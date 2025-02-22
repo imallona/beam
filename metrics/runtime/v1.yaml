@@ -1,0 +1,72 @@
+id: runtime
+version: v1
+name: Wall-clock runtime
+aliases:
+  - wall_time
+  - elapsed_time
+description: |
+  Wall-clock seconds elapsed during the execution of a method on a given
+  input. A measured metric: the value comes from a timer surrounding the
+  method invocation, not from a comparison of outputs.
+metric_kind: measured
+measurand: time elapsed during method execution, in seconds
+task:
+  - efficiency
+requires_ground_truth: false
+output:
+  shape: scalar
+  dtype: float
+  description: elapsed time in seconds
+semantics:
+  scale_type: ratio
+  scale_rationale: |
+    Time has a meaningful zero (no elapsed time) and ratios are well-defined
+    (twice as long is meaningfully twice as long).
+  range:
+    lower: 0
+    upper: null
+    lower_inclusive: true
+  polarity: lower_is_better
+  monotonic: true
+  meaningful_zero: true
+  allowed_transformations:
+    - log
+    - rank
+  uncertainty_model:
+    type: none
+comparability:
+  comparable_within:
+    - same_dataset
+    - same_task
+  aggregation_rules:
+    - geometric_mean_recommended_for_cross_dataset_aggregation_of_ratios
+    - arithmetic_mean_misleading_when_values_span_orders_of_magnitude
+implementations:
+  - name: perf_counter
+    language: python
+    package: stdlib
+    function: time.perf_counter
+    license: PSF-2.0
+  - name: system_time
+    language: r
+    package: base
+    function: system.time
+    license: GPL-2.0-or-later
+  - name: gnu_time
+    language: other
+    package: GNU time
+    function: /usr/bin/time
+    license: GPL-3.0-or-later
+    repo_url: https://www.gnu.org/software/time/
+examples:
+  - description: a trivial no-op should take negligible wall time
+    inputs:
+      method: noop
+    expected_output: 0.0
+    tolerance: 1.0
+provenance:
+  author: Izaskun Mallona
+  contact: izaskun.mallona@gmail.com
+  created: "2026-05-20"
+  modified: "2026-05-20"
+  license: CC-BY-4.0

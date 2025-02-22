@@ -1,0 +1,105 @@
+id: ari
+version: v1
+name: Adjusted Rand Index (Hubert-Arabie)
+aliases:
+  - arand
+  - adjusted_rand_score
+description: |
+  Corrected-for-chance similarity between two partitions of the same set of
+  elements. Defined as the Rand Index adjusted by its expected value under a
+  random model of partition pairs. Equals 1 for identical partitions and 0 for
+  random partitions; can be negative for worse-than-random agreement.
+citations:
+  - text: "Hubert L, Arabie P. Comparing partitions. Journal of Classification, 1985."
+    doi: "10.1007/BF01908075"
+metric_kind: derived
+measurand: agreement between predicted and true partition assignments
+task:
+  - clustering
+requires_ground_truth: true
+ground_truth:
+  description: a reference partition of the same elements (e.g. cell type labels, gold-standard clusters)
+  shape: vector
+  dtype: nominal_label
+inputs:
+  - role: predicted_partition
+    shape: vector
+    dtype: nominal_label
+    description: cluster assignment per element from the method under evaluation
+  - role: true_partition
+    shape: vector
+    dtype: nominal_label
+    description: reference partition; same length as predicted_partition
+output:
+  shape: scalar
+  dtype: float
+  description: ARI value in [-1, 1]
+semantics:
+  scale_type: interval
+  scale_rationale: |
+    The chance-correction gives a meaningful zero (expected value under random
+    partition pairs) but the unit length is not invariant across pairs of
+    partitions, so the scale is interval rather than ratio.
+  range:
+    lower: -1
+    upper: 1
+    lower_inclusive: true
+    upper_inclusive: true
+  polarity: higher_is_better
+  monotonic: true
+  meaningful_zero: true
+  allowed_transformations:
+    - affine
+    - rank
+  uncertainty_model:
+    type: bootstrap
+comparability:
+  comparable_within:
+    - same_dataset
+  aggregation_rules:
+    - per_dataset_min_max_normalization_before_cross_dataset_aggregation
+    - arithmetic_mean_across_datasets_only_after_normalization
+implementations:
+  - name: sklearn
+    language: python
+    package: scikit-learn
+    function: sklearn.metrics.adjusted_rand_score
+    license: BSD-3-Clause
+    repo_url: https://github.com/scikit-learn/scikit-learn
+  - name: mclust
+    language: r
+    package: mclust
+    function: adjustedRandIndex
+    license: GPL-2.0-or-later
+    repo_url: https://cran.r-project.org/package=mclust
+  - name: aricode
+    language: r
+    package: aricode
+    function: ARI
+    license: GPL-3.0-or-later
+    repo_url: https://cran.r-project.org/package=aricode
+examples:
+  - description: identical partitions
+    inputs:
+      predicted_partition: [0, 0, 1, 1, 2, 2]
+      true_partition: [0, 0, 1, 1, 2, 2]
+    expected_output: 1.0
+    tolerance: 1.0e-12
+  - description: relabelled but identical partitions
+    inputs:
+      predicted_partition: [2, 2, 0, 0, 1, 1]
+      true_partition: [0, 0, 1, 1, 2, 2]
+    expected_output: 1.0
+    tolerance: 1.0e-12
+  - description: completely disjoint partitions
+    inputs:
+      predicted_partition: [0, 0, 0, 0, 0, 0]
+      true_partition: [0, 0, 1, 1, 2, 2]
+    expected_output: 0.0
+    tolerance: 1.0e-12
+provenance:
+  author: Izaskun Mallona
+  contact: izaskun.mallona@gmail.com
+  created: "2026-05-20"
+  modified: "2026-05-20"
+  license: CC-BY-4.0
