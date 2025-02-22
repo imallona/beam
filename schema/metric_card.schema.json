@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/imallona/beam/schema/metric_card.schema.json",
+  "title": "Metric card",
+  "description": "Formalization of a benchmark performance metric. Language-neutral; readable from Python (jsonschema) and R (jsonvalidate). See PLAN.md Section 1.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "name",
+    "description",
+    "metric_kind",
+    "measurand",
+    "task",
+    "requires_ground_truth",
+    "output",
+    "semantics",
+    "comparability",
+    "implementations",
+    "examples",
+    "provenance"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*$",
+      "description": "Stable kebab- or snake-case identifier."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^v[0-9]+(\\.[0-9]+)*$",
+      "description": "Card version, e.g. v1 or v1.2."
+    },
+    "name": { "type": "string" },
+    "aliases": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "description": { "type": "string" },
+    "citations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["text"],
+        "additionalProperties": false,
+        "properties": {
+          "text": { "type": "string" },
+          "doi": { "type": "string" },
+          "url": { "type": "string", "format": "uri" }
+        }
+      }
+    },
+    "metric_kind": {
+      "type": "string",
+      "enum": ["derived", "measured"],
+      "description": "derived: computed from inputs (e.g. ARI from two label vectors). measured: observed during execution (e.g. runtime, peak memory)."
+    },
+    "measurand": { "type": "string" },
+    "task": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "requires_ground_truth": { "type": "boolean" },
+    "ground_truth": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string" },
+        "shape": { "type": "string" },
+        "dtype": { "type": "string" }
+      }
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role", "shape", "dtype"],
+        "additionalProperties": false,
+        "properties": {
+          "role": { "type": "string" },
+          "shape": { "type": "string" },
+          "dtype": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["shape", "dtype"],
+      "additionalProperties": false,
+      "properties": {
+        "shape": { "type": "string" },
+        "dtype": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "semantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scale_type",
+        "polarity",
+        "monotonic",
+        "meaningful_zero",
+        "allowed_transformations"
+      ],
+      "properties": {
+        "scale_type": {
+          "type": "string",
+          "enum": ["nominal", "ordinal", "interval", "ratio"]
+        },
+        "scale_rationale": { "type": "string" },
+        "range": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "lower": { "type": ["number", "null"] },
+            "upper": { "type": ["number", "null"] },
+            "lower_inclusive": { "type": "boolean", "default": true },
+            "upper_inclusive": { "type": "boolean", "default": true }
+          }
+        },
+        "polarity": {
+          "type": "string",
+          "enum": ["higher_is_better", "lower_is_better", "target_value"]
+        },
+        "target": { "type": "number" },
+        "monotonic": { "type": "boolean" },
+        "meaningful_zero": { "type": "boolean" },
+        "allowed_transformations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "affine",
+              "log",
+              "rank",
+              "arcsin",
+              "sqrt",
+              "negate",
+              "min_max",
+              "z_score"
+            ]
+          }
+        },
+        "uncertainty_model": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["analytic", "bootstrap", "permutation", "none"]
+            }
+          }
+        }
+      }
+    },
+    "comparability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["comparable_within"],
+      "properties": {
+        "comparable_within": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["same_dataset", "same_task", "across_tasks"]
+          },
+          "minItems": 1
+        },
+        "aggregation_rules": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "implementations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "language", "license"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "language": {
+            "type": "string",
+            "enum": ["python", "r", "julia", "c", "cpp", "rust", "other"]
+          },
+          "package": { "type": "string" },
+          "function": { "type": "string" },
+          "version": { "type": "string" },
+          "license": { "type": "string" },
+          "repo_url": { "type": "string", "format": "uri" },
+          "citation": { "type": "string" }
+        }
+      }
+    },
+    "examples": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["description", "expected_output"],
+        "additionalProperties": false,
+        "properties": {
+          "description": { "type": "string" },
+          "inputs": {},
+          "expected_output": {},
+          "tolerance": { "type": "number" }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["author", "created", "license"],
+      "additionalProperties": false,
+      "properties": {
+        "author": { "type": "string" },
+        "contact": { "type": "string" },
+        "created": { "type": "string", "format": "date" },
+        "modified": { "type": "string", "format": "date" },
+        "license": { "type": "string" }
+      }
+    },
+    "mappings": {
+      "type": "object",
+      "description": "Cross-references to external ontologies (STATO, OBI, EDAM). Optional; keys are ontology slugs, values are term identifiers.",
+      "additionalProperties": { "type": "string" }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "metric_kind": { "const": "derived" } }, "required": ["metric_kind"] },
+      "then": { "required": ["inputs"] }
+    },
+    {
+      "if": { "properties": { "requires_ground_truth": { "const": true } }, "required": ["requires_ground_truth"] },
+      "then": { "required": ["ground_truth"] }
+    }
+  ]
+}
