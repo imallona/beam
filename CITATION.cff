@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use beam in academic work, please cite it as below."
+title: beam
+abstract: "Benchmark Evaluation And Metrics: a metric formalization layer for bioinformatics benchmarks, with multi-criteria decision analysis and method-dataset heterogeneity diagnostics."
+authors:
+  - family-names: Mallona
+    given-names: Izaskun
+    email: izaskun.mallona@gmail.com
+    orcid: "https://orcid.org/0000-0002-2853-7526"
+repository-code: "https://github.com/imallona/beam"
+license: GPL-3.0-or-later
+version: "0.1.1"
+date-released: "2025-03-22"
+keywords:
+  - benchmarking
+  - bioinformatics
+  - metrics
+  - multi-criteria decision analysis
+  - meta-research
+  - measurement theory

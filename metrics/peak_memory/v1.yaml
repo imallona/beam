@@ -1,0 +1,73 @@
+id: peak_memory
+version: v1
+name: Peak resident set size
+aliases:
+  - peak_rss
+  - max_rss
+  - max_memory
+description: |
+  Maximum resident set size of the process executing a method, in bytes.
+  Measured by the operating system or a monitoring tool wrapping the
+  process.
+metric_kind: measured
+measurand: maximum resident memory used during method execution, in bytes
+task:
+  - efficiency
+requires_ground_truth: false
+output:
+  shape: scalar
+  dtype: int
+  description: peak RSS in bytes
+semantics:
+  scale_type: ratio
+  scale_rationale: |
+    Bytes are a ratio scale with a meaningful zero.
+  range:
+    lower: 0
+    upper: null
+    lower_inclusive: true
+  polarity: lower_is_better
+  monotonic: true
+  meaningful_zero: true
+  allowed_transformations:
+    - log
+    - rank
+  uncertainty_model:
+    type: none
+comparability:
+  comparable_within:
+    - same_dataset
+    - same_task
+  aggregation_rules:
+    - geometric_mean_recommended_for_cross_dataset_aggregation
+implementations:
+  - name: psutil
+    language: python
+    package: psutil
+    function: psutil.Process.memory_info
+    license: BSD-3-Clause
+    repo_url: https://github.com/giampaolo/psutil
+  - name: gnu_time
+    language: other
+    package: GNU time
+    function: /usr/bin/time -v
+    license: GPL-3.0-or-later
+    repo_url: https://www.gnu.org/software/time/
+  - name: peakRAM
+    language: r
+    package: peakRAM
+    function: peakRAM
+    license: GPL-2.0-or-later
+    repo_url: https://cran.r-project.org/package=peakRAM
+examples:
+  - description: trivial process should use minimal memory
+    inputs:
+      method: noop
+    expected_output: 10000000
+    tolerance: 100000000
+provenance:
+  author: Izaskun Mallona
+  contact: izaskun.mallona@gmail.com
+  created: "2025-03-22"
+  modified: "2025-03-22"
+  license: CC-BY-4.0

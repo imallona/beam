@@ -1,0 +1,81 @@
+id: nmi
+version: v1
+name: Normalised mutual information
+aliases:
+  - normalized_mutual_information
+  - nmi_score
+description: |
+  Mutual information between two partitions, normalised to [0, 1] using one
+  of several conventions (arithmetic mean of entropies, geometric mean, or
+  max). Equals 1 for identical partitions and 0 for independent partitions.
+  Unlike ARI, NMI is not chance-corrected.
+citations:
+  - text: "Strehl A, Ghosh J. Cluster ensembles - a knowledge reuse framework for combining multiple partitions. JMLR, 2002."
+metric_kind: derived
+measurand: normalised mutual information between predicted and true partition assignments
+task:
+  - clustering
+requires_ground_truth: true
+ground_truth:
+  description: reference partition of the same elements
+  shape: vector
+  dtype: nominal_label
+inputs:
+  - role: predicted_partition
+    shape: vector
+    dtype: nominal_label
+  - role: true_partition
+    shape: vector
+    dtype: nominal_label
+output:
+  shape: scalar
+  dtype: float
+semantics:
+  scale_type: interval
+  scale_rationale: |
+    NMI has a meaningful zero (independent partitions) but is not chance-
+    corrected, so its unit length depends on the marginal entropies.
+  range:
+    lower: 0
+    upper: 1
+    lower_inclusive: true
+    upper_inclusive: true
+  polarity: higher_is_better
+  monotonic: true
+  meaningful_zero: true
+  allowed_transformations:
+    - affine
+    - rank
+  uncertainty_model:
+    type: bootstrap
+comparability:
+  comparable_within:
+    - same_dataset
+  aggregation_rules:
+    - per_dataset_normalization_before_cross_dataset_aggregation
+implementations:
+  - name: sklearn
+    language: python
+    package: scikit-learn
+    function: sklearn.metrics.normalized_mutual_info_score
+    license: BSD-3-Clause
+    repo_url: https://github.com/scikit-learn/scikit-learn
+  - name: aricode
+    language: r
+    package: aricode
+    function: NMI
+    license: GPL-3.0-or-later
+    repo_url: https://cran.r-project.org/package=aricode
+examples:
+  - description: identical partitions
+    inputs:
+      predicted_partition: [0, 0, 1, 1, 2, 2]
+      true_partition: [0, 0, 1, 1, 2, 2]
+    expected_output: 1.0
+    tolerance: 1.0e-12
+provenance:
+  author: Izaskun Mallona
+  contact: izaskun.mallona@gmail.com
+  created: "2025-03-22"
+  modified: "2025-03-22"
+  license: CC-BY-4.0

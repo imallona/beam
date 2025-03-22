@@ -1,0 +1,83 @@
+id: f1_score
+version: v1
+name: F1 score
+aliases:
+  - f1
+  - f_measure
+description: |
+  Harmonic mean of precision and recall. Used for binary classification or
+  per-class evaluation in multiclass settings. Equals 1 only when both
+  precision and recall are 1.
+citations:
+  - text: "van Rijsbergen CJ. Information Retrieval, 2nd edition. Butterworth-Heinemann, 1979."
+metric_kind: derived
+measurand: harmonic mean of precision and recall
+task:
+  - classification
+  - retrieval
+requires_ground_truth: true
+ground_truth:
+  description: reference labels (typically binary or one-hot)
+  shape: vector
+  dtype: nominal_label
+inputs:
+  - role: predicted_labels
+    shape: vector
+    dtype: nominal_label
+  - role: true_labels
+    shape: vector
+    dtype: nominal_label
+output:
+  shape: scalar
+  dtype: float
+  description: F1 in [0, 1]
+semantics:
+  scale_type: ratio
+  scale_rationale: |
+    A fraction in [0, 1] with a meaningful zero (no true positives) and a
+    meaningful unit.
+  range:
+    lower: 0
+    upper: 1
+    lower_inclusive: true
+    upper_inclusive: true
+  polarity: higher_is_better
+  monotonic: true
+  meaningful_zero: true
+  allowed_transformations:
+    - affine
+    - rank
+  uncertainty_model:
+    type: bootstrap
+comparability:
+  comparable_within:
+    - same_dataset
+  aggregation_rules:
+    - per_dataset_normalization_before_cross_dataset_aggregation
+    - macro_or_micro_averaging_choice_must_be_recorded_for_multiclass
+implementations:
+  - name: sklearn
+    language: python
+    package: scikit-learn
+    function: sklearn.metrics.f1_score
+    license: BSD-3-Clause
+    repo_url: https://github.com/scikit-learn/scikit-learn
+  - name: mlr3measures
+    language: r
+    package: mlr3measures
+    function: fbeta
+    license: LGPL-3.0-or-later
+    repo_url: https://cran.r-project.org/package=mlr3measures
+examples:
+  - description: all predictions correct on binary task
+    inputs:
+      predicted_labels: [0, 1, 1, 0]
+      true_labels: [0, 1, 1, 0]
+    expected_output: 1.0
+    tolerance: 1.0e-12
+provenance:
+  author: Izaskun Mallona
+  contact: izaskun.mallona@gmail.com
+  created: "2025-03-22"
+  modified: "2025-03-22"
+  license: CC-BY-4.0

@@ -1,0 +1,82 @@
+id: silhouette
+version: v1
+name: Silhouette coefficient
+aliases:
+  - silhouette_score
+  - silhouette_width
+description: |
+  Mean silhouette coefficient over all clustered instances. For each
+  instance, s = (b - a) / max(a, b), where a is the mean distance to
+  other instances in the same cluster and b is the mean distance to
+  instances in the nearest other cluster. Ranges over [-1, 1].
+citations:
+  - text: "Rousseeuw PJ. Silhouettes: a graphical aid to the interpretation and validation of cluster analysis. Journal of Computational and Applied Mathematics, 1987."
+    doi: "10.1016/0377-0427(87)90125-7"
+metric_kind: derived
+measurand: mean silhouette coefficient across instances
+task:
+  - clustering
+requires_ground_truth: false
+inputs:
+  - role: features
+    shape: matrix
+    dtype: float
+    description: instance by feature matrix
+  - role: cluster_labels
+    shape: vector
+    dtype: nominal_label
+    description: cluster assignment per instance
+output:
+  shape: scalar
+  dtype: float
+  description: mean silhouette coefficient in [-1, 1]
+semantics:
+  scale_type: interval
+  scale_rationale: |
+    The silhouette score has a meaningful zero (cluster compactness equal
+    to cluster separation) but its unit depends on the distance metric,
+    so the scale is interval not ratio.
+  range:
+    lower: -1
+    upper: 1
+    lower_inclusive: true
+    upper_inclusive: true
+  polarity: higher_is_better
+  monotonic: true
+  meaningful_zero: true
+  allowed_transformations:
+    - affine
+    - rank
+  uncertainty_model:
+    type: bootstrap
+comparability:
+  comparable_within:
+    - same_dataset
+  aggregation_rules:
+    - sensitive_to_choice_of_distance_metric_record_it_with_the_score
+implementations:
+  - name: sklearn
+    language: python
+    package: scikit-learn
+    function: sklearn.metrics.silhouette_score
+    license: BSD-3-Clause
+    repo_url: https://github.com/scikit-learn/scikit-learn
+  - name: cluster
+    language: r
+    package: cluster
+    function: silhouette
+    license: GPL-2.0-or-later
+    repo_url: https://cran.r-project.org/package=cluster
+examples:
+  - description: well-separated two-cluster toy data
+    inputs:
+      features: [[0, 0], [0, 1], [10, 10], [10, 11]]
+      cluster_labels: [0, 0, 1, 1]
+    expected_output: 0.9
+    tolerance: 0.1
+provenance:
+  author: Izaskun Mallona
+  contact: izaskun.mallona@gmail.com
+  created: "2025-03-22"
+  modified: "2025-03-22"
+  license: CC-BY-4.0

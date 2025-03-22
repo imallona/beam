@@ -1,0 +1,87 @@
+id: accuracy
+version: v1
+name: Classification accuracy
+aliases:
+  - acc
+  - accuracy_score
+description: |
+  Fraction of correctly classified instances. Defined as the number of
+  matches between predicted and true labels, divided by the total number
+  of instances.
+metric_kind: derived
+measurand: fraction of correctly classified instances
+task:
+  - classification
+requires_ground_truth: true
+ground_truth:
+  description: reference class label per instance
+  shape: vector
+  dtype: nominal_label
+inputs:
+  - role: predicted_labels
+    shape: vector
+    dtype: nominal_label
+  - role: true_labels
+    shape: vector
+    dtype: nominal_label
+output:
+  shape: scalar
+  dtype: float
+  description: accuracy in [0, 1]
+semantics:
+  scale_type: ratio
+  scale_rationale: |
+    A fraction with a meaningful zero (zero correct predictions) and a
+    meaningful unit (one correct prediction per N total).
+  range:
+    lower: 0
+    upper: 1
+    lower_inclusive: true
+    upper_inclusive: true
+  polarity: higher_is_better
+  monotonic: true
+  meaningful_zero: true
+  allowed_transformations:
+    - affine
+    - rank
+    - arcsin
+  uncertainty_model:
+    type: analytic
+comparability:
+  comparable_within:
+    - same_dataset
+  aggregation_rules:
+    - misleading_under_class_imbalance
+    - per_dataset_min_max_normalization_before_cross_dataset_aggregation
+implementations:
+  - name: sklearn
+    language: python
+    package: scikit-learn
+    function: sklearn.metrics.accuracy_score
+    license: BSD-3-Clause
+    repo_url: https://github.com/scikit-learn/scikit-learn
+  - name: mlr3measures
+    language: r
+    package: mlr3measures
+    function: acc
+    license: LGPL-3.0-or-later
+    repo_url: https://cran.r-project.org/package=mlr3measures
+examples:
+  - description: all predictions correct
+    inputs:
+      predicted_labels: [0, 1, 1, 0]
+      true_labels: [0, 1, 1, 0]
+    expected_output: 1.0
+    tolerance: 1.0e-12
+  - description: half correct
+    inputs:
+      predicted_labels: [0, 0, 0, 0]
+      true_labels: [0, 1, 1, 0]
+    expected_output: 0.5
+    tolerance: 1.0e-12
+provenance:
+  author: Izaskun Mallona
+  contact: izaskun.mallona@gmail.com
+  created: "2025-03-22"
+  modified: "2025-03-22"
+  license: CC-BY-4.0
