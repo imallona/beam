@@ -42,9 +42,15 @@ if (length(cards) == 0L) {
 
 validator <- jsonvalidate::json_validator(schema_path, engine = "ajv")
 
+# Force YAML sequences to R lists. Without this, yaml::read_yaml collapses
+# single-element sequences (e.g. "task: [clustering]") into atomic vectors,
+# which jsonlite::toJSON(auto_unbox = TRUE) then unwraps to JSON scalars,
+# breaking schema validation.
+seq_handler <- list(seq = function(x) as.list(x))
+
 failures <- character()
 for (card_path in cards) {
-    card <- yaml::read_yaml(card_path)
+    card <- yaml::read_yaml(card_path, handlers = seq_handler)
     card_json <- jsonlite::toJSON(
         card,
         auto_unbox = TRUE,

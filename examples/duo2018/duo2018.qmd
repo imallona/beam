@@ -1,0 +1,65 @@
+---
+title: "Duo 2018 clustering benchmark, walkthrough"
+author: "Izaskun Mallona"
+format: html
+---
+
+## Goal
+
+This vignette will re-analyse the fourteen single-cell clustering methods benchmarked in Duo et al. 2018. It uses the beam metric registry and the MCDA decision module. For now it shows the workflow on a small synthetic tool by metric table. The wiring to the actual Duo data lands in a later iteration.
+
+## Set-up
+
+```{python}
+import numpy as np
+
+from beam.cards import Registry
+from beam.mcda import equal_weights, min_max_normalize, rank, weighted_sum
+```
+
+## Pull metric metadata from the registry
+
+Two metrics from the seed registry: ARI (clustering quality, higher is better) and runtime (efficiency, lower is better). Polarity comes from the metric cards, not from a hand-typed list.
+
+```{python}
+reg = Registry()
+metric_ids = ["ari", "runtime"]
+polarity = [reg.get(mid).polarity for mid in metric_ids]
+print(dict(zip(metric_ids, polarity)))
+```
+
+## Score matrix
+
+A small synthetic stand-in for the Duo scores. Three methods, two metrics.
+
+```{python}
+methods = ["seurat", "raceid2", "flowsom"]
+scores = np.array([
+    [0.85, 120.0],   # seurat:  high ARI, slow
+    [0.45,  30.0],   # raceid2: low ARI,  fast
+    [0.55,  90.0],   # flowsom: medium ARI, medium speed
+])
+```
+
+## Normalise, aggregate, rank
+
+```{python}
+normalised = min_max_normalize(scores, polarity)
+weights = equal_weights(len(metric_ids))
+composite = weighted_sum(normalised, weights)
+ranks = rank(composite)
+
+for m, c, r in zip(methods, composite, ranks):
+    print(f"{m:8s}  composite={c:.3f}  rank={r}")
+```
+
+## What is missing
+
+This vignette is a starter. To run on the real Duo 2018 data we still need to :
+
+1. Replace the synthetic matrix with the published 14 methods by 12 datasets by 4 metrics tensor from Duo et al. 2018.
+2. Aggregate within each dataset, then combine across datasets.
+3. Compare to the rankings reported in the original paper.
+4. Add the sensitivity layer: alternative weight schemes, leave-one-metric-out, weight perturbation.
+
+The metric cards for ARI and runtime are already in place. Cards for Shannon entropy difference and cluster-count deviation will be added in the same milestone 

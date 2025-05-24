@@ -1,12 +1,12 @@
 # Duo 2018 clustering benchmark
 
-This folder will hold the reproducible vignette that re-analyses the
-fourteen single-cell clustering methods from Duo et al. 2018 with beam.
+This folder holds the walkthrough vignette and will host the full re-analysis of the fourteen single-cell clustering methods from Duo et al. 2018.
 
-The vignette is not yet written. When complete it will:
+`duo2018.qmd` is a starter vignette. It pulls metric polarity from the beam registry and runs the MCDA pipeline (normalise, weight, aggregate, rank) on a small synthetic tool by metric table.
 
-1. Load the scores from the prior MCDA work into a tool by metric tensor.
-2. Look up ARI, runtime, Shannon entropy difference, and cluster-count
-   deviation metric cards from the beam registry.
-3. Run the MCDA decision module with several weighting schemes.
-4. Produce a sensitivity analysis and a one-paragraph recommendation.
+To finish the re-analysis we still need to:
+
+1. Replace the synthetic matrix with the 14 methods by 12 datasets by 4 metrics tensor from Duo et al. 2018.
+2. Aggregate within each dataset, then across datasets.
+3. Compare to the rankings reported in the original paper.
+4. Add the sensitivity layer: alternative weight schemes, leave-one-metric-out, weight perturbation.
