@@ -13,18 +13,17 @@ This vignette will re-analyse the fourteen single-cell clustering methods benchm
 ```{python}
 import numpy as np
 
-from beam.cards import Registry
-from beam.mcda import equal_weights, min_max_normalize, rank, weighted_sum
+from beam.cards import polarities_for
+from beam.mcda import run
 ```
 
-## Pull metric metadata from the registry
+## Pull metric polarity from the registry
 
-Two metrics from the seed registry: ARI (clustering quality, higher is better) and runtime (efficiency, lower is better). Polarity comes from the metric cards, not from a hand-typed list.
+Two metrics from the seed registry: ARI (clustering quality, higher is better) and runtime (efficiency, lower is better). `polarities_for` looks up the polarity string per metric id from the metric cards, so the choice is recorded in the registry and not hand-typed in the vignette.
 
 ```{python}
-reg = Registry()
 metric_ids = ["ari", "runtime"]
-polarity = [reg.get(mid).polarity for mid in metric_ids]
+polarity = polarities_for(metric_ids)
 print(dict(zip(metric_ids, polarity)))
 ```
 
@@ -41,16 +40,34 @@ scores = np.array([
 ])
 ```
 
-## Normalise, aggregate, rank
+## One MCDA run
+
+`beam.mcda.run` runs the full pipeline in one call and returns a `Result` with every intermediate output.
 
 ```{python}
-normalised = min_max_normalize(scores, polarity)
-weights = equal_weights(len(metric_ids))
-composite = weighted_sum(normalised, weights)
-ranks = rank(composite)
+result = run(scores, polarity)
 
-for m, c, r in zip(methods, composite, ranks):
-    print(f"{m:8s}  composite={c:.3f}  rank={r}")
+print(f"weighting={result.weighting}  method={result.method}")
+for m, c, r in zip(methods, result.composite, result.ranks):
+    print(f"  {m:8s}  composite={c:.3f}  rank={r}")
+```
+
+## Compare under different choices
+
+Two weighting schemes (`equal`, `entropy`) crossed with two aggregation methods (`saw`, `topsis`). Stable ranks across the four runs mean the choice does not matter. Flipped ranks mean it does.
+
+```{python}
+combos = [
+    ("equal",   "saw"),
+    ("equal",   "topsis"),
+    ("entropy", "saw"),
+    ("entropy", "topsis"),
+]
+
+print(f"{'weighting':10s}  {'method':8s}  ranks (seurat, raceid2, flowsom)")
+for w, m in combos:
+    r = run(scores, polarity, weights=w, method=m)
+    print(f"{w:10s}  {m:8s}  {tuple(int(x) for x in r.ranks)}")
 ```
 
 ## What is missing
@@ -62,4 +79,4 @@ This vignette is a starter. To run on the real Duo 2018 data we still need to :
 3. Compare to the rankings reported in the original paper.
 4. Add the sensitivity layer: alternative weight schemes, leave-one-metric-out, weight perturbation.
 
-The metric cards for ARI and runtime are already in place. Cards for Shannon entropy difference and cluster-count deviation will be added in the same milestone 
+The metric cards for ARI and runtime are already in place. Cards for Shannon entropy difference and cluster-count deviation will be added in the same milestone

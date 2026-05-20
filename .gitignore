@@ -67,3 +67,17 @@ catalog/index.json
 .RData
 .Ruserdata
 .Rproj.user/
+
+# Project-specific local files
+# Long-form planning document kept private
+PLAN.md
+# Per-session styler / humanizer reports
+docs/style_report.md
+docs/humanizer_report.md
+# Local context for Claude Code
+.claude/
+# PDFs (proposals, application notes, source papers); never commit by accident
+*.pdf
+# Local Jupyter notebooks left in working tree
+multicriteria_decision_making_report.html
+multicriteria_decision_making_report.ipynb

@@ -3,13 +3,48 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from pathlib import Path
 
 from .loader import load_card
 from .model import MetricCard
 
 _DEFAULT_METRICS_DIR = Path(__file__).resolve().parents[3] / "metrics"
+
+
+def polarities_for(
+    metric_ids: Sequence[str],
+    registry: Registry | None = None,
+) -> list[str]:
+    """Look up the polarity string for each metric id, in order.
+
+    A small bridge between the card registry and the MCDA pipeline. The
+    facade `beam.mcda.run` takes a list of polarity strings, one per
+    column of the score matrix. Rather than hand-type that list (and risk
+    mismatching what the metric card actually says), pass the metric ids
+    through this helper and feed the result to `run`.
+
+    Parameters
+    ----------
+    metric_ids
+        Ordered list of metric ids matching the columns of the score matrix.
+    registry
+        Optional registry instance. Defaults to a fresh registry over the
+        bundled metrics/ directory.
+
+    Returns
+    -------
+    list of str
+        One polarity string per metric id, in the same order.
+
+    Examples
+    --------
+    >>> from beam.cards import polarities_for
+    >>> polarities_for(["ari", "runtime"])
+    ['higher_is_better', 'lower_is_better']
+    """
+    reg = registry if registry is not None else Registry()
+    return [reg.get(mid).polarity for mid in metric_ids]
 
 
 class Registry:

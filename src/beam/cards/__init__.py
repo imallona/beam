@@ -2,6 +2,6 @@
 
 from .loader import load_card
 from .model import MetricCard
-from .registry import Registry
+from .registry import Registry, polarities_for
 
-__all__ = ["MetricCard", "Registry", "load_card"]
+__all__ = ["MetricCard", "Registry", "load_card", "polarities_for"]

@@ -4,6 +4,26 @@ All notable changes to beam will be documented in this file. The format follows 
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-05-20
+
+### Added
+
+- `beam.mcda.run`: single-call facade for the full pipeline (normalise, weight, aggregate, rank). Returns a `Result` dataclass with every intermediate output. Accepts `weights="equal"`, `weights="entropy"`, or an explicit array; `method="saw"` or `method="topsis"`.
+- `beam.mcda.topsis`: distance-to-ideal aggregation on the [0, 1] normalised matrix. Returns relative closeness in [0, 1]. Single-tool and all-identical inputs return 0.5.
+- `beam.mcda.entropy_weights`: Shannon entropy weighting on a normalised matrix. Higher-variation metrics get higher weight; uniform columns contribute zero. Invariant under positive per-column scaling. Falls back to equal weights if every column is uniform.
+- `beam.cards.polarities_for`: small helper that looks up the polarity string per metric id from the registry, intended to be passed straight to `run`. Bridges the registry and the MCDA pipeline so polarity is not hand-typed.
+- `docs/explanations/cards-and-pipeline.md`: short explainer with a Mermaid diagram showing which metric card fields the MCDA pipeline currently consumes and which it does not.
+- Duo vignette extended with a 2x2 weighting x method comparison.
+- CI job that renders the Duo vignette with Quarto and uploads the HTML as a downloadable workflow artefact.
+- `docs` extra in `pyproject.toml` (`pip install -e .[docs]`) bundling `jupyter` for Quarto Python execution.
+
+### Changed
+
+- `beam.mcda.__init__` now exports `Result`, `run`, `topsis`, `entropy_weights`.
+- `beam.cards.__init__` now exports `polarities_for`.
+- `beam.mcda.run` docstring records which metric card fields the pipeline actually consumes (only `polarity`, in the normalisation step) and which it does not (`scale_type`, `range`, `allowed_transformations`).
+- Version bumped from 0.1.2 to 0.1.3.
+
 ## [0.1.2] - 2025-05-24
 
 ### Added
