@@ -1,6 +1,6 @@
 # Contributing to beam
 
-Thanks for considering a contribution. This file is the short version of the PR contract; the long version lives in PLAN.md Section 8.
+Thanks for considering a contribution. This file covers the PR contract, how to add a metric card, the licensing terms, and the community expectations.
 
 ## Quick start
 
@@ -59,3 +59,7 @@ See `docs/findings/0000-template.md`. Include a commit hash and a run manifest p
 - Documentation uses Quarto. Vignettes live in `examples/` and are rendered as part of CI.
 - Diataxis split for `docs/`: tutorials, how-to, reference, explanations. Do not mix modes within one document.
 - Plain English in prose; no jargon without an explicit definition.
+
+## Community
+
+Contributors and users are welcome regardless of sex, gender identity, age, ethnicity, nationality, religion, disability, sexual orientation, career stage, native language, or any other attribute. We believe in respectful and healthy collaboration in scientific research.

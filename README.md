@@ -21,7 +21,7 @@ A metric result procedure (not a result from running the metric), such as *accur
   - Range: ratio, natural plus zero, (0 - 11.5), etc
   - Scale: nominal, ordinal, interval, ratio
     - Allowed transformations: e.g `poor = 0, mid = 1`; or `sqrt(x)`, `arcsin(x)` etc
-  - Timeseries: no (whether repeated measures are taken at perhaps regular intervals) 
+  - Timeseries: no (whether repeated measures are taken at perhaps regular intervals)
 - Documentation
   - Description (human readable)
 - QA/QC
@@ -53,3 +53,93 @@ This project is inspired by [omnibenchark](https://github.com/omnibenchmark/omni
 # Started
 
 21st Feb 2025
+
+---
+
+# Status
+
+v0.1.3. Early stage. The schema, the seed metric registry, and the MCDA primitives are in place. Heterogeneity diagnostics and a real Duo 2018 vignette are planned for later releases.
+
+What is in v0.1.3:
+
+- A JSON Schema (draft 2020-12) for metric cards, covering identity, kind, inputs, output, semantics (scale, polarity, range, allowed transformations, uncertainty), comparability, implementations, examples, and provenance.
+- Seven seed metric cards: `ari`, `runtime`, `nmi`, `peak_memory`, `accuracy`, `f1_score`, `silhouette`.
+- `beam.cards`: load and look up metric cards from the registry. `polarities_for(metric_ids)` bridges the registry and the MCDA pipeline.
+- `beam.mcda`: normalisation (`min_max_normalize`), weighting (`equal_weights`, `entropy_weights`), aggregation (`weighted_sum` for SAW, `topsis`), ranking (`rank`), all behind a one-call `run(...)` facade returning a `Result` dataclass.
+- CI: ruff lint, ruff format, pytest on Python 3.12 and 3.13, R-side metric card validation via `jsonvalidate`, and Quarto vignette rendering with artefact upload.
+- A worked example under `examples/duo2018/` running the pipeline on synthetic data.
+
+## Install
+
+```
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev,docs]"
+```
+
+`[docs]` pulls in Jupyter and matplotlib so Quarto can execute the Python code chunks in the vignette. `[io]` pulls in pandas for the CSV adapter. `[dev]` covers the test suite.
+
+## Quick use
+
+```python
+import numpy as np
+from beam.cards import polarities_for
+from beam.mcda import run
+
+metric_ids = ["ari", "runtime"]
+polarity = polarities_for(metric_ids)
+
+scores = np.array([
+    [0.85, 120.0],
+    [0.70, 30.0],
+    [0.60, 90.0],
+])
+
+result = run(scores, polarity, weights="entropy", method="topsis")
+print(result.ranks)
+```
+
+See `examples/duo2018/duo2018.qmd` for a longer walkthrough.
+
+## Repository layout
+
+```
+schema/
+  metric_card.schema.json       JSON Schema (draft 2020-12) for the metric card format
+metrics/
+  <id>/v<version>.yaml          One YAML file per metric and version
+  LICENSE.md                    CC-BY-4.0 (cards only)
+src/beam/
+  cards/                        Card loader, MetricCard dataclass, Registry, polarities_for
+  mcda/                         normalize, weights, topsis, weighted_sum, rank, run, Result
+  io/                           CSV reader for tool by metric matrices (pandas, optional)
+tests/
+  test_schema.py                Python-side metric card validation
+  validate_cards.R              R-side metric card validation (jsonvalidate)
+  test_cards_*.py               Cards loader, registry, polarities_for
+  test_mcda_*.py                Normalize, weights, aggregate, topsis, facade, pipeline
+examples/
+  duo2018/duo2018.qmd           Walkthrough vignette
+docs/
+  adr/                          Architectural decision records
+  findings/                     Empirical findings log
+  explanations/                 Conceptual essays (measurement theory, cards-and-pipeline)
+  paper/                        Manuscript folder
+.github/workflows/ci.yml        CI: Python tests, R card validation, vignette rendering
+```
+
+## Build artefacts
+
+- `duo2018-vignette`: a workflow artefact uploaded by CI on every push and pull request. Contains the rendered Duo vignette as a self-contained HTML file. Download it from the Actions tab on GitHub.
+- `metric_card.schema.json`: the canonical schema. Any tool that validates JSON against it can ingest beam metric cards.
+- `CITATION.cff`: cff-version 1.2.0; GitHub renders a citation widget from it.
+- A wheel under `dist/` after `python -m build`. Not currently published to PyPI.
+
+## Licence
+
+- Code: GPL-3.0-or-later (`LICENSE`).
+- Metric cards under `metrics/`: CC-BY-4.0 (`metrics/LICENSE.md`).
+
+## Citation
+
+See `CITATION.cff`.
