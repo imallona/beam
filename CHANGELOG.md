@@ -4,6 +4,16 @@ All notable changes to beam will be documented in this file. The format follows 
 
 ## [Unreleased]
 
+### Added
+
+- `beam.mcda.leave_one_metric_out` and `SensitivityReport`: per-metric leave-one-out sensitivity. Runs the pipeline with all metrics and once per metric omission; reports per-tool rank stability and the metric whose removal causes the largest rank change.
+- `ipykernel>=6.0` and `matplotlib>=3.8` declared as explicit `[docs]` dependencies so Quarto reliably finds a Python kernel and can render the heatmap.
+
+### Changed
+
+- `beam.mcda.__init__` now exports `leave_one_metric_out` and `SensitivityReport`.
+- CI Quarto setup pinned to 1.5.57; the vignette render step now sets `MPLBACKEND=Agg`.
+
 ## [0.1.3] - 2026-05-20
 
 ### Added

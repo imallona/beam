@@ -78,7 +78,7 @@ ranks_grid = np.zeros((len(combos), len(methods)), dtype=int)
 labels = []
 for i, (w, m) in enumerate(combos):
     r = run(scores, polarity, weights=w, method=m)
-    ranks_grid[i] = r
+    ranks_grid[i] = r.ranks
     labels.append(f"{w} / {m}")
 
 print(f"{'weighting / method':22s}  ranks (seurat, raceid2, flowsom)")
@@ -104,6 +104,29 @@ cbar = fig.colorbar(im, ax=ax, ticks=range(1, len(methods) + 1))
 cbar.set_label("rank (1 = best)")
 fig.tight_layout()
 plt.show()
+```
+
+## Leave-one-metric-out
+
+`leave_one_metric_out` runs the pipeline with all metrics, then once with each metric removed. The report carries the base ranks, the per-omission ranks, per-tool rank stability (fraction of leave-one-out runs in which the tool keeps its base rank), and the metric whose removal causes the largest rank change.
+
+```{python}
+from beam.mcda import leave_one_metric_out
+
+report = leave_one_metric_out(
+    scores, polarity,
+    metric_ids=metric_ids,
+    weights="entropy",
+    method="topsis",
+)
+
+print(f"base ranks: {tuple(int(x) for x in report.base.ranks)}")
+for m, s in zip(methods, report.rank_stability):
+    print(f"  {m:8s}  stability={s:.2f}")
+print(
+    f"removing {metric_ids[report.most_influential_metric]!r} "
+    f"causes the largest rank shift of {report.max_rank_shift}"
+)
 ```
 
 ## What is missing
