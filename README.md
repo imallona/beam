@@ -54,20 +54,21 @@ This project is inspired by [omnibenchark](https://github.com/omnibenchmark/omni
 
 21st Feb 2025
 
----
-
 # Status
 
-v0.1.3. Early stage. The schema, the seed metric registry, and the MCDA primitives are in place. Heterogeneity diagnostics and a real Duo 2018 vignette are planned for later releases.
+Early stage. The schema, the seed metric registry, the MCDA primitives, an ontology-aware entry point, three sensitivity primitives, a cross-dataset aggregator, and a simulated test suite are in place. Heterogeneity diagnostics (Bradley-Terry trees, mixed-effects models) and a full Duo 2018 re-analysis are planned for later releases.
 
-What is in v0.1.3:
+What is in HEAD:
 
-- A JSON Schema (draft 2020-12) for metric cards, covering identity, kind, inputs, output, semantics (scale, polarity, range, allowed transformations, uncertainty), comparability, implementations, examples, and provenance.
+- A JSON Schema (draft 2020-12) for metric cards, covering identity, kind, inputs, output, semantics (scale, polarity, range, allowed transformations, uncertainty), comparability (including a `recommended_aggregation_across_datasets` enum), implementations, examples, and provenance.
 - Seven seed metric cards: `ari`, `runtime`, `nmi`, `peak_memory`, `accuracy`, `f1_score`, `silhouette`.
-- `beam.cards`: load and look up metric cards from the registry. `polarities_for(metric_ids)` bridges the registry and the MCDA pipeline.
-- `beam.mcda`: normalisation (`min_max_normalize`), weighting (`equal_weights`, `entropy_weights`), aggregation (`weighted_sum` for SAW, `topsis`), ranking (`rank`), all behind a one-call `run(...)` facade returning a `Result` dataclass.
-- CI: ruff lint, ruff format, pytest on Python 3.12 and 3.13, R-side metric card validation via `jsonvalidate`, and Quarto vignette rendering with artefact upload.
-- A worked example under `examples/duo2018/` running the pipeline on synthetic data.
+- `beam.cards`: card loader, `MetricCard` dataclass, `Registry`, and two bridges to the MCDA pipeline: `polarities_for(metric_ids)` (just polarity) and `properties_for(metric_ids)` (polarity, scale_type, range bounds, allowed transformations, recommended cross-dataset aggregation).
+- `beam.mcda`: normalisation (`min_max_normalize` with optional declared bounds), weighting (`equal_weights`, `entropy_weights`), aggregation (`weighted_sum` for SAW, `topsis`), ranking (`rank`), and two entry points: the lower-level `run(...)` and the ontology-aware `run_from_registry(...)` which pulls polarity and bounds from the registry and refuses incompatible scale types via `validate_for_aggregation`.
+- Sensitivity primitives: `leave_one_metric_out` (rank stability under metric omission), `smaa` (Dirichlet weight sampling, rank acceptability index, central weight vector per tool, confidence factor), and `smallest_weight_perturbation` (Triantaphyllou-Sanchez closed-form weight delta for SAW).
+- `aggregate_across_datasets`: reduce a tool by dataset matrix for one metric using the rule declared on its card (arithmetic_mean for bounded interval/ratio, geometric_mean for unbounded ratio per Smith 1988, median, or rank_mean).
+- `beam.scenarios`: four canonical simulated benchmark scenarios with documented ground truth (`random` with anti-correlated trade-offs, `clear_winner`, `ties`, `odd_dataset` where one method wins on most datasets but a different method wins on one odd dataset). Used by the test suite and by a simulated scenarios vignette.
+- CI: ruff lint, ruff format, pytest on Python 3.12 and 3.13, R-side metric card validation via `jsonvalidate`, and Quarto rendering of both vignettes with artefact upload.
+- Two worked vignettes under `examples/`: the Duo 2018 walkthrough on a small synthetic stand-in, and a simulated scenarios report that runs the full report layout on every canonical scenario.
 
 ## Install
 
@@ -77,17 +78,13 @@ source .venv/bin/activate
 pip install -e ".[dev,docs]"
 ```
 
-`[docs]` pulls in Jupyter and matplotlib so Quarto can execute the Python code chunks in the vignette. `[io]` pulls in pandas for the CSV adapter. `[dev]` covers the test suite.
+`[docs]` pulls in Jupyter and matplotlib so Quarto can execute the Python code chunks in the vignettes. `[io]` pulls in pandas for the CSV adapter. `[dev]` covers the test suite.
 
 ## Quick use
 
 ```python
 import numpy as np
-from beam.cards import polarities_for
-from beam.mcda import run
-
-metric_ids = ["ari", "runtime"]
-polarity = polarities_for(metric_ids)
+from beam.mcda import run_from_registry
 
 scores = np.array([
     [0.85, 120.0],
@@ -95,11 +92,14 @@ scores = np.array([
     [0.60, 90.0],
 ])
 
-result = run(scores, polarity, weights="entropy", method="topsis")
+result = run_from_registry(scores, ["ari", "runtime"],
+                           weights="entropy", method="topsis")
 print(result.ranks)
+print(result.bounds)         # which declared range was used per column
+print(result.metric_ids)     # carried through for labelling
 ```
 
-See `examples/duo2018/duo2018.qmd` for a longer walkthrough.
+`run_from_registry` validates the requested aggregation against the declared scale type of each metric, applies bounded min-max normalisation, and refuses out-of-range observations. See `examples/duo2018/duo2018.qmd` for the longer walkthrough and `examples/scenarios/scenarios.qmd` for the simulated scenarios report.
 
 ## Repository layout
 
@@ -110,16 +110,24 @@ metrics/
   <id>/v<version>.yaml          One YAML file per metric and version
   LICENSE.md                    CC-BY-4.0 (cards only)
 src/beam/
-  cards/                        Card loader, MetricCard dataclass, Registry, polarities_for
-  mcda/                         normalize, weights, topsis, weighted_sum, rank, run, Result
+  cards/                        Card loader, MetricCard, MetricProperties, Registry,
+                                polarities_for, properties_for
+  mcda/                         normalize, weights, topsis, weighted_sum, rank, run,
+                                run_from_registry, validate_for_aggregation, leave_one_metric_out,
+                                smaa, smallest_weight_perturbation, aggregate_across_datasets, Result
   io/                           CSV reader for tool by metric matrices (pandas, optional)
+  scenarios.py                  Four canonical simulated scenarios with documented ground truth
 tests/
   test_schema.py                Python-side metric card validation
   validate_cards.R              R-side metric card validation (jsonvalidate)
-  test_cards_*.py               Cards loader, registry, polarities_for
-  test_mcda_*.py                Normalize, weights, aggregate, topsis, facade, pipeline
+  test_cards_*.py               Cards loader, registry, polarities_for, properties_for
+  test_mcda_*.py                Normalize, weights, aggregate, topsis, facade, pipeline,
+                                validate, run_from_registry, sensitivity, smaa, perturbation,
+                                cross_dataset
+  test_scenarios.py             Ground-truth checks on the four canonical scenarios
 examples/
   duo2018/duo2018.qmd           Walkthrough vignette
+  scenarios/scenarios.qmd       Consistency-check vignette across canonical scenarios
 docs/
   adr/                          Architectural decision records
   findings/                     Empirical findings log
@@ -130,7 +138,8 @@ docs/
 
 ## Build artefacts
 
-- `duo2018-vignette`: a workflow artefact uploaded by CI on every push and pull request. Contains the rendered Duo vignette as a self-contained HTML file. Download it from the Actions tab on GitHub.
+- `duo2018-vignette`: a workflow artefact uploaded by CI on every push and pull request. The rendered Duo vignette as a self-contained HTML file. Download it from the Actions tab on GitHub.
+- `scenarios-vignette`: a second workflow artefact with the rendered simulated scenarios report.
 - `metric_card.schema.json`: the canonical schema. Any tool that validates JSON against it can ingest beam metric cards.
 - `CITATION.cff`: cff-version 1.2.0; GitHub renders a citation widget from it.
 - A wheel under `dist/` after `python -m build`. Not currently published to PyPI.

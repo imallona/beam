@@ -83,9 +83,21 @@ jobs:
           MPLBACKEND: Agg
         run: quarto render examples/duo2018/duo2018.qmd
 
-      - name: Upload rendered vignette as artefact
+      - name: Render scenarios vignette
+        env:
+          MPLBACKEND: Agg
+        run: quarto render examples/scenarios/scenarios.qmd
+
+      - name: Upload rendered Duo vignette as artefact
         uses: actions/upload-artifact@v4
         with:
           name: duo2018-vignette
           path: examples/duo2018/duo2018.html
+          if-no-files-found: error
+
+      - name: Upload rendered scenarios vignette as artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scenarios-vignette
+          path: examples/scenarios/scenarios.html
           if-no-files-found: error

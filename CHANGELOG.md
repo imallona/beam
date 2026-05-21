@@ -16,9 +16,13 @@ All notable changes to beam will be documented in this file. The format follows 
 - `beam.mcda.smallest_weight_perturbation` and `WeightPerturbationReport`: Triantaphyllou-Sanchez weight perturbation under SAW. Reports the smallest single-weight change that swaps each ordered pair of tools, the most fragile pair overall, and a fragility flag on the top rank.
 - New schema field `comparability.recommended_aggregation_across_datasets` (enum: `arithmetic_mean`, `geometric_mean`, `median`, `rank_mean`). Populated on all seven seed cards: arithmetic mean for ARI, NMI, silhouette, accuracy, F1; geometric mean for runtime and peak memory (Smith 1988).
 - `affine` added to the `allowed_transformations` of runtime and peak_memory so the min-max step the pipeline applies is honestly licit on those cards.
-- PLAN.md Section 10b: candidate metric card extensions (noise_floor, score_of_random_baseline, recommended_normalisation, target_value, maintainer, tested_against, ontology mappings), each with the analysis it would unlock.
+- PLAN.md Section 10b: candidate metric card extensions (noise_floor, score_of_random_baseline, recommended_normalisation, target_value, maintainer, tested_against, ontology mappings), each with the analysis it would make possible.
 - `ipykernel>=6.0` and `matplotlib>=3.8` declared as explicit `[docs]` dependencies so Quarto reliably finds a Python kernel and can render the heatmap.
 - Duo vignette: new SMAA section, new weight-perturbation section, new across-datasets aggregation section; switched the main MCDA call to `run_from_registry`.
+- `beam.scenarios`: four canonical simulated benchmark scenarios with documented ground truth (`random` with anti-correlated trade-offs, `clear_winner`, `ties`, `odd_dataset` where one method wins on most datasets but a different method wins on one odd dataset). Each generator returns a `Scenario` carrying scores, optional per-dataset tensor, metric ids, and a `ScenarioExpectation` documenting what the MCDA pipeline should report.
+- `tests/test_scenarios.py`: ground-truth assertions tying every pipeline primitive (run_from_registry, leave_one_metric_out, smaa, smallest_weight_perturbation, aggregate_across_datasets) to one or more scenarios. 15 tests in total, including a multi-seed sweep that the random scenario passes statistically.
+- `examples/scenarios/scenarios.qmd`: simulated scenarios vignette mirroring the Duo report layout across all four scenarios.
+- CI Quarto job now renders the scenarios vignette in addition to the Duo vignette and uploads the result as a separate artefact.
 
 ### Changed
 
