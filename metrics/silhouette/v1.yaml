@@ -54,6 +54,7 @@ comparability:
     - same_dataset
   aggregation_rules:
     - sensitive_to_choice_of_distance_metric_record_it_with_the_score
+  recommended_aggregation_across_datasets: arithmetic_mean
 implementations:
   - name: sklearn
     language: python

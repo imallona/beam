@@ -175,6 +175,11 @@
         "aggregation_rules": {
           "type": "array",
           "items": { "type": "string" }
+        },
+        "recommended_aggregation_across_datasets": {
+          "type": "string",
+          "enum": ["arithmetic_mean", "geometric_mean", "median", "rank_mean"],
+          "description": "Machine-readable hint for how to reduce per-dataset scores of this metric to a per-tool summary. Smith 1988: ratio metrics with values spanning orders of magnitude (runtime, peak memory) take geometric mean; bounded interval or ratio metrics take arithmetic mean unless an outlier-robust summary is wanted."
         }
       }
     },

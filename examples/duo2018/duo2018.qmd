@@ -23,18 +23,24 @@ This vignette will re-analyse the fourteen single-cell clustering methods benchm
 import numpy as np
 import matplotlib.pyplot as plt
 
-from beam.cards import polarities_for
-from beam.mcda import run
+from beam.cards import properties_for
+from beam.mcda import run_from_registry
 ```
 
-## Pull metric polarity from the registry
+## Pull metric properties from the registry
 
-Two metrics from the seed registry: ARI (clustering quality, higher is better) and runtime (efficiency, lower is better). `polarities_for` looks up the polarity string per metric id from the metric cards, so the choice is recorded in the registry and not hand-typed in the vignette.
+Two metrics from the seed registry: ARI (clustering quality, higher is better) and runtime (efficiency, lower is better). `properties_for` looks up the polarity, scale type, declared range, allowed transformations, and recommended cross-dataset aggregation for each card. The pipeline downstream consumes all of these rather than only polarity.
 
 ```{python}
 metric_ids = ["ari", "runtime"]
-polarity = polarities_for(metric_ids)
-print(dict(zip(metric_ids, polarity)))
+props = properties_for(metric_ids)
+polarity = [p.polarity for p in props]   # needed by the legacy primitives below
+for p in props:
+    print(
+        f"{p.id:8s}  polarity={p.polarity:16s}  scale={p.scale_type:8s}  "
+        f"range=({p.range_lower}, {p.range_upper})  "
+        f"agg_across_datasets={p.recommended_aggregation_across_datasets}"
+    )
 ```
 
 ## Score matrix
@@ -50,14 +56,14 @@ scores = np.array([
 ])
 ```
 
-## One MCDA run
+## One MCDA run, ontology-aware
 
-`beam.mcda.run` runs the full pipeline in one call and returns a `Result` with every intermediate output.
+`beam.mcda.run_from_registry` validates the requested aggregation against the declared scale types, pulls polarity and declared bounds from the cards, and runs the full pipeline.
 
 ```{python}
-result = run(scores, polarity)
+result = run_from_registry(scores, metric_ids)
 
-print(f"weighting={result.weighting}  method={result.method}")
+print(f"weighting={result.weighting}  method={result.method}  bounds={result.bounds}")
 for m, c, r in zip(methods, result.composite, result.ranks):
     print(f"  {m:8s}  composite={c:.3f}  rank={r}")
 ```
@@ -77,7 +83,7 @@ combos = [
 ranks_grid = np.zeros((len(combos), len(methods)), dtype=int)
 labels = []
 for i, (w, m) in enumerate(combos):
-    r = run(scores, polarity, weights=w, method=m)
+    r = run_from_registry(scores, metric_ids, weights=w, method=m)
     ranks_grid[i] = r.ranks
     labels.append(f"{w} / {m}")
 
@@ -129,13 +135,80 @@ print(
 )
 ```
 
+## SMAA weight sampling
+
+`smaa` samples weight vectors from a Dirichlet over the metrics simplex, runs the pipeline once per sample, and reports the rank acceptability index (per-tool, per-rank probability), the central weight vector per tool (the mean weighting under which that tool is top-ranked), and a confidence factor per tool (its share of top-ranked samples).
+
+```{python}
+from beam.mcda import smaa
+
+smaa_report = smaa(
+    scores, polarity,
+    n_samples=500,
+    method="topsis",
+    seed=0,
+)
+
+print("rank acceptability index (rows = methods, cols = ranks 1..n)")
+for m, row in zip(methods, smaa_report.rank_acceptability_index):
+    print(f"  {m:8s}  {[f'{v:.2f}' for v in row]}")
+
+print("\nconfidence factor (share of samples ranked first)")
+for m, c in zip(methods, smaa_report.confidence_factor):
+    print(f"  {m:8s}  {c:.2f}")
+```
+
+## Weight perturbation (Triantaphyllou-Sanchez)
+
+`smallest_weight_perturbation` reports, for every pair of methods where one is ranked above the other under SAW, the smallest single-weight change that swaps them. It also flags whether the top-ranked method is fragile, that is, whether some single weight can be changed by less than `fragility_threshold` (default 0.05) to dethrone it.
+
+```{python}
+from beam.mcda import smallest_weight_perturbation
+
+ts = smallest_weight_perturbation(
+    scores, polarity,
+    weights="equal",
+    method="saw",
+)
+
+print(f"base ranks: {tuple(int(x) for x in ts.base.ranks)}")
+if ts.most_fragile_pair is not None:
+    p = ts.most_fragile_pair
+    print(
+        f"most fragile pair: {methods[p.higher]} > {methods[p.lower]}, "
+        f"flips by changing weight on {metric_ids[p.criterion]!r} by {p.delta:+.3f}"
+    )
+print(f"top rank is fragile: {ts.top_rank_is_fragile}")
+```
+
+## Across-dataset aggregation
+
+When the benchmark has a tool by dataset by metric tensor rather than a tool by metric matrix, `aggregate_across_datasets` reduces the dataset axis for each metric using the rule declared on the card. Runtime takes geometric mean (Smith 1988, ratio-scale convention); ARI takes arithmetic mean.
+
+```{python}
+from beam.mcda import aggregate_across_datasets
+
+# Stand-in per-dataset ARI for one method across three datasets.
+ari_per_dataset = np.array([[0.80, 0.85, 0.90]])
+runtime_per_dataset = np.array([[10.0, 100.0, 1000.0]])
+
+ari_agg = aggregate_across_datasets(
+    ari_per_dataset,
+    rule=props[0].recommended_aggregation_across_datasets,
+)
+runtime_agg = aggregate_across_datasets(
+    runtime_per_dataset,
+    rule=props[1].recommended_aggregation_across_datasets,
+)
+print(f"ARI ({props[0].recommended_aggregation_across_datasets}): {ari_agg[0]:.3f}")
+print(f"runtime ({props[1].recommended_aggregation_across_datasets}): {runtime_agg[0]:.3f}")
+```
+
 ## What is missing
 
 This vignette is a starter. To run on the real Duo 2018 data we still need to :
 
 1. Replace the synthetic matrix with the published 14 methods by 12 datasets by 4 metrics tensor from Duo et al. 2018.
-2. Aggregate within each dataset, then combine across datasets.
+2. Aggregate within each dataset, then combine across datasets using `aggregate_across_datasets`.
 3. Compare to the rankings reported in the original paper.
-4. Add the sensitivity layer: alternative weight schemes, leave-one-metric-out, weight perturbation.
-
-The metric cards for ARI and runtime are already in place. Cards for Shannon entropy difference and cluster-count deviation will be added in the same milestone
+4. Add cards for Shannon entropy difference and cluster-count deviation.

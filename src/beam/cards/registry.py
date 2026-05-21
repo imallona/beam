@@ -7,7 +7,7 @@ from collections.abc import Iterator, Sequence
 from pathlib import Path
 
 from .loader import load_card
-from .model import MetricCard
+from .model import MetricCard, MetricProperties
 
 _DEFAULT_METRICS_DIR = Path(__file__).resolve().parents[3] / "metrics"
 
@@ -45,6 +45,36 @@ def polarities_for(
     """
     reg = registry if registry is not None else Registry()
     return [reg.get(mid).polarity for mid in metric_ids]
+
+
+def properties_for(
+    metric_ids: Sequence[str],
+    registry: Registry | None = None,
+) -> list[MetricProperties]:
+    """Look up a MetricProperties record for each metric id, in order.
+
+    Wider counterpart to ``polarities_for``. Pulls polarity, scale_type,
+    declared range bounds, allowed transformations, and the recommended
+    cross-dataset aggregation from each card. Downstream code uses this
+    view to drive bounded normalisation, scale-compatibility validation,
+    and across-dataset reduction without re-walking the YAML.
+    """
+    reg = registry if registry is not None else Registry()
+    out: list[MetricProperties] = []
+    for mid in metric_ids:
+        card = reg.get(mid)
+        out.append(
+            MetricProperties(
+                id=card.id,
+                polarity=card.polarity,
+                scale_type=card.scale_type,
+                range_lower=card.range_lower,
+                range_upper=card.range_upper,
+                allowed_transformations=card.allowed_transformations,
+                recommended_aggregation_across_datasets=card.recommended_aggregation_across_datasets,
+            )
+        )
+    return out
 
 
 class Registry:

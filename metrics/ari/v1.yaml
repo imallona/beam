@@ -59,6 +59,7 @@ comparability:
   aggregation_rules:
     - per_dataset_min_max_normalization_before_cross_dataset_aggregation
     - arithmetic_mean_across_datasets_only_after_normalization
+  recommended_aggregation_across_datasets: arithmetic_mean
 implementations:
   - name: sklearn
     language: python

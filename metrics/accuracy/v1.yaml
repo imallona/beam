@@ -53,6 +53,7 @@ comparability:
   aggregation_rules:
     - misleading_under_class_imbalance
     - per_dataset_min_max_normalization_before_cross_dataset_aggregation
+  recommended_aggregation_across_datasets: arithmetic_mean
 implementations:
   - name: sklearn
     language: python

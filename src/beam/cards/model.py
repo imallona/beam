@@ -64,3 +64,31 @@ class MetricCard:
     @property
     def allowed_transformations(self) -> tuple[str, ...]:
         return tuple(self.semantics.get("allowed_transformations", []))
+
+    @property
+    def recommended_aggregation_across_datasets(self) -> str | None:
+        """Recommended way to aggregate this metric's scores across datasets.
+
+        Set on the card under comparability.recommended_aggregation_across_datasets.
+        One of arithmetic_mean, geometric_mean, median, rank_mean, or None if
+        unspecified.
+        """
+        return self.comparability.get("recommended_aggregation_across_datasets")
+
+
+@dataclass(frozen=True)
+class MetricProperties:
+    """A small read-only view onto the metric card fields that the MCDA pipeline consumes.
+
+    Returned by ``beam.cards.properties_for`` so that downstream code can
+    work against a uniform structure rather than reaching into the nested
+    semantics dict of a ``MetricCard``.
+    """
+
+    id: str
+    polarity: str
+    scale_type: str
+    range_lower: float | None
+    range_upper: float | None
+    allowed_transformations: tuple[str, ...]
+    recommended_aggregation_across_datasets: str | None

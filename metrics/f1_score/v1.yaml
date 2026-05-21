@@ -55,6 +55,7 @@ comparability:
   aggregation_rules:
     - per_dataset_normalization_before_cross_dataset_aggregation
     - macro_or_micro_averaging_choice_must_be_recorded_for_multiclass
+  recommended_aggregation_across_datasets: arithmetic_mean
 implementations:
   - name: sklearn
     language: python

@@ -7,11 +7,25 @@ All notable changes to beam will be documented in this file. The format follows 
 ### Added
 
 - `beam.mcda.leave_one_metric_out` and `SensitivityReport`: per-metric leave-one-out sensitivity. Runs the pipeline with all metrics and once per metric omission; reports per-tool rank stability and the metric whose removal causes the largest rank change.
+- `beam.mcda.smaa` and `SMAAReport`: SMAA-style weight-sampling sensitivity for SAW and TOPSIS. Draws Dirichlet weight vectors over the metrics simplex, runs the pipeline per sample, and reports the rank acceptability index, the per-tool central weight vector, and the confidence factor (Lahdelma and Salminen 2001).
+- `beam.cards.MetricProperties` and `properties_for`: a small read-only view over polarity, scale_type, declared range bounds, allowed transformations, and the recommended cross-dataset aggregation pulled from a metric card.
+- `beam.mcda.run_from_registry`: ontology-aware entry that pulls polarity and declared bounds from the registry, validates the requested aggregation against the declared scale type and allowed transformations, and feeds the result into `run`.
+- `beam.mcda.validate_for_aggregation` and `IncompatibleScaleError`: rejects SAW or TOPSIS on nominal or ordinal columns, and refuses metrics whose `allowed_transformations` exclude `affine` or `min_max`.
+- `min_max_normalize` now accepts an optional `bounds=` list. When provided, the declared bounds replace the empirical min/max in the rescaling, and observations outside the declared range raise.
+- `beam.mcda.aggregate_across_datasets`: reduces a tool by dataset score matrix for one metric to a per-tool vector using the rule declared on the metric card (arithmetic_mean, geometric_mean, median, rank_mean).
+- `beam.mcda.smallest_weight_perturbation` and `WeightPerturbationReport`: Triantaphyllou-Sanchez weight perturbation under SAW. Reports the smallest single-weight change that swaps each ordered pair of tools, the most fragile pair overall, and a fragility flag on the top rank.
+- New schema field `comparability.recommended_aggregation_across_datasets` (enum: `arithmetic_mean`, `geometric_mean`, `median`, `rank_mean`). Populated on all seven seed cards: arithmetic mean for ARI, NMI, silhouette, accuracy, F1; geometric mean for runtime and peak memory (Smith 1988).
+- `affine` added to the `allowed_transformations` of runtime and peak_memory so the min-max step the pipeline applies is honestly licit on those cards.
+- PLAN.md Section 10b: candidate metric card extensions (noise_floor, score_of_random_baseline, recommended_normalisation, target_value, maintainer, tested_against, ontology mappings), each with the analysis it would unlock.
 - `ipykernel>=6.0` and `matplotlib>=3.8` declared as explicit `[docs]` dependencies so Quarto reliably finds a Python kernel and can render the heatmap.
+- Duo vignette: new SMAA section, new weight-perturbation section, new across-datasets aggregation section; switched the main MCDA call to `run_from_registry`.
 
 ### Changed
 
-- `beam.mcda.__init__` now exports `leave_one_metric_out` and `SensitivityReport`.
+- `beam.cards.__init__` now exports `MetricProperties` and `properties_for`.
+- `beam.mcda.__init__` now exports `IncompatibleScaleError`, `PairPerturbation`, `Result`, `SMAAReport`, `SensitivityReport`, `WeightPerturbationReport`, `aggregate_across_datasets`, `leave_one_metric_out`, `run_from_registry`, `smaa`, `smallest_weight_perturbation`, and `validate_for_aggregation`.
+- `Result` dataclass gained `bounds` and `metric_ids` fields so the caller can inspect which declared range was used and which metric ids correspond to the score columns.
+- `docs/explanations/cards-and-pipeline.md` reclassifies `scale_type`, `range`, `allowed_transformations`, and `recommended_aggregation_across_datasets` from "declared but not enforced" to "consumed", with an updated Mermaid diagram.
 - CI Quarto setup pinned to 1.5.57; the vignette render step now sets `MPLBACKEND=Agg`.
 
 ## [0.1.3] - 2026-05-20
