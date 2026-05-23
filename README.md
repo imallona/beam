@@ -63,10 +63,10 @@ What is in HEAD:
 - A JSON Schema (draft 2020-12) for metric cards, covering identity, kind, inputs, output, semantics (scale, polarity, range, allowed transformations, uncertainty), comparability (including a `recommended_aggregation_across_datasets` enum), implementations, examples, and provenance.
 - Seven seed metric cards: `ari`, `runtime`, `nmi`, `peak_memory`, `accuracy`, `f1_score`, `silhouette`.
 - `beam.cards`: card loader, `MetricCard` dataclass, `Registry`, and two bridges to the MCDA pipeline: `polarities_for(metric_ids)` (just polarity) and `properties_for(metric_ids)` (polarity, scale_type, range bounds, allowed transformations, recommended cross-dataset aggregation).
-- `beam.mcda`: normalisation (`min_max_normalize` with optional declared bounds), weighting (`equal_weights`, `entropy_weights`), aggregation (`weighted_sum` for SAW, `topsis`), ranking (`rank`), and two entry points: the lower-level `run(...)` and the ontology-aware `run_from_registry(...)` which pulls polarity and bounds from the registry and refuses incompatible scale types via `validate_for_aggregation`.
+- `beam.mcda`: normalization (`min_max_normalize` with optional declared bounds), weighting (`equal_weights`, `entropy_weights`), aggregation (`weighted_sum` for SAW, `topsis`), ranking (`rank`), and two entry points: the lower-level `run(...)` and the ontology-aware `run_from_registry(...)` which pulls polarity and bounds from the registry and refuses incompatible scale types via `validate_for_aggregation`.
 - Sensitivity primitives: `leave_one_metric_out` (rank stability under metric omission), `smaa` (Dirichlet weight sampling, rank acceptability index, central weight vector per tool, confidence factor), and `smallest_weight_perturbation` (Triantaphyllou-Sanchez closed-form weight delta for SAW).
 - `aggregate_across_datasets`: reduce a tool by dataset matrix for one metric using the rule declared on its card (arithmetic_mean for bounded interval/ratio, geometric_mean for unbounded ratio per Smith 1988, median, or rank_mean).
-- `beam.scenarios`: four canonical simulated benchmark scenarios with documented ground truth (`random` with anti-correlated trade-offs, `clear_winner`, `ties`, `odd_dataset` where one method wins on most datasets but a different method wins on one odd dataset). Used by the test suite and by a simulated scenarios vignette.
+- `beam.scenarios`: canonical simulated benchmark scenarios with documented ground truth (`random` with anti-correlated trade-offs, `dominant`, `ties`, `odd_dataset` where one method is best on most datasets but a different method is best on one odd dataset), plus two normalization-failure showcases where the top-ranked method under plain min-max differs from the one under the card defaults. Used by the test suite and by a simulated scenarios vignette.
 - CI: ruff lint, ruff format, pytest on Python 3.12 and 3.13, R-side metric card validation via `jsonvalidate`, and Quarto rendering of both vignettes with artefact upload.
 - Two worked vignettes under `examples/`: the Duo 2018 walkthrough on a small synthetic stand-in, and a simulated scenarios report that runs the full report layout on every canonical scenario.
 
@@ -99,7 +99,7 @@ print(result.bounds)         # which declared range was used per column
 print(result.metric_ids)     # carried through for labelling
 ```
 
-`run_from_registry` validates the requested aggregation against the declared scale type of each metric, applies bounded min-max normalisation, and refuses out-of-range observations. See `examples/duo2018/duo2018.qmd` for the longer walkthrough and `examples/scenarios/scenarios.qmd` for the simulated scenarios report.
+`run_from_registry` validates the requested aggregation against the declared scale type of each metric, applies bounded min-max normalization, and refuses out-of-range observations. See `examples/duo2018/duo2018.qmd` for the longer walkthrough and `examples/scenarios/scenarios.qmd` for the simulated scenarios report.
 
 ## Repository layout
 

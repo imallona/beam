@@ -31,7 +31,7 @@ def test_run_returns_result_with_all_fields():
     result = run(_toy_scores(), _TOY_POLARITY)
     assert isinstance(result, Result)
     assert result.scores.shape == (3, 2)
-    assert result.normalised.shape == (3, 2)
+    assert result.normalized.shape == (3, 2)
     assert result.weights.shape == (2,)
     assert result.composite.shape == (3,)
     assert result.ranks.shape == (3,)
@@ -121,7 +121,7 @@ def test_run_saw_matches_hand_call_to_primitives():
     expected_ranks = rank(expected_composite)
 
     result = run(scores, _TOY_POLARITY)
-    np.testing.assert_allclose(result.normalised, expected_norm)
+    np.testing.assert_allclose(result.normalized, expected_norm)
     np.testing.assert_allclose(result.weights, expected_w)
     np.testing.assert_allclose(result.composite, expected_composite)
     np.testing.assert_array_equal(result.ranks, expected_ranks)

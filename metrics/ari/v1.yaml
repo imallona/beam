@@ -46,6 +46,7 @@ semantics:
     lower_inclusive: true
     upper_inclusive: true
   polarity: higher_is_better
+  score_of_random_baseline: 0
   monotonic: true
   meaningful_zero: true
   allowed_transformations:
@@ -60,6 +61,7 @@ comparability:
     - per_dataset_min_max_normalization_before_cross_dataset_aggregation
     - arithmetic_mean_across_datasets_only_after_normalization
   recommended_aggregation_across_datasets: arithmetic_mean
+  recommended_normalization: baseline_relative
 implementations:
   - name: sklearn
     language: python

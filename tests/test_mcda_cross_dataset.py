@@ -36,7 +36,7 @@ def test_median_outlier_robustness():
 
 
 def test_rank_mean_uses_within_dataset_ranks():
-    """Tool 0 wins on both datasets, tool 1 second on both, tool 2 last on both."""
+    """Tool 0 is best on both datasets, tool 1 second on both, tool 2 last on both."""
     scores = np.array(
         [
             [0.9, 0.85],

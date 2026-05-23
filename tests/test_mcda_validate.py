@@ -89,3 +89,30 @@ def test_min_max_in_transformations_is_accepted():
 def test_rejects_unknown_method():
     with pytest.raises(ValueError, match="unknown method"):
         validate_for_aggregation([_ratio_props()], "promethee")
+
+
+def test_log_min_max_needs_log_in_transformations():
+    """A ratio metric using log_min_max must declare log, not just affine."""
+    only_affine = _ratio_props(allowed=("affine", "min_max"))
+    with pytest.raises(IncompatibleScaleError, match="log_min_max"):
+        validate_for_aggregation([only_affine], "saw", strategies=["log_min_max"])
+
+
+def test_log_min_max_accepted_when_log_declared():
+    has_log = _ratio_props(allowed=("log", "rank"))
+    validate_for_aggregation([has_log], "saw", strategies=["log_min_max"])
+
+
+def test_rank_strategy_needs_rank_transformation():
+    no_rank = _ratio_props(allowed=("affine", "min_max"))
+    with pytest.raises(IncompatibleScaleError, match="rank"):
+        validate_for_aggregation([no_rank], "saw", strategies=["rank"])
+
+
+def test_baseline_relative_passes_with_affine():
+    validate_for_aggregation([_interval_props()], "saw", strategies=["baseline_relative"])
+
+
+def test_strategies_length_must_match():
+    with pytest.raises(ValueError, match="strategies has"):
+        validate_for_aggregation([_ratio_props(), _interval_props()], "saw", strategies=["min_max"])

@@ -128,6 +128,10 @@
           "enum": ["higher_is_better", "lower_is_better", "target_value"]
         },
         "target": { "type": "number" },
+        "score_of_random_baseline": {
+          "type": "number",
+          "description": "Value a chance-level method reaches on this metric, in native units. ARI: 0 (corrected for chance). Consumed by the baseline_relative normalization so a method no better than chance maps to 0 instead of the column midpoint."
+        },
         "monotonic": { "type": "boolean" },
         "meaningful_zero": { "type": "boolean" },
         "allowed_transformations": {
@@ -180,6 +184,11 @@
           "type": "string",
           "enum": ["arithmetic_mean", "geometric_mean", "median", "rank_mean"],
           "description": "Machine-readable hint for how to reduce per-dataset scores of this metric to a per-tool summary. Smith 1988: ratio metrics with values spanning orders of magnitude (runtime, peak memory) take geometric mean; bounded interval or ratio metrics take arithmetic mean unless an outlier-robust summary is wanted."
+        },
+        "recommended_normalization": {
+          "type": "string",
+          "enum": ["min_max", "log_min_max", "rank", "zscore", "baseline_relative"],
+          "description": "Machine-readable hint for how the MCDA pipeline should rescale this metric to [0, 1] before weighting. min_max for bounded metrics; log_min_max for ratio metrics spanning orders of magnitude (runtime, peak memory) so a single outlier does not compress the rest (Smith 1988); rank for a scale-free outlier-proof rescale; zscore for a logistic-squashed standardization; baseline_relative for chance-corrected metrics so a chance-level method maps to 0 rather than the column midpoint."
         }
       }
     },

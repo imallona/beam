@@ -8,7 +8,7 @@
 
 ## Context
 
-Strobl et al. (Biometrical Journal 2024) argue that global rankings on heterogeneous datasets hide the more useful question: which dataset features make method A preferable to method B. beam needs a diagnostic module that answers this.
+Strobl and Leisch (Biometrical Journal 2024) argue that global rankings on heterogeneous datasets hide the more useful question: which dataset features make method A preferable to method B. beam needs a diagnostic module that answers this.
 
 I first considered Rasch / IRT. Dropped because of the unidimensionality assumption, which benchmarks typically violate.
 
@@ -32,7 +32,7 @@ IRT held for Phase 8.
 ## Alternatives considered
 
 - IRT (eRm, mirt, py-irt): unidimensionality assumption too strong for v1.
-- Single global ranking with no heterogeneity diagnostic: this is what Strobl criticises.
+- Single global ranking with no heterogeneity diagnostic: this is what Strobl criticizes.
 - Permutation-based subgroup discovery: less interpretable than trees.
 
 ## References

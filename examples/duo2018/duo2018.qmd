@@ -160,7 +160,7 @@ for m, c in zip(methods, smaa_report.confidence_factor):
 
 ## Weight perturbation (Triantaphyllou-Sanchez)
 
-`smallest_weight_perturbation` reports, for every pair of methods where one is ranked above the other under SAW, the smallest single-weight change that swaps them. It also flags whether the top-ranked method is fragile, that is, whether some single weight can be changed by less than `fragility_threshold` (default 0.05) to dethrone it.
+`smallest_weight_perturbation` reports, for every pair of methods where one is ranked above the other under SAW, the smallest single-weight change that swaps them. It also flags whether the top-ranked method is fragile, that is, whether some single weight can be changed by less than `fragility_threshold` (default 0.05) to move it off the top rank.
 
 ```{python}
 from beam.mcda import smallest_weight_perturbation

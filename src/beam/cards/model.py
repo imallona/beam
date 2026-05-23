@@ -75,6 +75,25 @@ class MetricCard:
         """
         return self.comparability.get("recommended_aggregation_across_datasets")
 
+    @property
+    def recommended_normalization(self) -> str | None:
+        """Recommended way to rescale this metric to [0, 1] before weighting.
+
+        Set on the card under comparability.recommended_normalization. One of
+        min_max, log_min_max, rank, zscore, baseline_relative, or None if
+        unspecified (the pipeline then falls back to min_max).
+        """
+        return self.comparability.get("recommended_normalization")
+
+    @property
+    def score_of_random_baseline(self) -> float | None:
+        """Score a chance-level method reaches, if the card declares one.
+
+        Set under semantics.score_of_random_baseline. Consumed by the
+        baseline_relative normalization.
+        """
+        return self.semantics.get("score_of_random_baseline")
+
 
 @dataclass(frozen=True)
 class MetricProperties:
@@ -92,3 +111,5 @@ class MetricProperties:
     range_upper: float | None
     allowed_transformations: tuple[str, ...]
     recommended_aggregation_across_datasets: str | None
+    recommended_normalization: str | None = None
+    score_of_random_baseline: float | None = None

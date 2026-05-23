@@ -3,7 +3,12 @@
 from .aggregate import rank, weighted_sum
 from .cross_dataset import aggregate_across_datasets
 from .facade import Result, run, run_from_registry
-from .normalize import min_max_normalize
+from .normalize import (
+    STRATEGIES,
+    min_max_normalize,
+    normalization_warnings,
+    normalize,
+)
 from .perturbation import (
     PairPerturbation,
     WeightPerturbationReport,
@@ -16,6 +21,7 @@ from .validate import IncompatibleScaleError, validate_for_aggregation
 from .weights import entropy_weights, equal_weights
 
 __all__ = [
+    "STRATEGIES",
     "IncompatibleScaleError",
     "PairPerturbation",
     "Result",
@@ -27,6 +33,8 @@ __all__ = [
     "equal_weights",
     "leave_one_metric_out",
     "min_max_normalize",
+    "normalization_warnings",
+    "normalize",
     "rank",
     "run",
     "run_from_registry",

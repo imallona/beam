@@ -80,7 +80,7 @@ def smallest_weight_perturbation(
 
         C_a - C_b = sum_k w_k * (x_ak - x_bk)
 
-    where ``x`` is the normalised matrix. The smallest change to weight
+    where ``x`` is the normalized matrix. The smallest change to weight
     ``k`` alone that brings this difference to zero is
 
         delta_k = (C_b - C_a) / (x_ak - x_bk)
@@ -119,7 +119,7 @@ def smallest_weight_perturbation(
         )
 
     base = run(scores, polarity, weights=weights, method=method, bounds=bounds)
-    x = base.normalised
+    x = base.normalized
     w = base.weights
     n_tools, n_metrics = x.shape
 

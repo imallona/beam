@@ -42,6 +42,7 @@ comparability:
   aggregation_rules:
     - geometric_mean_recommended_for_cross_dataset_aggregation
   recommended_aggregation_across_datasets: geometric_mean
+  recommended_normalization: log_min_max
 implementations:
   - name: psutil
     language: python

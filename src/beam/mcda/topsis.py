@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 
 
-def topsis(normalised: np.ndarray, weights: np.ndarray) -> np.ndarray:
+def topsis(normalized: np.ndarray, weights: np.ndarray) -> np.ndarray:
     """Compute TOPSIS relative-closeness scores per tool.
 
     The input is the matrix produced by ``min_max_normalize``: values in
@@ -26,7 +26,7 @@ def topsis(normalised: np.ndarray, weights: np.ndarray) -> np.ndarray:
 
     Parameters
     ----------
-    normalised
+    normalized
         Shape ``(n_tools, n_metrics)``, values in [0, 1].
     weights
         Shape ``(n_metrics,)``, non-negative; typically sums to 1.
@@ -36,22 +36,22 @@ def topsis(normalised: np.ndarray, weights: np.ndarray) -> np.ndarray:
     np.ndarray
         Shape ``(n_tools,)``, closeness in [0, 1].
     """
-    normalised = np.asarray(normalised, dtype=float)
+    normalized = np.asarray(normalized, dtype=float)
     weights = np.asarray(weights, dtype=float)
 
-    if normalised.ndim != 2:
-        raise ValueError(f"normalised must be 2D; got shape {normalised.shape}")
+    if normalized.ndim != 2:
+        raise ValueError(f"normalized must be 2D; got shape {normalized.shape}")
     if weights.ndim != 1:
         raise ValueError(f"weights must be 1D; got shape {weights.shape}")
-    if weights.shape[0] != normalised.shape[1]:
+    if weights.shape[0] != normalized.shape[1]:
         raise ValueError(
             f"weights length {weights.shape[0]} does not match number of "
-            f"metrics {normalised.shape[1]}"
+            f"metrics {normalized.shape[1]}"
         )
     if np.any(weights < 0):
         raise ValueError("weights must be non-negative")
 
-    weighted = normalised * weights[None, :]
+    weighted = normalized * weights[None, :]
     ideal = weighted.max(axis=0)
     anti_ideal = weighted.min(axis=0)
 

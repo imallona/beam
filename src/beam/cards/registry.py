@@ -56,7 +56,7 @@ def properties_for(
     Wider counterpart to ``polarities_for``. Pulls polarity, scale_type,
     declared range bounds, allowed transformations, and the recommended
     cross-dataset aggregation from each card. Downstream code uses this
-    view to drive bounded normalisation, scale-compatibility validation,
+    view to drive bounded normalization, scale-compatibility validation,
     and across-dataset reduction without re-walking the YAML.
     """
     reg = registry if registry is not None else Registry()
@@ -72,6 +72,8 @@ def properties_for(
                 range_upper=card.range_upper,
                 allowed_transformations=card.allowed_transformations,
                 recommended_aggregation_across_datasets=card.recommended_aggregation_across_datasets,
+                recommended_normalization=card.recommended_normalization,
+                score_of_random_baseline=card.score_of_random_baseline,
             )
         )
     return out

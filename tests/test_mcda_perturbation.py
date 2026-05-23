@@ -45,7 +45,7 @@ def test_delta_signs_match_direction_to_close_gap():
     """For each pair the candidate delta should bring the composites equal."""
     scores = _toy_scores()
     out = smallest_weight_perturbation(scores, _TOY_POLARITY)
-    x = out.base.normalised
+    x = out.base.normalized
     w = out.base.weights.copy()
     for p in out.per_pair:
         if p.criterion == -1:

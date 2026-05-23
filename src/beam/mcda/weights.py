@@ -12,8 +12,8 @@ def equal_weights(n_metrics: int) -> np.ndarray:
     return np.full(n_metrics, 1.0 / n_metrics)
 
 
-def entropy_weights(normalised: np.ndarray) -> np.ndarray:
-    """Shannon entropy weights for a [0, 1] normalised tool by metric matrix.
+def entropy_weights(normalized: np.ndarray) -> np.ndarray:
+    """Shannon entropy weights for a [0, 1] normalized tool by metric matrix.
 
     The principle: a metric on which every tool scores the same offers no
     discrimination and should not influence the ranking. A metric on which
@@ -23,7 +23,7 @@ def entropy_weights(normalised: np.ndarray) -> np.ndarray:
     Algorithm:
 
     1. Turn each column into a probability mass by dividing by its sum:
-       ``p[i, j] = normalised[i, j] / sum_k normalised[k, j]``.
+       ``p[i, j] = normalized[i, j] / sum_k normalized[k, j]``.
     2. Compute the per-column entropy
        ``E[j] = -(1 / ln n_tools) * sum_i p[i, j] * ln p[i, j]``,
        using the convention ``0 * ln 0 = 0``.
@@ -38,7 +38,7 @@ def entropy_weights(normalised: np.ndarray) -> np.ndarray:
 
     Parameters
     ----------
-    normalised
+    normalized
         Shape ``(n_tools, n_metrics)``, values in [0, 1] (non-negative).
 
     Returns
@@ -48,25 +48,25 @@ def entropy_weights(normalised: np.ndarray) -> np.ndarray:
 
     Notes
     -----
-    Because the algorithm normalises each column to a probability mass
+    Because the algorithm normalizes each column to a probability mass
     before computing entropy, the weights are invariant under positive
     rescaling of any single column: multiplying column j by a positive
     constant leaves ``w`` unchanged.
     """
-    normalised = np.asarray(normalised, dtype=float)
-    if normalised.ndim != 2:
-        raise ValueError(f"normalised must be 2D; got shape {normalised.shape}")
-    n_tools, n_metrics = normalised.shape
+    normalized = np.asarray(normalized, dtype=float)
+    if normalized.ndim != 2:
+        raise ValueError(f"normalized must be 2D; got shape {normalized.shape}")
+    n_tools, n_metrics = normalized.shape
     if n_tools < 2:
         raise ValueError(
             f"entropy_weights needs at least 2 tools to measure variability; got {n_tools}"
         )
-    if np.any(normalised < 0):
-        raise ValueError("normalised must contain non-negative values")
+    if np.any(normalized < 0):
+        raise ValueError("normalized must contain non-negative values")
 
-    col_sums = normalised.sum(axis=0)
+    col_sums = normalized.sum(axis=0)
     safe_sums = np.where(col_sums > 0, col_sums, 1.0)
-    p = normalised / safe_sums[None, :]
+    p = normalized / safe_sums[None, :]
 
     # 0 * ln 0 = 0 by convention. np.where eagerly evaluates both branches,
     # so we silence the harmless log(0) warning rather than rewrite with a mask.

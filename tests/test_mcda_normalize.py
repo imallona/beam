@@ -1,9 +1,9 @@
-"""Tests for the MCDA normalisation step."""
+"""Tests for the MCDA normalization step."""
 
 import numpy as np
 import pytest
 
-from beam.mcda import min_max_normalize
+from beam.mcda import min_max_normalize, normalization_warnings, normalize
 
 
 def test_higher_is_better_min_max():
@@ -43,3 +43,106 @@ def test_unknown_polarity_raises():
 def test_one_dimensional_input_raises():
     with pytest.raises(ValueError, match="2D"):
         min_max_normalize(np.array([1.0, 2.0, 3.0]), ["higher_is_better"])
+
+
+def test_log_min_max_compresses_a_heavy_tail():
+    """A 100x outlier leaves the small values spread out under log scaling,
+    whereas plain min-max would crush them all near the same value."""
+    scores = np.array([[10.0], [20.0], [40.0], [4000.0]])
+    out = normalize(scores, ["lower_is_better"], ["log_min_max"])
+    # fastest maps to 1, slowest to 0, and the two middle methods stay apart
+    assert out[0, 0] == pytest.approx(1.0)
+    assert out[3, 0] == pytest.approx(0.0)
+    assert out[1, 0] - out[2, 0] > 0.1
+
+
+def test_log_min_max_requires_positive_values():
+    with pytest.raises(ValueError, match="strictly positive"):
+        normalize(np.array([[1.0], [0.0]]), ["lower_is_better"], ["log_min_max"])
+
+
+def test_rank_is_scale_free_and_outlier_proof():
+    """Rank normalization depends only on order, so a 100x outlier does not
+    change the spacing of the other methods."""
+    a = normalize(np.array([[10.0], [20.0], [40.0]]), ["lower_is_better"], ["rank"])
+    b = normalize(np.array([[10.0], [20.0], [4000.0]]), ["lower_is_better"], ["rank"])
+    np.testing.assert_allclose(a, b)
+    np.testing.assert_allclose(a.ravel(), [1.0, 0.5, 0.0])
+
+
+def test_rank_ties_share_the_mean_rank():
+    out = normalize(np.array([[5.0], [5.0], [1.0]]), ["higher_is_better"], ["rank"])
+    assert out[0, 0] == out[1, 0]
+
+
+def test_zscore_maps_the_mean_method_to_half():
+    out = normalize(np.array([[1.0], [2.0], [3.0]]), ["higher_is_better"], ["zscore"])
+    assert out[1, 0] == pytest.approx(0.5)
+    assert 0.0 < out[0, 0] < 0.5 < out[2, 0] < 1.0
+
+
+def test_baseline_relative_maps_chance_to_zero():
+    """A chance-level value (0) maps to 0, not to the column midpoint."""
+    scores = np.array([[0.8], [0.0], [-0.2]])
+    out = normalize(
+        scores,
+        ["higher_is_better"],
+        ["baseline_relative"],
+        bounds=[(-1, 1)],
+        baselines=[0.0],
+    )
+    np.testing.assert_allclose(out.ravel(), [0.8, 0.0, 0.0])
+
+
+def test_baseline_relative_needs_a_baseline():
+    with pytest.raises(ValueError, match="score_of_random_baseline"):
+        normalize(np.array([[0.8], [0.2]]), ["higher_is_better"], ["baseline_relative"])
+
+
+def test_baseline_relative_rejects_lower_is_better():
+    with pytest.raises(ValueError, match="higher_is_better"):
+        normalize(
+            np.array([[0.8], [0.2]]),
+            ["lower_is_better"],
+            ["baseline_relative"],
+            baselines=[0.0],
+        )
+
+
+def test_out_of_range_check_applies_to_every_strategy():
+    """The declared-range guard fires regardless of the strategy chosen."""
+    with pytest.raises(ValueError, match="above declared upper bound"):
+        normalize(np.array([[2.0], [0.5]]), ["higher_is_better"], ["rank"], bounds=[(-1, 1)])
+
+
+def test_unknown_strategy_raises():
+    with pytest.raises(ValueError, match="unknown normalization strategy"):
+        normalize(np.array([[1.0], [2.0]]), ["higher_is_better"], ["bogus"])
+
+
+def test_warns_on_empirical_bound():
+    scores = np.array([[10.0], [20.0], [30.0]])
+    warnings = normalization_warnings(
+        scores, ["min_max"], bounds=[(0, None)], metric_ids=["runtime"]
+    )
+    assert any("empirical upper bound" in w for w in warnings)
+
+
+def test_warns_on_heavy_tail():
+    scores = np.array([[1.0], [2.0], [500.0]])
+    warnings = normalization_warnings(
+        scores, ["min_max"], bounds=[(0, 1000)], metric_ids=["runtime"]
+    )
+    assert any("heavy-tailed" in w for w in warnings)
+
+
+def test_no_warning_for_bounded_min_max():
+    scores = np.array([[0.2], [0.5], [0.9]])
+    warnings = normalization_warnings(scores, ["min_max"], bounds=[(0, 1)], metric_ids=["nmi"])
+    assert warnings == []
+
+
+def test_no_warning_for_non_min_max_strategies():
+    scores = np.array([[10.0], [20.0], [5000.0]])
+    warnings = normalization_warnings(scores, ["log_min_max"], bounds=[(0, None)])
+    assert warnings == []

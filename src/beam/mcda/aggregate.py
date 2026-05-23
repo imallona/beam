@@ -1,4 +1,4 @@
-"""Aggregate normalised scores into per-tool composite scores."""
+"""Aggregate normalized scores into per-tool composite scores."""
 
 from __future__ import annotations
 
@@ -6,34 +6,34 @@ import numpy as np
 
 
 def weighted_sum(
-    normalised: np.ndarray,
+    normalized: np.ndarray,
     weights: np.ndarray,
 ) -> np.ndarray:
     """Simple additive weighting (SAW): per-tool dot product of scores and weights.
 
     Parameters
     ----------
-    normalised: 2D array, shape (n_tools, n_metrics), values in [0, 1].
+    normalized: 2D array, shape (n_tools, n_metrics), values in [0, 1].
     weights: 1D array, length n_metrics, non-negative; usually sums to 1.
 
     Returns
     -------
     1D array of length n_tools, the composite score per tool.
     """
-    normalised = np.asarray(normalised, dtype=float)
+    normalized = np.asarray(normalized, dtype=float)
     weights = np.asarray(weights, dtype=float)
-    if normalised.ndim != 2:
-        raise ValueError(f"normalised must be 2D; got shape {normalised.shape}")
+    if normalized.ndim != 2:
+        raise ValueError(f"normalized must be 2D; got shape {normalized.shape}")
     if weights.ndim != 1:
         raise ValueError(f"weights must be 1D; got shape {weights.shape}")
-    if weights.shape[0] != normalised.shape[1]:
+    if weights.shape[0] != normalized.shape[1]:
         raise ValueError(
             f"weights length {weights.shape[0]} does not match number of "
-            f"metrics {normalised.shape[1]}"
+            f"metrics {normalized.shape[1]}"
         )
     if np.any(weights < 0):
         raise ValueError("weights must be non-negative")
-    return normalised @ weights
+    return normalized @ weights
 
 
 def rank(scores: np.ndarray) -> np.ndarray:

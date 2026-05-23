@@ -30,7 +30,7 @@ def aggregate_across_datasets(
     - ``rank_mean``: rank each tool within each dataset (1 is best on a
       higher-is-better metric), then take the per-tool mean rank. Polarity
       is not consulted here; the caller must align polarity before calling
-      this function or use ``rank_mean`` only on already-normalised data.
+      this function or use ``rank_mean`` only on already-normalized data.
 
     Parameters
     ----------

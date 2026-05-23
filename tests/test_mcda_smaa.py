@@ -56,7 +56,7 @@ def test_sampled_weights_lie_on_the_simplex():
 
 
 def test_dominant_tool_is_always_top_ranked():
-    """A tool that dominates on every metric wins under any positive weights."""
+    """A tool that dominates on every metric ranks first under any positive weights."""
     scores = np.array(
         [
             [0.9, 0.9],

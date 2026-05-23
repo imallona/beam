@@ -31,13 +31,15 @@ def test_pulls_polarity_from_cards():
     assert out.polarity == ("higher_is_better", "lower_is_better")
 
 
-def test_declared_bounds_change_normalisation():
-    """ARI's empirical max is 0.85; declared upper is 1. The normalised ARI for
-    the top tool should fall short of 1 under the declared bound."""
-    scores = np.array([[0.85, 120.0], [0.70, 30.0]])
-    out_declared = run_from_registry(scores, ["ari", "runtime"])
-    assert out_declared.normalised[0, 0] < 1.0  # 0.85 mapped against declared upper 1
-    assert out_declared.normalised[0, 0] == pytest.approx((0.85 - (-1)) / (1 - (-1)))
+def test_ari_uses_baseline_relative_normalization():
+    """ARI declares baseline_relative with a chance baseline of 0 and upper 1, so
+    0.85 maps to 0.85, not the 0.925 that a min-max against [-1, 1] would give. A
+    chance-level method (ARI 0) maps to 0 rather than to the column midpoint."""
+    scores = np.array([[0.85, 120.0], [0.0, 30.0]])
+    out = run_from_registry(scores, ["ari", "runtime"])
+    assert out.normalization[0] == "baseline_relative"
+    assert out.normalized[0, 0] == pytest.approx(0.85)
+    assert out.normalized[1, 0] == pytest.approx(0.0)
 
 
 def test_rejects_out_of_range_value():

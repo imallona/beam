@@ -1,18 +1,18 @@
 id: nmi
 version: v1
-name: Normalised mutual information
+name: Normalized mutual information
 aliases:
   - normalized_mutual_information
   - nmi_score
 description: |
-  Mutual information between two partitions, normalised to [0, 1] using one
+  Mutual information between two partitions, normalized to [0, 1] using one
   of several conventions (arithmetic mean of entropies, geometric mean, or
   max). Equals 1 for identical partitions and 0 for independent partitions.
   Unlike ARI, NMI is not chance-corrected.
 citations:
   - text: "Strehl A, Ghosh J. Cluster ensembles - a knowledge reuse framework for combining multiple partitions. JMLR, 2002."
 metric_kind: derived
-measurand: normalised mutual information between predicted and true partition assignments
+measurand: normalized mutual information between predicted and true partition assignments
 task:
   - clustering
 requires_ground_truth: true

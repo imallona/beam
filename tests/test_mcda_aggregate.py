@@ -7,16 +7,16 @@ from beam.mcda import rank, weighted_sum
 
 
 def test_weighted_sum_uniform_weights():
-    normalised = np.array([[0.5, 0.5], [1.0, 0.0]])
+    normalized = np.array([[0.5, 0.5], [1.0, 0.0]])
     weights = np.array([0.5, 0.5])
-    result = weighted_sum(normalised, weights)
+    result = weighted_sum(normalized, weights)
     np.testing.assert_allclose(result, [0.5, 0.5])
 
 
 def test_weighted_sum_skewed_weights():
-    normalised = np.array([[1.0, 0.0], [0.0, 1.0]])
+    normalized = np.array([[1.0, 0.0], [0.0, 1.0]])
     weights = np.array([0.8, 0.2])
-    result = weighted_sum(normalised, weights)
+    result = weighted_sum(normalized, weights)
     np.testing.assert_allclose(result, [0.8, 0.2])
 
 

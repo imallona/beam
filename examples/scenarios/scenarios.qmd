@@ -17,10 +17,10 @@ format:
 
 This vignette runs the simulated scenarios. Four scenarios with documented ground truth feed through the same MCDA report layout as the Duo vignette. The point is to verify, at a glance, that the pipeline reports what each scenario was built to encode.
 
-- random: anti-correlated scores so no method Pareto-dominates. The winner depends entirely on weights; SMAA confidence is spread across the Pareto frontier; the top rank is fragile under weight perturbation.
-- clear winner: one method dominates on every metric. It is rank 1 under any weighting; SMAA confidence factor for it is 1; no single-criterion weight perturbation can dethrone it.
+- random: anti-correlated scores so no method Pareto-dominates. Which method comes out on top depends entirely on weights; SMAA confidence is spread across the Pareto frontier; the top rank is fragile under weight perturbation.
+- dominant: one method dominates on every metric. It is rank 1 under any weighting; SMAA confidence factor for it is 1; no single-criterion weight perturbation can move it off the top rank.
 - ties: two methods produce identical scores. They share a rank under any weighting.
-- odd dataset: one method wins on most datasets, another wins on one odd dataset. The cross-dataset aggregation rule declared on each metric card picks the global winner.
+- odd dataset: one method is best on most datasets, another is best on one odd dataset. The cross-dataset aggregation rule declared on each metric card picks the method best overall.
 
 ## Set-up
 
@@ -32,15 +32,32 @@ from beam.cards import properties_for
 from beam.mcda import (
     aggregate_across_datasets,
     leave_one_metric_out,
+    run,
     run_from_registry,
     smaa,
     smallest_weight_perturbation,
 )
-from beam.scenarios import all_scenarios
+from beam.scenarios import all_scenarios, normalization_failure_scenarios
 
 
 def polarity_for(scenario):
     return [p.polarity for p in properties_for(list(scenario.metric_ids))]
+
+
+def bounds_for(scenario):
+    props = properties_for(list(scenario.metric_ids))
+    return [(p.range_lower, p.range_upper) for p in props]
+
+
+def unguarded_minmax(scenario):
+    """Force plain min-max on every column, the behaviour the card defaults improve on."""
+    return run(
+        scenario.scores,
+        polarity_for(scenario),
+        normalization="min_max",
+        bounds=bounds_for(scenario),
+        metric_ids=list(scenario.metric_ids),
+    )
 
 
 def print_section(label):
@@ -66,9 +83,9 @@ for s in all_scenarios():
     print_section(f"{s.name}  ({s.kind})")
     print(s.description)
     print()
-    print("expected winner:",
-          "none" if s.expectation.expected_winner is None
-          else s.method_names[s.expectation.expected_winner])
+    print("expected top-ranked method:",
+          "none" if s.expectation.expected_top_ranked is None
+          else s.method_names[s.expectation.expected_top_ranked])
     if s.expectation.tied_pair is not None:
         a, b = s.expectation.tied_pair
         print("tied pair:", s.method_names[a], "==", s.method_names[b])
@@ -123,21 +140,38 @@ for s in all_scenarios():
 
 ## SMAA confidence factor per scenario
 
-Bar plot to check the share of weight samples in which each method is top-ranked, side by side across scenarios.
+Bar plot to check the share of weight samples in which each method is top-ranked, side by side across scenarios. The gold bar marks the method documented to rank first, and the green bars mark a documented tied pair. The random scenario has no single method expected to rank first, so all its bars are blue.
 
 ```{python}
 scenarios = all_scenarios()
 n_scen = len(scenarios)
-fig, axes = plt.subplots(1, n_scen, figsize=(3.0 * n_scen, 3.0), sharey=True)
+fig, axes = plt.subplots(1, n_scen, figsize=(3.0 * n_scen, 3.2), sharey=True)
 
 for ax, s in zip(axes, scenarios):
     pol = polarity_for(s)
     rep = smaa(s.scores, pol, n_samples=500, method="saw", seed=0)
-    ax.bar(range(len(s.method_names)), rep.confidence_factor, color="#3a7ca5")
-    ax.set_title(f"{s.name}\n({s.kind})")
+    top = s.expectation.expected_top_ranked
+    tied = s.expectation.tied_pair
+    colors = []
+    for i in range(len(s.method_names)):
+        if top is not None and i == top:
+            colors.append("#d9a521")
+        elif tied is not None and i in tied:
+            colors.append("#55a868")
+        else:
+            colors.append("#3a7ca5")
+    ax.bar(range(len(s.method_names)), rep.confidence_factor, color=colors)
+    if top is not None:
+        truth = f"truth: {s.method_names[top]} ranks first"
+    elif tied is not None:
+        truth = f"truth: tie {s.method_names[tied[0]]}=={s.method_names[tied[1]]}"
+    else:
+        truth = "truth: no single top-ranked method"
+    ax.set_title(f"{s.name}\n({s.kind})\n{truth}")
     ax.set_xticks(range(len(s.method_names)))
     ax.set_xticklabels(s.method_names, rotation=45, ha="right")
     ax.set_ylim(0, 1.05)
+    ax.set_xlabel("method")
     ax.set_ylabel("SMAA confidence factor")
 fig.tight_layout()
 plt.show()
@@ -169,6 +203,8 @@ ax.set_yticks(range(len(odd.method_names)))
 ax.set_yticklabels(odd.method_names)
 ax.set_xlabel("dataset")
 ax.set_ylabel("method")
+truth_top = odd.method_names[odd.expectation.expected_top_ranked]
+ax.set_title(f"truth: {truth_top} ranks first overall; one odd dataset flips locally")
 for i in range(ari_per_dataset_ranks.shape[0]):
     for j in range(ari_per_dataset_ranks.shape[1]):
         ax.text(j, i, ari_per_dataset_ranks[i, j], ha="center", va="center",
@@ -178,6 +214,72 @@ cbar.set_label("ARI rank (1 = best)")
 fig.tight_layout()
 plt.show()
 ```
+
+## Normalization strategy matters
+
+Plain min-max scaling is the obvious default, and it is wrong for some metrics. Two scenarios make the failure concrete. In each one the top-ranked method under unguarded all-min_max differs from the one under the card defaults. See the explanation page on normalization and scales for the reasoning.
+
+```{python}
+for s in normalization_failure_scenarios():
+    print_section(f"{s.name}  ({s.kind})")
+    print(s.description)
+    print()
+
+    unguarded = unguarded_minmax(s)
+    guarded = run_from_registry(s.scores, s.metric_ids, weights="equal", method="saw")
+
+    print("ranks: unguarded all-min_max  vs  card defaults")
+    print(f"  method     {'min_max':>10s}  {'card':>10s}")
+    for name, ru, rg in zip(s.method_names, unguarded.ranks, guarded.ranks):
+        flag = "  <- flips" if ru != rg else ""
+        print(f"  {name:8s}   {int(ru):>10d}  {int(rg):>10d}{flag}")
+
+    print()
+    print("card normalization strategy per metric:")
+    for mid, strat in zip(s.metric_ids, guarded.normalization):
+        print(f"  {mid:10s}  {strat}")
+
+    if unguarded.warnings:
+        print()
+        print("guard warnings raised under unguarded min-max:")
+        for w in unguarded.warnings:
+            print(f"  - {w}")
+```
+
+The outlier-runtime scenario shows how a single slow method flattens the runtime column under min-max. The plot puts the normalized runtime under min-max next to the same column under the card default log_min_max.
+
+```{python}
+outlier = next(s for s in normalization_failure_scenarios() if s.kind == "minmax_heavy_tail")
+runtime_col = list(outlier.metric_ids).index("runtime")
+mm = unguarded_minmax(outlier).normalized[:, runtime_col]
+lg = run_from_registry(outlier.scores, outlier.metric_ids).normalized[:, runtime_col]
+
+x = np.arange(len(outlier.method_names))
+width = 0.38
+fig, ax = plt.subplots(figsize=(5.5, 3.2))
+ax.bar(x - width / 2, mm, width, label="min_max", color="#c44e52")
+ax.bar(x + width / 2, lg, width, label="log_min_max", color="#3a7ca5")
+ax.set_xticks(x)
+ax.set_xticklabels(outlier.method_names)
+ax.set_xlabel("method")
+ax.set_ylabel("normalized runtime (higher = faster)")
+ax.set_title("Runtime outlier crushes the min-max scale")
+
+# overlay the ground truth: the actual runtime in seconds, on a log scale
+true_runtime = outlier.scores[:, runtime_col]
+ax2 = ax.twinx()
+ax2.plot(x, true_runtime, "k--o", label="true runtime (s)")
+ax2.set_yscale("log")
+ax2.set_ylabel("true runtime (s, log scale)")
+
+lines1, labels1 = ax.get_legend_handles_labels()
+lines2, labels2 = ax2.get_legend_handles_labels()
+ax.legend(lines1 + lines2, labels1 + labels2, loc="center right")
+fig.tight_layout()
+plt.show()
+```
+
+The dashed line is the ground truth: the actual runtime in seconds. Under min-max the four good methods (m0 to m3) sit at almost the same height, so their real speed differences vanish and a tiny ARI difference decides the order. Under log_min_max the bars track the true ladder, so the genuinely fastest good method ranks first.
 
 ## What is missing
 

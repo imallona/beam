@@ -6,6 +6,12 @@ All notable changes to beam will be documented in this file. The format follows 
 
 ### Added
 
+- `beam.mcda.normalize`: per-column normalization dispatcher with five strategies (`min_max`, `log_min_max`, `rank`, `zscore`, `baseline_relative`). `log_min_max` keeps the multiplicative structure of ratio metrics so one outlier no longer compresses the rest (Smith 1988); `rank` is scale-free and outlier-proof; `zscore` is a logistic-squashed standardization; `baseline_relative` maps a chance-level score to 0 instead of the column midpoint. `min_max_normalize` is now a thin wrapper over `normalize`. The declared-range check applies to every strategy.
+- `beam.mcda.normalization_warnings`: guard that flags min-max columns resting on an empirical bound (not comparable across method sets) or on a heavy-tailed distribution (one outlier dominates the rescale). Warnings travel on the `Result` and do not block the run.
+- New schema field `comparability.recommended_normalization` (enum: `min_max`, `log_min_max`, `rank`, `zscore`, `baseline_relative`) and `semantics.score_of_random_baseline`. Populated on the seed cards: `log_min_max` for runtime and peak_memory, `baseline_relative` with a chance baseline of 0 for ARI, `min_max` (the default) for the bounded metrics.
+- `beam.scenarios.normalization_failure_scenarios`: two showcase scenarios where the top-ranked method under unguarded all-min_max differs from the one under the card defaults. `outlier_runtime` (a runtime outlier hides the speed ladder; min-max ranks a slower method first, `log_min_max` ranks the fastest good one first). `chance_baseline` (min-max scores a chance-level ARI as 0.5 and ranks a random method above a better one; `baseline_relative` restores the order).
+- `docs/explanations/normalization-and-scales.md`: explanation of where min-max fails, why the choice depends on the measurement scale (interval versus ratio, Stevens), the affine-flag decision for ratio metrics, the five strategies, and the guard.
+- Tests: strategy unit tests and guard tests in `tests/test_mcda_normalize.py`; strategy-aware validation tests in `tests/test_mcda_validate.py`; showcase assertions in `tests/test_scenarios.py` pinning the top-rank flip, the collapsed runtime ladder, the chance-baseline value difference, and the empirical-bound instability.
 - `beam.mcda.leave_one_metric_out` and `SensitivityReport`: per-metric leave-one-out sensitivity. Runs the pipeline with all metrics and once per metric omission; reports per-tool rank stability and the metric whose removal causes the largest rank change.
 - `beam.mcda.smaa` and `SMAAReport`: SMAA-style weight-sampling sensitivity for SAW and TOPSIS. Draws Dirichlet weight vectors over the metrics simplex, runs the pipeline per sample, and reports the rank acceptability index, the per-tool central weight vector, and the confidence factor (Lahdelma and Salminen 2001).
 - `beam.cards.MetricProperties` and `properties_for`: a small read-only view over polarity, scale_type, declared range bounds, allowed transformations, and the recommended cross-dataset aggregation pulled from a metric card.
@@ -16,16 +22,22 @@ All notable changes to beam will be documented in this file. The format follows 
 - `beam.mcda.smallest_weight_perturbation` and `WeightPerturbationReport`: Triantaphyllou-Sanchez weight perturbation under SAW. Reports the smallest single-weight change that swaps each ordered pair of tools, the most fragile pair overall, and a fragility flag on the top rank.
 - New schema field `comparability.recommended_aggregation_across_datasets` (enum: `arithmetic_mean`, `geometric_mean`, `median`, `rank_mean`). Populated on all seven seed cards: arithmetic mean for ARI, NMI, silhouette, accuracy, F1; geometric mean for runtime and peak memory (Smith 1988).
 - `affine` added to the `allowed_transformations` of runtime and peak_memory so the min-max step the pipeline applies is honestly licit on those cards.
-- PLAN.md Section 10b: candidate metric card extensions (noise_floor, score_of_random_baseline, recommended_normalisation, target_value, maintainer, tested_against, ontology mappings), each with the analysis it would make possible.
+- PLAN.md Section 10b: candidate metric card extensions (noise_floor, score_of_random_baseline, recommended_normalization, target_value, maintainer, tested_against, ontology mappings), each with the analysis it would make possible.
 - `ipykernel>=6.0` and `matplotlib>=3.8` declared as explicit `[docs]` dependencies so Quarto reliably finds a Python kernel and can render the heatmap.
 - Duo vignette: new SMAA section, new weight-perturbation section, new across-datasets aggregation section; switched the main MCDA call to `run_from_registry`.
-- `beam.scenarios`: four canonical simulated benchmark scenarios with documented ground truth (`random` with anti-correlated trade-offs, `clear_winner`, `ties`, `odd_dataset` where one method wins on most datasets but a different method wins on one odd dataset). Each generator returns a `Scenario` carrying scores, optional per-dataset tensor, metric ids, and a `ScenarioExpectation` documenting what the MCDA pipeline should report.
+- `beam.scenarios`: four canonical simulated benchmark scenarios with documented ground truth (`random` with anti-correlated trade-offs, `dominant`, `ties`, `odd_dataset` where one method is best on most datasets but a different method is best on one odd dataset). Each generator returns a `Scenario` carrying scores, optional per-dataset tensor, metric ids, and a `ScenarioExpectation` documenting what the MCDA pipeline should report.
 - `tests/test_scenarios.py`: ground-truth assertions tying every pipeline primitive (run_from_registry, leave_one_metric_out, smaa, smallest_weight_perturbation, aggregate_across_datasets) to one or more scenarios. 15 tests in total, including a multi-seed sweep that the random scenario passes statistically.
 - `examples/scenarios/scenarios.qmd`: simulated scenarios vignette mirroring the Duo report layout across all four scenarios.
 - CI Quarto job now renders the scenarios vignette in addition to the Duo vignette and uploads the result as a separate artefact.
 
 ### Changed
 
+- `beam.mcda.run` and `run_from_registry` now take a per-metric normalization strategy. `run_from_registry` reads `comparability.recommended_normalization` from each card (default `min_max`), pulls `score_of_random_baseline` for the `baseline_relative` strategy, and runs the empirical-bound and heavy-tail guard.
+- `validate_for_aggregation` is now strategy-aware: it checks that the card permits the transform the chosen strategy applies (`log` for `log_min_max`, `rank` for `rank`, `affine`/`min_max` for `min_max` and `baseline_relative`, `z_score`/`affine` for `zscore`), replacing the earlier blanket `affine`/`min_max` check. A ratio metric normalized by `log_min_max` is validated against `log` rather than an `affine` grant.
+- `Result` gained `normalization` (the per-column strategy used) and `warnings` (the guard output).
+- `beam.mcda.__init__` now also exports `STRATEGIES`, `normalize`, and `normalization_warnings`.
+- British spelling (`normalis-`, `standardis-`) replaced by the z spelling (`normaliz-`, `standardiz-`) across code, tests, docs, and cards, including the `Result.normalized` field.
+- `docs/explanations/cards-and-pipeline.md` reclassifies `recommended_normalization` and `score_of_random_baseline` as consumed and documents the strategy-aware validation and the guard.
 - `beam.cards.__init__` now exports `MetricProperties` and `properties_for`.
 - `beam.mcda.__init__` now exports `IncompatibleScaleError`, `PairPerturbation`, `Result`, `SMAAReport`, `SensitivityReport`, `WeightPerturbationReport`, `aggregate_across_datasets`, `leave_one_metric_out`, `run_from_registry`, `smaa`, `smallest_weight_perturbation`, and `validate_for_aggregation`.
 - `Result` dataclass gained `bounds` and `metric_ids` fields so the caller can inspect which declared range was used and which metric ids correspond to the score columns.
@@ -36,9 +48,9 @@ All notable changes to beam will be documented in this file. The format follows 
 
 ### Added
 
-- `beam.mcda.run`: single-call facade for the full pipeline (normalise, weight, aggregate, rank). Returns a `Result` dataclass with every intermediate output. Accepts `weights="equal"`, `weights="entropy"`, or an explicit array; `method="saw"` or `method="topsis"`.
-- `beam.mcda.topsis`: distance-to-ideal aggregation on the [0, 1] normalised matrix. Returns relative closeness in [0, 1]. Single-tool and all-identical inputs return 0.5.
-- `beam.mcda.entropy_weights`: Shannon entropy weighting on a normalised matrix. Higher-variation metrics get higher weight; uniform columns contribute zero. Invariant under positive per-column scaling. Falls back to equal weights if every column is uniform.
+- `beam.mcda.run`: single-call facade for the full pipeline (normalize, weight, aggregate, rank). Returns a `Result` dataclass with every intermediate output. Accepts `weights="equal"`, `weights="entropy"`, or an explicit array; `method="saw"` or `method="topsis"`.
+- `beam.mcda.topsis`: distance-to-ideal aggregation on the [0, 1] normalized matrix. Returns relative closeness in [0, 1]. Single-tool and all-identical inputs return 0.5.
+- `beam.mcda.entropy_weights`: Shannon entropy weighting on a normalized matrix. Higher-variation metrics get higher weight; uniform columns contribute zero. Invariant under positive per-column scaling. Falls back to equal weights if every column is uniform.
 - `beam.cards.polarities_for`: small helper that looks up the polarity string per metric id from the registry, intended to be passed straight to `run`. Bridges the registry and the MCDA pipeline so polarity is not hand-typed.
 - `docs/explanations/cards-and-pipeline.md`: short explainer with a Mermaid diagram showing which metric card fields the MCDA pipeline currently consumes and which it does not.
 - Duo vignette extended with a 2x2 weighting x method comparison.
@@ -49,7 +61,7 @@ All notable changes to beam will be documented in this file. The format follows 
 
 - `beam.mcda.__init__` now exports `Result`, `run`, `topsis`, `entropy_weights`.
 - `beam.cards.__init__` now exports `polarities_for`.
-- `beam.mcda.run` docstring records which metric card fields the pipeline actually consumes (only `polarity`, in the normalisation step) and which it does not (`scale_type`, `range`, `allowed_transformations`).
+- `beam.mcda.run` docstring records which metric card fields the pipeline actually consumes (only `polarity`, in the normalization step) and which it does not (`scale_type`, `range`, `allowed_transformations`).
 - Version bumped from 0.1.2 to 0.1.3.
 
 ## [0.1.2] - 2025-05-24

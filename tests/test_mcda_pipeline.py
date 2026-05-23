@@ -1,4 +1,4 @@
-"""End-to-end test: pull metric metadata from the registry, normalise, aggregate, rank."""
+"""End-to-end test: pull metric metadata from the registry, normalize, aggregate, rank."""
 
 import numpy as np
 
@@ -19,13 +19,13 @@ def test_end_to_end_with_registry():
         ]
     )
 
-    normalised = min_max_normalize(scores, polarity)
+    normalized = min_max_normalize(scores, polarity)
     weights = equal_weights(len(metric_ids))
-    composite = weighted_sum(normalised, weights)
+    composite = weighted_sum(normalized, weights)
     ranks = rank(composite)
 
     assert composite.shape == (3,)
     assert ranks.shape == (3,)
     assert min(ranks) == 1
     assert max(ranks) == 3
-    assert (normalised >= 0).all() and (normalised <= 1).all()
+    assert (normalized >= 0).all() and (normalized <= 1).all()

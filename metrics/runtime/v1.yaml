@@ -43,6 +43,7 @@ comparability:
     - geometric_mean_recommended_for_cross_dataset_aggregation_of_ratios
     - arithmetic_mean_misleading_when_values_span_orders_of_magnitude
   recommended_aggregation_across_datasets: geometric_mean
+  recommended_normalization: log_min_max
 implementations:
   - name: perf_counter
     language: python

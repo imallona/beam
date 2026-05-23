@@ -1,7 +1,7 @@
 """Ground-truth checks on the canonical simulated scenarios.
 
 Each test pins one qualitative property of one scenario kind so that a
-regression in any single pipeline primitive (normalisation, weighting,
+regression in any single pipeline primitive (normalization, weighting,
 aggregation, SMAA, weight perturbation, cross-dataset aggregation)
 trips a documented assertion.
 """
@@ -14,6 +14,7 @@ import pytest
 from beam.cards import properties_for
 from beam.mcda import (
     aggregate_across_datasets,
+    run,
     run_from_registry,
     smaa,
     smallest_weight_perturbation,
@@ -21,8 +22,11 @@ from beam.mcda import (
 from beam.scenarios import (
     Scenario,
     all_scenarios,
-    clear_winner_scenario,
+    chance_baseline_scenario,
+    dominant_method_scenario,
+    normalization_failure_scenarios,
     odd_dataset_scenario,
+    outlier_runtime_scenario,
     random_scenario,
     tied_scenario,
 )
@@ -32,9 +36,22 @@ def _polarity(scenario: Scenario):
     return [p.polarity for p in properties_for(list(scenario.metric_ids))]
 
 
+def _unguarded_minmax(scenario: Scenario):
+    """Run a scenario forcing plain min-max on every column, the behaviour the
+    card-driven defaults are meant to improve on."""
+    bounds = [(p.range_lower, p.range_upper) for p in properties_for(list(scenario.metric_ids))]
+    return run(
+        scenario.scores,
+        _polarity(scenario),
+        normalization="min_max",
+        bounds=bounds,
+        metric_ids=list(scenario.metric_ids),
+    )
+
+
 def test_all_scenarios_returns_one_of_each_kind():
     kinds = {s.kind for s in all_scenarios()}
-    assert kinds == {"no_signal", "clear_winner", "ties", "odd_dataset"}
+    assert kinds == {"no_signal", "dominant", "ties", "odd_dataset"}
 
 
 def test_all_scenarios_metric_ids_resolve_in_registry():
@@ -44,26 +61,26 @@ def test_all_scenarios_metric_ids_resolve_in_registry():
         assert [p.id for p in props] == list(s.metric_ids)
 
 
-def test_clear_winner_takes_rank_one_under_run_from_registry():
-    s = clear_winner_scenario(seed=0)
+def test_dominant_takes_rank_one_under_run_from_registry():
+    s = dominant_method_scenario(seed=0)
     out = run_from_registry(s.scores, s.metric_ids)
-    assert out.ranks[s.expectation.expected_winner] == 1
+    assert out.ranks[s.expectation.expected_top_ranked] == 1
 
 
-def test_clear_winner_takes_rank_one_under_topsis_too():
-    s = clear_winner_scenario(seed=0)
+def test_dominant_takes_rank_one_under_topsis_too():
+    s = dominant_method_scenario(seed=0)
     out = run_from_registry(s.scores, s.metric_ids, method="topsis")
-    assert out.ranks[s.expectation.expected_winner] == 1
+    assert out.ranks[s.expectation.expected_top_ranked] == 1
 
 
-def test_clear_winner_owns_smaa_confidence():
-    s = clear_winner_scenario(seed=0)
+def test_dominant_owns_smaa_confidence():
+    s = dominant_method_scenario(seed=0)
     report = smaa(s.scores, _polarity(s), n_samples=300, method="saw", seed=0)
-    assert report.confidence_factor[s.expectation.expected_winner] == pytest.approx(1.0)
+    assert report.confidence_factor[s.expectation.expected_top_ranked] == pytest.approx(1.0)
 
 
-def test_clear_winner_is_not_fragile_under_weight_perturbation():
-    s = clear_winner_scenario(seed=0)
+def test_dominant_is_not_fragile_under_weight_perturbation():
+    s = dominant_method_scenario(seed=0)
     out = smallest_weight_perturbation(s.scores, _polarity(s), weights="equal", method="saw")
     assert out.top_rank_is_fragile is False
     assert out.top_rank_perturbation is None
@@ -84,10 +101,10 @@ def test_tied_pair_shares_rank_under_every_smaa_sample():
     np.testing.assert_array_equal(report.sampled_ranks[:, a], report.sampled_ranks[:, b])
 
 
-def test_random_scenario_has_no_dominant_winner():
+def test_random_scenario_has_no_clear_top_performer():
     s = random_scenario(n_tools=5, seed=0)
     report = smaa(s.scores, _polarity(s), n_samples=400, method="saw", seed=0)
-    assert report.confidence_factor.max() < s.expectation.smaa_winner_confidence_atmost
+    assert report.confidence_factor.max() < s.expectation.smaa_top_confidence_atmost
 
 
 def test_random_scenario_top_rank_is_fragile():
@@ -102,25 +119,25 @@ def test_random_scenario_top_rank_is_fragile():
     assert out.top_rank_is_fragile is True
 
 
-def test_odd_dataset_pooled_winner_is_global_winner():
+def test_odd_dataset_pooled_top_is_global_top():
     s = odd_dataset_scenario(seed=0)
     out = run_from_registry(s.scores, s.metric_ids)
-    assert out.ranks[s.expectation.expected_winner] == 1
+    assert out.ranks[s.expectation.expected_top_ranked] == 1
 
 
-def test_odd_dataset_winner_differs_from_pooled():
-    """On the last (odd) dataset, the odd-dataset winner takes top rank on both metrics."""
+def test_odd_dataset_top_differs_from_pooled():
+    """On the last (odd) dataset, the odd-dataset method is best on both metrics."""
     s = odd_dataset_scenario(seed=0)
     assert s.scores_per_dataset is not None
     odd_idx = s.scores_per_dataset.shape[1] - 1
     ari_per_tool = s.scores_per_dataset[:, odd_idx, 0]
     runtime_per_tool = s.scores_per_dataset[:, odd_idx, 1]
-    assert ari_per_tool.argmax() != s.expectation.expected_winner
-    assert runtime_per_tool.argmin() != s.expectation.expected_winner
+    assert ari_per_tool.argmax() != s.expectation.expected_top_ranked
+    assert runtime_per_tool.argmin() != s.expectation.expected_top_ranked
 
 
 def test_odd_dataset_geometric_mean_used_for_runtime():
-    """The pooled runtime column for the global winner reflects geometric mean across datasets."""
+    """Pooled runtime for the best-overall method uses geometric mean across datasets."""
     s = odd_dataset_scenario(seed=0)
     tensor = s.scores_per_dataset
     pooled_runtime = aggregate_across_datasets(tensor[:, :, 1], rule="geometric_mean")
@@ -134,14 +151,86 @@ def test_odd_dataset_arithmetic_mean_used_for_ari():
     np.testing.assert_allclose(s.scores[:, 0], pooled_ari)
 
 
-def test_random_winner_distribution_across_seeds_is_not_concentrated():
-    """Across many seeds, no single method should win more than 60 percent of the time."""
+def test_random_top_distribution_across_seeds_is_not_concentrated():
+    """Across many seeds, no single method comes out on top more than 60% of the time."""
     n_trials = 50
     n_tools = 5
-    winners = []
+    tops = []
     for s_seed in range(n_trials):
         s = random_scenario(n_tools=n_tools, seed=s_seed)
         out = run_from_registry(s.scores, s.metric_ids)
-        winners.append(int(np.argmin(out.ranks)))
-    counts = np.bincount(winners, minlength=n_tools)
+        tops.append(int(np.argmin(out.ranks)))
+    counts = np.bincount(tops, minlength=n_tools)
     assert counts.max() <= int(0.6 * n_trials)
+
+
+def test_normalization_failure_scenarios_kinds():
+    kinds = {s.kind for s in normalization_failure_scenarios()}
+    assert kinds == {"minmax_heavy_tail", "minmax_chance_baseline"}
+
+
+def test_outlier_runtime_flips_the_top_ranked():
+    """Unguarded min-max ranks m1 first because the outlier hides the runtime
+    ladder; the card default log_min_max ranks the genuinely fastest good
+    method m0 first."""
+    s = outlier_runtime_scenario()
+    unguarded = _unguarded_minmax(s)
+    guarded = run_from_registry(s.scores, s.metric_ids)
+    assert int(np.argmin(unguarded.ranks)) == 1
+    assert int(np.argmin(guarded.ranks)) == s.expectation.expected_top_ranked == 0
+
+
+def test_outlier_runtime_minmax_collapses_the_ladder():
+    """The four good methods are spread out under log_min_max but crushed
+    together under min-max anchored on the outlier."""
+    s = outlier_runtime_scenario()
+    unguarded = _unguarded_minmax(s)
+    guarded = run_from_registry(s.scores, s.metric_ids)
+    good = slice(0, 4)
+    minmax_spread = np.ptp(unguarded.normalized[good, 1])
+    log_spread = np.ptp(guarded.normalized[good, 1])
+    assert minmax_spread < 0.05
+    assert log_spread > 0.25
+
+
+def test_outlier_runtime_raises_the_guard_warnings():
+    s = outlier_runtime_scenario()
+    unguarded = _unguarded_minmax(s)
+    assert any("heavy-tailed" in w for w in unguarded.warnings)
+    assert any("empirical upper bound" in w for w in unguarded.warnings)
+    # the card default uses log_min_max, so no min-max warning is raised
+    guarded = run_from_registry(s.scores, s.metric_ids)
+    assert guarded.warnings == ()
+
+
+def test_chance_baseline_flips_a_pair():
+    """Unguarded min-max ranks the chance method m0 above the modestly better
+    m1; baseline_relative restores the correct order."""
+    s = chance_baseline_scenario()
+    unguarded = _unguarded_minmax(s)
+    guarded = run_from_registry(s.scores, s.metric_ids)
+    assert unguarded.ranks[0] < unguarded.ranks[1]
+    assert guarded.ranks[1] < guarded.ranks[0]
+    assert int(np.argmin(guarded.ranks)) == s.expectation.expected_top_ranked == 2
+
+
+def test_chance_baseline_value_difference():
+    """Min-max scores chance ARI at the column midpoint; baseline_relative at 0."""
+    s = chance_baseline_scenario()
+    unguarded = _unguarded_minmax(s)
+    guarded = run_from_registry(s.scores, s.metric_ids)
+    assert unguarded.normalized[0, 0] == pytest.approx(0.5)
+    assert guarded.normalized[0, 0] == pytest.approx(0.0)
+
+
+def test_empirical_bound_makes_runtime_unstable_under_minmax():
+    """Adding the outlier changes the normalized runtime of a shared method
+    under min-max, the instability the empirical-bound warning flags."""
+    s = outlier_runtime_scenario()
+    bounds = [(0.0, None)]
+    full = run(s.scores[:, 1:2], ["lower_is_better"], normalization="min_max", bounds=bounds)
+    without_outlier = run(
+        s.scores[:4, 1:2], ["lower_is_better"], normalization="min_max", bounds=bounds
+    )
+    # m0's normalized runtime swings widely when the method set changes
+    assert abs(full.normalized[0, 0] - without_outlier.normalized[0, 0]) > 0.1
