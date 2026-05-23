@@ -1,6 +1,11 @@
 """beam.mcda: multi-criteria decision analysis on a tool by metric matrix."""
 
 from .aggregate import rank, weighted_sum
+from .cd import (
+    CriticalDifferenceReport,
+    critical_difference,
+    nemenyi_critical_difference,
+)
 from .cross_dataset import aggregate_across_datasets
 from .facade import Result, run, run_from_registry
 from .normalize import (
@@ -22,6 +27,7 @@ from .weights import entropy_weights, equal_weights
 
 __all__ = [
     "STRATEGIES",
+    "CriticalDifferenceReport",
     "IncompatibleScaleError",
     "PairPerturbation",
     "Result",
@@ -29,10 +35,12 @@ __all__ = [
     "SensitivityReport",
     "WeightPerturbationReport",
     "aggregate_across_datasets",
+    "critical_difference",
     "entropy_weights",
     "equal_weights",
     "leave_one_metric_out",
     "min_max_normalize",
+    "nemenyi_critical_difference",
     "normalization_warnings",
     "normalize",
     "rank",

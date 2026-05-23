@@ -200,25 +200,29 @@ def tied_scenario(
     tied_pair: tuple[int, int] = (0, 1),
     seed: int = 0,
 ) -> Scenario:
-    """Two methods produce identical scores; the rest are noisy.
+    """Two methods are tied for first; the rest are weaker and noisy.
 
-    The tied pair shares its rank under any weighting. The expectation
-    flags this so the test suite can check rank equality and SMAA
-    rank-acceptability equality for the pair.
+    The tied pair shares identical scores, set above the other methods on
+    both metrics, so the pair ties for the top rank under any weighting.
+    Making the pair the best methods keeps the SMAA confidence factor on
+    the pair rather than on some unrelated method, so the tie is the story
+    the plot tells. The expectation flags the pair so the test suite can
+    check rank equality and SMAA rank-acceptability equality.
     """
     rng = np.random.default_rng(seed)
     ari = rng.uniform(0.05, 0.55, size=n_tools)
     runtime = rng.lognormal(mean=np.log(60.0), sigma=0.4, size=n_tools)
     a, b = tied_pair
-    ari[b] = ari[a]
-    runtime[b] = runtime[a]
+    # set the pair to dominate on both metrics, identical to each other
+    ari[a] = ari[b] = 0.9
+    runtime[a] = runtime[b] = 15.0
     scores = np.column_stack([ari, runtime])
     return Scenario(
         name="ties",
         kind="ties",
         description=(
-            f"Methods {a} and {b} produce identical scores on every metric. "
-            "They share a rank under any weighting."
+            f"Methods {a} and {b} have identical scores, set above the rest on "
+            "both metrics, so they tie for the top rank under any weighting."
         ),
         method_names=tuple(f"m{i}" for i in range(n_tools)),
         metric_ids=("ari", "runtime"),

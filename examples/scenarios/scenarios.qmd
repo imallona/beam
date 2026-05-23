@@ -31,6 +31,7 @@ import matplotlib.pyplot as plt
 from beam.cards import properties_for
 from beam.mcda import (
     aggregate_across_datasets,
+    critical_difference,
     leave_one_metric_out,
     run,
     run_from_registry,
@@ -280,6 +281,47 @@ plt.show()
 ```
 
 The dashed line is the ground truth: the actual runtime in seconds. Under min-max the four good methods (m0 to m3) sit at almost the same height, so their real speed differences vanish and a tiny ARI difference decides the order. Under log_min_max the bars track the true ladder, so the genuinely fastest good method ranks first.
+
+## Are the methods separable across datasets?
+
+The MCDA composite gives one ranking, but it does not say whether that ranking is statistically real across the datasets. The Demsar (2006) Friedman test and Nemenyi post-hoc answer that. Here they run on the odd-dataset scenario, using the per-dataset ARI as the tool by dataset matrix. See the explanation page on comparing methods across datasets for the reasoning.
+
+```{python}
+odd = next(s for s in scenarios if s.kind == "odd_dataset")
+ari_by_dataset = odd.scores_per_dataset[:, :, 0]  # tool by dataset, higher is better
+cd = critical_difference(ari_by_dataset, higher_is_better=True, tool_names=odd.method_names)
+
+print(f"Friedman statistic = {cd.friedman_statistic:.3f}, p = {cd.friedman_pvalue:.3f}")
+print(f"critical difference (alpha={cd.alpha}) = {cd.critical_difference:.3f}")
+print("average ranks (1 = best):")
+for i in cd.order:
+    print(f"  {odd.method_names[i]:8s}  {cd.average_ranks[i]:.2f}")
+groups = [tuple(odd.method_names[i] for i in c) for c in cd.cliques]
+print("cliques (not significantly different):", groups or "none")
+```
+
+```{python}
+order = cd.order
+names_sorted = [odd.method_names[i] for i in order]
+ranks_sorted = [cd.average_ranks[i] for i in order]
+ypos = list(range(len(order)))
+best = min(ranks_sorted)
+
+fig, ax = plt.subplots(figsize=(5.5, 3.0))
+ax.barh(ypos, ranks_sorted, color="#3a7ca5")
+ax.axvspan(best, best + cd.critical_difference, color="#c44e52", alpha=0.15)
+ax.axvline(best + cd.critical_difference, color="#c44e52", linestyle="--")
+ax.set_yticks(ypos)
+ax.set_yticklabels(names_sorted)
+ax.invert_yaxis()
+ax.set_xlabel("average rank (1 = best)")
+ax.set_ylabel("method (best at top)")
+ax.set_title(f"Friedman p = {cd.friedman_pvalue:.2f}; methods within the shaded band are not separable")
+fig.tight_layout()
+plt.show()
+```
+
+With only five datasets the critical difference is wide. Every method falls inside the shaded band, and the Friedman test does not reject at alpha 0.05, so the data cannot separate the methods even though the MCDA composite puts m0 first. This is the honest complement to the composite: the recommendation holds under the stated weighting, but a claim that one method is better across datasets would need more datasets to support it.
 
 ## What is missing
 

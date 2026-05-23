@@ -6,6 +6,10 @@ All notable changes to beam will be documented in this file. The format follows 
 
 ### Added
 
+- `beam.mcda.critical_difference` and `CriticalDifferenceReport`: Demsar (2006) Friedman test plus Nemenyi post-hoc on a tool by dataset matrix. Reports the average rank per tool (1 is best), the Friedman statistic and p-value, the Nemenyi critical difference, and the cliques of tools that are not significantly different. The critical-difference q term is computed from `scipy.stats.studentized_range` and matches Demsar Table 5 (2.728 for five methods at alpha 0.05). `nemenyi_critical_difference` is exposed separately. This is the committed Phase 1 statistical-comparison output; it answers whether the methods are separable across datasets, which the MCDA composite cannot.
+- `docs/explanations/comparing-methods-across-datasets.md`: explanation of the Friedman-Nemenyi method, the critical difference, cliques, when it applies, and the Bonferroni-Dunn caveat.
+- Scenarios vignette: new section running Friedman-Nemenyi on the odd-dataset per-dataset ARI, with a critical-difference plot. With five datasets the methods are not separable, the honest complement to the MCDA composite.
+- `tests/test_mcda_cd.py`: validates the Nemenyi q against Demsar Table 5, the significant and non-significant cases, orientation handling, tie handling, and the shape guards.
 - `beam.mcda.normalize`: per-column normalization dispatcher with five strategies (`min_max`, `log_min_max`, `rank`, `zscore`, `baseline_relative`). `log_min_max` keeps the multiplicative structure of ratio metrics so one outlier no longer compresses the rest (Smith 1988); `rank` is scale-free and outlier-proof; `zscore` is a logistic-squashed standardization; `baseline_relative` maps a chance-level score to 0 instead of the column midpoint. `min_max_normalize` is now a thin wrapper over `normalize`. The declared-range check applies to every strategy.
 - `beam.mcda.normalization_warnings`: guard that flags min-max columns resting on an empirical bound (not comparable across method sets) or on a heavy-tailed distribution (one outlier dominates the rescale). Warnings travel on the `Result` and do not block the run.
 - New schema field `comparability.recommended_normalization` (enum: `min_max`, `log_min_max`, `rank`, `zscore`, `baseline_relative`) and `semantics.score_of_random_baseline`. Populated on the seed cards: `log_min_max` for runtime and peak_memory, `baseline_relative` with a chance baseline of 0 for ARI, `min_max` (the default) for the bounded metrics.
@@ -32,6 +36,9 @@ All notable changes to beam will be documented in this file. The format follows 
 
 ### Changed
 
+- `scipy>=1.11` added to the core dependencies. The Demsar module needs the Friedman p-value and the exact Studentized range critical value for any number of methods, which a hand-rolled implementation or a small hardcoded table could not provide cleanly (Duo 2018 alone has 14 methods).
+- `beam.mcda.__init__` now also exports `CriticalDifferenceReport`, `critical_difference`, and `nemenyi_critical_difference`.
+- `tied_scenario` now sets the tied pair above the other methods, so the pair ties for the top rank. The SMAA confidence factor then lands on the pair (both near 1.0) instead of on an unrelated method, which fixes a confusing bar in the scenarios vignette.
 - `beam.mcda.run` and `run_from_registry` now take a per-metric normalization strategy. `run_from_registry` reads `comparability.recommended_normalization` from each card (default `min_max`), pulls `score_of_random_baseline` for the `baseline_relative` strategy, and runs the empirical-bound and heavy-tail guard.
 - `validate_for_aggregation` is now strategy-aware: it checks that the card permits the transform the chosen strategy applies (`log` for `log_min_max`, `rank` for `rank`, `affine`/`min_max` for `min_max` and `baseline_relative`, `z_score`/`affine` for `zscore`), replacing the earlier blanket `affine`/`min_max` check. A ratio metric normalized by `log_min_max` is validated against `log` rather than an `affine` grant.
 - `Result` gained `normalization` (the per-column strategy used) and `warnings` (the guard output).
