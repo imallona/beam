@@ -411,3 +411,110 @@ def normalization_failure_scenarios(seed: int = 0) -> list[Scenario]:
     the contrast between strategies.
     """
     return [gen(seed=seed) for gen in _NORMALIZATION_FAILURE_GENERATORS]
+
+
+@dataclass(frozen=True)
+class TransportationBenchmark:
+    """A cross-domain MCDA example: transport modes scored across terrains.
+
+    The methods are transport modes and the datasets are terrains. The data
+    is illustrative and made up, but the numbers are kept in a plausible
+    range so the example reads sensibly. It is deliberately not a bio
+    benchmark and does not use the metric registry; the metrics carry their
+    own polarity and normalization here.
+
+    The point of the example is twofold. First, no mode is fastest on every
+    terrain (a boat is best on water, a small plane on the long leg, a
+    motorcycle off-road), which is the method-by-dataset interaction that a
+    single global ranking hides. Second, some modes do not run on some
+    terrains at all (a boat off-road, a small plane on an urban hop). Those
+    cells are NaN. Because no mode is feasible on every terrain, a single
+    pooled ranking over all modes is not even well defined, so the honest
+    output is per-terrain.
+
+    Fields:
+        mode_names: the transport modes (rows).
+        terrain_names: the terrains (the dataset axis).
+        metric_names: ("speed", "cost", "co2").
+        polarity: per metric, higher_is_better or lower_is_better.
+        normalization: per metric strategy for the MCDA pipeline.
+        scores: (n_modes, n_terrains, n_metrics) with NaN where a mode cannot
+            run on a terrain.
+    """
+
+    mode_names: tuple[str, ...]
+    terrain_names: tuple[str, ...]
+    metric_names: tuple[str, ...]
+    polarity: tuple[str, ...]
+    normalization: tuple[str, ...]
+    scores: np.ndarray
+
+    def feasible(self) -> np.ndarray:
+        """Boolean (n_modes, n_terrains) mask, True where the mode runs on the terrain."""
+        return ~np.isnan(self.scores[:, :, 0])
+
+    def metric(self, name: str) -> np.ndarray:
+        """The (n_modes, n_terrains) slice for one metric name."""
+        return self.scores[:, :, self.metric_names.index(name)]
+
+
+def transportation_benchmark() -> TransportationBenchmark:
+    """Build the illustrative transportation example with infeasible cells as NaN.
+
+    Modes: on foot, running, bicycle, motorcycle, train, boat, small plane.
+    Terrains: flat road, mud, steep uphill, open water, long distance, urban hop.
+    Metrics: speed (km/h, higher is better), cost (per km, lower is better),
+    CO2 (g per km, lower is better). The fastest mode by terrain is train on
+    the flat road and the urban hop, motorcycle on mud and uphill, boat on
+    open water, and a small plane on the long distance. No mode runs on every
+    terrain: the boat and plane cannot use the dry land terrains, and the land
+    modes cannot cross open water.
+    """
+    nan = np.nan
+    # rows: foot, running, bicycle, motorcycle, train, boat, plane
+    # cols: flat_road, mud, uphill, open_water, long_distance, urban_hop
+    speed = np.array(
+        [
+            [5, 3, 2, nan, 5, 4],
+            [12, 6, 4, nan, 10, 8],
+            [20, 8, 6, nan, 18, 15],
+            [70, 25, 30, nan, 90, 40],
+            [90, nan, nan, nan, 200, 60],
+            [nan, nan, nan, 30, 40, nan],
+            [nan, nan, nan, 18, 750, nan],
+        ],
+        dtype=float,
+    )
+    cost = np.array(
+        [
+            [0.1, 0.2, 0.3, nan, 0.1, 0.1],
+            [0.1, 0.2, 0.3, nan, 0.1, 0.1],
+            [0.2, 0.3, 0.4, nan, 0.2, 0.2],
+            [0.6, 1.0, 1.0, nan, 0.6, 0.7],
+            [0.3, nan, nan, nan, 0.25, 0.4],
+            [nan, nan, nan, 0.6, 2.5, nan],
+            [nan, nan, nan, 4.0, 1.2, nan],
+        ],
+        dtype=float,
+    )
+    co2 = np.array(
+        [
+            [0, 0, 0, nan, 0, 0],
+            [0, 0, 0, nan, 0, 0],
+            [0, 0, 0, nan, 0, 0],
+            [100, 150, 150, nan, 100, 110],
+            [40, nan, nan, nan, 35, 45],
+            [nan, nan, nan, 120, 250, nan],
+            [nan, nan, nan, 250, 180, nan],
+        ],
+        dtype=float,
+    )
+    scores = np.stack([speed, cost, co2], axis=2)
+    return TransportationBenchmark(
+        mode_names=("foot", "running", "bicycle", "motorcycle", "train", "boat", "plane"),
+        terrain_names=("flat_road", "mud", "uphill", "open_water", "long_distance", "urban_hop"),
+        metric_names=("speed", "cost", "co2"),
+        polarity=("higher_is_better", "lower_is_better", "lower_is_better"),
+        normalization=("log_min_max", "log_min_max", "rank"),
+        scores=scores,
+    )

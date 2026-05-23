@@ -21,6 +21,7 @@ from beam.mcda import (
 )
 from beam.scenarios import (
     Scenario,
+    TransportationBenchmark,
     all_scenarios,
     chance_baseline_scenario,
     dominant_method_scenario,
@@ -29,6 +30,7 @@ from beam.scenarios import (
     outlier_runtime_scenario,
     random_scenario,
     tied_scenario,
+    transportation_benchmark,
 )
 
 
@@ -234,3 +236,57 @@ def test_empirical_bound_makes_runtime_unstable_under_minmax():
     )
     # m0's normalized runtime swings widely when the method set changes
     assert abs(full.normalized[0, 0] - without_outlier.normalized[0, 0]) > 0.1
+
+
+def test_transportation_benchmark_shape_and_metrics():
+    b = transportation_benchmark()
+    assert isinstance(b, TransportationBenchmark)
+    assert b.scores.shape == (len(b.mode_names), len(b.terrain_names), len(b.metric_names))
+    assert b.metric_names == ("speed", "cost", "co2")
+    assert b.polarity == ("higher_is_better", "lower_is_better", "lower_is_better")
+
+
+def test_transportation_infeasible_cells_are_nan():
+    b = transportation_benchmark()
+    feas = b.feasible()
+    m = b.mode_names.index
+    t = b.terrain_names.index
+    assert not feas[m("boat"), t("mud")]  # a boat does not run off-road
+    assert not feas[m("plane"), t("urban_hop")]  # a small plane does not do urban hops
+    assert feas[m("boat"), t("open_water")]
+    assert feas[m("plane"), t("long_distance")]
+
+
+def test_transportation_no_mode_runs_on_every_terrain():
+    """The point of the example: a single global ranking is not well defined."""
+    b = transportation_benchmark()
+    assert not b.feasible().all(axis=1).any()
+
+
+def test_transportation_fastest_mode_per_terrain():
+    b = transportation_benchmark()
+    speed = b.metric("speed")
+    fastest = {
+        b.terrain_names[t]: b.mode_names[int(np.nanargmax(speed[:, t]))]
+        for t in range(len(b.terrain_names))
+    }
+    assert fastest["flat_road"] == "train"
+    assert fastest["mud"] == "motorcycle"
+    assert fastest["open_water"] == "boat"
+    assert fastest["long_distance"] == "plane"
+    assert fastest["urban_hop"] == "train"
+
+
+def test_transportation_single_terrain_mcda_runs():
+    """On long distance every mode is feasible, so the MCDA pipeline runs there."""
+    b = transportation_benchmark()
+    lt = b.terrain_names.index("long_distance")
+    out = run(
+        b.scores[:, lt, :],
+        b.polarity,
+        normalization=list(b.normalization),
+        method="saw",
+        metric_ids=list(b.metric_names),
+    )
+    assert out.ranks.shape == (len(b.mode_names),)
+    assert set(out.ranks.tolist()) == set(range(1, len(b.mode_names) + 1))

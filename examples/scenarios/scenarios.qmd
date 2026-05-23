@@ -38,7 +38,11 @@ from beam.mcda import (
     smaa,
     smallest_weight_perturbation,
 )
-from beam.scenarios import all_scenarios, normalization_failure_scenarios
+from beam.scenarios import (
+    all_scenarios,
+    normalization_failure_scenarios,
+    transportation_benchmark,
+)
 
 
 def polarity_for(scenario):
@@ -322,6 +326,68 @@ plt.show()
 ```
 
 With only five datasets the critical difference is wide. Every method falls inside the shaded band, and the Friedman test does not reject at alpha 0.05, so the data cannot separate the methods even though the MCDA composite puts m0 first. This is the honest complement to the composite: the recommendation holds under the stated weighting, but a claim that one method is better across datasets would need more datasets to support it.
+
+## A cross-domain example: transportation
+
+The MCDA core is not specific to bioinformatics. This example scores transport modes (the methods) across terrains (the datasets) on speed, cost, and CO2. The data is made up but kept in a plausible range. It shows two things more clearly than the bio scenarios do.
+
+First, no mode is fastest on every terrain. A train is fastest on the flat road, a motorcycle off-road, a boat on open water, a small plane on the long leg. A single global ranking hides this.
+
+Second, some modes do not run on some terrains at all: a boat cannot go off-road, a small plane cannot do an urban hop, and the land modes cannot cross open water. Those cells are missing (NaN). Because no mode runs on every terrain, a single pooled ranking over all modes is not even well defined, so the honest output is per-terrain.
+
+```{python}
+tb = transportation_benchmark()
+feasible = tb.feasible()
+speed = tb.metric("speed")
+
+print("modes that run on every terrain:",
+      [tb.mode_names[i] for i in range(len(tb.mode_names)) if feasible[i].all()] or "none")
+print()
+print("fastest mode per terrain (by speed, feasible modes only):")
+for t, terrain in enumerate(tb.terrain_names):
+    best = tb.mode_names[int(np.nanargmax(speed[:, t]))]
+    print(f"  {terrain:15s}  {best}")
+```
+
+On the long-distance terrain every mode is feasible, so the full MCDA pipeline runs there. Speed and cost span orders of magnitude, so they use log_min_max; CO2 has true zeros (walking, cycling), so it uses rank.
+
+```{python}
+lt = tb.terrain_names.index("long_distance")
+long_scores = tb.scores[:, lt, :]
+res = run(long_scores, tb.polarity, normalization=list(tb.normalization),
+          method="saw", metric_ids=list(tb.metric_names))
+print("long-distance ranking under equal weights (1 = best):")
+for name, r in sorted(zip(tb.mode_names, res.ranks), key=lambda x: x[1]):
+    print(f"  {int(r)}  {name}")
+```
+
+Under equal weights the cheap, low-CO2 modes rank high even on the long leg, which is the cautionary reading: an equal-weight composite rewards a mode that is sensible only because the weighting ignores how long the trip would actually take.
+
+```{python}
+# speed heatmap: modes by terrain, with infeasible cells left blank
+fig, ax = plt.subplots(figsize=(6.0, 3.2))
+masked = np.ma.masked_invalid(speed)
+cmap = plt.cm.viridis.copy()
+cmap.set_bad(color="#dddddd")
+im = ax.imshow(masked, cmap=cmap, aspect="auto", norm="log")
+ax.set_xticks(range(len(tb.terrain_names)))
+ax.set_xticklabels(tb.terrain_names, rotation=45, ha="right")
+ax.set_yticks(range(len(tb.mode_names)))
+ax.set_yticklabels(tb.mode_names)
+ax.set_xlabel("terrain")
+ax.set_ylabel("transport mode")
+ax.set_title("Speed by mode and terrain (grey = mode cannot run there)")
+for i in range(speed.shape[0]):
+    for j in range(speed.shape[1]):
+        if np.isnan(speed[i, j]):
+            ax.text(j, i, "x", ha="center", va="center", color="#888888")
+cbar = fig.colorbar(im, ax=ax)
+cbar.set_label("speed (km/h, log scale)")
+fig.tight_layout()
+plt.show()
+```
+
+The grey cells with an x are the mode-terrain pairs that do not run. They show the coverage problem directly: any ranking that pools across terrains compares modes that were measured on different subsets of conditions.
 
 ## What is missing
 
