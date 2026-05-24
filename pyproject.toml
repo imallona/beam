@@ -27,6 +27,7 @@ dependencies = [
     "pyyaml>=6.0",
     "numpy>=1.26",
     "scipy>=1.11",
+    "pymcdm>=1.4",
 ]
 
 [project.optional-dependencies]
@@ -50,6 +51,9 @@ Repository = "https://github.com/imallona/beam"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/beam"]
+artifacts = [
+    "src/beam/data/*.csv",
+]
 
 [tool.hatch.build.targets.sdist]
 include = [

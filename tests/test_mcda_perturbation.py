@@ -97,9 +97,122 @@ def test_fragility_flag_trips_under_threshold():
     assert out.top_rank_is_fragile is True
 
 
-def test_rejects_topsis():
-    with pytest.raises(NotImplementedError, match="closed-form only for 'saw'"):
-        smallest_weight_perturbation(_toy_scores(), _TOY_POLARITY, method="topsis")
+def test_rejects_unknown_method():
+    with pytest.raises(ValueError, match="unknown method"):
+        smallest_weight_perturbation(_toy_scores(), _TOY_POLARITY, method="not_a_method")
+
+
+@pytest.mark.parametrize("method", ["topsis", "vikor", "promethee_ii", "comet"])
+def test_numeric_path_runs_on_non_linear_methods(method):
+    """The numeric path returns a report for each non-linear aggregation."""
+    out = smallest_weight_perturbation(_toy_scores(), _TOY_POLARITY, method=method)
+    assert isinstance(out, WeightPerturbationReport)
+    assert len(out.per_pair) == 3
+
+
+def _seeded_matrices():
+    rng = np.random.default_rng(0)
+    return [rng.random((4, 3)) for _ in range(5)]
+
+
+def test_numeric_path_agrees_with_closed_form_on_saw():
+    """On SAW the numeric search must recover the exact closed-form delta.
+
+    The numeric path is validated against the exact answer: for every pair with
+    a feasible flip the closed-form delta and a numeric re-solve on the SAW
+    aggregation must agree within the bisection tolerance.
+    """
+    from beam.mcda.aggregate import weighted_sum
+    from beam.mcda.perturbation import _smallest_flip_delta
+
+    polarity = ("higher_is_better", "higher_is_better", "higher_is_better")
+    for scores in _seeded_matrices():
+        out = smallest_weight_perturbation(scores, polarity, method="saw")
+        x = out.base.normalized
+        w = out.base.weights
+        for p in out.per_pair:
+            if p.criterion == -1:
+                continue
+            if abs(p.delta) > 1.0:
+                # The closed form has no range cap; only compare deltas that
+                # fall inside the numeric search range.
+                continue
+            numeric_delta = _smallest_flip_delta(
+                x,
+                w,
+                weighted_sum,
+                p.higher,
+                p.lower,
+                p.criterion,
+                search_range=1.0,
+                tolerance=1e-9,
+            )
+            assert numeric_delta is not None
+            assert numeric_delta == pytest.approx(p.delta, abs=1e-6)
+
+
+@pytest.mark.parametrize("method", ["vikor", "promethee_ii"])
+def test_numeric_path_finds_flip_on_near_tie(method):
+    """The top two tools have a small feasible single-weight flip.
+
+    The top two tools split the criteria (tool 0 leads on criteria 0 and 1,
+    tool 1 leads on criterion 2), so shifting weight onto criterion 2 flips
+    their order. Tool 2 is far worse and cannot be dislodged.
+    """
+    scores = np.array(
+        [
+            [0.80, 0.80, 0.10],
+            [0.70, 0.70, 0.95],
+            [0.10, 0.05, 0.02],
+        ]
+    )
+    out = smallest_weight_perturbation(scores, ("higher_is_better",) * 3, method=method)
+    ranks = out.base.ranks
+    top_idx = int(np.where(ranks == 1)[0][0])
+    second_idx = int(np.where(ranks == 2)[0][0])
+    near_tie = next(p for p in out.per_pair if p.higher == top_idx and p.lower == second_idx)
+    assert near_tie.criterion != -1
+    assert math.isfinite(near_tie.absolute_delta)
+    assert near_tie.absolute_delta < 0.5
+
+
+@pytest.mark.parametrize("method", ["vikor", "promethee_ii"])
+def test_numeric_path_reports_no_flip_for_dominant_tool(method):
+    """A strictly dominating tool cannot be displaced by a single-weight change."""
+    scores = np.array(
+        [
+            [0.9, 0.9],
+            [0.5, 0.4],
+            [0.1, 0.2],
+        ]
+    )
+    out = smallest_weight_perturbation(
+        scores, ("higher_is_better", "higher_is_better"), method=method
+    )
+    top_idx = int(np.argmin(out.base.ranks))
+    for p in out.per_pair:
+        if p.higher == top_idx:
+            assert p.criterion == -1
+            assert math.isinf(p.absolute_delta)
+    assert out.top_rank_perturbation is None
+    assert out.top_rank_is_fragile is False
+
+
+@pytest.mark.parametrize("method", ["vikor", "promethee_ii"])
+def test_numeric_report_fields_stay_consistent(method):
+    """most_fragile_pair, top_rank_perturbation and the fragility flag agree with per_pair."""
+    out = smallest_weight_perturbation(_toy_scores(), _TOY_POLARITY, method=method)
+    feasible = [p for p in out.per_pair if p.criterion != -1]
+    if feasible:
+        smallest = min(feasible, key=lambda p: p.absolute_delta)
+        assert out.most_fragile_pair.absolute_delta == pytest.approx(smallest.absolute_delta)
+    top_idx = int(np.argmin(out.base.ranks))
+    if out.top_rank_perturbation is not None:
+        assert out.top_rank_perturbation.higher == top_idx
+        expected = out.top_rank_perturbation.absolute_delta < 0.05
+        assert out.top_rank_is_fragile == expected
+    else:
+        assert out.top_rank_is_fragile is False
 
 
 def test_rejects_one_dimensional_scores():

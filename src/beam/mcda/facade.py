@@ -9,10 +9,19 @@ import numpy as np
 
 from ..cards import Registry, properties_for
 from .aggregate import rank, weighted_sum
+from .comet import comet
 from .normalize import Bound, normalization_warnings, normalize
+from .promethee import promethee_ii
 from .topsis import topsis
 from .validate import validate_for_aggregation
-from .weights import entropy_weights, equal_weights
+from .vikor import vikor
+from .weights import (
+    critic_weights,
+    entropy_weights,
+    equal_weights,
+    merec_weights,
+    standard_deviation_weights,
+)
 
 
 @dataclass(frozen=True)
@@ -39,8 +48,14 @@ class Result:
     warnings: tuple[str, ...] = ()
 
 
-_KNOWN_WEIGHTINGS = ("equal", "entropy")
-_KNOWN_METHODS = ("saw", "topsis")
+_KNOWN_WEIGHTINGS = ("equal", "entropy", "std", "critic", "merec")
+_KNOWN_METHODS = ("saw", "topsis", "vikor", "promethee_ii", "comet")
+
+_OBJECTIVE_WEIGHTS = {
+    "std": standard_deviation_weights,
+    "critic": critic_weights,
+    "merec": merec_weights,
+}
 
 
 def _resolve_weights(
@@ -52,6 +67,8 @@ def _resolve_weights(
             return equal_weights(normalized.shape[1]), "equal"
         if weighting == "entropy":
             return entropy_weights(normalized), "entropy"
+        if weighting in _OBJECTIVE_WEIGHTS:
+            return _OBJECTIVE_WEIGHTS[weighting](normalized), weighting
         raise ValueError(f"unknown weighting {weighting!r}; supported: {_KNOWN_WEIGHTINGS}")
     w = np.asarray(weighting, dtype=float)
     if w.shape != (normalized.shape[1],):
@@ -62,10 +79,15 @@ def _resolve_weights(
 
 
 def _resolve_method(method: str):
-    if method == "saw":
-        return weighted_sum
-    if method == "topsis":
-        return topsis
+    methods = {
+        "saw": weighted_sum,
+        "topsis": topsis,
+        "vikor": vikor,
+        "promethee_ii": promethee_ii,
+        "comet": comet,
+    }
+    if method in methods:
+        return methods[method]
     raise ValueError(f"unknown method {method!r}; supported: {_KNOWN_METHODS}")
 
 
@@ -100,12 +122,18 @@ def run(
        strategy in ``normalization`` (default ``min_max`` on every column),
        respecting per-metric polarity and, when provided, declared bounds.
        After this step every column is oriented so higher is better.
-    2. Build a weight vector. Pass ``"equal"`` or ``"entropy"`` for the
-       built-in schemes, or pass an explicit array of length
-       ``n_metrics``.
-    3. Aggregate to one composite score per tool. Pass ``"saw"`` for
-       simple additive weighting (the dot product of normalized scores
-       and weights) or ``"topsis"`` for distance-to-ideal aggregation.
+    2. Build a weight vector. Pass ``"equal"``, ``"entropy"``, ``"std"``,
+       ``"critic"`` or ``"merec"`` for the built-in objective schemes, or
+       pass an explicit array of length ``n_metrics``. For a subjective
+       scheme, call ``beam.mcda.ahp_weights`` on a pairwise comparison
+       matrix and pass the returned array. ``"merec"`` takes logarithms and
+       needs a normalization bounded away from zero, so it rejects a column
+       carrying a hard zero (plain min-max maps the worst tool to zero).
+    3. Aggregate to one composite score per tool. Pass ``"saw"`` for simple
+       additive weighting (the dot product of normalized scores and
+       weights), ``"topsis"`` for distance-to-ideal aggregation, ``"vikor"``
+       for the compromise ranking, ``"promethee_ii"`` for the net
+       outranking flow, or ``"comet"`` for the characteristic-objects model.
 
     Returns a ``Result`` with every intermediate output. Two runs over the
     same scores can be compared by their ``.ranks`` to see how much the
@@ -125,10 +153,11 @@ def run(
         ``"lower_is_better"``. Get this from
         ``beam.cards.polarities_for(metric_ids)``.
     weights
-        ``"equal"`` (default), ``"entropy"``, or an explicit array of
-        length ``n_metrics``.
+        ``"equal"`` (default), ``"entropy"``, ``"std"``, ``"critic"``,
+        ``"merec"``, or an explicit array of length ``n_metrics``.
     method
-        ``"saw"`` (default) or ``"topsis"``.
+        ``"saw"`` (default), ``"topsis"``, ``"vikor"``, ``"promethee_ii"``
+        or ``"comet"``.
     bounds
         Optional list of ``(lower, upper)`` per metric. Forwarded to
         ``min_max_normalize``. Either side can be ``None`` to fall back

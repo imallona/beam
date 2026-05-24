@@ -3,6 +3,17 @@
 from __future__ import annotations
 
 import numpy as np
+from pymcdm.methods import WSM
+
+
+def _identity_normalization(matrix: np.ndarray, cost: bool | None = None) -> np.ndarray:
+    """Return the matrix unchanged.
+
+    beam normalizes scores before aggregation, so the matrix already lies in
+    [0, 1] with every column oriented higher is better. This passthrough lets
+    pymcdm operate on that matrix directly instead of normalizing it again.
+    """
+    return matrix
 
 
 def weighted_sum(
@@ -10,6 +21,11 @@ def weighted_sum(
     weights: np.ndarray,
 ) -> np.ndarray:
     """Simple additive weighting (SAW): per-tool dot product of scores and weights.
+
+    The computation is delegated to ``pymcdm.methods.WSM`` with an identity
+    normalization, so every aggregation in beam runs on the same engine.
+    pymcdm runs directly on beam's already normalized matrix, with all criteria
+    typed as profit (+1) because the matrix is oriented higher is better.
 
     Parameters
     ----------
@@ -33,7 +49,9 @@ def weighted_sum(
         )
     if np.any(weights < 0):
         raise ValueError("weights must be non-negative")
-    return normalized @ weights
+    types = np.ones(normalized.shape[1])
+    method = WSM(normalization_function=_identity_normalization)
+    return method(normalized, weights, types, validation=False)
 
 
 def rank(scores: np.ndarray) -> np.ndarray:

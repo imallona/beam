@@ -15,200 +15,246 @@ format:
 
 ## Goal
 
-This vignette will re-analyse the fourteen single-cell clustering methods benchmarked in Duo et al. 2018. It uses the beam metric registry and the MCDA decision module. For now it shows the workflow on a small synthetic tool by metric table. The wiring to the actual Duo data lands in a later iteration.
+This vignette re-analyses the fourteen single-cell clustering methods benchmarked in Duo, Robinson and Soneson (2018) with the beam metric registry and the MCDA decision module. It loads the published method by dataset by metric tensor, pulls the metric cards, and pools each metric across the twelve datasets using the rule its card recommends. It then runs the MCDA pipeline and checks how stable the ranking is under different weightings, aggregation methods, and weight perturbations. It closes with a Demsar critical-difference diagram that asks whether the methods are separable on ARI at all, and a recommendation paragraph that reports what the data show.
 
 ## Set-up
+
+The five aggregation methods used below (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET) are wrapped from pymcdm. beam normalizes by metric card, then calls pymcdm on the normalized matrix and keeps the higher-is-better convention. The weighting schemes are beam's own, since pymcdm's reject the zeros beam's normalization produces.
 
 ```{python}
 import numpy as np
 import matplotlib.pyplot as plt
 
+from beam.datasets import load_duo2018
 from beam.cards import properties_for
-from beam.mcda import run_from_registry
+from beam.mcda import (
+    run_from_registry,
+    critical_difference,
+    smaa,
+    smallest_weight_perturbation,
+)
 ```
 
-## Pull metric properties from the registry
+## Load the tensor
 
-Two metrics from the seed registry: ARI (clustering quality, higher is better) and runtime (efficiency, lower is better). `properties_for` looks up the polarity, scale type, declared range, allowed transformations, and recommended cross-dataset aggregation for each card. The pipeline downstream consumes all of these rather than only polarity.
+`load_duo2018` reads the bundled CSV into a frozen dataclass. The scores are a method by dataset by metric tensor with `numpy.nan` in the cells that were the literal string NA in the source. The loader does not impute or drop anything.
 
 ```{python}
-metric_ids = ["ari", "runtime"]
-props = properties_for(metric_ids)
-polarity = [p.polarity for p in props]   # needed by the legacy primitives below
+duo = load_duo2018()
+print("scores shape:", duo.scores.shape)
+print("methods:", ", ".join(duo.method_names))
+print("datasets:", ", ".join(duo.dataset_names))
+print("metrics:", ", ".join(duo.metric_ids))
+```
+
+## Missing cells
+
+Four metrics are recorded. ARI, runtime and Shannon entropy difference each have five missing cells; cluster-count deviation has 101 of 168 cells missing because several methods do not report a fixed cluster count for every dataset. With more than half its cells empty, cluster-count deviation cannot be pooled across datasets without an imputation choice that would drive the result, so this analysis uses the three well-populated metrics: ARI, runtime, and Shannon entropy difference.
+
+```{python}
+for metric_id in duo.metric_ids:
+    n_missing = int(np.isnan(duo.tensor((metric_id,))[:, :, 0]).sum())
+    print(f"{metric_id:22s} missing cells: {n_missing:3d} / {14 * 12}")
+
+analysis_metrics = ["ari", "runtime", "shannon_entropy_diff"]
+```
+
+## Pull the metric cards
+
+`properties_for` looks up the card for each metric and exposes the fields the pipeline consumes: polarity, scale type, declared range, and the recommended cross-dataset aggregation. ARI is higher is better; runtime and Shannon entropy difference are lower is better. Runtime is a ratio metric that spans orders of magnitude, so its card recommends the geometric mean across datasets (Smith 1988). ARI and Shannon entropy difference take the arithmetic mean.
+
+```{python}
+props = properties_for(analysis_metrics)
+polarity = [p.polarity for p in props]
 for p in props:
     print(
-        f"{p.id:8s}  polarity={p.polarity:16s}  scale={p.scale_type:8s}  "
+        f"{p.id:22s}  polarity={p.polarity:16s}  scale={p.scale_type:8s}  "
         f"range=({p.range_lower}, {p.range_upper})  "
         f"agg_across_datasets={p.recommended_aggregation_across_datasets}"
     )
 ```
 
-## Score matrix
+## Pool across the twelve datasets
 
-A small synthetic stand-in for the Duo scores. Three methods, two metrics.
+The MCDA pipeline works on a method by metric matrix, so the dataset axis has to be folded out first. For each metric this code applies the rule the card declares, but with a NaN-aware reduction so the five missing cells do not poison a method's pooled score. ARI and Shannon entropy difference use a NaN-aware arithmetic mean; runtime uses a NaN-aware geometric mean (the mean of the logs, then exponentiated, over the observed datasets only).
+
+The NaN handling lives here in the example, not in the core pipeline. `beam.mcda.aggregate_across_datasets` is not NaN-aware by design; pushing coverage-aware pooling into the core normalization, weighting and aggregation is Phase 4 work tied to the heterogeneity module. Doing it at the example level keeps the choice explicit: a method's pooled score is the average over the datasets where it was actually measured. The five gaps fall on SAFE (two datasets) and ascend (three datasets); every other method is observed on all twelve.
 
 ```{python}
-methods = ["seurat", "raceid2", "flowsom"]
-scores = np.array([
-    [0.85, 120.0],   # seurat:  high ARI, slow
-    [0.45,  30.0],   # raceid2: low ARI,  fast
-    [0.55,  90.0],   # flowsom: medium ARI, medium speed
-])
+def pool_metric(metric_id, rule):
+    matrix = duo.tensor((metric_id,))[:, :, 0]
+    if rule == "arithmetic_mean":
+        return np.nanmean(matrix, axis=1)
+    if rule == "geometric_mean":
+        return np.exp(np.nanmean(np.log(matrix), axis=1))
+    raise ValueError(f"unsupported pooling rule {rule!r}")
+
+pooled = np.column_stack(
+    [pool_metric(p.id, p.recommended_aggregation_across_datasets) for p in props]
+)
+print("pooled matrix shape:", pooled.shape)
+print("pooled matrix all finite:", bool(np.isfinite(pooled).all()))
 ```
 
 ## One MCDA run, ontology-aware
 
-`beam.mcda.run_from_registry` validates the requested aggregation against the declared scale types, pulls polarity and declared bounds from the cards, and runs the full pipeline.
+`run_from_registry` pulls polarity, declared bounds and the per-metric normalization strategy from the cards, validates the requested aggregation against the declared scale types, and runs the full pipeline. The default here is equal weights with simple additive weighting (SAW).
 
 ```{python}
-result = run_from_registry(scores, metric_ids)
+result = run_from_registry(pooled, analysis_metrics, weights="equal", method="saw")
 
-print(f"weighting={result.weighting}  method={result.method}  bounds={result.bounds}")
-for m, c, r in zip(methods, result.composite, result.ranks):
-    print(f"  {m:8s}  composite={c:.3f}  rank={r}")
+print(f"weighting={result.weighting}  method={result.method}")
+print(f"{'method':12s}  composite  rank")
+order = np.argsort(result.ranks)
+for i in order:
+    print(f"{duo.method_names[i]:12s}  {result.composite[i]:.3f}      {result.ranks[i]}")
 ```
 
-## Compare under different choices
+## Compare across weightings and aggregation methods
 
-Two weighting schemes (`equal`, `entropy`) crossed with two aggregation methods (`saw`, `topsis`). Stable ranks across the four runs mean the choice does not matter. Flipped ranks mean it does.
+Four weightings (equal, entropy, std, critic) crossed with four aggregation methods (saw, topsis, vikor, promethee_ii) give sixteen runs. A method whose rank stays the same down a column is stable to these choices; a method whose rank moves is sensitive to them.
 
 ```{python}
-combos = [
-    ("equal",   "saw"),
-    ("equal",   "topsis"),
-    ("entropy", "saw"),
-    ("entropy", "topsis"),
-]
+weightings = ["equal", "entropy", "std", "critic"]
+methods = ["saw", "topsis", "vikor", "promethee_ii"]
 
-ranks_grid = np.zeros((len(combos), len(methods)), dtype=int)
-labels = []
+combos = [(w, m) for w in weightings for m in methods]
+ranks_grid = np.zeros((len(combos), len(duo.method_names)), dtype=int)
+row_labels = []
 for i, (w, m) in enumerate(combos):
-    r = run_from_registry(scores, metric_ids, weights=w, method=m)
+    r = run_from_registry(pooled, analysis_metrics, weights=w, method=m)
     ranks_grid[i] = r.ranks
-    labels.append(f"{w} / {m}")
-
-print(f"{'weighting / method':22s}  ranks (seurat, raceid2, flowsom)")
-for lab, row in zip(labels, ranks_grid):
-    print(f"  {lab:22s}  {tuple(int(x) for x in row)}")
+    row_labels.append(f"{w} / {m}")
 ```
 
-The same ranks as a heatmap, with rank 1 (best) in green and rank 3 (worst) in red. A column of one solid colour means the method's rank is stable across all four configurations.
+The ranks as a heatmap, rank 1 (best) in green and rank 14 (worst) in red. A column of one colour means that method holds its rank across every configuration.
 
 ```{python}
-fig, ax = plt.subplots(figsize=(5.5, 3.0))
-im = ax.imshow(ranks_grid, cmap="RdYlGn_r", aspect="auto", vmin=1, vmax=len(methods))
-ax.set_xticks(range(len(methods)))
-ax.set_xticklabels(methods)
-ax.set_yticks(range(len(labels)))
-ax.set_yticklabels(labels)
-ax.set_xlabel("method")
-ax.set_ylabel("weighting / aggregation")
+n_methods = len(duo.method_names)
+fig, ax = plt.subplots(figsize=(9.0, 6.0))
+im = ax.imshow(ranks_grid, cmap="RdYlGn_r", aspect="auto", vmin=1, vmax=n_methods)
+ax.set_xticks(range(n_methods))
+ax.set_xticklabels(duo.method_names, rotation=90)
+ax.set_yticks(range(len(row_labels)))
+ax.set_yticklabels(row_labels)
+ax.set_xlabel("clustering method")
+ax.set_ylabel("weighting / aggregation method")
+ax.set_title("Rank by configuration (ARI higher better, runtime and entropy diff lower better)")
 for i in range(ranks_grid.shape[0]):
     for j in range(ranks_grid.shape[1]):
-        ax.text(j, i, ranks_grid[i, j], ha="center", va="center", fontweight="bold", color="black")
-cbar = fig.colorbar(im, ax=ax, ticks=range(1, len(methods) + 1))
+        ax.text(j, i, ranks_grid[i, j], ha="center", va="center", fontsize=7, color="black")
+cbar = fig.colorbar(im, ax=ax, ticks=[1, n_methods])
 cbar.set_label("rank (1 = best)")
 fig.tight_layout()
 plt.show()
 ```
 
-## Leave-one-metric-out
-
-`leave_one_metric_out` runs the pipeline with all metrics, then once with each metric removed. The report carries the base ranks, the per-omission ranks, per-tool rank stability (fraction of leave-one-out runs in which the tool keeps its base rank), and the metric whose removal causes the largest rank change.
-
 ```{python}
-from beam.mcda import leave_one_metric_out
-
-report = leave_one_metric_out(
-    scores, polarity,
-    metric_ids=metric_ids,
-    weights="entropy",
-    method="topsis",
-)
-
-print(f"base ranks: {tuple(int(x) for x in report.base.ranks)}")
-for m, s in zip(methods, report.rank_stability):
-    print(f"  {m:8s}  stability={s:.2f}")
-print(
-    f"removing {metric_ids[report.most_influential_metric]!r} "
-    f"causes the largest rank shift of {report.max_rank_shift}"
-)
+top_per_combo = {duo.method_names[int(np.argmin(row))] for row in ranks_grid}
+print("methods that are top-ranked in at least one of the 16 configurations:")
+print("  " + ", ".join(sorted(top_per_combo)))
 ```
 
-## SMAA weight sampling
+## Critical-difference diagram on ARI
 
-`smaa` samples weight vectors from a Dirichlet over the metrics simplex, runs the pipeline once per sample, and reports the rank acceptability index (per-tool, per-rank probability), the central weight vector per tool (the mean weighting under which that tool is top-ranked), and a confidence factor per tool (its share of top-ranked samples).
+The MCDA composite gives one ranking, but it does not say whether the methods are separable. The Demsar (2006) Friedman test ranks the methods on each dataset and asks whether the average ranks differ more than chance. The Nemenyi post-hoc gives the critical difference: two methods whose average ranks differ by less than it are not distinguishable from this data.
+
+This runs on ARI alone, on the block of methods observed on all twelve datasets. SAFE and ascend have missing ARI cells, so they are dropped here to keep the block complete; the remaining twelve methods are observed on all twelve datasets.
 
 ```{python}
-from beam.mcda import smaa
+ari = duo.tensor(("ari",))[:, :, 0]
+complete = duo.complete_methods(("ari",))
+block_idx = [i for i in range(n_methods) if complete[i]]
+block = ari[block_idx, :]
+block_names = [duo.method_names[i] for i in block_idx]
+print(f"ARI block: {block.shape[0]} methods by {block.shape[1]} datasets, all observed: "
+      f"{bool(np.isfinite(block).all())}")
+print("dropped (incomplete ARI):",
+      ", ".join(duo.method_names[i] for i in range(n_methods) if not complete[i]))
 
-smaa_report = smaa(
-    scores, polarity,
-    n_samples=500,
-    method="topsis",
-    seed=0,
-)
-
-print("rank acceptability index (rows = methods, cols = ranks 1..n)")
-for m, row in zip(methods, smaa_report.rank_acceptability_index):
-    print(f"  {m:8s}  {[f'{v:.2f}' for v in row]}")
-
-print("\nconfidence factor (share of samples ranked first)")
-for m, c in zip(methods, smaa_report.confidence_factor):
-    print(f"  {m:8s}  {c:.2f}")
+cd = critical_difference(block, higher_is_better=True, tool_names=tuple(block_names))
+print(f"\nFriedman statistic={cd.friedman_statistic:.2f}  p-value={cd.friedman_pvalue:.2e}")
+print(f"Nemenyi critical difference (alpha={cd.alpha}): {cd.critical_difference:.2f}")
+print("average ranks (1 = best on ARI):")
+for i in cd.order:
+    print(f"  {block_names[i]:12s}  {cd.average_ranks[i]:.2f}")
 ```
 
-## Weight perturbation (Triantaphyllou-Sanchez)
-
-`smallest_weight_perturbation` reports, for every pair of methods where one is ranked above the other under SAW, the smallest single-weight change that swaps them. It also flags whether the top-ranked method is fragile, that is, whether some single weight can be changed by less than `fragility_threshold` (default 0.05) to move it off the top rank.
+The diagram draws each method at its average ARI rank, with rank 1 (best, highest ARI) on the left. The bars join methods whose average ranks lie within the critical difference, so the methods a bar spans are not separable on ARI at this sample size.
 
 ```{python}
-from beam.mcda import smallest_weight_perturbation
+ranks_sorted = cd.average_ranks[cd.order]
+names_sorted = [block_names[i] for i in cd.order]
 
-ts = smallest_weight_perturbation(
-    scores, polarity,
-    weights="equal",
-    method="saw",
-)
+fig, ax = plt.subplots(figsize=(9.0, 3.2))
+y = 0.0
+ax.scatter(ranks_sorted, np.full_like(ranks_sorted, y), color="black", zorder=3)
+for x, name in zip(ranks_sorted, names_sorted):
+    ax.annotate(name, (x, y), xytext=(0, 8), textcoords="offset points",
+                ha="center", rotation=90, fontsize=8)
 
-print(f"base ranks: {tuple(int(x) for x in ts.base.ranks)}")
+clique_y = -0.15
+for k, clique in enumerate(cd.cliques):
+    positions = [float(cd.average_ranks[i]) for i in clique]
+    ax.plot([min(positions), max(positions)], [clique_y - 0.06 * k] * 2,
+            color="tab:blue", linewidth=3, solid_capstyle="round")
+
+ax.set_xlabel("average rank on ARI (1 = best, higher ARI; ground truth direction marked)")
+ax.set_yticks([])
+ax.set_ylim(clique_y - 0.06 * len(cd.cliques) - 0.1, 0.6)
+ax.set_title(f"Friedman p={cd.friedman_pvalue:.1e}, Nemenyi CD={cd.critical_difference:.2f}")
+ax.invert_xaxis()
+fig.tight_layout()
+plt.show()
+```
+
+## SMAA confidence
+
+`smaa` samples weight vectors from a Dirichlet over the three-metric simplex, runs the pipeline once per sample, and reports the confidence factor per method: the share of samples in which that method is top-ranked. A method with a confidence factor near 1 is top-ranked under almost any weighting.
+
+```{python}
+smaa_report = smaa(pooled, polarity, n_samples=2000, method="topsis", seed=0)
+print("confidence factor (share of weight samples ranked first), nonzero only:")
+for i in np.argsort(-smaa_report.confidence_factor):
+    if smaa_report.confidence_factor[i] > 0:
+        print(f"  {duo.method_names[i]:12s}  {smaa_report.confidence_factor[i]:.3f}")
+```
+
+```{python}
+fig, ax = plt.subplots(figsize=(8.0, 3.5))
+ax.bar(range(n_methods), smaa_report.confidence_factor, color="tab:green")
+ax.set_xticks(range(n_methods))
+ax.set_xticklabels(duo.method_names, rotation=90)
+ax.set_xlabel("clustering method")
+ax.set_ylabel("SMAA confidence factor (share top-ranked)")
+ax.set_ylim(0, 1)
+ax.set_title("SMAA over 2000 Dirichlet weight draws (method=topsis)")
+fig.tight_layout()
+plt.show()
+```
+
+## Smallest weight perturbation
+
+`smallest_weight_perturbation` reports, under SAW, the smallest single-weight change that swaps any ranked-above pair. It also flags whether the top-ranked method is fragile, that is, whether some single weight can be moved by less than the fragility threshold (default 0.05) to push it off the top rank.
+
+```{python}
+ts = smallest_weight_perturbation(pooled, polarity, weights="equal", method="saw")
+top_method = duo.method_names[int(np.argmin(ts.base.ranks))]
+print(f"top-ranked under equal weights / SAW: {top_method}")
+print(f"top rank is fragile: {ts.top_rank_is_fragile}")
 if ts.most_fragile_pair is not None:
     p = ts.most_fragile_pair
     print(
-        f"most fragile pair: {methods[p.higher]} > {methods[p.lower]}, "
-        f"flips by changing weight on {metric_ids[p.criterion]!r} by {p.delta:+.3f}"
+        f"most fragile ordered pair: {duo.method_names[p.higher]} over "
+        f"{duo.method_names[p.lower]}, flips by changing the weight on "
+        f"{analysis_metrics[p.criterion]!r} by {p.delta:+.3f}"
     )
-print(f"top rank is fragile: {ts.top_rank_is_fragile}")
 ```
 
-## Across-dataset aggregation
+## Recommendation
 
-When the benchmark has a tool by dataset by metric tensor rather than a tool by metric matrix, `aggregate_across_datasets` reduces the dataset axis for each metric using the rule declared on the card. Runtime takes geometric mean (Smith 1988, ratio-scale convention); ARI takes arithmetic mean.
+Under the default pipeline (equal weights, SAW) on ARI, runtime and Shannon entropy difference pooled across the twelve datasets, Seurat ranks first, and it stays first across all sixteen weighting-by-method configurations tested above. The SMAA analysis puts Seurat top-ranked in about 99 percent of random weight draws, and the weight-perturbation check finds its top rank is not fragile: no single weight change within the threshold dislodges it. On the composite, RaceID2 and SAFE rank near the bottom.
 
-```{python}
-from beam.mcda import aggregate_across_datasets
+The critical-difference diagram qualifies this. On ARI alone, the per-dataset ranks favour SC3 (best average ARI rank), with Seurat tied close behind, and the Friedman test is clearly significant (p well below 0.05), so the methods are not all equivalent. But the Nemenyi critical difference is large relative to the rank spread, so most pairs sit inside overlapping cliques and are not separable on ARI at twelve datasets. The composite ranks Seurat first because it also pools strong runtime and entropy-difference scores, not because it is the single best on ARI. The honest reading is that Seurat is a stable top choice across these three metrics and these weightings, while the gap between the upper-middle methods on ARI alone is within the noise the test can resolve.
 
-# Stand-in per-dataset ARI for one method across three datasets.
-ari_per_dataset = np.array([[0.80, 0.85, 0.90]])
-runtime_per_dataset = np.array([[10.0, 100.0, 1000.0]])
-
-ari_agg = aggregate_across_datasets(
-    ari_per_dataset,
-    rule=props[0].recommended_aggregation_across_datasets,
-)
-runtime_agg = aggregate_across_datasets(
-    runtime_per_dataset,
-    rule=props[1].recommended_aggregation_across_datasets,
-)
-print(f"ARI ({props[0].recommended_aggregation_across_datasets}): {ari_agg[0]:.3f}")
-print(f"runtime ({props[1].recommended_aggregation_across_datasets}): {runtime_agg[0]:.3f}")
-```
-
-## What is missing
-
-This vignette is a starter. To run on the real Duo 2018 data we still need to :
-
-1. Replace the synthetic matrix with the published 14 methods by 12 datasets by 4 metrics tensor from Duo et al. 2018.
-2. Aggregate within each dataset, then combine across datasets using `aggregate_across_datasets`.
-3. Compare to the rankings reported in the original paper.
-4. Add cards for Shannon entropy difference and cluster-count deviation.
+This matches the expected narrative for Seurat (stable top choice) and for RaceID2 (a consistent low performer). It diverges on FlowSOM: here FlowSOM sits mid-pack on the composite, not among the lowest, so the expected "RaceID2 and FlowSOM are consistent low performers" holds for RaceID2 but not for FlowSOM on this metric set and pooling.

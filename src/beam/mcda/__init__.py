@@ -6,6 +6,7 @@ from .cd import (
     critical_difference,
     nemenyi_critical_difference,
 )
+from .comet import comet
 from .cross_dataset import aggregate_across_datasets
 from .facade import Result, run, run_from_registry
 from .normalize import (
@@ -19,36 +20,54 @@ from .perturbation import (
     WeightPerturbationReport,
     smallest_weight_perturbation,
 )
+from .promethee import promethee_ii
 from .sensitivity import SensitivityReport, leave_one_metric_out
 from .smaa import SMAAReport, smaa
 from .topsis import topsis
 from .validate import IncompatibleScaleError, validate_for_aggregation
-from .weights import entropy_weights, equal_weights
+from .vikor import vikor
+from .weights import (
+    InconsistentPairwiseMatrixError,
+    ahp_weights,
+    critic_weights,
+    entropy_weights,
+    equal_weights,
+    merec_weights,
+    standard_deviation_weights,
+)
 
 __all__ = [
     "STRATEGIES",
     "CriticalDifferenceReport",
     "IncompatibleScaleError",
+    "InconsistentPairwiseMatrixError",
     "PairPerturbation",
     "Result",
     "SMAAReport",
     "SensitivityReport",
     "WeightPerturbationReport",
     "aggregate_across_datasets",
+    "ahp_weights",
+    "comet",
+    "critic_weights",
     "critical_difference",
     "entropy_weights",
     "equal_weights",
     "leave_one_metric_out",
+    "merec_weights",
     "min_max_normalize",
     "nemenyi_critical_difference",
     "normalization_warnings",
     "normalize",
+    "promethee_ii",
     "rank",
     "run",
     "run_from_registry",
     "smaa",
     "smallest_weight_perturbation",
+    "standard_deviation_weights",
     "topsis",
     "validate_for_aggregation",
+    "vikor",
     "weighted_sum",
 ]

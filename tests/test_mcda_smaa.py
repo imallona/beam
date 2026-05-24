@@ -109,7 +109,23 @@ def test_records_n_samples_and_seed():
 
 def test_rejects_unknown_method():
     with pytest.raises(ValueError, match="unknown method"):
-        smaa(_toy_scores(), _TOY_POLARITY, method="vikor")
+        smaa(_toy_scores(), _TOY_POLARITY, method="not_a_method")
+
+
+@pytest.mark.parametrize("method", ["vikor", "promethee_ii", "comet"])
+def test_supports_new_aggregations(method):
+    """SMAA runs on each new aggregation and records the method on the report."""
+    report = smaa(_toy_scores(), _TOY_POLARITY, n_samples=64, method=method, seed=0)
+    assert report.method == method
+    assert report.base.method == method
+
+
+@pytest.mark.parametrize("method", ["vikor", "promethee_ii", "comet"])
+def test_new_aggregations_yield_valid_rank_acceptability(method):
+    """Rows of the rank acceptability index sum to 1 and confidence is its rank-1 column."""
+    report = smaa(_toy_scores(), _TOY_POLARITY, n_samples=128, method=method, seed=0)
+    np.testing.assert_allclose(report.rank_acceptability_index.sum(axis=1), 1.0)
+    np.testing.assert_allclose(report.confidence_factor, report.rank_acceptability_index[:, 0])
 
 
 def test_rejects_one_dimensional_scores():

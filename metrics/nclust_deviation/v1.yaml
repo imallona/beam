@@ -1,0 +1,84 @@
+id: nclust_deviation
+version: v1
+name: Cluster-count deviation from the truth
+aliases:
+  - nclust.vs.true
+  - cluster_count_deviation
+description: |
+  Deviation of the estimated number of clusters from the true number of clusters, as used in the Duo 2018 clustering benchmark (the nclust.vs.true column). It is the absolute difference between the number of clusters a method reports and the number of clusters in the reference partition. A value of 0 means the method recovered the correct cluster count; larger values mean it over- or under-clustered. This metric is sparsely populated in Duo 2018: 101 of the 168 method by data set cells are missing, because several methods do not report a fixed cluster count for every data set, so callers should expect many NaN entries and account for partial coverage when aggregating.
+citations:
+  - text: "Duo A, Robinson MD, Soneson C. A systematic performance evaluation of clustering methods for single-cell RNA-seq data. F1000Research 2018, 7:1141."
+    doi: "10.12688/f1000research.15666.3"
+metric_kind: derived
+measurand: absolute difference between the estimated and the true number of clusters
+task:
+  - clustering
+requires_ground_truth: true
+ground_truth:
+  description: a reference partition of the same elements, whose number of distinct clusters is the target count
+  shape: vector
+  dtype: nominal_label
+inputs:
+  - role: predicted_partition
+    shape: vector
+    dtype: nominal_label
+    description: cluster assignment per element from the method under evaluation
+  - role: true_partition
+    shape: vector
+    dtype: nominal_label
+    description: reference partition; same length as predicted_partition
+output:
+  shape: scalar
+  dtype: float
+  description: absolute difference in cluster counts, a non-negative number
+semantics:
+  scale_type: ratio
+  scale_rationale: |
+    The quantity is the absolute difference between two cluster counts, so it has a genuine zero (the estimated count equals the true count) and ratios are meaningful (a deviation of four is twice as far off as a deviation of two). It is unbounded above because a method can report arbitrarily many clusters. In Duo 2018 the observed values run from 0 to 7.
+  range:
+    lower: 0
+    upper: null
+    lower_inclusive: true
+  polarity: lower_is_better
+  monotonic: true
+  meaningful_zero: true
+  allowed_transformations:
+    - affine
+    - rank
+  uncertainty_model:
+    type: none
+comparability:
+  comparable_within:
+    - same_dataset
+  aggregation_rules:
+    - small_unbounded_count_deviation_takes_arithmetic_mean_across_datasets
+    - geometric_mean_undefined_here_because_a_zero_deviation_is_the_best_outcome
+  recommended_aggregation_across_datasets: arithmetic_mean
+  recommended_normalization: rank
+implementations:
+  - name: duoclustering2018
+    language: r
+    package: DuoClustering2018
+    function: plot_nclust
+    license: GPL-2.0-or-later
+    repo_url: https://bioconductor.org/packages/DuoClustering2018
+    citation: "Duo A, Robinson MD, Soneson C. F1000Research 2018, 7:1141."
+examples:
+  - description: estimated cluster count matches the true count
+    inputs:
+      predicted_n_clusters: 4
+      true_n_clusters: 4
+    expected_output: 0.0
+    tolerance: 1.0e-12
+  - description: method reports three clusters too many
+    inputs:
+      predicted_n_clusters: 7
+      true_n_clusters: 4
+    expected_output: 3.0
+    tolerance: 1.0e-12
+provenance:
+  author: Izaskun Mallona
+  contact: izaskun.mallona@gmail.com
+  created: "2026-05-24"
+  modified: "2026-05-24"
+  license: CC-BY-4.0

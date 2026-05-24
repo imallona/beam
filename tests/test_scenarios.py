@@ -255,6 +255,12 @@ def test_transportation_infeasible_cells_are_nan():
     assert not feas[m("plane"), t("urban_hop")]  # a small plane does not do urban hops
     assert feas[m("boat"), t("open_water")]
     assert feas[m("plane"), t("long_distance")]
+    assert not feas[m("trail_running"), t("open_water")]  # trail running cannot cross water
+    assert feas[m("trail_running"), t("mud")]
+    assert not feas[m("e_bike"), t("open_water")]  # an e-bike cannot cross water
+    assert feas[m("e_bike"), t("flat_road")]
+    assert feas[m("kayak"), t("open_water")]  # a kayak is a water mode
+    assert not feas[m("kayak"), t("flat_road")]  # a kayak does not run on dry land
 
 
 def test_transportation_no_mode_runs_on_every_terrain():
@@ -272,9 +278,55 @@ def test_transportation_fastest_mode_per_terrain():
     }
     assert fastest["flat_road"] == "train"
     assert fastest["mud"] == "motorcycle"
+    assert fastest["uphill"] == "motorcycle"
     assert fastest["open_water"] == "boat"
     assert fastest["long_distance"] == "plane"
     assert fastest["urban_hop"] == "train"
+
+
+def test_transportation_trail_running_crosses_over_road_running():
+    """Trail running is slower than road running on the flat road but faster on
+    mud and uphill: the within-terrain crossover the example illustrates."""
+    b = transportation_benchmark()
+    speed = b.metric("speed")
+    m = b.mode_names.index
+    t = b.terrain_names.index
+    road = m("running")
+    trail = m("trail_running")
+    assert speed[trail, t("flat_road")] < speed[road, t("flat_road")]
+    assert speed[trail, t("mud")] > speed[road, t("mud")]
+    assert speed[trail, t("uphill")] > speed[road, t("uphill")]
+
+
+def test_transportation_e_bike_crosses_over_bicycle():
+    """An e-bike is faster than a bicycle on the flat road and the urban hop but
+    slower uphill, a second within-terrain crossover among the light modes."""
+    b = transportation_benchmark()
+    speed = b.metric("speed")
+    m = b.mode_names.index
+    t = b.terrain_names.index
+    bike = m("bicycle")
+    ebike = m("e_bike")
+    assert speed[ebike, t("flat_road")] > speed[bike, t("flat_road")]
+    assert speed[ebike, t("urban_hop")] > speed[bike, t("urban_hop")]
+    assert speed[ebike, t("uphill")] < speed[bike, t("uphill")]
+
+
+def test_transportation_kayak_outranks_boat_on_cost_and_co2():
+    """The kayak is slower than the motorboat on open water but cheaper and zero
+    CO2, so it outranks the boat on cost and CO2 while losing on speed."""
+    b = transportation_benchmark()
+    m = b.mode_names.index
+    t = b.terrain_names.index
+    speed = b.metric("speed")
+    cost = b.metric("cost")
+    co2 = b.metric("co2")
+    kayak = m("kayak")
+    boat = m("boat")
+    water = t("open_water")
+    assert speed[kayak, water] < speed[boat, water]
+    assert cost[kayak, water] < cost[boat, water]
+    assert co2[kayak, water] < co2[boat, water]
 
 
 def test_transportation_single_terrain_mcda_runs():
@@ -290,3 +342,67 @@ def test_transportation_single_terrain_mcda_runs():
     )
     assert out.ranks.shape == (len(b.mode_names),)
     assert set(out.ranks.tolist()) == set(range(1, len(b.mode_names) + 1))
+
+
+def test_transportation_feasible_submatrix_drops_nan_rows():
+    """The submatrix on a terrain keeps only the feasible modes and is NaN-free."""
+    b = transportation_benchmark()
+    names, sub = b.feasible_submatrix("open_water")
+    assert names == ("kayak", "boat", "plane")
+    assert sub.shape == (3, len(b.metric_names))
+    assert not np.isnan(sub).any()
+
+
+def test_transportation_feasible_submatrix_full_on_long_distance():
+    """Every mode is feasible on long distance, so the submatrix keeps all rows."""
+    b = transportation_benchmark()
+    names, sub = b.feasible_submatrix("long_distance")
+    assert names == b.mode_names
+    assert sub.shape == (len(b.mode_names), len(b.metric_names))
+    assert not np.isnan(sub).any()
+
+
+def test_transportation_feasible_submatrix_runs_through_mcda():
+    """The dropped-NaN submatrix is directly consumable by run()."""
+    b = transportation_benchmark()
+    names, sub = b.feasible_submatrix("open_water")
+    out = run(
+        sub,
+        b.polarity,
+        normalization=list(b.normalization),
+        method="saw",
+        metric_ids=list(b.metric_names),
+    )
+    assert out.ranks.shape == (len(names),)
+    assert set(out.ranks.tolist()) == set(range(1, len(names) + 1))
+
+
+def test_transportation_feasible_submatrix_rejects_unknown_terrain():
+    b = transportation_benchmark()
+    with pytest.raises(ValueError, match="unknown terrain"):
+        b.feasible_submatrix("space")
+
+
+def test_transportation_common_feasible_block_ground_modes():
+    """The four ground modes share five terrains; open water is excluded."""
+    b = transportation_benchmark()
+    block_modes = ("foot", "running", "bicycle", "motorcycle")
+    terrains, block = b.common_feasible_block(block_modes)
+    assert set(terrains) == {"flat_road", "mud", "uphill", "long_distance", "urban_hop"}
+    assert "open_water" not in terrains
+    assert block.shape == (len(block_modes), len(terrains))
+    assert not np.isnan(block).any()
+
+
+def test_transportation_common_feasible_block_rejects_unknown_mode():
+    b = transportation_benchmark()
+    with pytest.raises(ValueError, match="unknown mode"):
+        b.common_feasible_block(("foot", "rocket"))
+
+
+def test_transportation_common_feasible_block_water_and_land_share_only_long_distance():
+    """A boat and a land mode overlap only on long distance, the one terrain both run on."""
+    b = transportation_benchmark()
+    terrains, block = b.common_feasible_block(("boat", "train"))
+    assert terrains == ("long_distance",)
+    assert block.shape == (2, 1)

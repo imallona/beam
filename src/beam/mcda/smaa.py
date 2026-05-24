@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .facade import Result, run
+from .facade import _KNOWN_METHODS, Result, run
 
 
 @dataclass(frozen=True)
@@ -76,7 +76,9 @@ def smaa(
     n_samples
         Number of weight vectors to draw. Defaults to 1000.
     method
-        Aggregation method forwarded to ``run``. ``"saw"`` or ``"topsis"``.
+        Aggregation method forwarded to ``run``. Any of the five methods
+        supported by ``run``: ``"saw"``, ``"topsis"``, ``"vikor"``,
+        ``"promethee_ii"`` or ``"comet"``.
     alpha
         Optional length ``n_metrics`` concentration vector for the
         Dirichlet draw. Defaults to ones, which gives a uniform
@@ -99,8 +101,8 @@ def smaa(
         raise ValueError(f"polarity has {len(polarity)} entries but scores has {n_metrics} columns")
     if n_samples < 1:
         raise ValueError(f"n_samples must be at least 1; got {n_samples}")
-    if method not in ("saw", "topsis"):
-        raise ValueError(f"unknown method {method!r}; supported: ('saw', 'topsis')")
+    if method not in _KNOWN_METHODS:
+        raise ValueError(f"unknown method {method!r}; supported: {_KNOWN_METHODS}")
 
     if alpha is None:
         alpha_arr = np.ones(n_metrics)

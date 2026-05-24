@@ -27,6 +27,10 @@ Python is the canonical implementation. R-only methods run via reticulate or sub
 - Two parallel implementations: doubles maintenance, drifts.
 - Pure R: pymcdm has no R equivalent.
 
+## Update (2026-05-24)
+
+beam now depends on pymcdm at runtime. The MCDA aggregation algorithms (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET) are delegated to pymcdm rather than hand-coded in beam. pymcdm has moved from the dev extra to the core runtime dependencies, so it must be installed for beam to import. See ADR 0008 for the rationale.
+
 ## References
 
 - https://github.com/Valdecy/pymcdm

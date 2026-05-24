@@ -45,6 +45,7 @@ from the top-ranked method under the card defaults:
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 import numpy as np
@@ -423,14 +424,18 @@ class TransportationBenchmark:
     benchmark and does not use the metric registry; the metrics carry their
     own polarity and normalization here.
 
-    The point of the example is twofold. First, no mode is fastest on every
-    terrain (a boat is best on water, a small plane on the long leg, a
+    The point of the example is threefold. First, no mode is fastest on every
+    terrain (a boat is fastest on water, a small plane on the long leg, a
     motorcycle off-road), which is the method-by-dataset interaction that a
     single global ranking hides. Second, some modes do not run on some
     terrains at all (a boat off-road, a small plane on an urban hop). Those
     cells are NaN. Because no mode is feasible on every terrain, a single
     pooled ranking over all modes is not even well defined, so the honest
-    output is per-terrain.
+    output is per-terrain. Third, the slower modes cross over within the land
+    terrains: trail running is slower than road running on the flat road but
+    faster on mud and uphill, and an e-bike is faster than a bicycle on the
+    flat road and the urban hop but slower uphill. A pooled speed order over
+    these modes reports one ranking that is wrong on at least one terrain.
 
     Fields:
         mode_names: the transport modes (rows).
@@ -457,29 +462,122 @@ class TransportationBenchmark:
         """The (n_modes, n_terrains) slice for one metric name."""
         return self.scores[:, :, self.metric_names.index(name)]
 
+    def feasible_submatrix(self, terrain: str) -> tuple[tuple[str, ...], np.ndarray]:
+        """Return the modes feasible on one terrain and their score submatrix.
+
+        On a given terrain only some modes run. This drops the modes whose
+        cells are NaN on that terrain and returns the remaining mode names
+        together with the dense ``(n_feasible_modes, n_metrics)`` score
+        matrix, ready to pass to ``beam.mcda.run``. This is the per-terrain,
+        example-level NaN handling the transportation vignette documents:
+        instead of imputing or pooling across terrains, each terrain is
+        analysed over the modes that actually run on it.
+
+        Parameters
+        ----------
+        terrain
+            One of ``terrain_names``.
+
+        Returns
+        -------
+        tuple of (tuple of str, numpy.ndarray)
+            The feasible mode names in original row order, and the
+            ``(n_feasible_modes, n_metrics)`` score matrix with no NaN.
+
+        Raises
+        ------
+        ValueError
+            If ``terrain`` is not in ``terrain_names``.
+        """
+        if terrain not in self.terrain_names:
+            raise ValueError(f"unknown terrain {terrain!r}; expected one of {self.terrain_names}")
+        column = self.terrain_names.index(terrain)
+        mask = self.feasible()[:, column]
+        rows = np.nonzero(mask)[0]
+        names = tuple(self.mode_names[i] for i in rows)
+        submatrix = self.scores[rows, column, :]
+        return names, submatrix
+
+    def common_feasible_block(
+        self,
+        modes: Sequence[str],
+    ) -> tuple[tuple[str, ...], np.ndarray]:
+        """Return a block of modes and the terrains on which all of them run.
+
+        A critical-difference diagram needs a complete tool by dataset table
+        with no missing cells. Because no mode runs on every terrain, the
+        honest way to build such a table is to restrict to a set of modes and
+        keep only the terrains where every mode in the set is feasible. This
+        returns those common terrain names and the ``(n_modes, n_common)``
+        speed matrix for the requested modes, in the row order given.
+
+        Parameters
+        ----------
+        modes
+            The mode names to include in the block.
+
+        Returns
+        -------
+        tuple of (tuple of str, numpy.ndarray)
+            The terrain names where every requested mode is feasible, and the
+            ``(len(modes), n_common_terrains)`` speed matrix for those modes
+            and terrains. Speed is used because it is the metric whose ground
+            truth (fastest mode per terrain) the vignette marks.
+
+        Raises
+        ------
+        ValueError
+            If any requested mode is unknown, or if there is no terrain on
+            which all requested modes are feasible.
+        """
+        for mode in modes:
+            if mode not in self.mode_names:
+                raise ValueError(f"unknown mode {mode!r}; expected one of {self.mode_names}")
+        rows = [self.mode_names.index(mode) for mode in modes]
+        feasible = self.feasible()
+        common = [t for t in range(len(self.terrain_names)) if all(feasible[i, t] for i in rows)]
+        if not common:
+            raise ValueError(f"no terrain has every mode in {tuple(modes)} feasible")
+        terrains = tuple(self.terrain_names[t] for t in common)
+        speed = self.metric("speed")
+        block = speed[np.ix_(rows, common)]
+        return terrains, block
+
 
 def transportation_benchmark() -> TransportationBenchmark:
     """Build the illustrative transportation example with infeasible cells as NaN.
 
-    Modes: on foot, running, bicycle, motorcycle, train, boat, small plane.
+    Modes: on foot, road running, trail running, bicycle, e-bike, motorcycle,
+    train, kayak, boat, small plane.
     Terrains: flat road, mud, steep uphill, open water, long distance, urban hop.
     Metrics: speed (km/h, higher is better), cost (per km, lower is better),
     CO2 (g per km, lower is better). The fastest mode by terrain is train on
     the flat road and the urban hop, motorcycle on mud and uphill, boat on
     open water, and a small plane on the long distance. No mode runs on every
-    terrain: the boat and plane cannot use the dry land terrains, and the land
-    modes cannot cross open water.
+    terrain: the boat, kayak and plane cannot use the dry land terrains, and
+    the land modes cannot cross open water.
+
+    The slower modes cross over within the land terrains. Trail running is
+    slower than road running on the flat road but faster on mud and uphill,
+    where off-road traction helps. An e-bike is faster than a bicycle on the
+    flat road and the urban hop but slower uphill, where its weight costs it.
+    On the water, the kayak is slower than the motorboat but cheaper and zero
+    CO2, so it outranks the boat on cost and CO2 while it is slower on speed.
     """
     nan = np.nan
-    # rows: foot, running, bicycle, motorcycle, train, boat, plane
+    # rows: foot, running, trail_running, bicycle, e_bike, motorcycle, train,
+    #       kayak, boat, plane
     # cols: flat_road, mud, uphill, open_water, long_distance, urban_hop
     speed = np.array(
         [
             [5, 3, 2, nan, 5, 4],
             [12, 6, 4, nan, 10, 8],
+            [10, 8, 6, nan, 9, 7],
             [20, 8, 6, nan, 18, 15],
+            [28, 8, 4, nan, 22, 20],
             [70, 25, 30, nan, 90, 40],
             [90, nan, nan, nan, 200, 60],
+            [nan, nan, nan, 6, 8, nan],
             [nan, nan, nan, 30, 40, nan],
             [nan, nan, nan, 18, 750, nan],
         ],
@@ -489,9 +587,12 @@ def transportation_benchmark() -> TransportationBenchmark:
         [
             [0.1, 0.2, 0.3, nan, 0.1, 0.1],
             [0.1, 0.2, 0.3, nan, 0.1, 0.1],
+            [0.1, 0.2, 0.3, nan, 0.1, 0.1],
             [0.2, 0.3, 0.4, nan, 0.2, 0.2],
+            [0.25, 0.35, 0.45, nan, 0.25, 0.25],
             [0.6, 1.0, 1.0, nan, 0.6, 0.7],
             [0.3, nan, nan, nan, 0.25, 0.4],
+            [nan, nan, nan, 0.2, 0.5, nan],
             [nan, nan, nan, 0.6, 2.5, nan],
             [nan, nan, nan, 4.0, 1.2, nan],
         ],
@@ -502,8 +603,11 @@ def transportation_benchmark() -> TransportationBenchmark:
             [0, 0, 0, nan, 0, 0],
             [0, 0, 0, nan, 0, 0],
             [0, 0, 0, nan, 0, 0],
+            [0, 0, 0, nan, 0, 0],
+            [8, 10, 12, nan, 8, 8],
             [100, 150, 150, nan, 100, 110],
             [40, nan, nan, nan, 35, 45],
+            [nan, nan, nan, 0, 0, nan],
             [nan, nan, nan, 120, 250, nan],
             [nan, nan, nan, 250, 180, nan],
         ],
@@ -511,7 +615,18 @@ def transportation_benchmark() -> TransportationBenchmark:
     )
     scores = np.stack([speed, cost, co2], axis=2)
     return TransportationBenchmark(
-        mode_names=("foot", "running", "bicycle", "motorcycle", "train", "boat", "plane"),
+        mode_names=(
+            "foot",
+            "running",
+            "trail_running",
+            "bicycle",
+            "e_bike",
+            "motorcycle",
+            "train",
+            "kayak",
+            "boat",
+            "plane",
+        ),
         terrain_names=("flat_road", "mud", "uphill", "open_water", "long_distance", "urban_hop"),
         metric_names=("speed", "cost", "co2"),
         polarity=("higher_is_better", "lower_is_better", "lower_is_better"),

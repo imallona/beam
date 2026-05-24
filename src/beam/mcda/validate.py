@@ -12,7 +12,7 @@ from collections.abc import Sequence
 
 from ..cards import MetricProperties
 
-_ARITHMETIC_METHODS = ("saw", "topsis")
+_ARITHMETIC_METHODS = ("saw", "topsis", "vikor", "promethee_ii", "comet")
 
 # The transform each normalization strategy applies, expressed as the set of
 # allowed_transformations labels that license it. A column passes if its card
@@ -39,10 +39,10 @@ def validate_for_aggregation(
 
     Two rules, applied per column:
 
-    1. Scale type. SAW and TOPSIS rely on weighted arithmetic on the
-       normalized matrix. A nominal column has no order and an ordinal
-       column has no unit, so neither method is licit. Only interval and
-       ratio scales pass.
+    1. Scale type. SAW, TOPSIS, VIKOR, PROMETHEE II and COMET all rely on
+       weighted arithmetic on the normalized matrix. A nominal column has no
+       order and an ordinal column has no unit, so none of these methods is
+       licit on them. Only interval and ratio scales pass.
     2. Allowed transformations. The pipeline rescales each column with the
        strategy named in ``strategies`` (defaulting to ``min_max``). The
        card must permit the transform that strategy applies: ``affine`` or

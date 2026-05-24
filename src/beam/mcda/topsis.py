@@ -3,6 +3,17 @@
 from __future__ import annotations
 
 import numpy as np
+from pymcdm.methods import TOPSIS
+
+
+def _identity_normalization(matrix: np.ndarray, cost: bool | None = None) -> np.ndarray:
+    """Return the matrix unchanged.
+
+    beam normalizes scores before aggregation, so the matrix already lies in
+    [0, 1] with every column oriented higher is better. This passthrough lets
+    pymcdm operate on that matrix directly instead of normalizing it again.
+    """
+    return matrix
 
 
 def topsis(normalized: np.ndarray, weights: np.ndarray) -> np.ndarray:
@@ -20,9 +31,16 @@ def topsis(normalized: np.ndarray, weights: np.ndarray) -> np.ndarray:
     where D+(i) and D-(i) are the Euclidean distances from tool i to A+
     and A-. Higher closeness is better.
 
+    The computation is delegated to ``pymcdm.methods.TOPSIS`` with an
+    identity normalization, so pymcdm runs directly on beam's already
+    normalized matrix, and with all criteria typed as profit (+1) because the
+    matrix is oriented higher is better. The native loop has been replaced by
+    that call.
+
     For a single tool, or when all tools are identical on every metric,
-    D+ + D- is zero and closeness is undefined. The function returns 0.5
-    in those rows so the caller still gets a usable vector.
+    D+ + D- is zero and closeness is undefined. pymcdm returns a not-a-number
+    there, so beam intercepts that case and returns 0.5 in those rows, the
+    same convention as before, so the caller still gets a usable vector.
 
     Parameters
     ----------
@@ -51,13 +69,12 @@ def topsis(normalized: np.ndarray, weights: np.ndarray) -> np.ndarray:
     if np.any(weights < 0):
         raise ValueError("weights must be non-negative")
 
-    weighted = normalized * weights[None, :]
-    ideal = weighted.max(axis=0)
-    anti_ideal = weighted.min(axis=0)
+    types = np.ones(normalized.shape[1])
+    method = TOPSIS(normalization_function=_identity_normalization)
+    with np.errstate(invalid="ignore"):
+        closeness = method(normalized, weights, types, validation=False)
 
-    dist_to_ideal = np.sqrt(((weighted - ideal[None, :]) ** 2).sum(axis=1))
-    dist_to_anti = np.sqrt(((weighted - anti_ideal[None, :]) ** 2).sum(axis=1))
-
-    denom = dist_to_ideal + dist_to_anti
-    safe_denom = np.where(denom > 0, denom, 1.0)
-    return np.where(denom > 0, dist_to_anti / safe_denom, 0.5)
+    # pymcdm yields a not-a-number when the ideal and anti-ideal coincide for a
+    # row, which happens for a single tool or for rows identical on every
+    # metric. beam fills those with 0.5 so the result stays usable.
+    return np.where(np.isfinite(closeness), closeness, 0.5)
