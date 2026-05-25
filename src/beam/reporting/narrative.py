@@ -87,6 +87,13 @@ def recommendation(result: RunResult) -> str:
         if n_metrics > 1:
             sentences.append(f"Its rank held in {held} of {n_metrics} leave-one-metric-out runs.")
 
+    if result.leave_one_dataset_out is not None:
+        lodo = result.leave_one_dataset_out
+        n_eval = len(lodo.evaluated_datasets)
+        if n_eval > 0:
+            held = round(float(lodo.rank_stability[top_idx]) * n_eval)
+            sentences.append(f"Its rank held in {held} of {n_eval} leave-one-dataset-out runs.")
+
     if result.perturbation is not None:
         pert = result.perturbation.top_rank_perturbation
         if result.perturbation.top_rank_is_fragile and pert is not None:

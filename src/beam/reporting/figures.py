@@ -105,6 +105,33 @@ def smaa_confidence_figure(
     return _fig_to_base64(fig)
 
 
+def dataset_stability_figure(
+    tool_names: tuple[str, ...],
+    rank_stability: np.ndarray,
+    ranks: np.ndarray,
+    n_datasets: int,
+) -> str:
+    """Bar chart of the per-tool leave-one-dataset-out rank stability.
+
+    Each bar is the share of leave-one-dataset-out runs in which the tool kept
+    its base rank, so a bar near 100 percent means the tool's position does not
+    depend on any single dataset. Tools are ordered by their headline rank.
+    """
+    order = np.argsort(ranks)
+    names = [tool_names[i] for i in order]
+    values = rank_stability[order] * 100.0
+    fig = Figure(figsize=(7, max(2.0, 0.4 * len(names))))
+    ax = fig.subplots()
+    ax.barh(range(len(names)), values, color="#ee8866")
+    ax.set_yticks(range(len(names)))
+    ax.set_yticklabels(names)
+    ax.invert_yaxis()
+    ax.set_xlabel(f"rank held across {n_datasets} leave-one-dataset-out runs (percent)")
+    ax.set_ylabel("tool (ordered by headline rank)")
+    ax.set_xlim(0, 100)
+    return _fig_to_base64(fig)
+
+
 def critical_difference_figure(
     tool_names: tuple[str, ...],
     average_ranks: np.ndarray,

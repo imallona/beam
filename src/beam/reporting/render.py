@@ -117,6 +117,14 @@ def _build_context(
         context["loo"] = _loo_summary(result)
     if result.perturbation is not None:
         context["perturbation"] = _perturbation_summary(result)
+    if result.leave_one_dataset_out is not None:
+        context["lodo"] = _lodo_summary(result)
+        context["lodo_figure"] = figures.dataset_stability_figure(
+            result.tool_names,
+            result.leave_one_dataset_out.rank_stability,
+            res.ranks,
+            len(result.leave_one_dataset_out.evaluated_datasets),
+        )
 
     cd = _critical_difference_section(result, registry)
     if cd is not None:
@@ -148,6 +156,23 @@ def _loo_summary(result: RunResult) -> dict[str, Any]:
         "most_influential_metric": influential,
         "max_rank_shift": int(loo.max_rank_shift),
         "n_metrics": n_metrics,
+    }
+
+
+def _lodo_summary(result: RunResult) -> dict[str, Any]:
+    lodo = result.leave_one_dataset_out
+    top_idx = int(np.argmin(result.result.ranks))
+    names = lodo.dataset_names
+    influential = (
+        names[lodo.most_influential_dataset]
+        if names is not None and 0 <= lodo.most_influential_dataset < len(names)
+        else str(lodo.most_influential_dataset)
+    )
+    return {
+        "top_stability_pct": f"{float(lodo.rank_stability[top_idx]) * 100:.0f}",
+        "most_influential_dataset": influential,
+        "max_rank_shift": int(lodo.max_rank_shift),
+        "n_datasets": len(lodo.evaluated_datasets),
     }
 
 

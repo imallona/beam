@@ -93,6 +93,11 @@ jobs:
           MPLBACKEND: Agg
         run: quarto render examples/transportation/transportation.qmd
 
+      - name: Render M4 vignette
+        env:
+          MPLBACKEND: Agg
+        run: quarto render examples/m4/m4.qmd
+
       - name: Upload rendered Duo vignette as artefact
         uses: actions/upload-artifact@v4
         with:
@@ -112,4 +117,11 @@ jobs:
         with:
           name: transportation-vignette
           path: examples/transportation/transportation.html
+          if-no-files-found: error
+
+      - name: Upload rendered M4 vignette as artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-vignette
+          path: examples/m4/m4.html
           if-no-files-found: error

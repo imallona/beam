@@ -7,7 +7,7 @@ from .cd import (
     nemenyi_critical_difference,
 )
 from .comet import comet
-from .cross_dataset import aggregate_across_datasets
+from .cross_dataset import aggregate_across_datasets, reduce_tensor
 from .facade import RegistryContext, Result, registry_context, run, run_from_registry
 from .normalize import (
     STRATEGIES,
@@ -21,7 +21,12 @@ from .perturbation import (
     smallest_weight_perturbation,
 )
 from .promethee import promethee_ii
-from .sensitivity import SensitivityReport, leave_one_metric_out
+from .sensitivity import (
+    DatasetSensitivityReport,
+    SensitivityReport,
+    leave_one_dataset_out,
+    leave_one_metric_out,
+)
 from .smaa import SMAAReport, smaa
 from .topsis import topsis
 from .validate import IncompatibleScaleError, validate_for_aggregation
@@ -39,6 +44,7 @@ from .weights import (
 __all__ = [
     "STRATEGIES",
     "CriticalDifferenceReport",
+    "DatasetSensitivityReport",
     "IncompatibleScaleError",
     "InconsistentPairwiseMatrixError",
     "PairPerturbation",
@@ -54,6 +60,7 @@ __all__ = [
     "critical_difference",
     "entropy_weights",
     "equal_weights",
+    "leave_one_dataset_out",
     "leave_one_metric_out",
     "merec_weights",
     "min_max_normalize",
@@ -62,6 +69,7 @@ __all__ = [
     "normalize",
     "promethee_ii",
     "rank",
+    "reduce_tensor",
     "registry_context",
     "run",
     "run_from_registry",

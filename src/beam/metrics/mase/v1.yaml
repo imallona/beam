@@ -1,0 +1,109 @@
+id: mase
+version: v1
+name: Mean Absolute Scaled Error
+aliases:
+  - mase
+description: |
+  Mean absolute forecast error scaled by the in-sample mean absolute error of
+  the seasonal naive method on the same series. A value below 1 means the
+  forecast beats the in-sample seasonal naive baseline; a value above 1 means
+  it does not. Because the scaling uses the series' own history, MASE is
+  scale-free and comparable across series of different magnitudes, and it is
+  defined even when actual values are zero.
+citations:
+  - text: "Hyndman RJ, Koehler AB. Another look at measures of forecast accuracy. International Journal of Forecasting, 2006."
+    doi: "10.1016/j.ijforecast.2006.03.001"
+  - text: "Makridakis S, Spiliotis E, Assimakopoulos V. The M4 Competition: 100,000 time series and 61 forecasting methods. International Journal of Forecasting, 2020."
+    doi: "10.1016/j.ijforecast.2019.04.014"
+metric_kind: derived
+measurand: absolute forecast error scaled by the in-sample seasonal naive error
+task:
+  - forecasting
+requires_ground_truth: true
+ground_truth:
+  description: the realized future values of the series over the forecast horizon
+  shape: vector
+  dtype: float
+inputs:
+  - role: forecast
+    shape: vector
+    dtype: float
+    description: point forecast over the horizon from the method under evaluation
+  - role: actual
+    shape: vector
+    dtype: float
+    description: realized future values; same length as forecast
+  - role: insample
+    shape: vector
+    dtype: float
+    description: the in-sample history used to compute the seasonal naive scaling denominator
+output:
+  shape: scalar
+  dtype: float
+  description: mean absolute scaled error, non-negative; 1 matches the in-sample seasonal naive method
+semantics:
+  scale_type: ratio
+  scale_rationale: |
+    The error is scaled by the in-sample seasonal naive error, so it has a
+    meaningful zero (a perfect forecast scores 0), a natural reference point at
+    1 (as accurate as the seasonal naive baseline), and well-defined ratios
+    (half the scaled error is twice as accurate on this measure). The scale is
+    ratio.
+  range:
+    lower: 0
+    upper: null
+    lower_inclusive: true
+  polarity: lower_is_better
+  monotonic: true
+  meaningful_zero: true
+  allowed_transformations:
+    - affine
+    - log
+    - rank
+  uncertainty_model:
+    type: none
+comparability:
+  comparable_within:
+    - same_dataset
+    - same_task
+    - across_tasks
+  aggregation_rules:
+    - scale_free_so_comparable_across_series
+    - arithmetic_mean_across_series_is_the_standard_pooling
+  recommended_aggregation_across_datasets: arithmetic_mean
+  recommended_normalization: min_max
+implementations:
+  - name: m4_evaluation
+    language: r
+    package: M4-methods
+    function: mase_cal
+    license: unlicensed
+    repo_url: https://github.com/Mcompetitions/M4-methods
+    citation: "M4 competition Benchmarks and Evaluation.R"
+  - name: forecast
+    language: r
+    package: forecast
+    function: accuracy
+    license: GPL-3.0-or-later
+    repo_url: https://cran.r-project.org/package=forecast
+examples:
+  - description: a perfect forecast scores zero
+    inputs:
+      forecast: [10.0, 12.0]
+      actual: [10.0, 12.0]
+      insample: [1.0, 2.0, 3.0, 4.0]
+    expected_output: 0.0
+    tolerance: 1.0e-9
+  - description: errors of 2 against a non-seasonal naive scaling of 1
+    inputs:
+      forecast: [12.0, 14.0]
+      actual: [10.0, 12.0]
+      insample: [1.0, 2.0, 3.0, 4.0]
+    expected_output: 2.0
+    tolerance: 1.0e-9
+provenance:
+  author: Izaskun Mallona
+  contact: izaskun.mallona@gmail.com
+  created: "2026-05-25"
+  modified: "2026-05-25"
+  license: CC-BY-4.0

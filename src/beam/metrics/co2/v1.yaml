@@ -1,0 +1,69 @@
+id: co2
+version: v1
+name: Carbon dioxide emissions per distance
+aliases:
+  - co2_per_km
+  - carbon_intensity
+description: |
+  Carbon dioxide emitted per kilometre travelled, in grams. A measured
+  quantity, lower is better, with a true zero for zero-emission modes such as
+  walking or cycling. Used as a domain-neutral performance metric in the
+  transportation example. Because several modes emit exactly zero, the card
+  recommends a rank normalization, which stays defined when a column carries
+  hard zeros, rather than a log rescale.
+metric_kind: measured
+measurand: carbon dioxide emitted per kilometre travelled, in grams
+task:
+  - transportation
+  - sustainability
+requires_ground_truth: false
+output:
+  shape: scalar
+  dtype: float
+  description: grams of CO2 per kilometre
+semantics:
+  scale_type: ratio
+  scale_rationale: |
+    Emissions have a true zero (a zero-emission mode emits nothing) and ratios
+    are well-defined (twice the grams per kilometre is meaningfully twice the
+    emission), so the scale is ratio.
+  range:
+    lower: 0
+    upper: null
+    lower_inclusive: true
+  polarity: lower_is_better
+  monotonic: true
+  meaningful_zero: true
+  allowed_transformations:
+    - affine
+    - rank
+  uncertainty_model:
+    type: none
+comparability:
+  comparable_within:
+    - same_dataset
+    - same_task
+  aggregation_rules:
+    - arithmetic_mean_for_a_ratio_quantity_with_hard_zeros
+    - rank_normalization_because_zero_emission_modes_break_a_log_rescale
+  recommended_aggregation_across_datasets: arithmetic_mean
+  recommended_normalization: rank
+implementations:
+  - name: emissions_over_distance
+    language: other
+    package: arithmetic
+    function: total_co2_g / distance_km
+    license: CC0-1.0
+examples:
+  - description: a zero-emission mode emits zero grams per km
+    inputs:
+      total_co2_g: 0.0
+      distance_km: 10.0
+    expected_output: 0.0
+    tolerance: 1.0e-9
+provenance:
+  author: Izaskun Mallona
+  contact: izaskun.mallona@gmail.com
+  created: "2026-05-25"
+  modified: "2026-05-25"
+  license: CC-BY-4.0

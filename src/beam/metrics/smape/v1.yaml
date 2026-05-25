@@ -1,0 +1,102 @@
+id: smape
+version: v1
+name: Symmetric Mean Absolute Percentage Error
+aliases:
+  - smape
+  - symmetric_mape
+description: |
+  Symmetric mean absolute percentage error between a point forecast and the
+  realized future values, in percent. Using the M4 competition definition,
+  each horizon step contributes 2 * |F - A| / (|F| + |A|), averaged over the
+  horizon and expressed as a percentage. The symmetric denominator bounds the
+  value in [0, 200], unlike the classic MAPE which is unbounded and undefined
+  when an actual value is zero.
+citations:
+  - text: "Makridakis S. Accuracy measures: theoretical and practical concerns. International Journal of Forecasting, 1993."
+    doi: "10.1016/0169-2070(93)90079-3"
+  - text: "Makridakis S, Spiliotis E, Assimakopoulos V. The M4 Competition: 100,000 time series and 61 forecasting methods. International Journal of Forecasting, 2020."
+    doi: "10.1016/j.ijforecast.2019.04.014"
+metric_kind: derived
+measurand: symmetric percentage error between forecast and realized values
+task:
+  - forecasting
+requires_ground_truth: true
+ground_truth:
+  description: the realized future values of the series over the forecast horizon
+  shape: vector
+  dtype: float
+inputs:
+  - role: forecast
+    shape: vector
+    dtype: float
+    description: point forecast over the horizon from the method under evaluation
+  - role: actual
+    shape: vector
+    dtype: float
+    description: realized future values; same length as forecast
+output:
+  shape: scalar
+  dtype: float
+  description: symmetric MAPE in percent, in [0, 200]
+semantics:
+  scale_type: ratio
+  scale_rationale: |
+    The error has a meaningful zero (a perfect forecast scores 0) and a
+    forecast with half the symmetric percentage error is meaningfully twice as
+    accurate on this measure, so the scale is ratio. The symmetric denominator
+    caps the value at 200.
+  range:
+    lower: 0
+    upper: 200
+    lower_inclusive: true
+    upper_inclusive: true
+  polarity: lower_is_better
+  monotonic: true
+  meaningful_zero: true
+  allowed_transformations:
+    - affine
+    - rank
+  uncertainty_model:
+    type: none
+comparability:
+  comparable_within:
+    - same_dataset
+    - same_task
+  aggregation_rules:
+    - arithmetic_mean_across_series_is_the_standard_pooling
+    - bounded_percentage_so_min_max_normalization_is_safe
+  recommended_aggregation_across_datasets: arithmetic_mean
+  recommended_normalization: min_max
+implementations:
+  - name: m4_evaluation
+    language: r
+    package: M4-methods
+    function: smape_cal
+    license: unlicensed
+    repo_url: https://github.com/Mcompetitions/M4-methods
+    citation: "M4 competition Benchmarks and Evaluation.R"
+  - name: sktime
+    language: python
+    package: sktime
+    function: MeanAbsolutePercentageError(symmetric=True)
+    license: BSD-3-Clause
+    repo_url: https://github.com/sktime/sktime
+examples:
+  - description: a perfect forecast scores zero
+    inputs:
+      forecast: [100.0, 110.0, 120.0]
+      actual: [100.0, 110.0, 120.0]
+    expected_output: 0.0
+    tolerance: 1.0e-9
+  - description: forecast of 90 against actual of 110 each step
+    inputs:
+      forecast: [90.0, 90.0]
+      actual: [110.0, 110.0]
+    expected_output: 20.0
+    tolerance: 1.0e-9
+provenance:
+  author: Izaskun Mallona
+  contact: izaskun.mallona@gmail.com
+  created: "2026-05-25"
+  modified: "2026-05-25"
+  license: CC-BY-4.0

@@ -17,7 +17,8 @@ The point of the example is to make three facts visible that the bio scenarios s
 - a comparison of weightings (equal, entropy, std, CRITIC) on the same terrain, with a note that MEREC needs a zero-free normalization and so is run under z-score;
 - a Demsar critical-difference diagram restricted to the four ground modes and the five terrains they all share;
 - SMAA (TOPSIS) on the long-distance terrain, reporting the confidence factor per mode;
-- a Triantaphyllou-Sanchez weight perturbation (SAW) on the long-distance terrain, reporting the most fragile pair.
+- a Triantaphyllou-Sanchez weight perturbation (SAW) on the long-distance terrain, reporting the most fragile pair;
+- leave-one-dataset-out on the complete water block (kayak, motorboat, plane on open water and the long distance), showing that the plane ranks first only because the long leg is in the pool: drop that terrain and the motorboat ranks first on the water itself.
 
 The data and two helpers (`feasible_submatrix`, `common_feasible_block`) live in `beam.scenarios` as `transportation_benchmark()`; they are covered by `tests/test_scenarios.py`.
 

@@ -114,6 +114,35 @@ def test_single_dataset_report_has_no_cd_section(tmp_path):
     assert "Critical difference across datasets" not in html
 
 
+def test_report_includes_leave_one_dataset_out_for_tensor(tmp_path):
+    duo = load_duo2018()
+    metric_ids = ("ari", "runtime", "shannon_entropy_diff")
+    tensor = duo.tensor(metric_ids)
+    complete = duo.complete_methods(metric_ids)
+    scores = beam.Scores(
+        values=tensor[complete],
+        tool_names=tuple(np.array(duo.method_names)[complete].tolist()),
+        metric_ids=metric_ids,
+        dataset_names=duo.dataset_names,
+        layout="long",
+    )
+    result = rank(scores, weights="equal", method="saw")
+    assert result.leave_one_dataset_out is not None
+    out = tmp_path / "duo.html"
+    write_report(result, out)
+    html = out.read_text(encoding="utf-8")
+    assert "Leave one dataset out" in html
+    assert "leave-one-dataset-out runs" in html
+
+
+def test_single_dataset_report_has_no_lodo_section(tmp_path):
+    result = _toy_result(sensitivity=True)
+    out = tmp_path / "report.html"
+    write_report(result, out)
+    html = out.read_text(encoding="utf-8")
+    assert "Leave one dataset out" not in html
+
+
 def test_ground_truth_tool_is_labelled(tmp_path):
     result = _toy_result(sensitivity=False)
     out = tmp_path / "report.html"

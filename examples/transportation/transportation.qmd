@@ -15,7 +15,7 @@ format:
 
 ## Goal
 
-The MCDA core in beam is not specific to bioinformatics. This vignette runs it on a made-up transportation example to make three points that the bio scenarios state but do not show as sharply. The modes of transport play the role of the methods, and the terrains play the role of the datasets. Each mode is scored on a terrain by speed (km/h, higher is better), cost (per km, lower is better), and CO2 (g per km, lower is better). The numbers are illustrative, kept in a plausible range so the example reads sensibly. The example does not use the metric registry: it carries its own polarity and per-metric normalization.
+The MCDA core in beam is not specific to bioinformatics. This vignette runs it on a made-up transportation example to make three points that the bio scenarios state but do not show as sharply. The modes of transport play the role of the methods, and the terrains play the role of the datasets. Each mode is scored on a terrain by speed (km/h, higher is better), cost (per km, lower is better), and CO2 (g per km, lower is better). The numbers are illustrative, kept in a plausible range so the example reads sensibly. The three metrics are bundled metric cards (`speed`, `cost`, `co2`), so this cross-domain example reads polarity and normalization from the same registry as the bioinformatics examples. Every example here goes through the cards, whether the metrics are biological or not.
 
 The first point is a method-by-dataset interaction. No mode is fastest on every terrain. A train is fastest on the flat road and the urban hop, a motorcycle on mud and uphill, a boat on open water, and a small plane on the long distance. A single global ranking over all terrains hides this.
 
@@ -33,7 +33,9 @@ import matplotlib.pyplot as plt
 
 from beam.mcda import (
     critical_difference,
+    leave_one_dataset_out,
     run,
+    run_from_registry,
     smaa,
     smallest_weight_perturbation,
 )
@@ -106,9 +108,9 @@ for t, terrain in enumerate(tb.terrain_names):
 
 ## Per-terrain MCDA with example-level NaN handling
 
-Because no mode runs on every terrain, the analysis is done one terrain at a time. On each terrain the infeasible modes are dropped (their cells are NaN) and the MCDA pipeline runs over the modes that actually run there. This is the example-level NaN handling: no imputation and no pooling across terrains, just the modes that were measured on the terrain in question. The helper `feasible_submatrix` does the row dropping and returns a dense, NaN-free score matrix ready for `run`.
+Because no mode runs on every terrain, the analysis is done one terrain at a time. On each terrain the infeasible modes are dropped (their cells are NaN) and the MCDA pipeline runs over the modes that actually run there. This is the example-level NaN handling: no imputation and no pooling across terrains, just the modes that were measured on the terrain in question. The helper `feasible_submatrix` drops the infeasible rows and returns a dense, NaN-free score matrix. `run_from_registry` then reads polarity and normalization from the `speed`, `cost` and `co2` cards.
 
-Speed and cost span orders of magnitude across modes, so they use `log_min_max`. CO2 has true zeros (walking, cycling), so it uses `rank`, which is defined when a column carries hard zeros.
+The cards declare the normalization: speed and cost span orders of magnitude across modes, so they use `log_min_max`; CO2 has true zeros (walking, cycling), so it uses `rank`, which is defined when a column carries hard zeros.
 
 A first pass uses equal weights and SAW.
 
@@ -117,12 +119,7 @@ print("per-terrain top-ranked mode, equal weights, SAW")
 print(f"{'terrain':15s}  {'top-ranked':12s}  {'fastest by speed':16s}  same?")
 for terrain in tb.terrain_names:
     names, sub = tb.feasible_submatrix(terrain)
-    out = run(
-        sub, tb.polarity,
-        normalization=list(tb.normalization),
-        method="saw",
-        metric_ids=list(tb.metric_names),
-    )
+    out = run_from_registry(sub, list(tb.metric_names), method="saw")
     top = names[int(np.argmin(out.ranks))]
     fastest = names[int(np.argmax(sub[:, 0]))]
     print(f"  {terrain:15s}  {top:12s}  {fastest:16s}  {top == fastest}")
@@ -139,13 +136,7 @@ print("per-terrain top-ranked mode, speed-heavy weights (0.8, 0.1, 0.1), SAW")
 print(f"{'terrain':15s}  {'top-ranked':12s}  {'fastest by speed':16s}  same?")
 for terrain in tb.terrain_names:
     names, sub = tb.feasible_submatrix(terrain)
-    out = run(
-        sub, tb.polarity,
-        weights=speed_heavy,
-        normalization=list(tb.normalization),
-        method="saw",
-        metric_ids=list(tb.metric_names),
-    )
+    out = run_from_registry(sub, list(tb.metric_names), weights=speed_heavy, method="saw")
     top = names[int(np.argmin(out.ranks))]
     fastest = names[int(np.argmax(sub[:, 0]))]
     print(f"  {terrain:15s}  {top:12s}  {fastest:16s}  {top == fastest}")
@@ -193,13 +184,7 @@ methods = ["saw", "topsis", "vikor", "promethee_ii", "comet"]
 ranks_by_method = {}
 print(f"{'method':14s}  ranks by mode (1 = best)")
 for m in methods:
-    out = run(
-        sub, tb.polarity,
-        weights=speed_heavy,
-        normalization=list(tb.normalization),
-        method=m,
-        metric_ids=list(tb.metric_names),
-    )
+    out = run_from_registry(sub, list(tb.metric_names), weights=speed_heavy, method=m)
     ranks_by_method[m] = out.ranks
     by_mode = {n: int(r) for n, r in zip(names, out.ranks)}
     print(f"  {m:14s}  {by_mode}")
@@ -242,19 +227,13 @@ Holding the method at SAW and the terrain at long distance, the data-driven weig
 ```{python}
 print(f"{'weighting':10s}  {'weights (speed, cost, co2)':28s}  top-ranked")
 for wname in ["equal", "entropy", "std", "critic"]:
-    out = run(
-        sub, tb.polarity,
-        weights=wname,
-        normalization=list(tb.normalization),
-        method="saw",
-        metric_ids=list(tb.metric_names),
-    )
+    out = run_from_registry(sub, list(tb.metric_names), weights=wname, method="saw")
     w_str = np.array2string(np.round(out.weights, 3), separator=", ")
     top = names[int(np.argmin(out.ranks))]
     print(f"  {wname:10s}  {w_str:28s}  {top}")
 ```
 
-MEREC is left out of the table above. It takes the logarithm of the normalized scores, so it cannot accept a column that carries a hard zero, and the card normalization here (`rank` on CO2) produces such a zero. Run with a zero-free normalization instead. Under z-score normalization MEREC reads the removal effect of each metric and weights cost and CO2 above speed, so it lands on a cheap mode at the top, the same lesson as the other data-driven weightings.
+MEREC is left out of the table above. It takes the logarithm of the normalized scores, so it cannot accept a column that carries a hard zero, and the card normalization here (`rank` on CO2) produces such a zero. This is the one place the example calls `run` directly to override the card default with a zero-free normalization. Under z-score normalization MEREC reads the removal effect of each metric and weights cost and CO2 above speed, so it lands on a cheap mode at the top, the same lesson as the other data-driven weightings.
 
 ```{python}
 merec = run(
@@ -360,6 +339,62 @@ print(f"top rank is fragile: {ts.top_rank_is_fragile}")
 ```
 
 The most fragile pair is the one that the smallest single-weight nudge can reorder. Here a change of about five thousandths to the speed weight is enough to swap the kayak and the plane, while the equal-weight top rank itself is not fragile under any single-weight change of that size. The pairing tells a user which two modes sit closest together under the current weighting, so a small revision to preferences would reorder them first.
+
+## Leave one dataset out: how much the pooled order leans on one terrain
+
+The sections above keep the analysis per terrain because no mode runs on every terrain. On a complete block, where a set of modes does run on every terrain in the block, a pooled ranking is well defined, and the next question is how much that pooled ranking leans on any single terrain. Leave-one-dataset-out answers it: pool the block, rank it, then drop one terrain, pool the rest, and re-rank. The water modes make the point sharply. The kayak, the motorboat and the small plane all run on two terrains, open water and the long distance, so they form a complete two-terrain block.
+
+```{python}
+water_modes = ("kayak", "boat", "plane")
+water_terrains = ("open_water", "long_distance")
+mode_idx = [tb.mode_names.index(m) for m in water_modes]
+terrain_idx = [tb.terrain_names.index(t) for t in water_terrains]
+water_block = tb.scores[np.ix_(mode_idx, terrain_idx, range(len(tb.metric_names)))]
+print("speed (km/h) by mode and terrain:")
+print(f"{'mode':8s}  {'open_water':>11s}  {'long_distance':>13s}")
+for i, mode in enumerate(water_modes):
+    print(f"{mode:8s}  {water_block[i, 0, 0]:11.0f}  {water_block[i, 1, 0]:13.0f}")
+```
+
+Pooling the two terrains with speed-heavy weights and SAW, then dropping each terrain in turn. The reduction across terrains is the arithmetic mean of the raw scores, one per metric.
+
+```{python}
+rules = ("arithmetic_mean",) * len(tb.metric_names)
+lodo = leave_one_dataset_out(
+    water_block, tb.polarity, rules,
+    dataset_names=water_terrains,
+    metric_ids=tb.metric_names,
+    weights=speed_heavy,
+    method="saw",
+    normalization=list(tb.normalization),
+)
+print("pooled over both terrains:", {m: int(r) for m, r in zip(water_modes, lodo.base.ranks)})
+for d, r in lodo.leave_one_out.items():
+    print(f"drop {water_terrains[d]:14s}:", {m: int(rk) for m, rk in zip(water_modes, r.ranks)})
+print()
+print("rank held across the leave-one-dataset-out runs:")
+for m, s in zip(water_modes, lodo.rank_stability):
+    print(f"  {m:8s}  {s * 100:5.0f}%")
+print(f"most influential terrain: {water_terrains[lodo.most_influential_dataset]} "
+      f"(largest rank shift {lodo.max_rank_shift})")
+```
+
+```{python}
+order = np.argsort(lodo.base.ranks)
+fig, ax = plt.subplots(figsize=(5.8, 2.6))
+ax.barh(range(len(water_modes)), lodo.rank_stability[order] * 100, color="#3a7ca5")
+ax.set_yticks(range(len(water_modes)))
+ax.set_yticklabels([water_modes[i] for i in order])
+ax.invert_yaxis()
+ax.set_xlim(0, 100)
+ax.set_xlabel("rank held across the 2 leave-one-dataset-out runs (percent)")
+ax.set_ylabel("transport mode (ordered by pooled rank)")
+ax.set_title("Water modes: leave-one-terrain-out rank stability (speed-heavy weights)")
+fig.tight_layout()
+plt.show()
+```
+
+Pooled over both terrains the plane ranks first, because its 750 km/h on the long leg pulls its mean speed far above the others. Drop the long distance and rank on open water alone, and the motorboat ranks first instead: it is the fastest mode actually on the water, where the plane is slow. Drop open water and the long-distance order stands, plane first. So the plane's first place is not a property of water travel; it is an artifact of including the long leg in the pool. The kayak ranks last in every run under speed-heavy weights. Leave-one-dataset-out turns that into a number: the plane and the motorboat each hold their rank in only half the runs, so the pooled recommendation between them hangs entirely on whether the long-distance terrain is in the pool. This is the same caution the per-terrain sections raise, now stated as a stability measure on a complete block.
 
 ## Why per-terrain is the honest output
 

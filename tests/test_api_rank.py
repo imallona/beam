@@ -34,6 +34,8 @@ def test_rank_from_array_produces_full_result():
     assert result.smaa is not None
     assert result.leave_one_out is not None
     assert result.perturbation is not None
+    # A wide (single-dataset) input has no leave-one-dataset-out analysis.
+    assert result.leave_one_dataset_out is None
 
 
 def test_rank_without_sensitivity_skips_primitives():
@@ -103,6 +105,24 @@ def test_rank_reduces_a_clean_tensor(tmp_path):
     assert result.matrix.shape == (2, 2)
     # runtime uses a geometric mean across datasets per its card.
     np.testing.assert_allclose(result.matrix[0, 1], np.sqrt(10 * 40))
+
+
+def test_rank_on_tensor_runs_leave_one_dataset_out(tmp_path):
+    path = tmp_path / "long.csv"
+    path.write_text(
+        "tool,dataset,metric,score\n"
+        "a,d1,ari,0.8\na,d2,ari,0.6\na,d3,ari,0.7\n"
+        "a,d1,runtime,10\na,d2,runtime,40\na,d3,runtime,20\n"
+        "b,d1,ari,0.5\nb,d2,ari,0.7\nb,d3,ari,0.6\n"
+        "b,d1,runtime,20\nb,d2,runtime,5\nb,d3,runtime,15\n",
+        encoding="utf-8",
+    )
+    result = rank(path, weights="equal", method="saw")
+    lodo = result.leave_one_dataset_out
+    assert lodo is not None
+    assert lodo.evaluated_datasets == (0, 1, 2)
+    assert lodo.dataset_names == ("d1", "d2", "d3")
+    np.testing.assert_array_equal(lodo.base.ranks, result.result.ranks)
 
 
 def test_rank_refuses_tensor_with_an_all_missing_metric_row(tmp_path):

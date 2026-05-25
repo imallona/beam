@@ -421,8 +421,11 @@ class TransportationBenchmark:
     The methods are transport modes and the datasets are terrains. The data
     is illustrative and made up, but the numbers are kept in a plausible
     range so the example reads sensibly. It is deliberately not a bio
-    benchmark and does not use the metric registry; the metrics carry their
-    own polarity and normalization here.
+    benchmark, yet it still goes through the metric registry: the metric ids
+    ``speed``, ``cost`` and ``co2`` resolve to bundled cards, so polarity and
+    normalization come from the ontology rather than being carried here. This
+    keeps every example, bio or not, consistent in how it reads metric
+    semantics.
 
     The point of the example is threefold. First, no mode is fastest on every
     terrain (a boat is fastest on water, a small plane on the long leg, a
@@ -440,19 +443,31 @@ class TransportationBenchmark:
     Fields:
         mode_names: the transport modes (rows).
         terrain_names: the terrains (the dataset axis).
-        metric_names: ("speed", "cost", "co2").
-        polarity: per metric, higher_is_better or lower_is_better.
-        normalization: per metric strategy for the MCDA pipeline.
+        metric_names: the metric card ids ("speed", "cost", "co2").
         scores: (n_modes, n_terrains, n_metrics) with NaN where a mode cannot
             run on a terrain.
+
+    ``polarity`` and ``normalization`` are read from the registry cards for
+    ``metric_names``, so the cards are the single source of truth.
     """
 
     mode_names: tuple[str, ...]
     terrain_names: tuple[str, ...]
     metric_names: tuple[str, ...]
-    polarity: tuple[str, ...]
-    normalization: tuple[str, ...]
     scores: np.ndarray
+
+    @property
+    def polarity(self) -> tuple[str, ...]:
+        """Per-metric polarity, read from the registry cards for ``metric_names``."""
+        return tuple(p.polarity for p in properties_for(list(self.metric_names)))
+
+    @property
+    def normalization(self) -> tuple[str, ...]:
+        """Per-metric normalization strategy, read from the registry cards."""
+        return tuple(
+            p.recommended_normalization or "min_max"
+            for p in properties_for(list(self.metric_names))
+        )
 
     def feasible(self) -> np.ndarray:
         """Boolean (n_modes, n_terrains) mask, True where the mode runs on the terrain."""
@@ -629,7 +644,5 @@ def transportation_benchmark() -> TransportationBenchmark:
         ),
         terrain_names=("flat_road", "mud", "uphill", "open_water", "long_distance", "urban_hop"),
         metric_names=("speed", "cost", "co2"),
-        polarity=("higher_is_better", "lower_is_better", "lower_is_better"),
-        normalization=("log_min_max", "log_min_max", "rank"),
         scores=scores,
     )

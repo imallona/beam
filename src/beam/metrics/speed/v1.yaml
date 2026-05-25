@@ -1,0 +1,65 @@
+id: speed
+version: v1
+name: Travel speed
+aliases:
+  - velocity
+description: |
+  Average travel speed in kilometres per hour. A measured quantity: the value
+  is distance covered divided by time taken, not a comparison of outputs. The
+  transportation example uses it, along with cost and co2, to run the registry
+  and the MCDA pipeline on a problem that has nothing to do with bioinformatics.
+metric_kind: measured
+measurand: distance covered per unit time, in kilometres per hour
+task:
+  - transportation
+  - efficiency
+requires_ground_truth: false
+output:
+  shape: scalar
+  dtype: float
+  description: speed in km/h
+semantics:
+  scale_type: ratio
+  scale_rationale: |
+    Speed has a meaningful zero (no motion) and ratios are well-defined (twice
+    the speed is meaningfully twice as fast), so the scale is ratio.
+  range:
+    lower: 0
+    upper: null
+    lower_inclusive: true
+  polarity: higher_is_better
+  monotonic: true
+  meaningful_zero: true
+  allowed_transformations:
+    - affine
+    - log
+    - rank
+  uncertainty_model:
+    type: none
+comparability:
+  comparable_within:
+    - same_dataset
+    - same_task
+  aggregation_rules:
+    - geometric_or_arithmetic_mean_for_a_ratio_quantity
+  recommended_aggregation_across_datasets: arithmetic_mean
+  recommended_normalization: log_min_max
+implementations:
+  - name: distance_over_time
+    language: other
+    package: arithmetic
+    function: distance_km / time_h
+    license: CC0-1.0
+examples:
+  - description: 120 km covered in 2 hours is 60 km/h
+    inputs:
+      distance_km: 120.0
+      time_h: 2.0
+    expected_output: 60.0
+    tolerance: 1.0e-9
+provenance:
+  author: Izaskun Mallona
+  contact: izaskun.mallona@gmail.com
+  created: "2026-05-25"
+  modified: "2026-05-25"
+  license: CC-BY-4.0

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import numpy as np
 
 _KNOWN_RULES = ("arithmetic_mean", "geometric_mean", "median", "rank_mean")
@@ -73,3 +75,93 @@ def aggregate_across_datasets(
             col_ranks[idx] = current_rank
         ranks[:, d] = col_ranks
     return ranks.mean(axis=1)
+
+
+def reduce_tensor(
+    tensor: np.ndarray,
+    rules: Sequence[str],
+    metric_ids: Sequence[str] | None = None,
+) -> np.ndarray:
+    """Fold the dataset axis of a tool by dataset by metric tensor, nan-aware.
+
+    Each metric column is reduced over the dataset axis with its own rule, so
+    the MCDA pipeline downstream sees a tool by metric matrix. Unlike
+    ``aggregate_across_datasets``, this function tolerates missing cells: a tool
+    measured on only some datasets is summarized over the datasets where it was
+    observed. A tool with no observed dataset for a metric cannot be summarized
+    and raises, since the single-matrix pipeline has no value to rank there.
+
+    When a metric column has no missing cells the reduction delegates to
+    ``aggregate_across_datasets``, so the complete-data path supports every rule
+    including ``rank_mean``. When a column has missing cells, ``rank_mean`` is
+    rejected: coverage-aware ranking across datasets is Phase 4 work tied to the
+    heterogeneity module.
+
+    Parameters
+    ----------
+    tensor
+        3D array of shape ``(n_tools, n_datasets, n_metrics)``.
+    rules
+        Length ``n_metrics`` sequence of reduction rule names, one per metric.
+        Typically sourced from each card's
+        ``recommended_aggregation_across_datasets``.
+    metric_ids
+        Optional length ``n_metrics`` labels used only in error messages.
+
+    Returns
+    -------
+    np.ndarray
+        Tool by metric matrix of shape ``(n_tools, n_metrics)``.
+
+    Raises
+    ------
+    ValueError
+        If the tensor is not 3D, the rule count does not match the metric
+        count, a tool has no observed dataset for some metric, or a
+        geometric-mean column has a non-positive observed value.
+    NotImplementedError
+        If ``rank_mean`` is requested on a column that has missing cells.
+    """
+    tensor = np.asarray(tensor, dtype=float)
+    if tensor.ndim != 3:
+        raise ValueError(f"tensor must be 3D; got shape {tensor.shape}")
+    n_tools, _, n_metrics = tensor.shape
+    if len(rules) != n_metrics:
+        raise ValueError(f"rules has {len(rules)} entries but tensor has {n_metrics} metrics")
+
+    out = np.empty((n_tools, n_metrics), dtype=float)
+    for j in range(n_metrics):
+        label = metric_ids[j] if metric_ids is not None else f"index {j}"
+        out[:, j] = _reduce_column(tensor[:, :, j], rules[j], label)
+    return out
+
+
+def _reduce_column(per_dataset: np.ndarray, rule: str, label: object) -> np.ndarray:
+    """Reduce one metric's tool by dataset slice to a tool vector, nan-aware."""
+    if rule not in _KNOWN_RULES:
+        raise ValueError(f"unknown rule {rule!r}; supported: {_KNOWN_RULES}")
+
+    observed = ~np.isnan(per_dataset)
+    if not observed.any(axis=1).all():
+        missing = np.where(~observed.any(axis=1))[0].tolist()
+        raise ValueError(
+            f"metric {label!r} has tool rows with no observed dataset (indices {missing}); "
+            "reduce or analyze per dataset, or use the heterogeneity module"
+        )
+
+    if observed.all():
+        return aggregate_across_datasets(per_dataset, rule)
+
+    if rule == "arithmetic_mean":
+        return np.nanmean(per_dataset, axis=1)
+    if rule == "median":
+        return np.nanmedian(per_dataset, axis=1)
+    if rule == "geometric_mean":
+        if np.nanmin(per_dataset) <= 0:
+            raise ValueError(f"geometric_mean reduction for metric {label!r} needs positive scores")
+        return np.exp(np.nanmean(np.log(per_dataset), axis=1))
+    # rank_mean
+    raise NotImplementedError(
+        f"rank_mean cross-dataset reduction for metric {label!r} with missing cells is "
+        "Phase 4 (coverage-aware) work; reduce per dataset first"
+    )

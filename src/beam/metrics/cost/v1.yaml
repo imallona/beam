@@ -1,0 +1,66 @@
+id: cost
+version: v1
+name: Monetary cost per distance
+aliases:
+  - cost_per_km
+description: |
+  Monetary cost of travel per kilometre, in a generic currency unit. A measured
+  quantity, lower is better. One of the three metrics in the transportation
+  example, which exercises the registry and the MCDA pipeline outside
+  bioinformatics.
+metric_kind: measured
+measurand: monetary cost incurred per kilometre travelled
+task:
+  - transportation
+  - efficiency
+requires_ground_truth: false
+output:
+  shape: scalar
+  dtype: float
+  description: cost per kilometre in a generic currency unit
+semantics:
+  scale_type: ratio
+  scale_rationale: |
+    Cost has a meaningful zero (free) and ratios are well-defined (twice the
+    cost per kilometre is meaningfully twice as expensive), so the scale is
+    ratio.
+  range:
+    lower: 0
+    upper: null
+    lower_inclusive: true
+  polarity: lower_is_better
+  monotonic: true
+  meaningful_zero: true
+  allowed_transformations:
+    - affine
+    - log
+    - rank
+  uncertainty_model:
+    type: none
+comparability:
+  comparable_within:
+    - same_dataset
+    - same_task
+  aggregation_rules:
+    - geometric_or_arithmetic_mean_for_a_ratio_quantity
+  recommended_aggregation_across_datasets: arithmetic_mean
+  recommended_normalization: log_min_max
+implementations:
+  - name: cost_over_distance
+    language: other
+    package: arithmetic
+    function: total_cost / distance_km
+    license: CC0-1.0
+examples:
+  - description: 30 currency units over 150 km is 0.2 per km
+    inputs:
+      total_cost: 30.0
+      distance_km: 150.0
+    expected_output: 0.2
+    tolerance: 1.0e-9
+provenance:
+  author: Izaskun Mallona
+  contact: izaskun.mallona@gmail.com
+  created: "2026-05-25"
+  modified: "2026-05-25"
+  license: CC-BY-4.0

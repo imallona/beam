@@ -80,6 +80,14 @@
 {{ loo.n_metrics }} leave-one-metric-out runs. Removing <code>{{ loo.most_influential_metric }}</code>
 caused the largest rank change, a shift of {{ loo.max_rank_shift }}.</p>
 {% endif %}
+{% if lodo %}
+<h3>Leave one dataset out</h3>
+<img src="data:image/png;base64,{{ lodo_figure }}" alt="rank stability per tool across dataset omissions">
+<p>The top-ranked tool kept its rank in {{ lodo.top_stability_pct }} percent of the
+{{ lodo.n_datasets }} leave-one-dataset-out runs. Omitting dataset
+<code>{{ lodo.most_influential_dataset }}</code> caused the largest rank change, a shift of
+{{ lodo.max_rank_shift }}.</p>
+{% endif %}
 {% if perturbation %}
 <h3>Smallest weight perturbation</h3>
 {% if perturbation.top_rank_is_fragile %}

@@ -56,19 +56,19 @@ This project is inspired by [omnibenchark](https://github.com/omnibenchmark/omni
 
 # Status
 
-Early stage, now installable end to end. The schema, the seed metric registry, the MCDA primitives, an ontology-aware entry point, three sensitivity primitives, a cross-dataset aggregator, and a simulated test suite are in place. The decision module is complete: five aggregations (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET), five objective and subjective weighting schemes, and a re-analysis of the real Duo 2018 clustering benchmark. Phase 2 added the user-facing layer: a CSV loader, the `beam.rank` procedural API, a self-contained HTML report, a reproducibility manifest, a declarative `beam.yaml` runner, and a `beam` command-line interface. Heterogeneity diagnostics (Bradley-Terry trees, mixed-effects models) are planned for later releases.
+Early stage, now installable end to end. The schema, the seed metric registry, the MCDA primitives, an ontology-aware entry point, four sensitivity primitives, a cross-dataset aggregator, and a simulated test suite are in place. The decision module is complete: five aggregations (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET), five objective and subjective weighting schemes, and a re-analysis of the real Duo 2018 clustering benchmark. Phase 2 added the user-facing layer: a CSV loader, the `beam.rank` procedural API, a self-contained HTML report, a reproducibility manifest, a declarative `beam.yaml` runner, and a `beam` command-line interface. Heterogeneity diagnostics (Bradley-Terry trees, mixed-effects models) are planned for later releases.
 
 What is in HEAD:
 
 - A JSON Schema (draft 2020-12) for metric cards, covering identity, kind, inputs, output, semantics (scale, polarity, range, allowed transformations, uncertainty), comparability (including a `recommended_aggregation_across_datasets` enum), implementations, examples, and provenance.
-- Nine seed metric cards: `ari`, `runtime`, `nmi`, `peak_memory`, `accuracy`, `f1_score`, `silhouette`, `shannon_entropy_diff`, `nclust_deviation`.
+- Fourteen seed metric cards across three domains, showing the registry is domain neutral: clustering and efficiency (`ari`, `runtime`, `nmi`, `peak_memory`, `accuracy`, `f1_score`, `silhouette`, `shannon_entropy_diff`, `nclust_deviation`), forecasting (`smape`, `mase`), and the illustrative transportation metrics (`speed`, `cost`, `co2`).
 - `beam.cards`: card loader, `MetricCard` dataclass, `Registry`, and two bridges to the MCDA pipeline: `polarities_for(metric_ids)` (just polarity) and `properties_for(metric_ids)` (polarity, scale_type, range bounds, allowed transformations, recommended cross-dataset aggregation).
 - `beam.mcda`: normalization (`min_max_normalize` with optional declared bounds, plus the strategy dispatcher `normalize`), weighting (`equal_weights`, `entropy_weights`, `standard_deviation_weights`, `critic_weights`, `merec_weights` objective, and `ahp_weights` subjective), aggregation (`weighted_sum` for SAW, `topsis`, `vikor`, `promethee_ii`, `comet`), ranking (`rank`), and two entry points: the lower-level `run(...)` and the ontology-aware `run_from_registry(...)` which pulls polarity and bounds from the registry and refuses incompatible scale types via `validate_for_aggregation`. The five aggregations wrap pymcdm: beam normalizes by metric card, then calls pymcdm with an identity normalization so pymcdm runs on the already-normalized matrix. beam keeps the higher-is-better convention (VIKOR returns -Q). The weighting schemes stay beam's own, since pymcdm's reject the zeros beam's normalization produces and pymcdm has no AHP.
-- Sensitivity primitives: `leave_one_metric_out` (rank stability under metric omission), `smaa` (Dirichlet weight sampling, rank acceptability index, central weight vector per tool, confidence factor, for all five aggregations), and `smallest_weight_perturbation` (Triantaphyllou-Sanchez closed-form weight delta for SAW, numeric for the other aggregations).
+- Sensitivity primitives: `leave_one_metric_out` (rank stability under metric omission), `leave_one_dataset_out` (rank stability under dataset omission, on a tensor input, nan-aware), `smaa` (Dirichlet weight sampling, rank acceptability index, central weight vector per tool, confidence factor, for all five aggregations), and `smallest_weight_perturbation` (Triantaphyllou-Sanchez closed-form weight delta for SAW, numeric for the other aggregations).
 - `aggregate_across_datasets`: reduce a tool by dataset matrix for one metric using the rule declared on its card (arithmetic_mean for bounded interval/ratio, geometric_mean for unbounded ratio per Smith 1988, median, or rank_mean).
-- `beam.scenarios`: canonical simulated benchmark scenarios with documented ground truth (`random` with anti-correlated trade-offs, `dominant`, `ties`, `odd_dataset` where one method is best on most datasets but a different method is best on one odd dataset), plus two normalization-failure examples where the top-ranked method under plain min-max differs from the one under the card defaults. Used by the test suite and by a simulated scenarios vignette. `beam.datasets.load_duo2018` loads the real Duo et al. 2018 clustering benchmark (14 methods by 12 datasets by 4 metrics) vendored under `src/beam/data/`.
+- `beam.scenarios`: canonical simulated benchmark scenarios with documented ground truth (`random` with anti-correlated trade-offs, `dominant`, `ties`, `odd_dataset` where one method is best on most datasets but a different method is best on one odd dataset), plus two normalization-failure examples where the top-ranked method under plain min-max differs from the one under the card defaults. Used by the test suite and by a simulated scenarios vignette. `beam.datasets.load_duo2018` loads the real Duo et al. 2018 clustering benchmark (14 methods by 12 datasets by 4 metrics) vendored under `src/beam/data/`. `beam.datasets.load_m4` loads a small results table derived from the M4 forecasting competition (25 methods by 6 frequency bands by 2 metrics), reduced from the GPL-3 M4comp2018 data by `src/beam/data/reduce_m4.R`.
 - CI: ruff lint, ruff format, pytest on Python 3.12 and 3.13, R-side metric card validation via `jsonvalidate`, and Quarto rendering of both vignettes with artefact upload.
-- Three worked vignettes under `examples/`: the Duo 2018 walkthrough on the real published data, a simulated scenarios report that runs the full report layout on every canonical scenario, and a cross-domain transportation example that exercises every aggregation and weighting scheme where terrain coverage is partial.
+- Four worked vignettes under `examples/`: the Duo 2018 walkthrough on the real published data, a simulated scenarios report that runs the full report layout on every canonical scenario, a cross-domain transportation example that exercises every aggregation and weighting scheme where terrain coverage is partial, and an M4 forecasting example on a large real non-bio benchmark. All four read metric semantics from the registry.
 
 ## Install
 
@@ -118,8 +118,9 @@ src/beam/
   mcda/                         normalize, weights (equal, entropy, std, critic, merec, ahp),
                                 topsis, weighted_sum, vikor, promethee_ii, comet, rank, run,
                                 run_from_registry, registry_context, validate_for_aggregation,
-                                leave_one_metric_out, smaa, smallest_weight_perturbation,
-                                critical_difference, aggregate_across_datasets, Result
+                                leave_one_metric_out, leave_one_dataset_out, smaa,
+                                smallest_weight_perturbation, critical_difference,
+                                aggregate_across_datasets, reduce_tensor, Result
   api.py                        load-rank-report procedural API: rank, RunResult
   reporting/                    Self-contained HTML report (write_report, exposed as beam.report)
   manifest.py                   Run manifest: hashes, card versions, software fingerprint
@@ -141,6 +142,7 @@ examples/
   duo2018/duo2018.qmd           Walkthrough vignette on the real Duo 2018 data
   scenarios/scenarios.qmd       Consistency-check vignette across canonical scenarios
   transportation/transportation.qmd  Cross-domain example across all methods
+  m4/m4.qmd                     M4 forecasting competition, a large real non-bio benchmark
 docs/
   adr/                          Architectural decision records
   findings/                     Empirical findings log

@@ -1,0 +1,159 @@
+---
+title: "M4 forecasting competition: a large real benchmark"
+author: "Izaskun Mallona"
+date: today
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-location: left
+    embed-resources: true
+    code-tools: true
+    fig-width: 6
+    fig-height: 3.5
+---
+
+## Goal
+
+This vignette runs beam on the M4 forecasting competition (Makridakis, Spiliotis and Assimakopoulos 2020), a large real benchmark from outside bioinformatics. M4 forecast 100,000 anonymized time series across six frequency bands (yearly, quarterly, monthly, weekly, daily, hourly). Each submitted method was scored by two error metrics, sMAPE and MASE, both lower is better. beam reads those two metrics from its registry as the cards `smape` and `mase`, treats the six frequency bands as the dataset axis, and runs the same pipeline as the bioinformatics examples.
+
+The point is to show three things on real data. The registry does not care about the domain: forecasting metrics carry polarity, scale and normalization the same way clustering metrics do. The method ranking depends heavily on the frequency band, which is why leave-one-dataset-out and the critical-difference diagram across frequencies matter here. And the choice of how to pool the bands changes which method ranks first, so the recommendation is partly a decision about pooling rather than a fact about the methods.
+
+## Provenance of the bundled table
+
+beam does not ship the 100,000 series. It ships a small derived table, `src/beam/data/M4_2018_by_frequency.csv`, computed once from the GPL-3 `M4comp2018` data, which carries the realized future values and the point forecasts of the top 25 methods. The reduction is recorded in `src/beam/data/reduce_m4.R` and was run as follows:
+
+```
+git clone https://github.com/carlanetto/M4comp2018.git
+cd M4comp2018 && git lfs pull          # the data is stored via git-lfs
+# commit 3c75dcd25c72c631f04bff1a017d9917d0e7251c, R 4.3.3
+Rscript reduce_m4.R                    # writes M4_2018_by_frequency.csv
+```
+
+`reduce_m4.R` computes, for each of the top 25 methods and each frequency band, the mean sMAPE and mean MASE over the series in that band, using the M4 metric definitions (sMAPE with the symmetric denominator; MASE scaled by the in-sample seasonal naive error, with seasonal period 1 for yearly, weekly and daily, 4 for quarterly, 12 for monthly, 24 for hourly). The reduction reproduces the published competition figures: the winner (Smyl, the ES-RNN) computes to an overall sMAPE of 11.374 and MASE of 1.536, matching the M4 paper. The table is GPL-3, derived from GPL-3 data; cite Makridakis, Spiliotis and Assimakopoulos (2020) when using it.
+
+## Load the table
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+import beam
+from beam.datasets import load_m4
+from beam.cards import properties_for
+
+m4 = load_m4()
+print("methods:", len(m4.method_names), "(rank order, winner first:", m4.method_names[0] + ")")
+print("frequency bands:", m4.frequency_names)
+print("series per band:", dict(zip(m4.frequency_names, m4.n_series.tolist())))
+print("metrics:", m4.metric_ids)
+```
+
+## Read the metric semantics from the cards
+
+`properties_for` pulls the `smape` and `mase` cards. Both are lower is better ratio metrics. sMAPE is bounded in [0, 200] so its card recommends min-max normalization; MASE is an unbounded scaled error and also normalizes by min-max here. Both pool across datasets by arithmetic mean.
+
+```{python}
+for p in properties_for(list(m4.metric_ids)):
+    print(
+        f"{p.id:6s}  polarity={p.polarity:15s}  scale={p.scale_type:6s}  "
+        f"norm={p.recommended_normalization:8s}  across_datasets={p.recommended_aggregation_across_datasets}"
+    )
+```
+
+## One MCDA run through the registry
+
+The tensor is dense (every top-25 method has a score on every band), so it goes straight into `beam.rank`. The headline run uses equal weights and SAW. The input is a method by band by metric tensor, so `beam.rank` pools the six bands per metric with each card's rule, then ranks. It also runs the default sensitivity analysis, including leave-one-dataset-out across the bands.
+
+```{python}
+scores = beam.Scores(
+    values=m4.tensor(),
+    tool_names=m4.method_names,
+    metric_ids=m4.metric_ids,
+    dataset_names=m4.frequency_names,
+    layout="long",
+)
+run = beam.rank(scores, weights="equal", method="saw", seed=0)
+order = np.argsort(run.result.ranks)
+print("top five under equal weights / SAW (each band weighted equally):")
+for i in order[:5]:
+    print(f"  {run.result.ranks[i]:>2d}  {m4.method_names[i]}")
+```
+
+The method that ranks first here need not be the official competition winner. The official M4 ranking pools by OWA over all 100,000 series, so the monthly and yearly bands (48,000 and 23,000 series) dominate. beam treats each band as one dataset and weights the six equally, which lifts methods that do well on the small high-frequency bands. So the top method depends on the pooling choice. The next sections make that dependence visible rather than settling on one number.
+
+## Ranking by frequency band
+
+The per-band sMAPE shows why the pooled order is not the whole story. The same method can lead on one band and trail on another.
+
+```{python}
+smape = m4.tensor(("smape",))[:, :, 0]
+n_methods = len(m4.method_names)
+n_bands = len(m4.frequency_names)
+
+# Rank methods within each band by sMAPE (1 = lowest sMAPE on that band).
+band_ranks = np.empty((n_methods, n_bands), dtype=int)
+for b in range(n_bands):
+    band_ranks[:, b] = np.argsort(np.argsort(smape[:, b])) + 1
+
+fig, ax = plt.subplots(figsize=(7.0, 7.5))
+im = ax.imshow(band_ranks, cmap="RdYlGn_r", aspect="auto", vmin=1, vmax=n_methods)
+ax.set_xticks(range(n_bands))
+ax.set_xticklabels(m4.frequency_names, rotation=45, ha="right")
+ax.set_yticks(range(n_methods))
+ax.set_yticklabels(m4.method_names)
+ax.set_xlabel("frequency band (dataset axis)")
+ax.set_ylabel("forecasting method")
+ax.set_title("Per-band sMAPE rank (1 = lowest sMAPE on that band)")
+cbar = fig.colorbar(im, ax=ax, ticks=[1, n_methods])
+cbar.set_label("sMAPE rank (1 = best)")
+fig.tight_layout()
+plt.show()
+```
+
+## Leave one frequency band out
+
+`beam.rank` ran leave-one-dataset-out across the six bands. For each band it is dropped, the remaining five are pooled, the methods are re-ranked, and the result is compared to the all-band ranking. A method with low stability owes its position to one band.
+
+```{python}
+lodo = run.leave_one_dataset_out
+top_idx = int(np.argmin(run.result.ranks))
+print(f"bands evaluated: {len(lodo.evaluated_datasets)} of {n_bands}")
+print(f"most influential band: {lodo.dataset_names[lodo.most_influential_dataset]} "
+      f"(largest rank shift {lodo.max_rank_shift})")
+print()
+order = np.argsort(run.result.ranks)
+print(f"{'method':16s}  pooled rank  rank held across leave-one-band-out runs")
+for i in order[:8]:
+    print(f"{m4.method_names[i]:16s}  {run.result.ranks[i]:>4d}        {lodo.rank_stability[i] * 100:5.0f}%")
+```
+
+```{python}
+order = np.argsort(run.result.ranks)
+fig, ax = plt.subplots(figsize=(7.0, 7.5))
+ax.barh(range(n_methods), lodo.rank_stability[order] * 100, color="tab:orange")
+ax.set_yticks(range(n_methods))
+ax.set_yticklabels([m4.method_names[i] for i in order])
+ax.invert_yaxis()
+ax.set_xlim(0, 100)
+ax.set_xlabel(f"rank held across {len(lodo.evaluated_datasets)} leave-one-band-out runs (percent)")
+ax.set_ylabel("forecasting method (ordered by pooled rank)")
+ax.set_title("Leave-one-frequency-band-out rank stability (equal weights, SAW)")
+fig.tight_layout()
+plt.show()
+```
+
+The hourly band is the most influential. It has only a few hundred series and very different dynamics from the long yearly and quarterly series, so a method tuned for it moves a lot in the ranking when it is dropped. This is the forecasting version of the method-by-dataset interaction the other examples show.
+
+## Report
+
+`beam.report` writes the whole run to one self-contained HTML file: the ranking, the per-band sensitivity, a critical-difference diagram across the six bands (the input is a complete tensor), and a recommendation paragraph.
+
+```{python}
+beam.report(run, "m4_report.html", ground_truth_tool="Smyl")
+print("wrote m4_report.html")
+```
+
+## Recommendation
+
+Pooled with equal weight per frequency band and SAW over sMAPE and MASE, the ranking favours methods that do well across all six bands, not only on the high-volume monthly and yearly series. The official competition order is different: it pools by OWA weighted by the number of series, so the monthly and yearly bands dominate and the ES-RNN of Smyl ranks first. The leave-one-band-out analysis points at the hourly band as the one the ranking leans on most, and with only six bands the critical-difference diagram has little power to separate the top methods. The top methods are close together, and which one comes first turns on whether the bands are weighted equally or by series count. beam writes that choice into the manifest instead of leaving it implicit.

@@ -32,3 +32,36 @@ Missing cells are the literal string `NA`. The counts are 5 in `ARI`, 5 in `elap
 ### License
 
 The Duo 2018 article is open access under CC-BY 4.0. The DuoClustering2018 Bioconductor package is released under GPL (>= 2), as listed on its Bioconductor landing page. This bundled CSV is redistributed under those terms; cite Duo, Robinson and Soneson (2018) when using it.
+
+## M4_2018_by_frequency.csv
+
+A method by frequency by metric results table derived from the M4 forecasting competition (Makridakis, Spiliotis and Assimakopoulos 2020).
+
+### Shape
+
+25 methods (the top 25 by competition OWA rank, in rank order) by 6 frequency bands (Yearly, Quarterly, Monthly, Weekly, Daily, Hourly) by 2 metrics. The long CSV has one row per method and band with columns `method, frequency, smape, mase, n_series`. The two metrics map to the bundled registry as `smape` and `mase`, both lower is better.
+
+### How it was generated
+
+beam does not ship the 100,000 raw series, only this small derived table. It was computed once from the GPL-3 `M4comp2018` R package, which carries the realized future values and the point forecasts of the top 25 methods. The reduction script is `reduce_m4.R` in this folder. The exact steps:
+
+```
+git clone https://github.com/carlanetto/M4comp2018.git
+cd M4comp2018 && git lfs pull          # M4.rda is stored via git-lfs
+# source commit 3c75dcd25c72c631f04bff1a017d9917d0e7251c, R 4.3.3
+Rscript reduce_m4.R                    # writes M4_2018_by_frequency.csv
+```
+
+`reduce_m4.R` computes, per method per band, the mean sMAPE and mean MASE over the series in that band. sMAPE uses the M4 symmetric definition `2*|F-A|/(|F|+|A|)` averaged over the horizon, in percent. MASE scales the mean absolute error by the in-sample seasonal naive error, with seasonal period `m` = 1 for Yearly, Weekly and Daily, 4 for Quarterly, 12 for Monthly, 24 for Hourly. Method labels come from `submission_info` (the author surname; benchmark rows keep their names such as Theta, ARIMA, ETS).
+
+### Reproducibility check
+
+The reduction reproduces the published competition figures: the winner (Smyl, the ES-RNN) computes to an overall sMAPE of 11.374 and MASE of 1.536, which matches the M4 paper. The numeric reproduction is shown in the M4 vignette; the loader is covered by `tests/test_datasets_m4.py`.
+
+### Note on pooling
+
+The official M4 ranking pools by OWA over all 100,000 series, so it is weighted by series count and dominated by the monthly and yearly bands. beam treats each band as one dataset and weights them equally by default, which can put a different method first. This is a deliberate, recorded choice, not a discrepancy in the data.
+
+### License
+
+`M4comp2018` is GPL-3. This table is derived from that GPL-3 data and is redistributed under the same terms. The unlicensed M4 results spreadsheet in the `Mcompetitions/M4-methods` repository was not used. Cite Makridakis, Spiliotis and Assimakopoulos (2020), The M4 Competition: 100,000 time series and 61 forecasting methods, International Journal of Forecasting, DOI 10.1016/j.ijforecast.2019.04.014.

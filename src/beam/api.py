@@ -31,18 +31,20 @@ from .cards import Registry
 from .io import Scores, load_scores
 from .manifest import build_manifest
 from .mcda import (
+    DatasetSensitivityReport,
     RegistryContext,
     Result,
     SensitivityReport,
     SMAAReport,
     WeightPerturbationReport,
+    leave_one_dataset_out,
     leave_one_metric_out,
+    reduce_tensor,
     registry_context,
     run_from_registry,
     smaa,
     smallest_weight_perturbation,
 )
-from .mcda.cross_dataset import aggregate_across_datasets
 
 _DEFAULT_SMAA_SAMPLES = 1000
 _DEFAULT_SEED = 42
@@ -67,6 +69,9 @@ class RunResult:
         sensitivity analysis.
     smaa, leave_one_out, perturbation
         The default sensitivity outputs, or ``None`` when sensitivity was off.
+    leave_one_dataset_out
+        The leave-one-dataset-out sensitivity report, present only when the
+        input was a tensor with at least two datasets and sensitivity was on.
     manifest
         The run manifest dictionary (see ``beam.manifest``).
     """
@@ -79,6 +84,7 @@ class RunResult:
     smaa: SMAAReport | None = None
     leave_one_out: SensitivityReport | None = None
     perturbation: WeightPerturbationReport | None = None
+    leave_one_dataset_out: DatasetSensitivityReport | None = None
 
     @property
     def tool_names(self) -> tuple[str, ...]:
@@ -160,6 +166,7 @@ def rank(
     smaa_report: SMAAReport | None = None
     loo_report: SensitivityReport | None = None
     pert_report: WeightPerturbationReport | None = None
+    lodo_report: DatasetSensitivityReport | None = None
     if sensitivity:
         smaa_report = smaa(
             matrix,
@@ -190,6 +197,19 @@ def rank(
             normalization=list(context.normalization),
             baselines=list(context.baselines),
         )
+        if score_obj.is_tensor and score_obj.values.shape[1] >= 2:
+            lodo_report = leave_one_dataset_out(
+                score_obj.values,
+                context.polarity,
+                _reduction_rules(ids, reg),
+                dataset_names=score_obj.dataset_names,
+                metric_ids=ids,
+                weights=weights,
+                method=method,
+                normalization=list(context.normalization),
+                bounds=list(context.bounds),
+                baselines=list(context.baselines),
+            )
 
     manifest = build_manifest(
         scores=score_obj,
@@ -212,6 +232,7 @@ def rank(
         smaa=smaa_report,
         leave_one_out=loo_report,
         perturbation=pert_report,
+        leave_one_dataset_out=lodo_report,
     )
 
 
@@ -245,52 +266,24 @@ def _coerce_scores(
 
 
 def _matrix_for_ranking(scores: Scores, registry: Registry) -> np.ndarray:
-    if not scores.is_tensor:
-        return scores.values
-    return _reduce_across_datasets(scores, registry)
-
-
-def _reduce_across_datasets(scores: Scores, registry: Registry) -> np.ndarray:
     """Fold a tool by dataset by metric tensor to a tool by metric matrix.
 
     Each metric column is reduced over the dataset axis with the rule on its
     card (``comparability.recommended_aggregation_across_datasets``), nan-aware
     so a tool missing on some datasets is summarized over the datasets where it
-    was observed. A tool with no observations at all for a metric cannot be
-    summarized; that raises, since the single-matrix pipeline has no value to
-    rank there. Per-dataset and coverage-aware handling is the heterogeneity
-    module (Phase 4).
+    was observed. A tool with no observations at all for a metric raises, since
+    the single-matrix pipeline has no value to rank there. Per-dataset and
+    coverage-aware handling is the heterogeneity module (Phase 4).
     """
-    n_tools, _, n_metrics = scores.values.shape
-    out = np.empty((n_tools, n_metrics), dtype=float)
-    for j, metric_id in enumerate(scores.metric_ids):
-        rule = registry.get(metric_id).recommended_aggregation_across_datasets or "arithmetic_mean"
-        out[:, j] = _reduce_metric(scores.values[:, :, j], rule, metric_id)
-    return out
+    if not scores.is_tensor:
+        return scores.values
+    rules = _reduction_rules(scores.metric_ids, registry)
+    return reduce_tensor(scores.values, rules, metric_ids=scores.metric_ids)
 
 
-def _reduce_metric(per_dataset: np.ndarray, rule: str, metric_id: str) -> np.ndarray:
-    observed = ~np.isnan(per_dataset)
-    if not observed.any(axis=1).all():
-        missing = np.where(~observed.any(axis=1))[0].tolist()
-        raise ValueError(
-            f"metric {metric_id!r} has tool rows with no observed dataset (indices {missing}); "
-            "reduce or analyze per dataset, or use the heterogeneity module"
-        )
-    if rule == "arithmetic_mean":
-        return np.nanmean(per_dataset, axis=1)
-    if rule == "median":
-        return np.nanmedian(per_dataset, axis=1)
-    if rule == "geometric_mean":
-        if np.nanmin(per_dataset) <= 0:
-            raise ValueError(
-                f"geometric_mean reduction for metric {metric_id!r} needs positive scores"
-            )
-        return np.exp(np.nanmean(np.log(per_dataset), axis=1))
-    if rule == "rank_mean":
-        raise NotImplementedError(
-            f"rank_mean cross-dataset reduction for metric {metric_id!r} with missing cells is "
-            "Phase 4 (coverage-aware) work; reduce per dataset first"
-        )
-    # Fall back to the validated rule set in beam.mcda for a clean error.
-    return aggregate_across_datasets(per_dataset, rule)
+def _reduction_rules(metric_ids: Sequence[str], registry: Registry) -> list[str]:
+    """Per-metric cross-dataset reduction rules from the cards, defaulting to mean."""
+    return [
+        registry.get(mid).recommended_aggregation_across_datasets or "arithmetic_mean"
+        for mid in metric_ids
+    ]

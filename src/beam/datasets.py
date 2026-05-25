@@ -12,6 +12,16 @@ The data and metric mapping are documented in
 ``src/beam/data/README.md``. The four metrics map to the bundled metric
 registry as ARI to ``ari``, elapsed to ``runtime``, s.norm.vs.true to
 ``shannon_entropy_diff``, and nclust.vs.true to ``nclust_deviation``.
+
+The second data set is the M4 forecasting competition (Makridakis,
+Spiliotis and Assimakopoulos 2020). ``load_m4`` reads a small derived table
+into an ``M4Forecasting`` dataclass holding a method by frequency by metric
+tensor. The frequency bands (yearly, quarterly, monthly, weekly, daily,
+hourly) play the data set role, and the two metrics map to the registry as
+``smape`` and ``mase``, both lower is better. The table was computed once
+from the GPL-3 ``M4comp2018`` data; how it was generated, the source commit,
+and the reduction script are documented in ``src/beam/data/README.md`` and
+``src/beam/data/reduce_m4.R``.
 """
 
 from __future__ import annotations
@@ -173,6 +183,147 @@ class Duo2018:
             raise KeyError(
                 f"unknown metric id {metric_id!r}; available: {self.metric_ids}"
             ) from exc
+
+
+_M4_CSV_NAME: Final = "M4_2018_by_frequency.csv"
+
+# Frequency bands in increasing sampling rate (decreasing typical horizon),
+# the order the loader uses for the data set axis. The source CSV lists them
+# alphabetically.
+_M4_FREQUENCIES: Final[tuple[str, ...]] = (
+    "Yearly",
+    "Quarterly",
+    "Monthly",
+    "Weekly",
+    "Daily",
+    "Hourly",
+)
+
+_M4_METRIC_IDS: Final[tuple[str, ...]] = ("smape", "mase")
+
+_M4_POLARITY: Final[tuple[str, ...]] = ("lower_is_better", "lower_is_better")
+
+
+@dataclass(frozen=True)
+class M4Forecasting:
+    """The M4 competition results as a method by frequency by metric tensor.
+
+    The tensor is dense (every top-25 method has a score on every frequency
+    band for both metrics). The data set axis is the six M4 frequency bands.
+
+    Attributes
+    ----------
+    method_names
+        The 25 forecasting methods whose point forecasts the M4comp2018 data
+        ships, in competition rank order (Smyl, the ES-RNN winner, first).
+    frequency_names
+        The six frequency bands, in the order they index the data set axis.
+    metric_ids
+        The beam metric ids, in last-axis order: ``smape`` then ``mase``.
+    polarity
+        ``"lower_is_better"`` for both metrics, aligned with ``metric_ids``.
+    scores
+        Float array of shape (25, 6, 2) holding the mean sMAPE and mean MASE
+        per method per frequency band.
+    n_series
+        Int array of shape (6,) with the number of series in each frequency
+        band, the weight behind each column.
+    """
+
+    method_names: tuple[str, ...]
+    frequency_names: tuple[str, ...]
+    metric_ids: tuple[str, ...]
+    polarity: tuple[str, ...]
+    scores: np.ndarray
+    n_series: np.ndarray
+
+    def tensor(self, metric_ids: tuple[str, ...] | None = None) -> np.ndarray:
+        """Return the (n_methods, n_frequencies, len(metric_ids)) sub-tensor.
+
+        Parameters
+        ----------
+        metric_ids
+            Metric ids to select, in the requested order. ``None`` returns
+            both metrics in the canonical order.
+
+        Returns
+        -------
+        numpy.ndarray
+            A copy of the requested metric slices stacked along the last axis.
+
+        Raises
+        ------
+        KeyError
+            If a requested metric id is not present.
+        """
+        if metric_ids is None:
+            return self.scores.copy()
+        indices = []
+        for mid in metric_ids:
+            try:
+                indices.append(self.metric_ids.index(mid))
+            except ValueError as exc:
+                raise KeyError(f"unknown metric id {mid!r}; available: {self.metric_ids}") from exc
+        return self.scores[:, :, indices].copy()
+
+
+def load_m4() -> M4Forecasting:
+    """Load the bundled M4 forecasting results table.
+
+    Reads ``M4_2018_by_frequency.csv`` from the installed package via
+    ``importlib.resources``. The long CSV has one row per method and frequency
+    band with columns ``method, frequency, smape, mase, n_series``. The loader
+    reshapes it into a (25, 6, 2) method by frequency by metric tensor, with
+    methods kept in competition rank order and frequencies ordered from yearly
+    to hourly.
+
+    The table is a derived artefact, computed once from the GPL-3
+    ``M4comp2018`` data (the top-25 methods' point forecasts and the realized
+    values) by ``src/beam/data/reduce_m4.R``. See ``src/beam/data/README.md``
+    for the provenance, the metric definitions, and the validation against the
+    published competition figures.
+
+    Returns
+    -------
+    M4Forecasting
+        Frozen dataclass with method names, frequency names, the metric ids
+        ``smape`` and ``mase``, per-metric polarity, the (25, 6, 2) score
+        tensor, and the per-frequency series counts.
+    """
+    csv_text = resources.files(_CSV_PACKAGE).joinpath(_M4_CSV_NAME).read_text(encoding="utf-8")
+    rows = list(csv.DictReader(csv_text.splitlines()))
+
+    method_names: list[str] = []
+    for row in rows:
+        if row["method"] not in method_names:
+            method_names.append(row["method"])
+
+    freq_index = {name: i for i, name in enumerate(_M4_FREQUENCIES)}
+    method_index = {name: i for i, name in enumerate(method_names)}
+    n_methods = len(method_names)
+    n_freqs = len(_M4_FREQUENCIES)
+
+    scores = np.full((n_methods, n_freqs, len(_M4_METRIC_IDS)), np.nan, dtype=float)
+    n_series = np.zeros(n_freqs, dtype=int)
+    for row in rows:
+        mi = method_index[row["method"]]
+        fi = freq_index[row["frequency"]]
+        scores[mi, fi, 0] = float(row["smape"])
+        scores[mi, fi, 1] = float(row["mase"])
+        n_series[fi] = int(row["n_series"])
+
+    if np.isnan(scores).any():
+        missing = int(np.isnan(scores).sum())
+        raise ValueError(f"M4 table has {missing} unfilled cells; expected a dense tensor")
+
+    return M4Forecasting(
+        method_names=tuple(method_names),
+        frequency_names=_M4_FREQUENCIES,
+        metric_ids=_M4_METRIC_IDS,
+        polarity=_M4_POLARITY,
+        scores=scores,
+        n_series=n_series,
+    )
 
 
 def _parse_cell(value: str) -> float:

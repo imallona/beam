@@ -25,6 +25,7 @@ The five aggregation methods used below (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET
 import numpy as np
 import matplotlib.pyplot as plt
 
+import beam
 from beam.datasets import load_duo2018
 from beam.cards import properties_for
 from beam.mcda import (
@@ -251,9 +252,63 @@ if ts.most_fragile_pair is not None:
     )
 ```
 
+## End to end with beam.rank and beam.report
+
+The sections above call the pipeline primitives one by one. The same analysis runs in three lines through the top-level API. `beam.rank` takes the method by dataset by metric tensor, pools it across datasets per each card's rule (nan-aware), runs the MCDA pipeline, and runs the default sensitivity analysis on the same normalization context: SMAA, leave-one-metric-out, the smallest-weight perturbation, and, because the input is a tensor, leave-one-dataset-out.
+
+```{python}
+scores = beam.Scores(
+    values=duo.tensor(tuple(analysis_metrics)),
+    tool_names=tuple(duo.method_names),
+    metric_ids=tuple(analysis_metrics),
+    dataset_names=duo.dataset_names,
+    layout="long",
+)
+run = beam.rank(scores, weights="equal", method="saw", seed=0)
+print("top-ranked under equal weights / SAW:", run.top_tool)
+print("matrix ranked (methods by metrics):", run.matrix.shape)
+```
+
+Leave-one-dataset-out asks how much the ranking leans on any single dataset. For each dataset it drops that dataset, pools the remaining eleven the same way, re-ranks, and compares to the base ranking. The per-method stability is the share of those runs in which the method keeps its base rank.
+
+```{python}
+lodo = run.leave_one_dataset_out
+print(f"datasets evaluated: {len(lodo.evaluated_datasets)} of {duo.scores.shape[1]}")
+base_order = np.argsort(run.result.ranks)
+print(f"{'method':12s}  base rank  rank held across leave-one-dataset-out runs")
+for i in base_order:
+    print(f"{duo.method_names[i]:12s}  {run.result.ranks[i]:>4d}       {lodo.rank_stability[i] * 100:5.0f}%")
+
+influential = lodo.dataset_names[lodo.most_influential_dataset]
+print(f"\nmost influential dataset: {influential} (largest rank shift {lodo.max_rank_shift})")
+```
+
+```{python}
+n_eval = len(lodo.evaluated_datasets)
+order = base_order
+fig, ax = plt.subplots(figsize=(8.0, 4.0))
+ax.barh(range(n_methods), lodo.rank_stability[order] * 100, color="tab:orange")
+ax.set_yticks(range(n_methods))
+ax.set_yticklabels([duo.method_names[i] for i in order])
+ax.invert_yaxis()
+ax.set_xlabel(f"rank held across {n_eval} leave-one-dataset-out runs (percent)")
+ax.set_ylabel("clustering method (ordered by base rank)")
+ax.set_xlim(0, 100)
+ax.set_title("Leave-one-dataset-out rank stability (equal weights / SAW)")
+fig.tight_layout()
+plt.show()
+```
+
+`beam.report` writes the whole run to one self-contained HTML file: the ranking, the normalization diagnostics, every sensitivity output including the leave-one-dataset-out figure above, the critical-difference diagram, and the recommendation paragraph. Passing `ground_truth_tool` outlines the method documented to rank first on the ranking figure.
+
+```{python}
+beam.report(run, "duo2018_report.html", ground_truth_tool="Seurat")
+print("wrote duo2018_report.html")
+```
+
 ## Recommendation
 
-Under the default pipeline (equal weights, SAW) on ARI, runtime and Shannon entropy difference pooled across the twelve datasets, Seurat ranks first, and it stays first across all sixteen weighting-by-method configurations tested above. The SMAA analysis puts Seurat top-ranked in about 99 percent of random weight draws, and the weight-perturbation check finds its top rank is not fragile: no single weight change within the threshold dislodges it. On the composite, RaceID2 and SAFE rank near the bottom.
+Under the default pipeline (equal weights, SAW) on ARI, runtime and Shannon entropy difference pooled across the twelve datasets, Seurat ranks first, and it stays first across all sixteen weighting-by-method configurations tested above. The SMAA analysis puts Seurat top-ranked in about 99 percent of random weight draws, and the weight-perturbation check finds its top rank is not fragile: no single weight change within the threshold dislodges it. Leave-one-dataset-out adds the dataset axis to that account: Seurat keeps its first rank in all twelve runs that drop one dataset, so the recommendation does not hang on any single dataset. On the composite, RaceID2 and SAFE rank near the bottom.
 
 The critical-difference diagram qualifies this. On ARI alone, the per-dataset ranks favour SC3 (best average ARI rank), with Seurat tied close behind, and the Friedman test is clearly significant (p well below 0.05), so the methods are not all equivalent. But the Nemenyi critical difference is large relative to the rank spread, so most pairs sit inside overlapping cliques and are not separable on ARI at twelve datasets. The composite ranks Seurat first because it also pools strong runtime and entropy-difference scores, not because it is the single best on ARI. The honest reading is that Seurat is a stable top choice across these three metrics and these weightings, while the gap between the upper-middle methods on ARI alone is within the noise the test can resolve.
 
