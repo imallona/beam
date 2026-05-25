@@ -139,9 +139,7 @@ def test_loaded_scores_drive_run_from_registry(tmp_path):
         "tool,ari,runtime\nseurat,0.81,42.0\nsc3,0.74,310.5\nraceid,0.55,18.0\n",
     )
     scores = load_scores(path)
-    result = run_from_registry(
-        scores.values, scores.metric_ids, weights="equal", method="saw"
-    )
+    result = run_from_registry(scores.values, scores.metric_ids, weights="equal", method="saw")
     assert result.ranks.shape == (3,)
     assert set(result.ranks.tolist()) == {1, 2, 3}
 

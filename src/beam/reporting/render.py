@@ -157,9 +157,7 @@ def _perturbation_summary(result: RunResult) -> dict[str, Any]:
     summary: dict[str, Any] = {"top_rank_is_fragile": bool(pert.top_rank_is_fragile)}
     if top is not None:
         metric = (
-            result.metric_ids[top.criterion]
-            if 0 <= top.criterion < len(result.metric_ids)
-            else ""
+            result.metric_ids[top.criterion] if 0 <= top.criterion < len(result.metric_ids) else ""
         )
         summary["delta"] = f"{abs(top.delta):.3f}"
         summary["metric"] = metric

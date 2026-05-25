@@ -85,9 +85,7 @@ def recommendation(result: RunResult) -> str:
         n_metrics = len(result.metric_ids)
         held = round(stability * n_metrics)
         if n_metrics > 1:
-            sentences.append(
-                f"Its rank held in {held} of {n_metrics} leave-one-metric-out runs."
-            )
+            sentences.append(f"Its rank held in {held} of {n_metrics} leave-one-metric-out runs.")
 
     if result.perturbation is not None:
         pert = result.perturbation.top_rank_perturbation

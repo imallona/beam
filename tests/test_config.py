@@ -12,10 +12,7 @@ from beam.config import load_config, run_config
 def _scores_csv(tmp_path):
     path = tmp_path / "scores.csv"
     path.write_text(
-        "tool,ari,runtime,nmi\n"
-        "seurat,0.81,42.0,0.78\n"
-        "sc3,0.74,310.5,0.71\n"
-        "raceid,0.55,18.0,0.50\n",
+        "tool,ari,runtime,nmi\nseurat,0.81,42.0,0.78\nsc3,0.74,310.5,0.71\nraceid,0.55,18.0,0.50\n",
         encoding="utf-8",
     )
     return path
@@ -69,8 +66,7 @@ def test_run_config_selects_and_reorders_metrics(tmp_path):
     _scores_csv(tmp_path)
     cfg = _write_config(
         tmp_path,
-        "inputs:\n  scores: scores.csv\n"
-        "metrics:\n  - id: runtime\n  - id: ari\n",
+        "inputs:\n  scores: scores.csv\nmetrics:\n  - id: runtime\n  - id: ari\n",
     )
     result = run_config(cfg)
     assert result.metric_ids == ("runtime", "ari")

@@ -19,11 +19,7 @@ _SCHEMA: dict | None = None
 def _schema() -> dict:
     global _SCHEMA
     if _SCHEMA is None:
-        text = (
-            resources.files("beam")
-            .joinpath("schema", _SCHEMA_NAME)
-            .read_text(encoding="utf-8")
-        )
+        text = resources.files("beam").joinpath("schema", _SCHEMA_NAME).read_text(encoding="utf-8")
         _SCHEMA = json.loads(text)
     return _SCHEMA
 

@@ -147,8 +147,10 @@ def load_scores(
     resolved = _resolve_layout(layout, header, path)
     reg = registry if registry is not None else Registry()
 
-    scores = _read_long(rows, header, reg, path) if resolved == "long" else _read_wide(
-        rows, header, reg, path
+    scores = (
+        _read_long(rows, header, reg, path)
+        if resolved == "long"
+        else _read_wide(rows, header, reg, path)
     )
     return replace(scores, source_path=str(path))
 
@@ -172,8 +174,7 @@ def _check_metrics(metric_ids: Sequence[str], registry: Registry, path: Path) ->
     unknown = [mid for mid in metric_ids if mid not in known]
     if unknown:
         raise UnknownMetricError(
-            f"{path} names metric ids with no card: {unknown}; "
-            f"registered ids are {sorted(known)}"
+            f"{path} names metric ids with no card: {unknown}; registered ids are {sorted(known)}"
         )
 
 

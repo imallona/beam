@@ -107,8 +107,7 @@ def _cmd_validate(args: argparse.Namespace) -> int:
         raise ValueError(f"{args.scores} has no columns for {missing}")
     registry_context(ids, args.method)
     print(
-        f"ok: {scores.n_tools} tools, {len(ids)} metrics ({', '.join(ids)}), "
-        f"layout {scores.layout}"
+        f"ok: {scores.n_tools} tools, {len(ids)} metrics ({', '.join(ids)}), layout {scores.layout}"
     )
     return _EXIT_OK
 

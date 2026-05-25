@@ -2,7 +2,14 @@
 
 Every figure labels both axes. The figures are embedded directly in the HTML
 as data URIs, so a report is a single self-contained file with no external
-assets. The backend is forced to Agg so figures render on a headless host.
+assets.
+
+These functions build figures with ``matplotlib.figure.Figure`` directly,
+without ``pyplot`` and without calling ``matplotlib.use``. That matters because
+beam imports this module at package import time (``beam.report``), and switching
+the global matplotlib backend on import would break inline plotting in any
+notebook or Quarto vignette that imports beam. ``Figure.savefig`` writes a PNG
+without a GUI backend, so this still works headless.
 """
 
 from __future__ import annotations
@@ -10,17 +17,13 @@ from __future__ import annotations
 import base64
 import io
 
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.figure import Figure
 
 
-def _fig_to_base64(fig) -> str:
+def _fig_to_base64(fig: Figure) -> str:
     buffer = io.BytesIO()
     fig.savefig(buffer, format="png", dpi=110, bbox_inches="tight")
-    plt.close(fig)
     buffer.seek(0)
     return base64.b64encode(buffer.read()).decode("ascii")
 
@@ -39,7 +42,8 @@ def ranking_figure(
     order = np.argsort(ranks)
     names = [tool_names[i] for i in order]
     values = composite[order]
-    fig, ax = plt.subplots(figsize=(7, max(2.0, 0.4 * len(names))))
+    fig = Figure(figsize=(7, max(2.0, 0.4 * len(names))))
+    ax = fig.subplots()
     colors = ["#bbbbbb"] * len(names)
     edgecolors = ["none"] * len(names)
     for pos, name in enumerate(names):
@@ -66,7 +70,8 @@ def normalized_heatmap(
     order = np.argsort(ranks)
     names = [tool_names[i] for i in order]
     data = normalized[order]
-    fig, ax = plt.subplots(figsize=(1.2 * len(metric_ids) + 2, max(2.0, 0.4 * len(names))))
+    fig = Figure(figsize=(1.2 * len(metric_ids) + 2, max(2.0, 0.4 * len(names))))
+    ax = fig.subplots()
     image = ax.imshow(data, aspect="auto", cmap="viridis", vmin=0.0, vmax=1.0)
     ax.set_xticks(range(len(metric_ids)))
     ax.set_xticklabels(metric_ids, rotation=30, ha="right")
@@ -88,7 +93,8 @@ def smaa_confidence_figure(
     order = np.argsort(ranks)
     names = [tool_names[i] for i in order]
     values = confidence_factor[order] * 100.0
-    fig, ax = plt.subplots(figsize=(7, max(2.0, 0.4 * len(names))))
+    fig = Figure(figsize=(7, max(2.0, 0.4 * len(names))))
+    ax = fig.subplots()
     ax.barh(range(len(names)), values, color="#4477aa")
     ax.set_yticks(range(len(names)))
     ax.set_yticklabels(names)
@@ -113,7 +119,8 @@ def critical_difference_figure(
     order = np.argsort(average_ranks)
     names = [tool_names[i] for i in order]
     values = average_ranks[order]
-    fig, ax = plt.subplots(figsize=(7, max(2.0, 0.4 * len(names))))
+    fig = Figure(figsize=(7, max(2.0, 0.4 * len(names))))
+    ax = fig.subplots()
     ax.plot(values, range(len(names)), "o", color="#222222")
     ax.set_yticks(range(len(names)))
     ax.set_yticklabels(names)

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
+
 import numpy as np
 
 import beam
@@ -20,6 +23,22 @@ def test_report_is_exposed_at_top_level():
     assert beam.report is write_report
 
 
+def test_importing_beam_does_not_override_the_matplotlib_backend():
+    # The report figures must not force a backend (no matplotlib.use), or
+    # importing beam would break inline plotting in the Quarto vignettes. Run
+    # in a subprocess so the check starts from a clean matplotlib state.
+    script = (
+        "import matplotlib; matplotlib.use('svg');"
+        "import beam; from beam.reporting import figures; import numpy as np;"
+        "figures.ranking_figure(('a','b','c'), np.array([0.6,0.4,0.5]), np.array([1,3,2]));"
+        "b = matplotlib.get_backend().lower();"
+        "assert b == 'svg', b; print('ok')"
+    )
+    proc = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True)
+    assert proc.returncode == 0, proc.stderr
+    assert "ok" in proc.stdout
+
+
 def test_write_report_produces_self_contained_html(tmp_path):
     result = _toy_result()
     out = tmp_path / "report.html"
@@ -28,7 +47,7 @@ def test_write_report_produces_self_contained_html(tmp_path):
     assert html.startswith("<!DOCTYPE html>")
     # Figures are embedded, not linked.
     assert "data:image/png;base64," in html
-    assert "src=\"http" not in html
+    assert 'src="http' not in html
     assert result.top_tool in html
 
 
