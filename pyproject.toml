@@ -61,6 +61,7 @@ artifacts = [
     "src/beam/metrics/**/*.yaml",
     "src/beam/metrics/LICENSE.md",
     "src/beam/reporting/templates/*.j2",
+    "src/beam/heterogeneity/*.R",
 ]
 
 [tool.hatch.build.targets.sdist]

@@ -306,6 +306,52 @@ beam.report(run, "duo2018_report.html", ground_truth_tool="Seurat")
 print("wrote duo2018_report.html")
 ```
 
+## Heterogeneity: where does the ARI variance live
+
+Leave-one-dataset-out asks whether the pooled ranking hangs on any single dataset. A mixed-effects model asks a different question: how much of the score variation is a stable method effect and how much is the method-by-dataset interaction that a single ranking hides. `beam.heterogeneity.mixed_effects` fits `score ~ method + (1 | dataset)` on one metric in R's lme4, with the method as a fixed effect and the dataset as a random intercept that absorbs how easy or hard each dataset is for every method alike. The fit needs the R toolchain, so the section below runs only when it is available.
+
+```{python}
+from beam.heterogeneity import mixed_effects_from_matrix, r_available
+
+ari = duo.tensor(("ari",))[:, :, 0]
+
+if r_available():
+    me = mixed_effects_from_matrix(ari, duo.method_names, duo.dataset_names)
+    print(f"model: {me.formula}")
+    print(f"dataset shift (ICC): {me.icc_dataset:.2f} of the ARI variance")
+    print(f"residual share:      {me.residual_share:.2f} (interaction confounded with noise at one run per cell)")
+    order = np.argsort(-me.method_effects)
+    print("\nmethod          ARI marginal mean")
+    for i in order[:3]:
+        print(f"{me.method_names[i]:14s}  {me.method_effects[i]:.3f} +/- {me.method_effect_se[i]:.3f}")
+    print("\nlargest interaction residuals (method, dataset, residual):")
+    for m, ds, res in me.top_outliers(3):
+        print(f"  {m:10s} {ds:16s} {res:+.2f}")
+else:
+    me = None
+    print("R with lme4 not available; skipping the mixed-effects fit.")
+    print("Provision it with envs/heterogeneity.yml (conda or mamba).")
+```
+
+```{python}
+if me is not None:
+    order = np.argsort(me.method_effects)
+    names = [me.method_names[i] for i in order]
+    means = me.method_effects[order]
+    ses = me.method_effect_se[order]
+    fig, ax = plt.subplots(figsize=(8.0, 4.0))
+    ax.errorbar(means, range(len(names)), xerr=ses, fmt="o", color="tab:blue", capsize=3)
+    ax.set_yticks(range(len(names)))
+    ax.set_yticklabels(names)
+    ax.set_xlabel("ARI marginal mean over datasets (higher ranks first)")
+    ax.set_ylabel("clustering method (ordered by marginal mean)")
+    ax.set_title("Mixed-effects method effects on ARI, with standard errors")
+    fig.tight_layout()
+    plt.show()
+```
+
+The dataset intercept takes about 0.71 of the ARI variance, so most of the spread is datasets being uniformly easy or hard rather than methods reordering. SC3 and Seurat lead the marginal means and are not separable from each other given the standard errors, matching the critical-difference reading above. The residual share, the upper bound on the method-by-dataset interaction at one run per cell, concentrates on the two weakest methods (RaceID2 and FlowSOM) on a few simulated and four-group datasets, not on a reshuffling of the strong methods. See [the mixed-effects explanation](../../docs/explanations/heterogeneity-mixed-effects.md) and [findings 0002](../../docs/findings/0002-duo-2018-variance-decomposition.md).
+
 ## Recommendation
 
 Under the default pipeline (equal weights, SAW) on ARI, runtime and Shannon entropy difference pooled across the twelve datasets, Seurat ranks first, and it stays first across all sixteen weighting-by-method configurations tested above. The SMAA analysis puts Seurat top-ranked in about 99 percent of random weight draws, and the weight-perturbation check finds its top rank is not fragile: no single weight change within the threshold dislodges it. Leave-one-dataset-out adds the dataset axis to that account: Seurat keeps its first rank in all twelve runs that drop one dataset, so the recommendation does not hang on any single dataset. On the composite, RaceID2 and SAFE rank near the bottom.

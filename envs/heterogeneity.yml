@@ -1,0 +1,17 @@
+name: beam-heterogeneity
+# Environment for the R-backed heterogeneity diagnostics (beam.heterogeneity).
+# Python and R live in the same env so the Python wrapper can call Rscript on
+# PATH. Build it with conda or mamba:
+#   mamba env create -f envs/heterogeneity.yml
+#   conda activate beam-heterogeneity
+#   pip install -e ".[dev]"
+# The same file is the recipe for an apptainer or singularity image when conda
+# solving is not available on the target host.
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.12
+  - pip
+  - r-base>=4.3
+  - r-lme4>=1.1
+  - r-jsonlite>=1.8

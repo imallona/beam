@@ -1,0 +1,395 @@
+"""Mixed-effects variance decomposition on benchmark scores.
+
+Following Eugster, Hothorn and Leisch (2008), benchmark results for one
+metric are modelled as a mixed-effects model with the method as a fixed
+effect and the dataset as a random effect:
+
+    score ~ method + (1 | dataset)
+
+The method fixed effects give a global ranking that adjusts for the fact
+that some datasets are harder than others (a shift that lifts or lowers
+every method). The variance components split the score variation into a
+between-dataset part (the random dataset intercept) and a residual part.
+With one observation per (method, dataset) cell the residual is the
+method-by-dataset interaction confounded with measurement noise: the two
+cannot be separated without replicates. When the input does carry
+replicates (a multi-run benchmark, several runs of the same method on the
+same dataset), the richer model
+
+    score ~ method + (1 | dataset) + (1 | dataset:method)
+
+fits the interaction as its own variance component, and its share of the
+total is the formal answer to "how much of the apparent ranking is
+dataset-dependent". This is the diagnostic counterpart to
+``beam.mcda.leave_one_dataset_out``: the leave-one-out check asks whether
+the pooled ranking hangs on any single dataset; this asks how much of the
+score variance lives in the interaction at all.
+
+The model is fit by R's lme4 in a one-shot subprocess (ADR 0009). The
+``score`` values are taken as supplied for a single metric. Polarity does
+not enter a variance decomposition, but scale does, so do not mix metrics:
+pass one metric's scores per call. lme4 uses a Gaussian likelihood; for a
+bounded metric this is an approximation, and glmmTMB with a beta family is
+the documented future extension (PLAN Phase 4).
+"""
+
+from __future__ import annotations
+
+import functools
+import json
+import os
+import shutil
+import subprocess
+from collections.abc import Sequence
+from dataclasses import dataclass
+from importlib import resources
+
+import numpy as np
+
+_R_PACKAGE = "beam.heterogeneity"
+_R_SCRIPT = "mixed_effects.R"
+_PROBE_TIMEOUT_SECONDS = 30
+_FIT_TIMEOUT_SECONDS = 300
+
+
+def _rscript() -> str:
+    """Return the Rscript executable to call.
+
+    Defaults to ``Rscript`` on PATH. Set the ``BEAM_RSCRIPT`` environment
+    variable to an explicit path or wrapper script to point beam at an R
+    living elsewhere, for example an ``Rscript`` shim that runs inside an
+    apptainer or singularity container.
+    """
+    return os.environ.get("BEAM_RSCRIPT", "Rscript")
+
+
+class RNotAvailableError(RuntimeError):
+    """Raised when Rscript or a required R package is not on the system."""
+
+
+class RExecutionError(RuntimeError):
+    """Raised when the R subprocess exits with an error."""
+
+
+@functools.lru_cache(maxsize=1)
+def r_available() -> bool:
+    """Return True when Rscript and the lme4 and jsonlite packages are present.
+
+    The result is cached for the process. Tests and vignettes use this to
+    skip the analysis cleanly on a machine without the R toolchain.
+    """
+    rscript = _rscript()
+    if shutil.which(rscript) is None and not os.path.exists(rscript):
+        return False
+    probe = (
+        "quit(status = if ("
+        'requireNamespace("lme4", quietly = TRUE) && '
+        'requireNamespace("jsonlite", quietly = TRUE)'
+        ") 0L else 1L)"
+    )
+    try:
+        completed = subprocess.run(
+            [rscript, "-e", probe],
+            capture_output=True,
+            timeout=_PROBE_TIMEOUT_SECONDS,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return completed.returncode == 0
+
+
+@dataclass(frozen=True)
+class MixedEffectsReport:
+    """Outcome of a mixed-effects variance decomposition on one metric.
+
+    Attributes
+    ----------
+    method_names
+        Method labels in the order the effect estimates are reported (the
+        sorted factor levels lme4 used, not the input order).
+    method_effects
+        Estimated marginal mean per method over datasets, aligned with
+        ``method_names``. Higher means a higher score on the metric as
+        supplied, regardless of the metric's polarity.
+    method_effect_se
+        Standard error of each marginal mean, aligned with ``method_names``.
+    variance_components
+        Map from grouping factor to variance: ``"dataset"``, optionally
+        ``"dataset:method"`` (only in the interaction model), and
+        ``"Residual"``.
+    residuals
+        Per-observation residual, aligned with ``residual_methods`` and
+        ``residual_datasets`` (the rows fed to the model, with NaN scores
+        dropped).
+    residual_methods, residual_datasets
+        Method and dataset label per residual row.
+    formula
+        The R model formula that was fit.
+    formula_kind
+        ``"main"`` or ``"interaction"``, after resolving ``"auto"``.
+    has_replicates
+        True when at least one (dataset, method) cell held more than one
+        observation, so the interaction model is identifiable.
+    singular
+        lme4's singular-fit flag. A singular fit usually means a variance
+        component collapsed to its boundary (often zero) and the estimate
+        should be read with caution.
+    n_obs, n_methods, n_datasets
+        Observation and factor-level counts after dropping NaN scores.
+    loglik, aic
+        Model fit statistics.
+    warnings
+        Convergence or other warnings raised by lme4 during the fit.
+    """
+
+    method_names: tuple[str, ...]
+    method_effects: np.ndarray
+    method_effect_se: np.ndarray
+    variance_components: dict[str, float]
+    residuals: np.ndarray
+    residual_methods: tuple[str, ...]
+    residual_datasets: tuple[str, ...]
+    formula: str
+    formula_kind: str
+    has_replicates: bool
+    singular: bool
+    n_obs: int
+    n_methods: int
+    n_datasets: int
+    loglik: float
+    aic: float
+    warnings: tuple[str, ...]
+
+    @property
+    def total_variance(self) -> float:
+        """Sum of all variance components."""
+        return float(sum(self.variance_components.values()))
+
+    @property
+    def icc_dataset(self) -> float:
+        """Share of variance that is a pure between-dataset shift.
+
+        The intraclass correlation for the dataset random intercept: the
+        dataset variance over the total. A high value means most of the
+        spread in scores is datasets being easier or harder for every
+        method alike, not methods reordering across datasets.
+        """
+        total = self.total_variance
+        if total == 0.0:
+            return float("nan")
+        return self.variance_components.get("dataset", 0.0) / total
+
+    @property
+    def interaction_share(self) -> float | None:
+        """Share of variance in the method-by-dataset interaction.
+
+        Only defined for the interaction model, which needs replicates.
+        ``None`` for the main-effects model, where the interaction is
+        confounded with the residual and cannot be separated; in that case
+        read ``residual_share`` as an upper bound on the interaction.
+        """
+        if "dataset:method" not in self.variance_components:
+            return None
+        total = self.total_variance
+        if total == 0.0:
+            return float("nan")
+        return self.variance_components["dataset:method"] / total
+
+    @property
+    def residual_share(self) -> float:
+        """Share of variance in the residual.
+
+        In the main-effects model this is the method-by-dataset interaction
+        confounded with measurement noise, so it is an upper bound on the
+        interaction.
+        """
+        total = self.total_variance
+        if total == 0.0:
+            return float("nan")
+        return self.variance_components.get("Residual", 0.0) / total
+
+    def top_outliers(self, k: int = 10) -> list[tuple[str, str, float]]:
+        """Return the k (method, dataset, residual) cells with the largest absolute residual.
+
+        These are the cells where a method departs most from what its global
+        effect predicts on that dataset, the strongest single signals of
+        method-by-dataset interaction.
+        """
+        order = np.argsort(-np.abs(self.residuals))[:k]
+        return [
+            (self.residual_methods[i], self.residual_datasets[i], float(self.residuals[i]))
+            for i in order
+        ]
+
+
+def _run_r(payload: dict) -> dict:
+    """Invoke the lme4 subprocess with a JSON payload and parse its JSON reply."""
+    if not r_available():
+        raise RNotAvailableError(
+            "Rscript with the lme4 and jsonlite packages is required for the "
+            "mixed-effects analysis; check beam.heterogeneity.r_available()"
+        )
+    script = str(resources.files(_R_PACKAGE).joinpath(_R_SCRIPT))
+    try:
+        completed = subprocess.run(
+            [_rscript(), script],
+            input=json.dumps(payload),
+            capture_output=True,
+            text=True,
+            timeout=_FIT_TIMEOUT_SECONDS,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RExecutionError(
+            f"the R mixed-effects fit timed out after {_FIT_TIMEOUT_SECONDS}s"
+        ) from exc
+    if completed.returncode != 0:
+        raise RExecutionError(f"the R mixed-effects fit failed:\n{completed.stderr.strip()}")
+    try:
+        return json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise RExecutionError(
+            f"could not parse the R output as JSON:\n{completed.stdout.strip()}"
+        ) from exc
+
+
+def mixed_effects(
+    methods: Sequence[str],
+    datasets: Sequence[str],
+    scores: Sequence[float],
+    formula_kind: str = "auto",
+) -> MixedEffectsReport:
+    """Fit a mixed-effects model on one metric's scores and decompose its variance.
+
+    Parameters
+    ----------
+    methods, datasets, scores
+        Three parallel sequences, one entry per observation: the method
+        label, the dataset label, and the metric score. Rows with a NaN
+        score are dropped before fitting. Several rows sharing a (method,
+        dataset) pair are replicates and enable the interaction model.
+    formula_kind
+        ``"auto"`` (default) fits the interaction model when the input has
+        replicates and the main-effects model otherwise. ``"main"`` forces
+        ``score ~ method + (1 | dataset)``. ``"interaction"`` forces
+        ``score ~ method + (1 | dataset) + (1 | dataset:method)``, which is
+        only identifiable with replicates and otherwise yields a singular
+        fit.
+
+    Returns
+    -------
+    MixedEffectsReport
+
+    Raises
+    ------
+    ValueError
+        If the three sequences differ in length, or fewer than two methods
+        or two datasets remain after dropping NaN scores.
+    RNotAvailableError
+        If the R toolchain with lme4 is not available.
+    RExecutionError
+        If the R subprocess fails.
+    """
+    if formula_kind not in ("auto", "main", "interaction"):
+        raise ValueError(f"formula_kind must be auto, main or interaction; got {formula_kind!r}")
+    methods = [str(m) for m in methods]
+    datasets = [str(d) for d in datasets]
+    scores = np.asarray(scores, dtype=float)
+    if not (len(methods) == len(datasets) == len(scores)):
+        raise ValueError(
+            f"methods, datasets and scores must have the same length; got "
+            f"{len(methods)}, {len(datasets)}, {len(scores)}"
+        )
+
+    keep = ~np.isnan(scores)
+    methods = [m for m, k in zip(methods, keep, strict=True) if k]
+    datasets = [d for d, k in zip(datasets, keep, strict=True) if k]
+    scores = scores[keep]
+
+    if len(set(methods)) < 2:
+        raise ValueError("need at least 2 distinct methods with a non-NaN score")
+    if len(set(datasets)) < 2:
+        raise ValueError("need at least 2 distinct datasets with a non-NaN score")
+
+    payload = {
+        "method": methods,
+        "dataset": datasets,
+        "score": scores.tolist(),
+        "formula_kind": formula_kind,
+    }
+    reply = _run_r(payload)
+
+    return MixedEffectsReport(
+        method_names=tuple(reply["method_levels"]),
+        method_effects=np.asarray(reply["method_effect"], dtype=float),
+        method_effect_se=np.asarray(reply["method_effect_se"], dtype=float),
+        variance_components={k: float(v) for k, v in reply["variance_components"].items()},
+        residuals=np.asarray(reply["residuals"], dtype=float),
+        residual_methods=tuple(methods),
+        residual_datasets=tuple(datasets),
+        formula=reply["formula"],
+        formula_kind=reply["formula_kind"],
+        has_replicates=bool(reply["has_replicates"]),
+        singular=bool(reply["singular"]),
+        n_obs=int(reply["n_obs"]),
+        n_methods=int(reply["n_methods"]),
+        n_datasets=int(reply["n_datasets"]),
+        loglik=float(reply["loglik"]),
+        aic=float(reply["aic"]),
+        warnings=tuple(reply["warnings"]) if reply["warnings"] else (),
+    )
+
+
+def mixed_effects_from_matrix(
+    matrix,
+    method_names: Sequence[str],
+    dataset_names: Sequence[str],
+    formula_kind: str = "auto",
+) -> MixedEffectsReport:
+    """Fit the mixed-effects model from a method by dataset score matrix for one metric.
+
+    Convenience wrapper that flattens a 2D matrix into the long-format
+    sequences ``mixed_effects`` expects. NaN cells are carried through and
+    dropped by ``mixed_effects``.
+
+    Parameters
+    ----------
+    matrix
+        Array-like of shape ``(n_methods, n_datasets)`` holding one metric's
+        scores.
+    method_names
+        Length ``n_methods`` row labels.
+    dataset_names
+        Length ``n_datasets`` column labels.
+    formula_kind
+        Forwarded to ``mixed_effects``. A single matrix has one observation
+        per cell, so only ``"auto"`` (resolving to main) or ``"main"`` are
+        meaningful here.
+
+    Returns
+    -------
+    MixedEffectsReport
+    """
+    matrix = np.asarray(matrix, dtype=float)
+    if matrix.ndim != 2:
+        raise ValueError(f"matrix must be 2D; got shape {matrix.shape}")
+    n_methods, n_datasets = matrix.shape
+    if len(method_names) != n_methods:
+        raise ValueError(
+            f"method_names has {len(method_names)} entries but matrix has {n_methods} rows"
+        )
+    if len(dataset_names) != n_datasets:
+        raise ValueError(
+            f"dataset_names has {len(dataset_names)} entries but matrix has {n_datasets} columns"
+        )
+
+    methods: list[str] = []
+    datasets: list[str] = []
+    scores: list[float] = []
+    for mi in range(n_methods):
+        for di in range(n_datasets):
+            methods.append(str(method_names[mi]))
+            datasets.append(str(dataset_names[di]))
+            scores.append(float(matrix[mi, di]))
+    return mixed_effects(methods, datasets, scores, formula_kind=formula_kind)
