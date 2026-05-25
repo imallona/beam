@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# Validate every metric card under metrics/ against the JSON Schema, from R.
+# Validate every metric card under src/beam/metrics/ against the JSON Schema, from R.
 # Run from the repo root:
 #   Rscript tests/validate_cards.R
 
@@ -28,8 +28,8 @@ repo_root <- if (!is.null(script_dir)) {
     normalizePath(getwd())
 }
 
-schema_path <- file.path(repo_root, "schema", "metric_card.schema.json")
-metrics_dir <- file.path(repo_root, "metrics")
+schema_path <- file.path(repo_root, "src", "beam", "schema", "metric_card.schema.json")
+metrics_dir <- file.path(repo_root, "src", "beam", "metrics")
 
 if (!file.exists(schema_path)) {
     stop(sprintf("schema not found at %s", schema_path))

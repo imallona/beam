@@ -273,22 +273,76 @@ def run_from_registry(
         If any metric's declared scale type or allowed transformations
         forbid the requested aggregation.
     """
+    context = registry_context(metric_ids, method, registry=registry)
+
+    return run(
+        scores,
+        polarity=context.polarity,
+        weights=weights,
+        method=method,
+        bounds=context.bounds,
+        metric_ids=context.metric_ids,
+        normalization=context.normalization,
+        baselines=context.baselines,
+    )
+
+
+@dataclass(frozen=True)
+class RegistryContext:
+    """The card-derived inputs the pipeline needs for a set of metric ids.
+
+    Resolved once from the registry and reused by ``run_from_registry`` and by
+    the sensitivity primitives so the headline ranking and its sensitivity
+    analysis share the same per-metric normalization, bounds, and baselines.
+    """
+
+    metric_ids: tuple[str, ...]
+    polarity: tuple[str, ...]
+    normalization: tuple[str, ...]
+    bounds: tuple[Bound, ...]
+    baselines: tuple[float | None, ...]
+
+
+def registry_context(
+    metric_ids: Sequence[str],
+    method: str,
+    registry: Registry | None = None,
+) -> RegistryContext:
+    """Resolve polarity, normalization, bounds and baselines from the metric cards.
+
+    Looks up each id via ``properties_for``, picks the per-metric
+    normalization strategy from ``comparability.recommended_normalization``
+    (default ``min_max``), and validates the requested aggregation and those
+    strategies against the declared scale types and allowed transformations.
+
+    Parameters
+    ----------
+    metric_ids
+        Ordered metric ids matching the columns of the score matrix.
+    method
+        The aggregation the context will feed, validated here.
+    registry
+        Optional ``Registry``. Defaults to a fresh registry over the bundled
+        metrics.
+
+    Returns
+    -------
+    RegistryContext
+
+    Raises
+    ------
+    IncompatibleScaleError
+        If any metric's declared scale type or allowed transformations forbid
+        the requested aggregation.
+    """
     metric_ids = list(metric_ids)
     properties = properties_for(metric_ids, registry=registry)
     strategies = [p.recommended_normalization or "min_max" for p in properties]
     validate_for_aggregation(properties, method, strategies)
-
-    polarity = [p.polarity for p in properties]
-    bounds = [(p.range_lower, p.range_upper) for p in properties]
-    baselines = [p.score_of_random_baseline for p in properties]
-
-    return run(
-        scores,
-        polarity=polarity,
-        weights=weights,
-        method=method,
-        bounds=bounds,
-        metric_ids=metric_ids,
-        normalization=strategies,
-        baselines=baselines,
+    return RegistryContext(
+        metric_ids=tuple(metric_ids),
+        polarity=tuple(p.polarity for p in properties),
+        normalization=tuple(strategies),
+        bounds=tuple((p.range_lower, p.range_upper) for p in properties),
+        baselines=tuple(p.score_of_random_baseline for p in properties),
     )

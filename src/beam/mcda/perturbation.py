@@ -86,6 +86,8 @@ def smallest_weight_perturbation(
     fragility_threshold: float = 0.05,
     search_range: float = 1.0,
     tolerance: float = 1e-9,
+    normalization=None,
+    baselines=None,
 ) -> WeightPerturbationReport:
     """Compute the smallest single-weight change that swaps each pair of tools.
 
@@ -136,6 +138,11 @@ def smallest_weight_perturbation(
         (numeric path).
     bounds
         Optional declared bounds, forwarded to ``run``.
+    normalization, baselines
+        Optional per-metric normalization context forwarded to ``run``.
+        Default ``None`` keeps the ``run`` defaults. Pass the values from
+        ``beam.mcda.registry_context`` so the perturbation search rests on
+        the same normalized matrix as the headline ranking.
     fragility_threshold
         Absolute weight delta below which the top-rank flip is flagged as
         fragile in ``top_rank_is_fragile``. Default 0.05, i.e. five
@@ -155,7 +162,15 @@ def smallest_weight_perturbation(
     if method not in _KNOWN_METHODS:
         raise ValueError(f"unknown method {method!r}; supported: {_KNOWN_METHODS}")
 
-    base = run(scores, polarity, weights=weights, method=method, bounds=bounds)
+    base = run(
+        scores,
+        polarity,
+        weights=weights,
+        method=method,
+        bounds=bounds,
+        normalization=normalization,
+        baselines=baselines,
+    )
     x = base.normalized
     w = base.weights
     n_tools, n_metrics = x.shape

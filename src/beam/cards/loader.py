@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from importlib import resources
 from pathlib import Path
 from typing import Any
 
@@ -11,15 +12,19 @@ import yaml
 
 from .model import MetricCard
 
-_SCHEMA_PATH = Path(__file__).resolve().parents[3] / "schema" / "metric_card.schema.json"
+_SCHEMA_NAME = "metric_card.schema.json"
 _SCHEMA: dict | None = None
 
 
 def _schema() -> dict:
     global _SCHEMA
     if _SCHEMA is None:
-        with _SCHEMA_PATH.open() as f:
-            _SCHEMA = json.load(f)
+        text = (
+            resources.files("beam")
+            .joinpath("schema", _SCHEMA_NAME)
+            .read_text(encoding="utf-8")
+        )
+        _SCHEMA = json.loads(text)
     return _SCHEMA
 
 

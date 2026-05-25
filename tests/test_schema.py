@@ -1,22 +1,24 @@
-"""Validate that every metric card in metrics/ conforms to the metric card JSON Schema.
+"""Validate that every metric card conforms to the metric card JSON Schema.
 
-Runs in Python via jsonschema. The same schema is also validated from R in
-tests/validate_cards.R so the metric card format stays cross-language-clean
-from day one.
+The schema and the seed cards ship inside the package at beam/schema/ and
+beam/metrics/, so this test resolves them through importlib.resources, the
+same way beam itself does at runtime. The same schema is also validated from
+R in tests/validate_cards.R so the metric card format stays
+cross-language-clean from day one.
 """
 
 from __future__ import annotations
 
 import json
+from importlib import resources
 from pathlib import Path
 
 import jsonschema
 import pytest
 import yaml
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-SCHEMA_PATH = REPO_ROOT / "schema" / "metric_card.schema.json"
-METRICS_DIR = REPO_ROOT / "metrics"
+SCHEMA_PATH = Path(str(resources.files("beam").joinpath("schema", "metric_card.schema.json")))
+METRICS_DIR = Path(str(resources.files("beam").joinpath("metrics")))
 
 
 def _load_schema() -> dict:
@@ -43,7 +45,7 @@ def test_schema_itself_is_valid() -> None:
 
 
 def test_at_least_one_card_exists() -> None:
-    assert _discover_cards(), "no metric cards found under metrics/<id>/v*.yaml"
+    assert _discover_cards(), "no metric cards found under beam/metrics/<id>/v*.yaml"
 
 
 @pytest.mark.parametrize(
@@ -59,7 +61,7 @@ def test_card_validates(card_path: Path, validator: jsonschema.Draft202012Valida
         formatted = "; ".join(
             f"{'.'.join(map(str, e.path)) or '<root>'}: {e.message}" for e in errors
         )
-        pytest.fail(f"{card_path.relative_to(REPO_ROOT)} failed validation: {formatted}")
+        pytest.fail(f"{card_path.parent.name}/{card_path.name} failed validation: {formatted}")
 
 
 @pytest.mark.parametrize(

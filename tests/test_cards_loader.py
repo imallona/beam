@@ -1,13 +1,13 @@
 """Tests for the metric card loader."""
 
+from importlib import resources
 from pathlib import Path
 
 import pytest
 
 from beam.cards import load_card
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-METRICS_DIR = REPO_ROOT / "metrics"
+METRICS_DIR = Path(str(resources.files("beam").joinpath("metrics")))
 
 
 def _all_card_paths():

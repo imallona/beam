@@ -35,16 +35,16 @@ Commits do not bundle unrelated edits. One commit = one coherent change.
 
 ## Adding a metric card
 
-Cards live under `metrics/<id>/v<version>.yaml`. The directory name must match the `id` field; the filename stem must match the `version` field. This is enforced in CI.
+Cards live under `src/beam/metrics/<id>/v<version>.yaml`. The directory name must match the `id` field; the filename stem must match the `version` field. This is enforced in CI. The cards ship inside the package so an installed wheel can find them.
 
-The schema is at `schema/metric_card.schema.json`. Every required field must be present. A minimum-effort card needs `id`, `version`, `name`, `description`, `metric_kind`, `measurand`, `task`, `requires_ground_truth`, `output`, `semantics`, `comparability`, `implementations`, `examples`, and `provenance`.
+The schema is at `src/beam/schema/metric_card.schema.json`. Every required field must be present. A minimum-effort card needs `id`, `version`, `name`, `description`, `metric_kind`, `measurand`, `task`, `requires_ground_truth`, `output`, `semantics`, `comparability`, `implementations`, `examples`, and `provenance`.
 
-See `metrics/ari/v1.yaml` and `metrics/runtime/v1.yaml` for two worked examples covering the derived and the measured `metric_kind` respectively.
+See `src/beam/metrics/ari/v1.yaml` and `src/beam/metrics/runtime/v1.yaml` for two worked examples covering the derived and the measured `metric_kind` respectively.
 
 ## Licensing
 
-- Code (everything outside `metrics/`): GPL-3.0-or-later. See `LICENSE`.
-- Metric cards (`metrics/`): CC-BY-4.0. See `metrics/LICENSE.md`. By contributing a card you agree to this licensing.
+- Code (everything outside `src/beam/metrics/`): GPL-3.0-or-later. See `LICENSE`.
+- Metric cards (`src/beam/metrics/`): CC-BY-4.0. See `src/beam/metrics/LICENSE.md`. By contributing a card you agree to this licensing.
 
 ## ADR template
 

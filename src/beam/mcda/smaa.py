@@ -49,6 +49,9 @@ def smaa(
     method: str = "saw",
     alpha: Sequence[float] | None = None,
     seed: int | None = None,
+    normalization=None,
+    bounds=None,
+    baselines=None,
 ) -> SMAAReport:
     """Run an SMAA-style weight-sampling sensitivity analysis on ``scores``.
 
@@ -86,6 +89,12 @@ def smaa(
     seed
         Optional integer seed for the random generator. Recorded in the
         report so the run can be reproduced.
+    normalization, bounds, baselines
+        Optional per-metric normalization context forwarded to ``run``.
+        Default ``None`` keeps the ``run`` defaults (min-max with empirical
+        extrema). Pass the values resolved by
+        ``beam.mcda.registry_context`` so the SMAA analysis normalizes the
+        scores the same way as the headline ranking.
 
     Returns
     -------
@@ -116,11 +125,27 @@ def smaa(
     rng = np.random.default_rng(seed)
     sampled_weights = rng.dirichlet(alpha_arr, size=n_samples)
 
-    base = run(scores, polarity, weights="equal", method=method)
+    base = run(
+        scores,
+        polarity,
+        weights="equal",
+        method=method,
+        bounds=bounds,
+        normalization=normalization,
+        baselines=baselines,
+    )
 
     sampled_ranks = np.empty((n_samples, n_tools), dtype=int)
     for s in range(n_samples):
-        sampled_ranks[s] = run(scores, polarity, weights=sampled_weights[s], method=method).ranks
+        sampled_ranks[s] = run(
+            scores,
+            polarity,
+            weights=sampled_weights[s],
+            method=method,
+            bounds=bounds,
+            normalization=normalization,
+            baselines=baselines,
+        ).ranks
 
     rai = np.zeros((n_tools, n_tools), dtype=float)
     for a in range(n_tools):

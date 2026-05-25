@@ -4,12 +4,17 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Iterator, Sequence
+from importlib import resources
 from pathlib import Path
 
 from .loader import load_card
 from .model import MetricCard, MetricProperties
 
-_DEFAULT_METRICS_DIR = Path(__file__).resolve().parents[3] / "metrics"
+# The seed registry ships inside the package at beam/metrics/, so it resolves
+# the same way whether beam runs from a source checkout or an installed wheel.
+# Resolving through the beam package (which has an __init__) yields a concrete
+# filesystem path that supports glob, rather than a MultiplexedPath.
+_DEFAULT_METRICS_DIR = Path(str(resources.files("beam").joinpath("metrics")))
 
 
 def polarities_for(

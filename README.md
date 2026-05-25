@@ -56,7 +56,7 @@ This project is inspired by [omnibenchark](https://github.com/omnibenchmark/omni
 
 # Status
 
-Early stage. The schema, the seed metric registry, the MCDA primitives, an ontology-aware entry point, three sensitivity primitives, a cross-dataset aggregator, and a simulated test suite are in place. The decision module is complete: five aggregations (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET), five objective and subjective weighting schemes, and a re-analysis of the real Duo 2018 clustering benchmark. Heterogeneity diagnostics (Bradley-Terry trees, mixed-effects models) are planned for later releases.
+Early stage, now installable end to end. The schema, the seed metric registry, the MCDA primitives, an ontology-aware entry point, three sensitivity primitives, a cross-dataset aggregator, and a simulated test suite are in place. The decision module is complete: five aggregations (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET), five objective and subjective weighting schemes, and a re-analysis of the real Duo 2018 clustering benchmark. Phase 2 added the user-facing layer: a CSV loader, the `beam.rank` procedural API, a self-contained HTML report, a reproducibility manifest, a declarative `beam.yaml` runner, and a `beam` command-line interface. Heterogeneity diagnostics (Bradley-Terry trees, mixed-effects models) are planned for later releases.
 
 What is in HEAD:
 
@@ -82,42 +82,50 @@ pip install -e ".[dev,docs]"
 
 ## Quick use
 
+The five-line path, from a CSV to an HTML report:
+
 ```python
-import numpy as np
-from beam.mcda import run_from_registry
+import beam
 
-scores = np.array([
-    [0.85, 120.0],
-    [0.70, 30.0],
-    [0.60, 90.0],
-])
-
-result = run_from_registry(scores, ["ari", "runtime"],
-                           weights="entropy", method="topsis")
-print(result.ranks)
-print(result.bounds)         # which declared range was used per column
-print(result.metric_ids)     # carried through for labelling
+scores = beam.load_scores("scores.csv")          # tool by metric, or a tool by dataset by metric tensor
+result = beam.rank(scores, weights="entropy", method="topsis")
+beam.report(result, "report.html")
+print(result.top_tool, "ranks first")
 ```
 
-`run_from_registry` validates the requested aggregation against the declared scale type of each metric, applies bounded min-max normalization, and refuses out-of-range observations. See `examples/duo2018/duo2018.qmd` for the longer walkthrough and `examples/scenarios/scenarios.qmd` for the simulated scenarios report.
+`beam.rank` resolves polarity, normalization, bounds and baselines from the metric cards, runs the MCDA pipeline, runs the default sensitivity analysis on the same normalization context, and builds a run manifest. The returned `RunResult` carries the ranking, the sensitivity reports, and the manifest. `beam.report` writes one self-contained HTML file with the ranking, the sensitivity, a critical-difference section when the input has more than one dataset, and a plain-language recommendation.
+
+The same from the command line:
+
+```
+beam validate scores.csv
+beam rank scores.csv --weights entropy --method topsis --out result.json --report report.html
+beam report result.json --out report.html
+beam metric show ari
+beam run beam.yaml
+```
+
+The lower-level entry point `beam.mcda.run_from_registry(scores, metric_ids, weights=, method=)` takes a 2D array directly and returns just the MCDA `Result`. See `examples/duo2018/duo2018.qmd` for the longer walkthrough and `docs/tutorials/quickstart.md` for a runnable quickstart.
 
 ## Repository layout
 
 ```
-schema/
-  metric_card.schema.json       JSON Schema (draft 2020-12) for the metric card format
-metrics/
-  <id>/v<version>.yaml          One YAML file per metric and version
-  LICENSE.md                    CC-BY-4.0 (cards only)
 src/beam/
+  schema/                       metric_card.schema.json, JSON Schema (draft 2020-12), shipped as package data
+  metrics/                      One YAML file per metric and version; LICENSE.md is CC-BY-4.0 (cards only)
   cards/                        Card loader, MetricCard, MetricProperties, Registry,
                                 polarities_for, properties_for
   mcda/                         normalize, weights (equal, entropy, std, critic, merec, ahp),
                                 topsis, weighted_sum, vikor, promethee_ii, comet, rank, run,
-                                run_from_registry, validate_for_aggregation, leave_one_metric_out,
-                                smaa, smallest_weight_perturbation, critical_difference,
-                                aggregate_across_datasets, Result
-  io/                           CSV reader for tool by metric matrices (pandas, optional)
+                                run_from_registry, registry_context, validate_for_aggregation,
+                                leave_one_metric_out, smaa, smallest_weight_perturbation,
+                                critical_difference, aggregate_across_datasets, Result
+  api.py                        load-rank-report procedural API: rank, RunResult
+  reporting/                    Self-contained HTML report (write_report, exposed as beam.report)
+  manifest.py                   Run manifest: hashes, card versions, software fingerprint
+  config.py                     Declarative beam.yaml runner (run_config)
+  cli.py                        beam command-line interface (entry point beam = beam.cli:main)
+  io/                           load_scores (stdlib CSV) and the optional pandas read_csv
   scenarios.py                  Canonical simulated scenarios and the transportation benchmark
   datasets.py                   load_duo2018 loader for the bundled Duo 2018 benchmark
   data/                         DuoSCClustering2018.csv (Duo et al. 2018) and provenance
@@ -152,7 +160,7 @@ docs/
 ## Licence
 
 - Code: GPL-3.0-or-later (`LICENSE`).
-- Metric cards under `metrics/`: CC-BY-4.0 (`metrics/LICENSE.md`).
+- Metric cards under `src/beam/metrics/`: CC-BY-4.0 (`src/beam/metrics/LICENSE.md`).
 
 ## Citation
 

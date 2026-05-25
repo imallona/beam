@@ -28,6 +28,8 @@ dependencies = [
     "numpy>=1.26",
     "scipy>=1.11",
     "pymcdm>=1.4",
+    "jinja2>=3.1",
+    "matplotlib>=3.8",
 ]
 
 [project.optional-dependencies]
@@ -42,8 +44,10 @@ io = [
 docs = [
     "jupyter>=1.0",
     "ipykernel>=6.0",
-    "matplotlib>=3.8",
 ]
+
+[project.scripts]
+beam = "beam.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/imallona/beam"
@@ -53,16 +57,17 @@ Repository = "https://github.com/imallona/beam"
 packages = ["src/beam"]
 artifacts = [
     "src/beam/data/*.csv",
+    "src/beam/schema/*.json",
+    "src/beam/metrics/**/*.yaml",
+    "src/beam/metrics/LICENSE.md",
+    "src/beam/reporting/templates/*.j2",
 ]
 
 [tool.hatch.build.targets.sdist]
 include = [
     "src/",
-    "schema/",
-    "metrics/",
     "tests/",
     "README.md",
-    "PLAN.md",
     "LICENSE",
     "CHANGELOG.md",
     "CONTRIBUTING.md",

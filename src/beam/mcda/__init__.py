@@ -8,7 +8,7 @@ from .cd import (
 )
 from .comet import comet
 from .cross_dataset import aggregate_across_datasets
-from .facade import Result, run, run_from_registry
+from .facade import RegistryContext, Result, registry_context, run, run_from_registry
 from .normalize import (
     STRATEGIES,
     min_max_normalize,
@@ -42,6 +42,7 @@ __all__ = [
     "IncompatibleScaleError",
     "InconsistentPairwiseMatrixError",
     "PairPerturbation",
+    "RegistryContext",
     "Result",
     "SMAAReport",
     "SensitivityReport",
@@ -61,6 +62,7 @@ __all__ = [
     "normalize",
     "promethee_ii",
     "rank",
+    "registry_context",
     "run",
     "run_from_registry",
     "smaa",

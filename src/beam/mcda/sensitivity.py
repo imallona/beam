@@ -10,6 +10,17 @@ import numpy as np
 from .facade import Result, run
 
 
+def _subset_columns(context, cols: Sequence[int]):
+    """Restrict a per-metric context to the kept columns for a leave-one-out run.
+
+    ``None`` and a single strategy name apply to every column unchanged. A
+    per-column sequence is indexed down to the kept columns.
+    """
+    if context is None or isinstance(context, str):
+        return context
+    return [context[j] for j in cols]
+
+
 @dataclass(frozen=True)
 class SensitivityReport:
     """Outcome of a leave-one-metric-out sensitivity analysis.
@@ -34,6 +45,9 @@ def leave_one_metric_out(
     metric_ids: Sequence[str] | None = None,
     weights="equal",
     method: str = "saw",
+    normalization=None,
+    bounds=None,
+    baselines=None,
 ) -> SensitivityReport:
     """Run the pipeline once with all metrics, then once per metric omission.
 
@@ -59,6 +73,12 @@ def leave_one_metric_out(
         Forwarded to ``run``. ``"equal"``, ``"entropy"``, or an array.
     method
         Forwarded to ``run``. ``"saw"`` or ``"topsis"``.
+    normalization, bounds, baselines
+        Optional per-metric normalization context forwarded to ``run`` and
+        subset to the kept columns on each omission. Default ``None`` keeps
+        the ``run`` defaults. Pass the values from
+        ``beam.mcda.registry_context`` so the leave-one-out runs normalize
+        the scores the same way as the headline ranking.
 
     Returns
     -------
@@ -79,14 +99,30 @@ def leave_one_metric_out(
             f"metric_ids has {len(metric_ids)} entries but scores has {n_metrics} columns"
         )
 
-    base = run(scores, polarity, weights=weights, method=method)
+    base = run(
+        scores,
+        polarity,
+        weights=weights,
+        method=method,
+        normalization=normalization,
+        bounds=bounds,
+        baselines=baselines,
+    )
 
     loo: dict[int, Result] = {}
     for i in range(n_metrics):
         cols = [j for j in range(n_metrics) if j != i]
         sub_scores = scores[:, cols]
         sub_polarity = [polarity[j] for j in cols]
-        loo[i] = run(sub_scores, sub_polarity, weights=weights, method=method)
+        loo[i] = run(
+            sub_scores,
+            sub_polarity,
+            weights=weights,
+            method=method,
+            normalization=_subset_columns(normalization, cols),
+            bounds=_subset_columns(bounds, cols),
+            baselines=_subset_columns(baselines, cols),
+        )
 
     held = np.zeros(n_tools, dtype=int)
     for r in loo.values():

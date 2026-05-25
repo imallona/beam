@@ -4,4 +4,15 @@ This package is the Python canonical implementation of beam. See PLAN.md
 for the design and ADRs (docs/adr/) for the decisions behind it.
 """
 
-__version__ = "0.1.0"
+from importlib import metadata
+
+from .api import RunResult, rank
+from .io import Scores, load_scores
+from .reporting import write_report as report
+
+try:
+    __version__ = metadata.version("beam")
+except metadata.PackageNotFoundError:  # pragma: no cover - source tree without install
+    __version__ = "0.0.0+unknown"
+
+__all__ = ["RunResult", "Scores", "__version__", "load_scores", "rank", "report"]
