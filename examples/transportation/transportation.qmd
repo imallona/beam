@@ -396,6 +396,23 @@ plt.show()
 
 Pooled over both terrains the plane ranks first, because its 750 km/h on the long leg pulls its mean speed far above the others. Drop the long distance and rank on open water alone, and the motorboat ranks first instead: it is the fastest mode actually on the water, where the plane is slow. Drop open water and the long-distance order stands, plane first. So the plane's first place is not a property of water travel; it is an artifact of including the long leg in the pool. The kayak ranks last in every run under speed-heavy weights. Leave-one-dataset-out turns that into a number: the plane and the motorboat each hold their rank in only half the runs, so the pooled recommendation between them hangs entirely on whether the long-distance terrain is in the pool. This is the same caution the per-terrain sections raise, now stated as a stability measure on a complete block.
 
+The funky heatmap shows the complete water block as a glyph table, with the leave-one-dataset-out span and the aggregation span next to the order. The block is small (three modes, three metrics, two terrains), so the panels are short, but the dataset span panel records what the text above says: the plane and the motorboat each move by a rank when a terrain is dropped.
+
+```{python}
+import beam
+from beam.reporting import funky_heatmap_from_run
+
+water = beam.Scores(
+    values=water_block,
+    tool_names=water_modes,
+    metric_ids=tb.metric_names,
+    dataset_names=water_terrains,
+    layout="long",
+)
+water_run = beam.rank(water, weights="equal", method="saw")
+funky_heatmap_from_run(water_run, title="Transport water block: scores and rank robustness")
+```
+
 ## Heterogeneity: the interaction dominates here
 
 The mixed-effects model puts a number on what the per-terrain sections show. Fit on speed, with the mode as a fixed effect and the terrain as a random intercept, it splits the speed variance into a between-terrain shift and the rest. The fit needs R's lme4, so the chunk runs only when it is available.
@@ -415,7 +432,7 @@ else:
     print("R with lme4 not available; skipping the mixed-effects fit.")
 ```
 
-The contrast with the other examples is the point. On M4 the band intercept takes most of the variance, so the bands differ mostly in difficulty. Here the terrain intercept takes very little: almost all of the speed variance is the mode-by-terrain interaction, because the fast mode on one terrain is the slow mode on another. That is the sharpest form of the "against one method fits all" problem, and it is why a single pooled speed ranking is misleading even where it can be computed. A Bradley-Terry tree on the six terrains has too few datasets to find a stable split, the same small-sample limit the Duo and M4 examples hit; the OpenProblems spatial task is where a split appears.
+The contrast with the other examples is clear. On M4 the band intercept takes most of the variance, so the bands differ mostly in difficulty. Here the terrain intercept takes very little: almost all of the speed variance is the mode-by-terrain interaction, because the fast mode on one terrain is the slow mode on another. That is the sharpest form of the "against one method fits all" problem, and it is why a single pooled speed ranking is misleading even where it can be computed. A Bradley-Terry tree on the six terrains has too few datasets to find a stable split, the same small-sample limit the Duo and M4 examples hit; the OpenProblems spatial task is where a split appears.
 
 ## Why per-terrain is the honest output
 

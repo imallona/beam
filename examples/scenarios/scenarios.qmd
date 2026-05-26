@@ -183,6 +183,23 @@ fig.tight_layout()
 plt.show()
 ```
 
+## Funky heatmap with rank robustness
+
+The funky heatmap shows a scenario as a glyph table with robustness panels next to the order. The canonical scenarios are single-dataset, so there is no leave-one-dataset-out span here; the panels shown are the rank span across the five aggregations and the SMAA rank-acceptability bar. The random scenario has the two metrics trading off against each other, so the order changes when the aggregation or the weighting changes.
+
+```{python}
+import beam
+from beam.scenarios import random_scenario
+
+s = random_scenario()
+funky_run = beam.rank(s.scores, metric_ids=s.metric_ids, tool_names=s.method_names)
+from beam.reporting import funky_heatmap_from_run
+
+funky_heatmap_from_run(funky_run, title="Random scenario: scores and rank robustness")
+```
+
+The glyph grid is small (five methods, two metrics). The aggregation panel and the SMAA bar show methods changing rank across the aggregations and across the sampled weightings, so the row order is not firm.
+
 ## Per-dataset ranks for the odd-dataset scenario
 
 Plot to check the contribution of the odd dataset to the pooled ranking.

@@ -145,6 +145,18 @@ plt.show()
 
 The hourly band is the most influential. It has only a few hundred series and very different dynamics from the long yearly and quarterly series, so a method tuned for it moves a lot in the ranking when it is dropped. This is the forecasting version of the method-by-dataset interaction the other examples show.
 
+## Funky heatmap with rank robustness
+
+The funky heatmap shows the same run as a glyph table over the two error metrics, with three robustness panels: the rank span across the six leave-one-band-out runs, the rank span across the five aggregations, and the SMAA rank-acceptability bar.
+
+```{python}
+from beam.reporting import funky_heatmap_from_run
+
+funky_heatmap_from_run(run, title="M4: scores and rank robustness")
+```
+
+There are only two metrics, so the glyph grid is small. The robustness panels show more: many of the 25 methods change rank when a band is dropped or the aggregation is changed, and the SMAA bar puts the top ranks on several methods rather than one. The methods score close together, so the pooled order is not firm.
+
 ## Heterogeneity: how much of the sMAPE variance is the band
 
 The leave-one-band-out check asks whether the ranking leans on one band. A mixed-effects model asks the complementary question: how much of the sMAPE variation is a stable method effect and how much is the method-by-band interaction. It needs R's lme4, so the chunk runs only when it is available.

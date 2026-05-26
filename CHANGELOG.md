@@ -11,6 +11,7 @@ All notable changes to beam will be documented in this file. The format follows 
 - Sensitivity and comparison primitives: leave_one_metric_out, leave_one_dataset_out, SMAA, smallest_weight_perturbation, and the Demsar Friedman-Nemenyi critical-difference diagram.
 - User-facing layer: beam.load_scores and Scores, the beam.rank procedural API and RunResult, a self-contained HTML beam.report, a reproducibility manifest, the declarative beam.yaml runner, and the beam command-line interface.
 - Heterogeneity module beam.heterogeneity (R via one-shot subprocess): mixed-effects variance decomposition (lme4) with a glmmTMB beta engine for bounded metrics, Bradley-Terry trees (psychotree), and Plackett-Luce on full rankings (PlackettLuce).
+- beam.reporting.funky_heatmap and funky_heatmap_from_run: the glyph-table benchmarking plot (methods by metrics, circle size for score, colour for metric group, overall bar) with an added panel that shows each method's rank span across the leave-one-dataset-out runs, so the figure carries its own rank robustness instead of reading as a settled order.
 - Registry grew from seven to twenty-six metric cards across clustering, efficiency, forecasting, transportation, and the scIB single-cell integration and spatial metrics.
 - Bundled datasets load_duo2018, load_m4, and load_openproblems (batch_integration and spatially_variable_genes), each a small derived table with provenance in src/beam/data/README.md.
 - Five worked vignettes (Duo 2018, simulated scenarios, transportation, M4, OpenProblems), all rendered in CI.

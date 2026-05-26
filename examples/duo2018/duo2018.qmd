@@ -299,6 +299,26 @@ fig.tight_layout()
 plt.show()
 ```
 
+The funky heatmap shows the same run as a glyph table, with two robustness panels: the span of ranks each method takes across the leave-one-dataset-out runs, and the span across the five aggregations (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET) holding the weighting fixed. The brackets on the left group the methods the Friedman-Nemenyi test cannot separate on ARI. The two span panels differ: dropping a dataset barely moves the order, and Seurat holds rank one, but the choice of aggregation moves it a lot. On this benchmark the order depends more on how the metrics are combined than on which datasets are pooled.
+
+```{python}
+from beam.mcda import critical_difference
+from beam.reporting import funky_heatmap_from_run
+
+ari_for_cd = duo.tensor(("ari",))[:, :, 0]
+complete = ~np.isnan(ari_for_cd).any(axis=0)
+cd = critical_difference(ari_for_cd[:, complete], "higher_is_better", tool_names=duo.method_names)
+cliques = tuple(tuple(duo.method_names[i] for i in clique) for clique in cd.cliques)
+
+funky_heatmap_from_run(
+    run,
+    cliques=cliques,
+    show_smaa=False,
+    show_aggregation_consensus=True,
+    title="Duo 2018: scores and rank robustness",
+)
+```
+
 `beam.report` writes the whole run to one self-contained HTML file: the ranking, the normalization diagnostics, every sensitivity output including the leave-one-dataset-out figure above, the critical-difference diagram, and the recommendation paragraph. Passing `ground_truth_tool` outlines the method documented to rank first on the ranking figure.
 
 ```{python}

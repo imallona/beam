@@ -106,7 +106,7 @@ scores = beam.Scores(
     dataset_names=op.dataset_names,
     layout="long",
 )
-result = beam.rank(scores, weights="equal", method="topsis", sensitivity=False)
+result = beam.rank(scores, weights="equal", method="topsis")
 beam_order = np.argsort(result.result.ranks)
 print("beam (equal weights, TOPSIS), top 5:")
 for i in beam_order[:5]:
@@ -142,6 +142,46 @@ ax.set_title("Batch integration: beam ranking; red marks the mean-of-scores top 
 fig.tight_layout()
 plt.show()
 ```
+
+### A funky heatmap that shows its own rank robustness
+
+The funky heatmap is the standard way to show a multi-metric benchmark like this one: methods as rows sorted best first, metrics as circles sized by the score and coloured by group (here the scIB biological-conservation and batch-correction groups), and an overall bar. beam adds three panels next to it: a worth panel with the ARI marginal mean and a 95 percent interval from the mixed-effects model (overlapping intervals mean two methods are not separable), the span of ranks each method takes across the leave-one-dataset-out runs, and the SMAA rank-acceptability bar (the share of random weightings that put a method at each rank). The row order and circle sizes depend on the normalization, which beam takes from the metric cards rather than defaulting to min-max.
+
+```{python}
+from beam.heterogeneity import mixed_effects_from_matrix, r_available
+from beam.reporting import funky_heatmap_from_run
+
+bio = {
+    "ari", "nmi", "asw_label", "isolated_label_f1", "isolated_label_asw",
+    "cell_cycle_conservation", "hvg_overlap", "clisi",
+}
+groups = ["bio" if m in bio else "batch" for m in result.metric_ids]
+
+worth = worth_ci = None
+if r_available():
+    ari_slice = op.tensor(("ari",))[keep, :, 0]
+    me = mixed_effects_from_matrix(ari_slice, methods, op.dataset_names)
+    by_name = {name: i for i, name in enumerate(me.method_names)}
+    worth = np.array(
+        [me.method_effects[by_name[m]] if m in by_name else np.nan for m in result.tool_names]
+    )
+    worth_ci = np.array(
+        [1.96 * me.method_effect_se[by_name[m]] if m in by_name else np.nan for m in result.tool_names]
+    )
+
+funky = funky_heatmap_from_run(
+    result,
+    metric_groups=groups,
+    worth=worth,
+    worth_ci=worth_ci,
+    worth_label="ARI marginal mean\n(mixed-effects, 95% CI)",
+    show_aggregation_consensus=False,
+    title="OpenProblems batch integration: scores and rank robustness",
+)
+funky
+```
+
+With only six datasets the leave-one-dataset-out spans are wide: the top methods shift by several ranks when a single dataset is dropped, while the bottom methods stay put. The worth panel agrees, the ARI marginal-mean intervals of the top methods overlap, so they are not separable. The SMAA bar puts the top ranks on several methods rather than one. The top of this order is close, not fixed.
 
 ### Where the ARI variance lives
 
