@@ -14,7 +14,7 @@ Two options. A formal OWL or SKOS ontology aligned with BFO, OBI, STATO. Or JSON
 
 ## Decision
 
-JSON Schema plus YAML cards. Cards under metrics/. Schema in schema/metric_card.schema.json. An OWL or SKOS export can come in Phase 7 if downstream tools ask for one.
+JSON Schema plus YAML cards. Cards under metrics/. Schema in schema/metric_card.schema.json. An OWL or SKOS export can come later if downstream tools ask for one.
 
 ## Consequences
 

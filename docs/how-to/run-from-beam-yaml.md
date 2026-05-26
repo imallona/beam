@@ -1,6 +1,6 @@
 # Run a benchmark from a beam.yaml file
 
-Use this recipe when you want a whole beam run captured in one file: the input scores, the metric selection, the weighting and aggregation, the sensitivity settings, and the output paths. The file plus the written manifest.json is the artifact a reviewer reruns to reproduce your ranking.
+Use this recipe when you want a whole beam run captured in one file: the input scores, the metric selection, the weighting and aggregation, the sensitivity settings, and the output paths. Together, the beam.yaml and the written manifest.json are the artifact a reviewer reruns to reproduce your ranking.
 
 ## Write the beam.yaml
 
@@ -57,6 +57,6 @@ outputs is optional and each entry is optional. report writes the self-contained
 
 Keep beam.yaml and the written manifest.json together with the scores file. manifest.json records the input and its hash, the metrics, the parameters and the normalization that beam resolved from the cards. A reviewer with the same scores file reruns the ranking with one command. The manifest lets them confirm they got the same inputs and parameters you did.
 
-## Note on Phase 4 blocks
+## Note on the dataset_features and heterogeneity blocks
 
-The dataset_features and heterogeneity blocks are Phase 4 and ignored for now. You can leave them out. Per-metric version pins are recorded but not yet enforced; the registry resolves the latest version of each card.
+The dataset_features and heterogeneity blocks are parsed but ignored for now. You can leave them out. Per-metric version pins are recorded but not yet enforced; the registry resolves the latest version of each card.

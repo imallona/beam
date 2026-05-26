@@ -15,13 +15,13 @@ format:
 
 ## Goal
 
-The MCDA core in beam is not specific to bioinformatics. This vignette runs it on a made-up transportation example to make three points that the bio scenarios state but do not show as sharply. The modes of transport play the role of the methods, and the terrains play the role of the datasets. Each mode is scored on a terrain by speed (km/h, higher is better), cost (per km, lower is better), and CO2 (g per km, lower is better). The numbers are illustrative, kept in a plausible range so the example reads sensibly. The three metrics are bundled metric cards (`speed`, `cost`, `co2`), so this cross-domain example reads polarity and normalization from the same registry as the bioinformatics examples. Every example here goes through the cards, whether the metrics are biological or not.
+The MCDA core in beam is not specific to bioinformatics. This vignette runs it on a made-up transportation example to illustrate three points that the bio scenarios state but do not show as sharply. The modes of transport play the role of the methods, and the terrains play the role of the datasets. Each mode is scored on a terrain by speed (km/h, higher is better), cost (per km, lower is better), and CO2 (g per km, lower is better). The numbers are illustrative, kept in a plausible range. The three metrics are bundled metric cards (`speed`, `cost`, `co2`), so this cross-domain example reads polarity and normalization from the same registry as the bioinformatics examples. Every example here goes through the cards, whether the metrics are biological or not.
 
-The first point is a method-by-dataset interaction. No mode is fastest on every terrain. A train is fastest on the flat road and the urban hop, a motorcycle on mud and uphill, a boat on open water, and a small plane on the long distance. A single global ranking over all terrains hides this.
+The first point is a method-by-dataset interaction. No mode is fastest on every terrain. A train is fastest on the flat road and the urban hop, a motorcycle on mud and uphill, a boat on open water, and a small plane on the long distance. A single global ranking over all terrains hides this structure.
 
-The second point is partial coverage. Some modes do not run on some terrains at all. A boat cannot go off-road, a small plane cannot do an urban hop, and the land modes cannot cross open water. Those cells are missing (NaN). Because no mode is feasible on every terrain, a single pooled ranking over all modes is not even well defined. The honest output is per-terrain.
+The second point is partial coverage. Some modes do not run on some terrains at all. A boat cannot go off-road, a small plane cannot do an urban hop, and the land modes cannot cross open water. Those cells are missing (NaN). Because no mode is feasible on every terrain, a single pooled ranking over all modes is not even well defined. The output must be per-terrain.
 
-The third point is a crossover among the slower modes. Trail running is slower than road running on the flat road but faster on mud and uphill, where off-road traction helps. An e-bike is faster than a bicycle on the flat road and the urban hop but slower uphill, where its weight costs it. On the water the kayak is slower than the motorboat but cheaper and zero CO2, so it outranks the boat on cost and CO2 while it is slower on speed. None of these crossovers shows up in a single pooled order: the mode that is faster on one terrain is slower on another.
+The third point is a crossover among the slower modes. Trail running is slower than road running on the flat road but faster on mud and uphill, where off-road traction helps. An e-bike is faster than a bicycle on the flat road and the urban hop but slower uphill, where its weight costs it. On the water the kayak is slower than the motorboat but cheaper and zero CO2, so it outranks the boat on cost and CO2 while trailing on speed. None of these crossovers appears in a single pooled order: the mode that is faster on one terrain is slower on another.
 
 ## Set-up
 
@@ -125,7 +125,7 @@ for terrain in tb.terrain_names:
     print(f"  {terrain:15s}  {top:12s}  {fastest:16s}  {top == fastest}")
 ```
 
-Under equal weights the cheap, low-CO2 modes rank near the top on the land terrains even when they are slow. Speed is only one of three equally weighted metrics, so it does not decide the order on its own. This is the cautionary reading: an equal-weight composite can reward a mode that looks good only because the weighting discounts how long the trip would actually take.
+Under equal weights the cheap, low-CO2 modes rank near the top on the land terrains even when they are slow. Speed is only one of three equally weighted metrics, so it does not decide the order on its own. An equal-weight composite can reward a mode that looks good only because the weighting discounts how long the trip would actually take.
 
 Now weight speed heavily (0.8 on speed, 0.1 on cost, 0.1 on CO2) and rerun. With speed in charge, the per-terrain top-ranked mode tracks the ground truth, and a different mode ranks first on different terrains.
 
@@ -195,7 +195,7 @@ for m in methods:
     print(f"  {m:14s}  {names[int(np.argmin(ranks_by_method[m]))]}")
 ```
 
-All five methods put the plane first on the long distance under speed-heavy weights, which is the ground-truth fastest mode there. The methods reshuffle the middle of the table instead. SAW, TOPSIS, VIKOR and PROMETHEE II agree on the top of the order (plane, train, motorcycle) and differ only in where the boat and the light land modes land. COMET reads the table differently: it builds its ranking from characteristic objects rather than from a direct distance to the ideal, so it ranks the boat last and pushes the e-bike down, while still keeping the plane first. The reading is that the top of the order is stable across methods, while the middle is method-dependent, so a claim about the exact order of the middle modes should not lean on one method.
+All five methods put the plane first on the long distance under speed-heavy weights, which is the fastest mode there. The methods reshuffle the middle of the table instead. SAW, TOPSIS, VIKOR and PROMETHEE II agree on the top of the order (plane, train, motorcycle) and differ only in where the boat and the light land modes land. COMET reads the table differently: it builds its ranking from characteristic objects rather than from a direct distance to the ideal, so it ranks the boat last and pushes the e-bike down, while still keeping the plane first. The top of the order is stable across methods; the middle is method-dependent, so a claim about the exact order of the middle modes should not lean on one method.
 
 The same ranks as a heatmap. Each column is one mode, each row one aggregation method. A column of one colour means that mode keeps its rank across methods.
 
@@ -222,7 +222,7 @@ plt.show()
 
 ## Four weightings on the same terrain
 
-Holding the method at SAW and the terrain at long distance, the data-driven weightings are compared against equal weights. Entropy, standard deviation, and CRITIC all read the spread and correlation of the columns rather than any preference for speed, so they keep the three metrics near a third each. Under all four the order stays close to the equal-weight order, with running or train at the top, not the fastest mode.
+Holding the method at SAW and the terrain at long distance, the data-driven weightings are compared against equal weights. Entropy, standard deviation, and CRITIC all read the spread and correlation of the columns rather than any preference for speed, so they keep the three metrics near a third each. Under all four the order stays close to the equal-weight order, with running or train at the top rather than the fastest mode.
 
 ```{python}
 print(f"{'weighting':10s}  {'weights (speed, cost, co2)':28s}  top-ranked")
@@ -233,7 +233,7 @@ for wname in ["equal", "entropy", "std", "critic"]:
     print(f"  {wname:10s}  {w_str:28s}  {top}")
 ```
 
-MEREC is left out of the table above. It takes the logarithm of the normalized scores, so it cannot accept a column that carries a hard zero, and the card normalization here (`rank` on CO2) produces such a zero. This is the one place the example calls `run` directly to override the card default with a zero-free normalization. Under z-score normalization MEREC reads the removal effect of each metric and weights cost and CO2 above speed, so it lands on a cheap mode at the top, the same lesson as the other data-driven weightings.
+MEREC is left out of the table above. It takes the logarithm of the normalized scores, so it cannot accept a column that carries a hard zero, and the card normalization here (`rank` on CO2) produces such a zero. This is the one place the example calls `run` directly to override the card default with a zero-free normalization. Under z-score normalization MEREC reads the removal effect of each metric and weights cost and CO2 above speed, so a cheap mode ends up at the top, the same result as the other data-driven weightings.
 
 ```{python}
 merec = run(
@@ -247,7 +247,7 @@ w_str = np.array2string(np.round(merec.weights, 3), separator=", ")
 print(f"merec (zscore)  weights={w_str}  top-ranked={names[int(np.argmin(merec.ranks))]}")
 ```
 
-The lesson across both comparisons: the choice of weighting changes which mode ranks first far more than the choice of aggregation method does. The data-driven weightings recover a cheap mode, while only a deliberate emphasis on speed recovers the per-terrain fastest mode.
+Across both comparisons, the choice of weighting changes which mode ranks first far more than the choice of aggregation method does. The data-driven weightings recover a cheap mode; only a deliberate emphasis on speed recovers the per-terrain fastest mode.
 
 ## A critical-difference diagram on a common block
 
@@ -313,7 +313,7 @@ print(f"\nmost confident top-ranked mode: {most} "
       f"({smaa_report.confidence_factor.max():.2f} of samples)")
 ```
 
-The confidence is split between the train (about 0.37) and the plane (about 0.35), with running and bicycle taking the rest. No mode crosses half, so the long-distance top rank is fragile to the weighting: depending on how a user trades speed against cost and CO2, either the train or the plane comes out first. The SMAA confidence is the honest summary of that, rather than a single composite that would pick one and hide the split.
+The confidence is split between the train (about 0.37) and the plane (about 0.35), with running and bicycle taking the rest. No mode crosses half, so the long-distance top rank depends on the weighting: depending on how a user trades speed against cost and CO2, either the train or the plane comes out first. The SMAA confidence summarises that honestly, rather than a single composite that would pick one and hide the split.
 
 ## Weight perturbation on one terrain
 
@@ -342,7 +342,7 @@ The most fragile pair is the one that the smallest single-weight nudge can reord
 
 ## Leave one dataset out: how much the pooled order leans on one terrain
 
-The sections above keep the analysis per terrain because no mode runs on every terrain. On a complete block, where a set of modes does run on every terrain in the block, a pooled ranking is well defined, and the next question is how much that pooled ranking leans on any single terrain. Leave-one-dataset-out answers it: pool the block, rank it, then drop one terrain, pool the rest, and re-rank. The water modes make the point sharply. The kayak, the motorboat and the small plane all run on two terrains, open water and the long distance, so they form a complete two-terrain block.
+The sections above keep the analysis per terrain because no mode runs on every terrain. On a complete block, where a set of modes does run on every terrain in the block, a pooled ranking is well defined, and the next question is how much that pooled ranking leans on any single terrain. Leave-one-dataset-out answers it: pool the block, rank it, then drop one terrain, pool the rest, and re-rank. The water modes show this sharply. The kayak, the motorboat and the small plane all run on two terrains, open water and the long distance, so they form a complete two-terrain block.
 
 ```{python}
 water_modes = ("kayak", "boat", "plane")
@@ -394,7 +394,7 @@ fig.tight_layout()
 plt.show()
 ```
 
-Pooled over both terrains the plane ranks first, because its 750 km/h on the long leg pulls its mean speed far above the others. Drop the long distance and rank on open water alone, and the motorboat ranks first instead: it is the fastest mode actually on the water, where the plane is slow. Drop open water and the long-distance order stands, plane first. So the plane's first place is not a property of water travel; it is an artifact of including the long leg in the pool. The kayak ranks last in every run under speed-heavy weights. Leave-one-dataset-out turns that into a number: the plane and the motorboat each hold their rank in only half the runs, so the pooled recommendation between them hangs entirely on whether the long-distance terrain is in the pool. This is the same caution the per-terrain sections raise, now stated as a stability measure on a complete block.
+Pooled over both terrains the plane ranks first, because its 750 km/h on the long leg pulls its mean speed far above the others. Drop the long distance and rank on open water alone, and the motorboat ranks first instead: it is the fastest mode on the water, where the plane is slow. Drop open water and the long-distance order stands, plane first. The plane's first place is not a property of water travel; it is an artifact of including the long leg in the pool. The kayak ranks last in every run under speed-heavy weights. Leave-one-dataset-out turns that into a number: the plane and the motorboat each hold their rank in only half the runs, so the pooled recommendation between them hangs entirely on whether the long-distance terrain is in the pool. This is the same caution the per-terrain sections raise, now stated as a stability measure on a complete block.
 
 The funky heatmap shows the complete water block as a glyph table, with the leave-one-dataset-out span and the aggregation span next to the order. The block is small (three modes, three metrics, two terrains), so the panels are short, but the dataset span panel records what the text above says: the plane and the motorboat each move by a rank when a terrain is dropped.
 
@@ -432,10 +432,10 @@ else:
     print("R with lme4 not available; skipping the mixed-effects fit.")
 ```
 
-The contrast with the other examples is clear. On M4 the band intercept takes most of the variance, so the bands differ mostly in difficulty. Here the terrain intercept takes very little: almost all of the speed variance is the mode-by-terrain interaction, because the fast mode on one terrain is the slow mode on another. That is the sharpest form of the "against one method fits all" problem, and it is why a single pooled speed ranking is misleading even where it can be computed. A Bradley-Terry tree on the six terrains has too few datasets to find a stable split, the same small-sample limit the Duo and M4 examples hit; the OpenProblems spatial task is where a split appears.
+The contrast with the other examples is clear. On M4 the band intercept takes most of the variance, so the bands differ mostly in difficulty. Here the terrain intercept takes very little: almost all of the speed variance is the mode-by-terrain interaction, because the fast mode on one terrain is the slow mode on another. That is why a single pooled speed ranking is misleading even where it can be computed. A Bradley-Terry tree on the six terrains has too few datasets to find a stable split, the same small-sample limit the Duo and M4 examples hit; the OpenProblems spatial task is where a split appears.
 
 ## Why per-terrain is the honest output
 
-This example was built so that no mode runs on every terrain and no mode is fastest on every terrain it does run on. Both facts push the analysis to be per-terrain. The partial coverage means a pooled ranking over all modes is not even well defined, since different modes are measured on different terrains. The method-by-dataset interaction means that even where a pooled ranking is computable, it reports a single order that is wrong on at least some terrains: the fast modes lead on their own terrains and trail on others.
+This example was built so that no mode runs on every terrain and no mode is fastest on every terrain it does run on. Both facts push the analysis to be per-terrain. Partial coverage means a pooled ranking over all modes is not even well defined, since different modes are measured on different terrains. The method-by-dataset interaction means that even where a pooled ranking is computable, it reports a single order that is wrong on at least some terrains: the fast modes lead on their own terrains and trail on others.
 
-This mirrors method-by-dataset interaction in bioinformatics benchmarks. A clustering method that leads on one tissue can trail on another, and a method that needs a feature one dataset lacks is simply not applicable there, the same role the NaN cells play here. The transportation numbers are made up, but the shape of the problem is the same. Report per dataset and mark which method leads on each. Then use the cross-dataset tests (the critical-difference diagram, SMAA, weight perturbation) to say how much of the apparent ordering survives a change of conditions or of preferences.
+This mirrors method-by-dataset interaction in bioinformatics benchmarks. A clustering method that leads on one tissue can trail on another, and a method that needs a feature one dataset lacks is simply not applicable there, which is the same role the NaN cells play here. The transportation numbers are made up, but the structure of the problem is the same. Report per dataset and mark which method leads on each. Then use the cross-dataset tests (the critical-difference diagram, SMAA, weight perturbation) to say how much of the apparent ordering survives a change of conditions or of preferences.

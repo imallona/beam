@@ -6,7 +6,7 @@ The funky heatmap is the glyph table that dynbenchmark and OpenProblems use to r
 
 `beam.reporting.funky_heatmap` draws the glyph grid and the optional robustness panels beside it. `beam.reporting.funky_heatmap_from_run` builds the whole figure from a `beam.rank` `RunResult`. Each overlay answers one question about whether the row order is real, and each is fed by a beam primitive.
 
-The leave-one-dataset-out rank span answers whether the order hangs on any single dataset. For each method it draws the span of ranks the method takes when each dataset is dropped in turn, with the pooled rank marked on the span. The values are `rank_low`, `rank_high` and `rank_stability` from `beam.mcda.leave_one_dataset_out`. A single point is robust. A wide span means the order depends on which datasets are in the pool.
+The leave-one-dataset-out rank span answers whether the order hangs on any single dataset. For each method it draws the span of ranks the method takes when each dataset is dropped in turn, with the pooled rank marked on the span. The values are `rank_low`, `rank_high` and `rank_stability` from `beam.mcda.leave_one_dataset_out`. A single point means the rank does not change regardless of which dataset is dropped. A wide span means the order depends on which datasets are in the pool.
 
 The aggregation-consensus rank span answers whether the order is an artefact of the chosen aggregation. Holding the weighting fixed, it draws the span of ranks a method takes across the five aggregations: SAW, TOPSIS, VIKOR, PROMETHEE II and COMET. The values are `consensus_low` and `consensus_high`. A wide span means the order reflects the aggregation rule rather than the methods.
 

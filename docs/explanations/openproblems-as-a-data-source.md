@@ -1,6 +1,6 @@
 # OpenProblems as a data source
 
-beam needs benchmark results that are already a method by dataset by metric tensor with declared metric directions. Most published benchmarks are not in that shape, and assembling them is the data-engineering bottleneck that the broader Phase 5 meta-analysis runs into. OpenProblems in Single-Cell Analysis (openproblems.bio, Nature Biotechnology 2025, DOI 10.1038/s41587-025-02694-w) already produces that shape, so beam ingests it directly.
+beam needs benchmark results that are already a method by dataset by metric tensor with declared metric directions. Most published benchmarks are not in that shape, and assembling them is the data-engineering bottleneck that the broader cross-benchmark meta-analysis runs into. OpenProblems in Single-Cell Analysis (openproblems.bio, Nature Biotechnology 2025, DOI 10.1038/s41587-025-02694-w) already produces that shape, so beam ingests it directly.
 
 ## What OpenProblems publishes
 
@@ -22,6 +22,6 @@ Because no one task carries both breadth in metrics and breadth in datasets, `ba
 
 ## Two further uses
 
-OpenProblems re-derives its leaderboard by a fixed mean-of-normalized-scores rule. beam contrasts that with explicit MCDA aggregation plus sensitivity, which is the point the `batch_integration` example makes concrete. And because OpenProblems is a sister continuous-benchmarking platform to omnibenchmark, a clean ingestion doubles as a reference for the future omnibenchmark adapter in Phase 6.
+OpenProblems re-derives its leaderboard by a fixed mean-of-normalized-scores rule. beam contrasts that with explicit MCDA aggregation plus sensitivity, as the `batch_integration` example shows. Because OpenProblems is a sister continuous-benchmarking platform to omnibenchmark, a clean ingestion doubles as a reference for the future omnibenchmark adapter.
 
 The OpenProblems vignette (`examples/openproblems/openproblems.qmd`) works both tasks through end to end, and [findings 0004](../findings/0004-openproblems-svg-bradley-terry.md) records the assay-dependent spatial result.

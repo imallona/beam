@@ -16,7 +16,7 @@ Fitting a Bradley-Terry tree on the per-dataset correlation comparisons, with ca
 - a leaf of seqfish, slideseqv2 and slidetags datasets (n=10), led by nnsvg
 - a leaf of post_xenium and visium datasets (n=22, the largest), led by spanve
 
-The pooled top method, spark_x, does not hold everywhere. On the 22 visium and xenium datasets the leading method is spanve, and on the seqfish, slideseqv2 and slidetags datasets it is nnsvg. The reversed_leaves diagnostic flags these two leaves. The best spatially variable gene method depends on the spatial assay technology, which is exactly the heterogeneity against one method fits all that the Bradley-Terry tree exists to surface, and which a single pooled ranking hides. This is the demonstration that Duo, at 12 datasets with no split, was too small to show.
+The pooled top method, spark_x, does not hold everywhere. On the 22 visium and xenium datasets the leading method is spanve, and on the seqfish, slideseqv2 and slidetags datasets it is nnsvg. The reversed_leaves diagnostic flags these two leaves. The best spatially variable gene method depends on the spatial assay technology. A single pooled ranking hides this, and the Bradley-Terry tree makes it visible. Duo, at 12 datasets with no split, was too small to show this.
 
 ## Method
 
@@ -24,7 +24,7 @@ Loaded the tensor with `beam.datasets.load_openproblems("spatially_variable_gene
 
 ## Implications
 
-This is the richer real input anticipated in findings 0003 and in PLAN Phase 5: 50 datasets carrying real feature variation, where the parameter-stability test can separate a feature-dependent regime from sampling noise. The split is read honestly. The tree is descriptive of these 50 datasets and the technologies available in them. The technology and organism features are confounded, since some assays appear in only one organism, so the split should be read as by assay and the organism that comes with it, not as two independent effects. With that caveat, the result is concrete: a benchmark consumer who reads only the pooled ranking would adopt spark_x everywhere, when on the largest group of datasets, the 22 visium and xenium ones, spanve leads, and on a third group nnsvg leads.
+This is the richer real input anticipated in findings 0003: 50 datasets with real feature variation, where the parameter-stability test can separate a feature-dependent regime from sampling noise. The tree is descriptive of these 50 datasets and the technologies available in them. The technology and organism features are confounded, since some assays appear in only one organism, so the split should be read as by assay and the organism that comes with it, not as two independent effects. With that caveat, the result is concrete: a reader who uses only the pooled ranking would adopt spark_x everywhere, but on the largest group of datasets (the 22 visium and xenium ones) spanve leads, and on a third group nnsvg leads.
 
 ## Reproducibility
 

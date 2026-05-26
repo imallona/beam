@@ -28,7 +28,7 @@ Draw the funky heatmap in matplotlib inside beam rather than calling the R funky
 ## Alternatives considered
 
 - Call the R funkyheatmap package through the subprocess boundary. Rejected: it would add an R dependency to a plotting path that is otherwise pure Python, and it could not carry beam's robustness panels without reimplementing them anyway.
-- Keep the robustness diagnostics as separate figures. Rejected: the point is to put the robustness next to the order it qualifies, in the figure people actually read.
+- Keep the robustness diagnostics as separate figures. Rejected: the robustness signals should sit next to the order they qualify, in the figure people actually read.
 
 ## References
 

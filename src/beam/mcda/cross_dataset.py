@@ -94,7 +94,7 @@ def reduce_tensor(
     When a metric column has no missing cells the reduction delegates to
     ``aggregate_across_datasets``, so the complete-data path supports every rule
     including ``rank_mean``. When a column has missing cells, ``rank_mean`` is
-    rejected: coverage-aware ranking across datasets is Phase 4 work tied to the
+    rejected: coverage-aware ranking across datasets is future work tied to the
     heterogeneity module.
 
     Parameters
@@ -163,5 +163,5 @@ def _reduce_column(per_dataset: np.ndarray, rule: str, label: object) -> np.ndar
     # rank_mean
     raise NotImplementedError(
         f"rank_mean cross-dataset reduction for metric {label!r} with missing cells is "
-        "Phase 4 (coverage-aware) work; reduce per dataset first"
+        "coverage-aware future work; reduce per dataset first"
     )

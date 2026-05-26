@@ -17,7 +17,7 @@ Subcommands:
 parameters, the ranking, and the manifest). ``beam report`` reads that record,
 reloads the scores, re-runs with the recorded parameters (deterministic through
 the recorded seed), and renders the HTML report. ``beam heterogeneity`` and
-``beam metric run`` are deferred (Phase 4 and the metric-execution phase).
+``beam metric run`` are not yet exposed (the heterogeneity and metric-execution commands).
 """
 
 from __future__ import annotations

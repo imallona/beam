@@ -6,7 +6,7 @@ The mixed-effects model asks how much of the score variation is a method-by-data
 
 For one metric, each dataset gives a ranking of the methods. The tree works with the pairwise form of that ranking: for every method pair, the dataset records which method scored higher (a win for one, a loss for the other), a tie on an exact equality, or a missing comparison where a method has no score there. The metric polarity orients the comparison, so a lower-is-better metric needs no manual flipping. `beam.heterogeneity.paired_comparisons` builds this design from a method by dataset matrix; it is pure Python and is the part you can inspect without R.
 
-The datasets are the subjects of the model and the methods are the objects being compared. This is the reverse of the usual reading and it is the whole point: the tree splits on properties of the datasets.
+The datasets are the subjects of the model and the methods are the objects being compared. The order is reversed from the usual reading because the tree splits on properties of the datasets.
 
 ## The Bradley-Terry model
 

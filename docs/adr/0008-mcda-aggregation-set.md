@@ -8,7 +8,7 @@
 
 ## Context
 
-The decision module (PLAN Section 3, step 4) commits to a set of aggregation methods. The proposal lists weighted sum, TOPSIS and PROMETHEE; the existing notebook adds VIKOR and COMET. beam needs these as packaged functions with one uniform contract so the pipeline and the sensitivity analysis can call any of them through the same interface. beam first implemented these methods natively and regression-tested them against pymcdm as a test-only oracle. That parity has been validated: on the real Duo data, native beam and pymcdm produce identical rankings across all 16 weighting-by-method configurations. Maintaining a second implementation of well-known algorithms is avoidable cost, so the question is whether to keep the native code or to delegate to the maintained library.
+The decision module commits to a set of aggregation methods. The proposal lists weighted sum, TOPSIS and PROMETHEE; the existing notebook adds VIKOR and COMET. beam needs these as packaged functions with one uniform contract so the pipeline and the sensitivity analysis can call any of them through the same interface. beam first implemented these methods natively and regression-tested them against pymcdm as a test-only oracle. On the real Duo data, native beam and pymcdm produce identical rankings across all 16 weighting-by-method configurations. Maintaining a second implementation of well-known algorithms adds cost without added value, so beam delegates to the maintained library.
 
 ## Decision
 
@@ -28,7 +28,7 @@ beam keeps its own objective weights (equal, entropy, standard deviation, CRITIC
 
 ## Alternatives considered
 
-- Keep the native implementations: rejected because they duplicate a maintained library and must be kept correct by hand. The pymcdm regression tests already showed the two agree, so the native code added cost without added value.
+- Keep the native implementations: rejected because they duplicate a maintained library and must be kept correct by hand. The pymcdm regression tests already showed the two agree, so the native code added cost with no added value.
 - Delegate the weight functions too: rejected because pymcdm's weight functions sum-normalize and reject zeros, which beam's normalization produces, and AHP is absent from pymcdm.
 - Drop a method to reduce surface: rejected because the pipeline and sensitivity analysis rely on the full set.
 

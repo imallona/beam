@@ -8,7 +8,7 @@
 
 ## Context
 
-The CRS proposal commits to an R package for CRAN or Bioconductor. The prior MCDA work in this repo is a Python notebook on pymcdm. omnibenchmark is Python and Snakemake. The Phase 4 heterogeneity diagnostics (psychotree, lme4, glmmTMB) are R-only.
+The CRS proposal commits to an R package for CRAN or Bioconductor. The prior MCDA work in this repo is a Python notebook on pymcdm. omnibenchmark is Python and Snakemake. The heterogeneity diagnostics (psychotree, lme4, glmmTMB) are R-only.
 
 ## Decision
 

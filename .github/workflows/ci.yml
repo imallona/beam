@@ -74,7 +74,7 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Run the heterogeneity tests
-        run: pytest -q tests/test_heterogeneity_mixed_effects.py tests/test_heterogeneity_bradley_terry.py tests/test_heterogeneity_plackett_luce.py
+        run: pytest -q tests/test_heterogeneity_mixed_effects.py tests/test_heterogeneity_bradley_terry.py tests/test_heterogeneity_plackett_luce.py tests/test_heterogeneity_source_variance.py
 
   vignettes:
     name: Render Quarto vignettes

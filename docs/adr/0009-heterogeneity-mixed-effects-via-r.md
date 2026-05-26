@@ -8,7 +8,7 @@
 
 ## Context
 
-PLAN Section 4.2 commits to a mixed-effects model on benchmark scores (Eugster, Hothorn, Leisch 2008) to split the global method effect from the method-by-dataset interaction. The mature engines are in R: lme4 and glmmTMB. PLAN Section 10 already chose Python-first with R called from Python ([ADR 0002](0002-python-first.md)); what was open is reticulate or subprocess.
+beam uses a mixed-effects model on benchmark scores (Eugster, Hothorn, Leisch 2008) to split the global method effect from the method-by-dataset interaction. The mature engines are in R: lme4 and glmmTMB. [ADR 0002](0002-python-first.md) already chose Python-first with R called from Python; what was open is reticulate or subprocess.
 
 ## Decision
 
@@ -24,7 +24,7 @@ Wrap lme4 in a one-shot R subprocess. `beam.heterogeneity.mixed_effects` seriali
 ## Alternatives considered
 
 - reticulate: couples the Python process to a built R at import time for no benefit at these data sizes. Swappable later without changing the API.
-- statsmodels MixedLM: less complete for crossed random effects, a heavy dependency, and off the lme4 and glmmTMB path the rest of Phase 4 uses.
+- statsmodels MixedLM: less complete for crossed random effects, a heavy dependency, and off the lme4 and glmmTMB path the rest of the heterogeneity module uses.
 
 ## References
 

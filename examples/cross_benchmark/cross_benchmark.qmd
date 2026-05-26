@@ -1,0 +1,143 @@
+---
+title: "Cross-benchmark meta-analysis: do single-cell integration benchmarks disagree about the methods, the data, or the benchmarker?"
+author: "Izaskun Mallona"
+date: today
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-location: left
+    embed-resources: true
+    code-tools: true
+    fig-width: 7
+    fig-height: 4
+---
+
+## Goal
+
+Single-cell data-integration benchmarks reach different conclusions about which method to use. This vignette asks where the disagreement comes from: the methods, the datasets, or the benchmarker's own analysis choices (which metrics, how they are scaled, how they are weighted). It runs the meta-analysis on three benchmarks that publish reusable per-method scores on a shared metric set, and shows that re-ranking them all with one consistent rule removes much of the disagreement.
+
+## The benchmarks, and why these three
+
+Only three single-cell integration benchmarks publish reusable per-method scores on the shared scIB metric family (ARI, ASW, kBET, LISI) for an overlapping set of classical methods:
+
+- scIB (Luecken et al., Nature Methods 2022, DOI 10.1038/s41592-021-01336-8), scores from the scib-reproducibility repository.
+- OpenProblems batch integration (Nature Biotechnology 2025, DOI 10.1038/s41587-025-02694-w), the bundled CC-BY scores.
+- Tran et al. (Genome Biology 2020, DOI 10.1186/s13059-019-1850-9), scores from the paper's supplementary Tables S4 and S7.
+
+The five methods common to all three are combat, harmony, fastMNN, scanorama and LIGER. Benchmarks excluded: Tran's repository appeared empty until the scores were found in its supplement (a repository check is not sufficient); scIB-E (Genome Biology 2025) shares the scIB metrics but its methods are deep-learning ones (scVI, scANVI and loss-function variants) with no overlap with the classical five; the Communications Biology 2025 reference-informed evaluation covers one dataset with a bespoke RBET metric and overlaps only on combat and scanorama; BatchBench and sc_mixology use off-family metrics; spatial and cross-species benchmarks use different methods. The full provenance, licences and the dataset crosswalk are in `src/beam/data/README.md`.
+
+```{python}
+import numpy as np
+from collections import defaultdict
+from itertools import combinations
+from scipy.stats import spearmanr, rankdata
+
+from beam.datasets import load_integration_benchmarks, load_integration_published_ranks
+from beam.reporting import rank_bump, funky_heatmap
+
+CANON = ["combat", "harmony", "fastmnn", "scanorama", "liger"]
+BENCH = ["Tran", "scIB", "OpenProblems"]
+METRICS = ["ARI", "ASW", "kBET", "LISI"]
+
+ib = load_integration_benchmarks()
+published = load_integration_published_ranks()
+print("records:", len(ib.rank), "| benchmarks:", sorted(set(ib.benchmark)))
+```
+
+## The reported rankings disagree
+
+Each benchmark reported its own ranking of the five methods, using its own metric set, scaling and weighting (Tran's Table S7 final rank, scIB's 0.6 biological / 0.4 batch weighted overall, OpenProblems' mean of scaled scores).
+
+```{python}
+print("reported rank of each method (1 best):")
+print(f"  {'method':10s}", "  ".join(f"{b:>12s}" for b in BENCH))
+for m in CANON:
+    print(f"  {m:10s}", "  ".join(f"{published[b][m]:>12d}" for b in BENCH))
+
+pub_vectors = {b: np.array([published[b][m] for m in CANON]) for b in BENCH}
+pub_rhos = [spearmanr(pub_vectors[a], pub_vectors[b]).correlation for a, b in combinations(BENCH, 2)]
+print(f"\nmean cross-benchmark Spearman of the reported ranks: {np.mean(pub_rhos):.2f}")
+```
+
+combat ranks first in one benchmark and last in another; the reported rankings barely correlate.
+
+## beam's consistent re-ranking
+
+beam re-ranks all three from their raw scores with one rule: four shared metrics, equal weight, ranked within the common methods so the per-benchmark scale does not matter. The dataset axis is pooled per benchmark.
+
+```{python}
+cell = defaultdict(list)
+for b, d, m, mk, r in zip(ib.benchmark, ib.dataset, ib.method, ib.metric, ib.rank, strict=True):
+    cell[(b, m)].append(r)
+beam_mean = {(b, m): float(np.mean(cell[(b, m)])) for b in BENCH for m in CANON}
+beam_rank = {b: dict(zip(CANON, rankdata([beam_mean[(b, m)] for m in CANON], method="ordinal"), strict=True)) for b in BENCH}
+
+beam_vectors = {b: np.array([beam_mean[(b, m)] for m in CANON]) for b in BENCH}
+beam_rhos = [spearmanr(beam_vectors[a], beam_vectors[b]).correlation for a, b in combinations(BENCH, 2)]
+print(f"mean cross-benchmark Spearman, beam consistent ranking: {np.mean(beam_rhos):.2f}")
+print(f"reported: {np.mean(pub_rhos):+.2f}   beam: {np.mean(beam_rhos):+.2f}   change: {np.mean(beam_rhos) - np.mean(pub_rhos):+.2f}")
+```
+
+Agreement rises from near zero to moderate. Much of the disagreement was in the benchmarker's analysis choices, not the methods: when the metrics, scaling and weighting are held fixed, the benchmarks line up much more closely.
+
+## Subway plot: reported ranks and the consensus
+
+The bump chart shows each method's reported rank in the three benchmarks (left of the divider) and the beam consensus (right), derived by pooling the consistent per-benchmark ranks.
+
+```{python}
+consensus = dict(zip(
+    CANON,
+    rankdata([np.mean([beam_mean[(b, m)] for b in BENCH]) for m in CANON], method="ordinal"),
+    strict=True,
+))
+columns = [f"{b}\n(reported)" for b in BENCH] + ["beam\nconsensus"]
+ranks = np.array([[published[b][m] for b in BENCH] + [int(consensus[m])] for m in CANON])
+rank_bump(
+    tuple(CANON), tuple(columns), ranks, divider_after=2,
+    title="Reported method ranks across three benchmarks, and the beam consensus",
+)
+```
+
+Harmony holds the top rank consistently; combat, reported anywhere from first to last, settles to the bottom on the shared metrics; the consensus order is harmony, liger, fastMNN, scanorama, combat.
+
+## Funky heatmaps per benchmark
+
+The glyph tables show why the reported orders differ: the per-metric pattern over the five methods is not the same across benchmarks. Each circle is the method's standing on that metric within the benchmark (larger is better), coloured by the scIB biological and batch groups. The per-metric column maximum shifts across benchmarks for the same method, which is what drives the disagreement.
+
+```{python}
+groups = ["bio", "bio", "batch", "batch"]  # ARI, ASW | kBET, LISI
+n = len(CANON)
+for b in BENCH:
+    norm = np.zeros((n, len(METRICS)))
+    for j, mk in enumerate(METRICS):
+        ranks_bm = [np.mean([r for bb, _d, mm, mkk, r in zip(ib.benchmark, ib.dataset, ib.method, ib.metric, ib.rank, strict=True) if bb == b and mm == m and mkk == mk] or [np.nan]) for m in CANON]
+        norm[:, j] = 1.0 - (np.array(ranks_bm) - 1.0) / (n - 1)  # best rank -> 1
+    composite = np.nanmean(norm, axis=1)
+    order = rankdata(-composite, method="ordinal")
+    funky_heatmap(
+        norm, tuple(CANON), tuple(METRICS), composite, order,
+        metric_groups=tuple(groups), title=f"{b}: standing of the common methods per metric",
+    )
+```
+
+## How much of the variance is the benchmark
+
+A cross-benchmark variance decomposition puts a number on the split. The model is `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)`, where the method-by-benchmark component is the disagreement attributable to the benchmark rather than the method. The fit needs R's lme4, so the chunk runs only when it is available.
+
+```{python}
+from beam.heterogeneity import r_available, source_variance_decomposition
+
+methods, datasets, benchmarks, scores = ib.mean_rank_records()
+if r_available():
+    rep = source_variance_decomposition(methods, datasets, benchmarks, scores)
+    print(f"method-by-benchmark share: {rep.method_benchmark_share:.2f}")
+    print(f"residual (method-by-dataset plus noise): {rep.residual_share:.2f}")
+else:
+    print("R with lme4 not available; skipping the variance decomposition.")
+    print("Provision it with envs/heterogeneity.yml.")
+```
+
+## Limits
+
+This is three benchmarks and five methods, so the numbers are indicative, not precise: a Spearman over five methods is coarse, and three benchmarks is too few for a sharp benchmark-variance estimate. The reported rankings are reconstructed (Tran's final rank directly, scIB's 0.6/0.4 overall and OpenProblems' mean score recomputed). The benchmarks also use mostly different datasets, so part of the residual disagreement is genuine data differences, not the benchmarker. The one shared dataset, the human pancreas (Tran's Dataset 4 is the same Baron, Muraro, Segerstolpe, Wang and Xin studies scIB's pancreas task uses), is where a same-data, different-pipeline contrast could isolate the pure benchmarker effect with no data confound; that finer analysis is future work. With those caveats, the direction is clear: standardizing the analysis layer, which is what beam's metric cards and explicit aggregation do, removes much of the apparent disagreement between these benchmarks.

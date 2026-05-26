@@ -15,7 +15,7 @@ format:
 
 ## Goal
 
-This vignette runs the simulated scenarios. Four scenarios with documented ground truth feed through the same MCDA report layout as the Duo vignette. The point is to verify, at a glance, that the pipeline reports what each scenario was built to encode.
+This vignette runs the simulated scenarios. Four scenarios with documented ground truth feed through the same MCDA report layout as the Duo vignette, to verify at a glance that the pipeline reports what each scenario was built to encode.
 
 - random: anti-correlated scores so no method Pareto-dominates. Which method comes out on top depends entirely on weights; SMAA confidence is spread across the Pareto frontier; the top rank is fragile under weight perturbation.
 - dominant: one method dominates on every metric. It is rank 1 under any weighting; SMAA confidence factor for it is 1; no single-criterion weight perturbation can move it off the top rank.
@@ -302,7 +302,7 @@ fig.tight_layout()
 plt.show()
 ```
 
-The dashed line is the ground truth: the actual runtime in seconds. Under min-max the four good methods (m0 to m3) sit at almost the same height, so their real speed differences vanish and a tiny ARI difference decides the order. Under log_min_max the bars track the true ladder, so the genuinely fastest good method ranks first.
+The dashed line is the actual runtime in seconds. Under min-max the four good methods (m0 to m3) sit at almost the same height, so their real speed differences vanish and a tiny ARI difference decides the order. Under log_min_max the bars track the true ordering, so the genuinely fastest good method ranks first.
 
 ## Are the methods separable across datasets?
 
@@ -343,7 +343,7 @@ fig.tight_layout()
 plt.show()
 ```
 
-With only five datasets the critical difference is wide. Every method falls inside the shaded band, and the Friedman test does not reject at alpha 0.05, so the data cannot separate the methods even though the MCDA composite puts m0 first. This is the honest complement to the composite: the recommendation holds under the stated weighting, but a claim that one method is better across datasets would need more datasets to support it.
+With only five datasets the critical difference is wide. Every method falls inside the shaded band, and the Friedman test does not reject at alpha 0.05, so the data cannot separate the methods even though the MCDA composite puts m0 first. The recommendation holds under the stated weighting, but a claim that one method is better across datasets would need more datasets to support it.
 
 ## Heterogeneity diagnostics on a synthetic interaction
 
@@ -360,7 +360,7 @@ for j in range(8):
     het[:, j] = np.clip(np.array(means) + rng.normal(0, 0.05, 3), 0, 1)
 ```
 
-A mixed-effects model on this metric reports a small dataset intercept and a large residual: with one observation per cell the residual is the method-by-dataset interaction confounded with noise, and here it dominates because the methods reorder between the two regimes rather than the datasets differing in difficulty. The fits need the R toolchain, so the chunks run only when it is available.
+A mixed-effects model on this metric reports a small dataset intercept and a large residual. With one observation per cell the residual is the method-by-dataset interaction confounded with noise, and here it dominates because the methods reorder between the two regimes rather than the datasets differing in difficulty. The fits need the R toolchain, so the chunks run only when it is available.
 
 ```{python}
 from beam.heterogeneity import (
@@ -378,7 +378,7 @@ else:
     print("R with lme4 not available; skipping the mixed-effects fit.")
 ```
 
-The Bradley-Terry tree finds the feature behind the interaction. Unlike the small real benchmarks, this synthetic case has enough datasets and a clean signal, so the parameter-stability test splits the datasets on `regime` and assigns a different leading method to each leaf, exactly the ground-truth reversal built in.
+The Bradley-Terry tree finds the feature behind the interaction. Unlike the small real benchmarks, this synthetic case has enough datasets and a clean signal, so the parameter-stability test splits the datasets on `regime` and assigns a different leading method to each leaf, recovering exactly the reversal built into the construction.
 
 ```{python}
 if bttree_available():
@@ -396,7 +396,7 @@ else:
     print("R with psychotree not available; skipping the Bradley-Terry tree.")
 ```
 
-This is the positive control for the diagnostics: the Duo, M4 and transportation vignettes show the small-sample case where no split is found, and the OpenProblems spatial vignette shows a split on real data. Here the split is recovered from a known construction.
+This is the positive control for the diagnostics. The Duo, M4 and transportation vignettes show the small-sample case where no split is found; the OpenProblems spatial vignette shows a split on real data. Here the split is recovered from a known construction.
 
 ## A cross-domain example: transportation
 

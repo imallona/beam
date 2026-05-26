@@ -17,7 +17,7 @@ format:
 
 This vignette runs beam on the M4 forecasting competition (Makridakis, Spiliotis and Assimakopoulos 2020), a large real benchmark from outside bioinformatics. M4 forecast 100,000 anonymized time series across six frequency bands (yearly, quarterly, monthly, weekly, daily, hourly). Each submitted method was scored by two error metrics, sMAPE and MASE, both lower is better. beam reads those two metrics from its registry as the cards `smape` and `mase`, treats the six frequency bands as the dataset axis, and runs the same pipeline as the bioinformatics examples.
 
-The point is to show three things on real data. The registry does not care about the domain: forecasting metrics carry polarity, scale and normalization the same way clustering metrics do. The method ranking depends heavily on the frequency band, which is why leave-one-dataset-out and the critical-difference diagram across frequencies matter here. And the choice of how to pool the bands changes which method ranks first, so the recommendation is partly a decision about pooling rather than a fact about the methods.
+Three things are shown on real data. The registry does not care about the domain: forecasting metrics carry polarity, scale and normalization the same way clustering metrics do. The method ranking depends heavily on the frequency band, which is why leave-one-dataset-out and the critical-difference diagram across frequencies matter here. And the choice of how to pool the bands changes which method ranks first, so the recommendation is partly a decision about pooling rather than a fact about the methods.
 
 ## Provenance of the bundled table
 
@@ -80,7 +80,7 @@ for i in order[:5]:
     print(f"  {run.result.ranks[i]:>2d}  {m4.method_names[i]}")
 ```
 
-The method that ranks first here need not be the official competition winner. The official M4 ranking pools by OWA over all 100,000 series, so the monthly and yearly bands (48,000 and 23,000 series) dominate. beam treats each band as one dataset and weights the six equally, which lifts methods that do well on the small high-frequency bands. So the top method depends on the pooling choice. The next sections make that dependence visible rather than settling on one number.
+The method that ranks first here need not be the official competition winner. The official M4 ranking pools by OWA over all 100,000 series, so the monthly and yearly bands (48,000 and 23,000 series) dominate. beam treats each band as one dataset and weights the six equally, which lifts methods that do well on the small high-frequency bands. The top method depends on the pooling choice. The next sections make that dependence visible rather than settling on one number.
 
 ## Ranking by frequency band
 
@@ -155,7 +155,7 @@ from beam.reporting import funky_heatmap_from_run
 funky_heatmap_from_run(run, title="M4: scores and rank robustness")
 ```
 
-There are only two metrics, so the glyph grid is small. The robustness panels show more: many of the 25 methods change rank when a band is dropped or the aggregation is changed, and the SMAA bar puts the top ranks on several methods rather than one. The methods score close together, so the pooled order is not firm.
+There are only two metrics, so the glyph grid is small. The robustness panels are more informative: many of the 25 methods change rank when a band is dropped or the aggregation is changed, and the SMAA bar puts the top ranks on several methods rather than one. The methods score close together, so the pooled order is not firm.
 
 ## Heterogeneity: how much of the sMAPE variance is the band
 
@@ -174,7 +174,7 @@ else:
     print("R with lme4 not available; skipping the mixed-effects fit.")
 ```
 
-On M4 the band intercept takes most of the sMAPE variance: the bands differ mostly in how hard they are to forecast for every method alike, which is the opposite of the transportation example, where the terrain decides which mode is best. A Bradley-Terry tree on the six bands, with the seasonal period as the splitting feature, has too few datasets to find a stable split, the same small-sample limit the Duo benchmark hits and the reason the OpenProblems spatial task (50 datasets) is where a split appears.
+On M4 the band intercept takes most of the sMAPE variance: the bands differ mostly in how hard they are to forecast for every method alike, which is the opposite of the transportation example, where the terrain decides which mode leads. A Bradley-Terry tree on the six bands, with the seasonal period as the splitting feature, has too few datasets to find a stable split; this is the same small-sample limit the Duo benchmark hits, and why the OpenProblems spatial task (50 datasets) is where a split appears.
 
 ```{python}
 from beam.heterogeneity import bradley_terry_tree, bttree_available
@@ -209,4 +209,4 @@ print("wrote m4_report.html")
 
 ## Recommendation
 
-Pooled with equal weight per frequency band and SAW over sMAPE and MASE, the ranking favours methods that do well across all six bands, not only on the high-volume monthly and yearly series. The official competition order is different: it pools by OWA weighted by the number of series, so the monthly and yearly bands dominate and the ES-RNN of Smyl ranks first. The leave-one-band-out analysis points at the hourly band as the one the ranking leans on most, and with only six bands the critical-difference diagram has little power to separate the top methods. The top methods are close together, and which one comes first turns on whether the bands are weighted equally or by series count. beam writes that choice into the manifest instead of leaving it implicit.
+Pooled with equal weight per frequency band and SAW over sMAPE and MASE, the ranking favours methods that do well across all six bands, not only on the high-volume monthly and yearly series. The official competition order differs: it pools by OWA weighted by the number of series, so the monthly and yearly bands dominate and the ES-RNN of Smyl ranks first. The leave-one-band-out analysis points at the hourly band as the one the ranking leans on most, and with only six bands the critical-difference diagram has little power to separate the top methods. The top methods are close together, and which one comes first turns on whether the bands are weighted equally or by series count. beam writes that choice into the manifest instead of leaving it implicit.

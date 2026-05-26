@@ -1,6 +1,6 @@
 """The seed registry and schema must resolve as package resources.
 
-Phase 2 made beam installable: an installed wheel has no repo root, so the
+beam is installable as a wheel, which has no repo root, so the
 card loader and the registry must find metrics/ and schema/ inside the beam
 package rather than through a path relative to the source tree. These tests
 assert that the resolved locations live under the package and that loading

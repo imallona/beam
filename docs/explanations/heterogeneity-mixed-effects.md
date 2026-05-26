@@ -12,7 +12,7 @@ The method is a fixed effect: each method gets a marginal mean over datasets, wi
 
 The variance splits into two parts: the dataset variance and the residual variance. The intraclass correlation, the dataset variance over the total, is the share of the spread that is a pure dataset shift. A high value means the datasets differ mostly in difficulty, not in which method they favour. A low value means most of the variation is within datasets, where the method-by-dataset interaction lives.
 
-## Why the interaction is the point
+## Why the interaction matters
 
 A single global ranking is safe when the interaction is small: the method that leads on average leads nearly everywhere. When the interaction is large, the average hides reversals, and the better answer is "use method A on data like this, method B on data like that". This is the Strobl critique, that one method does not fit all datasets, stated as a variance component.
 

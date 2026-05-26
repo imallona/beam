@@ -15,7 +15,7 @@ format:
 
 ## Goal
 
-This vignette re-analyses the fourteen single-cell clustering methods benchmarked in Duo, Robinson and Soneson (2018) with the beam metric registry and the MCDA decision module. It loads the published method by dataset by metric tensor, pulls the metric cards, and pools each metric across the twelve datasets using the rule its card recommends. It then runs the MCDA pipeline and checks how stable the ranking is under different weightings, aggregation methods, and weight perturbations. It closes with a Demsar critical-difference diagram that asks whether the methods are separable on ARI at all, and a recommendation paragraph that reports what the data show.
+This vignette re-analyses the fourteen single-cell clustering methods benchmarked in Duo, Robinson and Soneson (2018) with the beam metric registry and the MCDA decision module. It loads the published method by dataset by metric tensor, pulls the metric cards, and pools each metric across the twelve datasets using the rule its card recommends. It then runs the MCDA pipeline and checks how stable the ranking is under different weightings, aggregation methods, and weight perturbations. It closes with a Demsar critical-difference diagram that asks whether the methods are separable on ARI at all.
 
 ## Set-up
 
@@ -79,7 +79,7 @@ for p in props:
 
 The MCDA pipeline works on a method by metric matrix, so the dataset axis has to be folded out first. For each metric this code applies the rule the card declares, but with a NaN-aware reduction so the five missing cells do not poison a method's pooled score. ARI and Shannon entropy difference use a NaN-aware arithmetic mean; runtime uses a NaN-aware geometric mean (the mean of the logs, then exponentiated, over the observed datasets only).
 
-The NaN handling lives here in the example, not in the core pipeline. `beam.mcda.aggregate_across_datasets` is not NaN-aware by design; pushing coverage-aware pooling into the core normalization, weighting and aggregation is Phase 4 work tied to the heterogeneity module. Doing it at the example level keeps the choice explicit: a method's pooled score is the average over the datasets where it was actually measured. The five gaps fall on SAFE (two datasets) and ascend (three datasets); every other method is observed on all twelve.
+The NaN handling lives here in the example, not in the core pipeline. `beam.mcda.aggregate_across_datasets` is not NaN-aware by design; pushing coverage-aware pooling into the core normalization, weighting and aggregation is future work tied to the heterogeneity module. Doing it at the example level keeps the choice explicit: a method's pooled score is the average over the datasets where it was actually measured. The five gaps fall on SAFE (two datasets) and ascend (three datasets); every other method is observed on all twelve.
 
 ```{python}
 def pool_metric(metric_id, rule):
@@ -269,7 +269,7 @@ print("top-ranked under equal weights / SAW:", run.top_tool)
 print("matrix ranked (methods by metrics):", run.matrix.shape)
 ```
 
-Leave-one-dataset-out asks how much the ranking leans on any single dataset. For each dataset it drops that dataset, pools the remaining eleven the same way, re-ranks, and compares to the base ranking. The per-method stability is the share of those runs in which the method keeps its base rank.
+Leave-one-dataset-out asks how much the ranking leans on any single dataset. For each dataset dropped, the remaining eleven are pooled the same way, re-ranked, and compared to the base ranking. The per-method stability is the share of those runs in which the method keeps its base rank.
 
 ```{python}
 lodo = run.leave_one_dataset_out
@@ -299,7 +299,7 @@ fig.tight_layout()
 plt.show()
 ```
 
-The funky heatmap shows the same run as a glyph table, with two robustness panels: the span of ranks each method takes across the leave-one-dataset-out runs, and the span across the five aggregations (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET) holding the weighting fixed. The brackets on the left group the methods the Friedman-Nemenyi test cannot separate on ARI. The two span panels differ: dropping a dataset barely moves the order, and Seurat holds rank one, but the choice of aggregation moves it a lot. On this benchmark the order depends more on how the metrics are combined than on which datasets are pooled.
+The funky heatmap shows the same run as a glyph table, with two robustness panels: the span of ranks each method takes across the leave-one-dataset-out runs, and the span across the five aggregations (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET) holding the weighting fixed. The brackets on the left group the methods the Friedman-Nemenyi test cannot separate on ARI. The two span panels differ: dropping a dataset barely moves the order, and Seurat holds rank one, but the choice of aggregation moves it considerably. On this benchmark the order depends more on how the metrics are combined than on which datasets are pooled.
 
 ```{python}
 from beam.mcda import critical_difference
@@ -319,7 +319,7 @@ funky_heatmap_from_run(
 )
 ```
 
-`beam.report` writes the whole run to one self-contained HTML file: the ranking, the normalization diagnostics, every sensitivity output including the leave-one-dataset-out figure above, the critical-difference diagram, and the recommendation paragraph. Passing `ground_truth_tool` outlines the method documented to rank first on the ranking figure.
+`beam.report` writes the whole run to one self-contained HTML file: the ranking, the normalization diagnostics, every sensitivity output including the leave-one-dataset-out figure above, the critical-difference diagram, and the recommendation paragraph. `ground_truth_tool` outlines the method documented to rank first on the ranking figure.
 
 ```{python}
 beam.report(run, "duo2018_report.html", ground_truth_tool="Seurat")
@@ -370,7 +370,7 @@ if me is not None:
     plt.show()
 ```
 
-The dataset intercept takes about 0.71 of the ARI variance, so most of the spread is datasets being uniformly easy or hard rather than methods reordering. SC3 and Seurat lead the marginal means and are not separable from each other given the standard errors, matching the critical-difference reading above. The residual share, the upper bound on the method-by-dataset interaction at one run per cell, concentrates on the two weakest methods (RaceID2 and FlowSOM) on a few simulated and four-group datasets, not on a reshuffling of the strong methods. See [the mixed-effects explanation](../../docs/explanations/heterogeneity-mixed-effects.md) and [findings 0002](../../docs/findings/0002-duo-2018-variance-decomposition.md).
+The dataset intercept takes about 0.71 of the ARI variance, so most of the spread is datasets being uniformly easy or hard rather than methods reordering. SC3 and Seurat lead the marginal means and are not separable from each other given the standard errors, which matches the critical-difference reading above. The residual share, the upper bound on the method-by-dataset interaction at one run per cell, concentrates on the two weakest methods (RaceID2 and FlowSOM) on a few simulated and four-group datasets, not on a reshuffling of the strong methods. See [the mixed-effects explanation](../../docs/explanations/heterogeneity-mixed-effects.md) and [findings 0002](../../docs/findings/0002-duo-2018-variance-decomposition.md).
 
 ## Heterogeneity: does a dataset feature reverse the ranking
 
@@ -401,11 +401,11 @@ else:
     print("Provision it with envs/heterogeneity.yml (conda or mamba).")
 ```
 
-On these 12 datasets the parameter-stability test finds no split, so the tree degrades to a single Bradley-Terry ranking led by SC3, the same order the net pairwise wins and the marginal means give. This is the honest small-sample limit: a dozen datasets is too few for the test to separate a feature-dependent regime from sampling noise, the same reason the critical-difference diagram and the variance decomposition both report a stable global ranking here. The tree earns its keep on a benchmark with many datasets carrying real feature variation; the OpenProblems spatially_variable_genes vignette is where a split appears. See [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md) and [findings 0003](../../docs/findings/0003-duo-2018-bradley-terry-tree.md).
+On these 12 datasets the parameter-stability test finds no split, so the tree reduces to a single Bradley-Terry ranking led by SC3, the same order the net pairwise wins and the marginal means give. A dozen datasets is too few for the test to separate a feature-dependent regime from sampling noise, which is also why the critical-difference diagram and the variance decomposition both report a stable global ranking here. The tree is more informative on a benchmark with many datasets carrying real feature variation; the OpenProblems spatially_variable_genes vignette is where a split appears. See [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md) and [findings 0003](../../docs/findings/0003-duo-2018-bradley-terry-tree.md).
 
 ## Recommendation
 
-Under the default pipeline (equal weights, SAW) on ARI, runtime and Shannon entropy difference pooled across the twelve datasets, Seurat ranks first, and it stays first across all sixteen weighting-by-method configurations tested above. The SMAA analysis puts Seurat top-ranked in about 99 percent of random weight draws, and the weight-perturbation check finds its top rank is not fragile: no single weight change within the threshold dislodges it. Leave-one-dataset-out adds the dataset axis to that account: Seurat keeps its first rank in all twelve runs that drop one dataset, so the recommendation does not hang on any single dataset. On the composite, RaceID2 and SAFE rank near the bottom.
+Under the default pipeline (equal weights, SAW) on ARI, runtime and Shannon entropy difference pooled across the twelve datasets, Seurat ranks first, and it holds that position across all sixteen weighting-by-method configurations tested above. The SMAA analysis puts Seurat top-ranked in about 99 percent of random weight draws, and the weight-perturbation check finds its top rank is not fragile: no single weight change within the threshold dislodges it. Leave-one-dataset-out adds the dataset axis to that picture: Seurat keeps its first rank in all twelve runs that drop one dataset, so the recommendation does not hang on any single dataset. On the composite, RaceID2 and SAFE rank near the bottom.
 
 The critical-difference diagram qualifies this. On ARI alone, the per-dataset ranks favour SC3 (best average ARI rank), with Seurat tied close behind, and the Friedman test is clearly significant (p well below 0.05), so the methods are not all equivalent. But the Nemenyi critical difference is large relative to the rank spread, so most pairs sit inside overlapping cliques and are not separable on ARI at twelve datasets. The composite ranks Seurat first because it also pools strong runtime and entropy-difference scores, not because it is the single best on ARI. The honest reading is that Seurat is a stable top choice across these three metrics and these weightings, while the gap between the upper-middle methods on ARI alone is within the noise the test can resolve.
 

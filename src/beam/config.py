@@ -21,9 +21,9 @@ A minimal file::
       manifest: manifest.json
       scores_normalized: scores_norm.csv
 
-The dataset_features and heterogeneity blocks sketched in PLAN Section 5.3 are
-Phase 4 and ignored here. Per-metric version pins are recorded but not yet
-enforced; the registry resolves the latest version.
+The dataset_features and heterogeneity blocks are parsed but ignored here.
+Per-metric version pins are recorded but not yet enforced; the registry
+resolves the latest version.
 """
 
 from __future__ import annotations

@@ -15,7 +15,7 @@ format:
 
 ## Goal
 
-This vignette runs beam on two tasks from OpenProblems in Single-Cell Analysis (openproblems.bio, Nature Biotechnology 2025), the continuous community benchmarking platform. OpenProblems scores every method on every dataset by every metric within a task and publishes the result as a method by dataset by metric tensor, so beam can ingest it directly. The two tasks are chosen for complementary reasons. The batch integration task is metric-rich (13 scIB metrics), so it exercises the multi-criteria decision layer. The spatially variable genes task is dataset-rich (50 spatial datasets), so it is where the Bradley-Terry tree can find a feature split, which the 12-dataset Duo benchmark could not show. See [the OpenProblems explanation](../../docs/explanations/openproblems-as-a-data-source.md).
+This vignette runs beam on two tasks from OpenProblems in Single-Cell Analysis (openproblems.bio, Nature Biotechnology 2025), the continuous community benchmarking platform. OpenProblems scores every method on every dataset by every metric within a task and publishes the result as a method by dataset by metric tensor, so beam can ingest it directly. The two tasks are chosen for different reasons. The batch integration task is metric-rich (13 scIB metrics), so it exercises the multi-criteria decision layer. The spatially variable genes task is dataset-rich (50 spatial datasets), so it is where the Bradley-Terry tree can find a feature split that the 12-dataset Duo benchmark could not show. See [the OpenProblems explanation](../../docs/explanations/openproblems-as-a-data-source.md).
 
 ## Provenance of the bundled tables
 
@@ -113,7 +113,7 @@ for i in beam_order[:5]:
     print(f"  {result.tool_names[i]}")
 ```
 
-OpenProblems builds its own leaderboard from the mean of the per-metric scaled scores. Pooling the raw scores the same way gives a different order, so the aggregation rule, not the data alone, decides the top method.
+OpenProblems builds its own leaderboard from the mean of the per-metric scaled scores. Pooling the raw scores the same way gives a different order, so the aggregation rule decides the top method, not the data alone.
 
 ```{python}
 mean_score = np.nanmean(np.nanmean(tensor, axis=1), axis=1)
@@ -126,7 +126,7 @@ print("beam top method:", result.tool_names[beam_order[0]])
 print("mean-of-scores top method:", methods[mean_order[0]])
 ```
 
-The two rules disagree on the leading method. This is the same point the M4 and Duo vignettes make: a benchmark recommendation is partly a decision about how the criteria are combined, which beam makes explicit and the single leaderboard number hides.
+The two rules disagree on the leading method. This is the same point the M4 and Duo vignettes make: a benchmark recommendation is partly a decision about how the criteria are combined. beam makes that decision explicit; a single leaderboard number hides it.
 
 ```{python}
 composite = result.result.composite
@@ -145,7 +145,7 @@ plt.show()
 
 ### A funky heatmap that shows its own rank robustness
 
-The funky heatmap is the standard way to show a multi-metric benchmark like this one: methods as rows sorted best first, metrics as circles sized by the score and coloured by group (here the scIB biological-conservation and batch-correction groups), and an overall bar. beam adds three panels next to it: a worth panel with the ARI marginal mean and a 95 percent interval from the mixed-effects model (overlapping intervals mean two methods are not separable), the span of ranks each method takes across the leave-one-dataset-out runs, and the SMAA rank-acceptability bar (the share of random weightings that put a method at each rank). The row order and circle sizes depend on the normalization, which beam takes from the metric cards rather than defaulting to min-max.
+The funky heatmap shows a multi-metric benchmark with methods as rows sorted best first, metrics as circles sized by the score and coloured by group (here the scIB biological-conservation and batch-correction groups), and an overall bar. beam adds three panels: a worth panel with the ARI marginal mean and a 95 percent interval from the mixed-effects model (overlapping intervals mean two methods are not separable), the span of ranks each method takes across the leave-one-dataset-out runs, and the SMAA rank-acceptability bar (the share of random weightings that put a method at each rank). The row order and circle sizes depend on the normalization, which beam takes from the metric cards rather than defaulting to min-max.
 
 ```{python}
 from beam.heterogeneity import mixed_effects_from_matrix, r_available
@@ -181,7 +181,7 @@ funky = funky_heatmap_from_run(
 funky
 ```
 
-With only six datasets the leave-one-dataset-out spans are wide: the top methods shift by several ranks when a single dataset is dropped, while the bottom methods stay put. The worth panel agrees, the ARI marginal-mean intervals of the top methods overlap, so they are not separable. The SMAA bar puts the top ranks on several methods rather than one. The top of this order is close, not fixed.
+With only six datasets the leave-one-dataset-out spans are wide: the top methods shift by several ranks when a single dataset is dropped, while the bottom methods stay put. The worth panel agrees: the ARI marginal-mean intervals of the top methods overlap, so they are not separable. The SMAA bar puts the top ranks on several methods rather than one. The top of this order is not settled.
 
 ### Where the ARI variance lives
 
@@ -299,8 +299,8 @@ if bt is not None and bt.did_split:
     plt.show()
 ```
 
-The pooled ranking is led by one method, but the leaves disagree: the leading spatially-variable-genes method depends on the spatial assay technology. This is the heterogeneity a single ranking hides, and the reason the 50-dataset task shows it where the 12-dataset Duo benchmark could not. See [findings 0004](../../docs/findings/0004-openproblems-svg-bradley-terry.md) and [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md).
+The pooled ranking has one method at the top, but the leaves disagree: which spatially-variable-genes method leads depends on the spatial assay technology. This is the heterogeneity a single ranking hides. The 50-dataset task shows it where the 12-dataset Duo benchmark could not. See [findings 0004](../../docs/findings/0004-openproblems-svg-bradley-terry.md) and [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md).
 
 ## Recommendation
 
-On batch integration, beam re-derives the per-metric normalization from the cards and runs explicit MCDA with sensitivity, which can place a different method first than the platform's mean-of-scores leaderboard. On spatially variable genes, the Bradley-Terry tree shows there is no single best method across assays. Both are the same message: a benchmark recommendation depends on how the criteria are combined and on which datasets it is read over, and beam makes both explicit rather than collapsing them into one number.
+On batch integration, beam re-derives the per-metric normalization from the cards and runs explicit MCDA with sensitivity, which can place a different method first than the platform's mean-of-scores leaderboard. On spatially variable genes, the Bradley-Terry tree shows there is no single best method across assays. Both cases show the same thing: a benchmark recommendation depends on how the criteria are combined and on which datasets it is read over. beam makes both explicit rather than collapsing them into one number.

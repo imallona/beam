@@ -1,0 +1,16 @@
+benchmark,method,published_rank
+Tran,combat,5
+Tran,harmony,1
+Tran,fastmnn,4
+Tran,scanorama,3
+Tran,liger,2
+scIB,combat,2
+scIB,harmony,3
+scIB,fastmnn,1
+scIB,scanorama,4
+scIB,liger,5
+OpenProblems,combat,1
+OpenProblems,harmony,2
+OpenProblems,fastmnn,3
+OpenProblems,scanorama,5
+OpenProblems,liger,4

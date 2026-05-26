@@ -30,7 +30,7 @@ The model is fit by R's lme4 in a one-shot subprocess (ADR 0009). The
 not enter a variance decomposition, but scale does, so do not mix metrics:
 pass one metric's scores per call. lme4 uses a Gaussian likelihood; for a
 bounded metric this is an approximation, and glmmTMB with a beta family is
-the documented future extension (PLAN Phase 4).
+the documented future extension.
 """
 
 from __future__ import annotations

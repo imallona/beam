@@ -2,7 +2,7 @@
 
 This folder holds a standalone vignette that runs the beam MCDA core on a made-up transportation problem instead of a bioinformatics benchmark. Transport modes (foot, road running, trail running, bicycle, e-bike, motorcycle, train, kayak, boat, plane) play the role of the methods, and terrains (flat road, mud, uphill, open water, long distance, urban hop) play the role of the datasets. Each mode is scored on a terrain by speed (higher is better), cost (lower is better), and CO2 (lower is better). The numbers are illustrative. The example does not use the metric registry: it carries its own polarity and per-metric normalization.
 
-The point of the example is to make three facts visible that the bio scenarios state but do not show as sharply:
+The example makes three facts visible that the bio scenarios state but do not show as sharply:
 
 1. No mode is fastest on every terrain (the method-by-dataset interaction). A train leads on the flat road and the urban hop, a motorcycle on mud and uphill, a boat on open water, a plane on the long distance. A single global ranking cannot report all of these at once.
 2. No mode runs on every terrain (partial coverage). Infeasible mode-terrain pairs are NaN. Because the coverage is incomplete, a single pooled ranking over all modes is not even well defined, so the honest output is per-terrain.

@@ -273,7 +273,7 @@ def _matrix_for_ranking(scores: Scores, registry: Registry) -> np.ndarray:
     so a tool missing on some datasets is summarized over the datasets where it
     was observed. A tool with no observations at all for a metric raises, since
     the single-matrix pipeline has no value to rank there. Per-dataset and
-    coverage-aware handling is the heterogeneity module (Phase 4).
+    coverage-aware handling is the heterogeneity module.
     """
     if not scores.is_tensor:
         return scores.values

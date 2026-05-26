@@ -11,6 +11,7 @@ All notable changes to beam will be documented in this file. The format follows 
 - Sensitivity and comparison primitives: leave_one_metric_out, leave_one_dataset_out, SMAA, smallest_weight_perturbation, and the Demsar Friedman-Nemenyi critical-difference diagram.
 - User-facing layer: beam.load_scores and Scores, the beam.rank procedural API and RunResult, a self-contained HTML beam.report, a reproducibility manifest, the declarative beam.yaml runner, and the beam command-line interface.
 - Heterogeneity module beam.heterogeneity (R via one-shot subprocess): mixed-effects variance decomposition (lme4) with a glmmTMB beta engine for bounded metrics, Bradley-Terry trees (psychotree), and Plackett-Luce on full rankings (PlackettLuce).
+- `beam.heterogeneity.source_variance_decomposition` and `SourceVarianceReport`: a cross-benchmark variance decomposition that fits `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)` in lme4 and reports the method-by-benchmark variance share, the part of the spread that is a method ranking differently depending on which benchmark evaluates it (disagreement from benchmarker choices) rather than genuine heterogeneity. Datasets are nested in benchmark, so benchmarks need not share datasets. Validated on synthetic two-benchmark data.
 - beam.reporting.funky_heatmap and funky_heatmap_from_run: the glyph-table benchmarking plot (methods by metrics, circle size for score, colour for metric group, overall bar) with an added panel that shows each method's rank span across the leave-one-dataset-out runs, so the figure carries its own rank robustness instead of reading as a settled order.
 - Registry grew from seven to twenty-six metric cards across clustering, efficiency, forecasting, transportation, and the scIB single-cell integration and spatial metrics.
 - Bundled datasets load_duo2018, load_m4, and load_openproblems (batch_integration and spatially_variable_genes), each a small derived table with provenance in src/beam/data/README.md.
@@ -45,7 +46,7 @@ All notable changes to beam will be documented in this file. The format follows 
 
 ### Added
 
-- `src/beam/mcda/` module, Phase 2 starter. `min_max_normalize` respects per-metric polarity. `equal_weights` builds a uniform weight vector. `weighted_sum` is the simple additive weighting (SAW) aggregation. `rank` returns competition ranks, 1 is best.
+- `src/beam/mcda/` module, the MCDA starter. `min_max_normalize` respects per-metric polarity. `equal_weights` builds a uniform weight vector. `weighted_sum` is the simple additive weighting (SAW) aggregation. `rank` returns competition ranks, 1 is best.
 - `examples/duo2018/duo2018.qmd`, walkthrough vignette. Pulls polarity from the metric cards and runs the MCDA pipeline on a synthetic three-method, two-metric stand-in. Lists what is still needed to run on the real Duo 2018 data.
 
 ### Changed

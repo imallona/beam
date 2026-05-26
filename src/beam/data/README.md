@@ -8,7 +8,7 @@ A method by metric result matrix from the single-cell RNA-seq clustering benchma
 
 Duo A, Robinson MD, Soneson C. A systematic performance evaluation of clustering methods for single-cell RNA-seq data. F1000Research 2018, 7:1141. DOI 10.12688/f1000research.15666.3.
 
-The underlying clustering results and data sets are distributed in the DuoClustering2018 Bioconductor experiment-data package (https://bioconductor.org/packages/DuoClustering2018), maintained by Angelo Duo and Charlotte Soneson, and in Charlotte Soneson's bettr deployment of the same benchmark. This CSV is the wide method by metric table used by that bettr app.
+The underlying clustering results and data sets are distributed in the DuoClustering2018 Bioconductor experiment-data package (https://bioconductor.org/packages/DuoClustering2018), maintained by Angelo Duo and Charlotte Soneson, and in Charlotte Soneson's bettr deployment of the same benchmark. This CSV is the wide method-by-metric table used by that bettr app.
 
 ### Shape
 
@@ -103,3 +103,21 @@ All scores are reported with higher is better (the platform's `maximize` flag is
 ### License
 
 The OpenProblems JSON data files are licensed CC-BY-4.0 (the `openproblems-bio/website` repository dual-licenses code as MIT and data and markdown as CC-BY-4.0). These derived tables are redistributed under CC-BY-4.0 with attribution; cite the OpenProblems consortium (Nature Biotechnology 2025, DOI 10.1038/s41587-025-02694-w) and, for the batch_integration metrics, Luecken et al. (Nature Methods 2022, DOI 10.1038/s41592-021-01336-8).
+
+## Cross-benchmark single-cell integration set (scib2022_metrics.csv, tran2020_metrics.csv, integration_published_ranks.csv)
+
+Three single-cell integration benchmarks harmonized on the shared scIB metric family (ARI, ASW, kBET, LISI) for the five methods common to all three (combat, harmony, fastMNN, scanorama, LIGER). Loaded by `beam.datasets.load_integration_benchmarks` and `beam.datasets.load_integration_published_ranks`.
+
+### Exact source of each table
+
+- `scib2022_metrics.csv`: raw (unscaled) per-method per-dataset scores from scIB (Luecken et al., Nature Methods 2022, DOI 10.1038/s41592-021-01336-8). Derived from the `theislab/scib-reproducibility` repository, file `data/metrics.csv` (the same values are in `visualization/data/metrics_RNA_allTasks.csv`). Takes the `unscaled` rows for the five real datasets (immune_cell_hum, immune_cell_hum_mou, lung_atlas, mouse_brain, pancreas) and the columns `ARI_cluster/label`, `ASW_label`, `kBET`, `iLISI`, with one representative integration variant per method (combat_full, harmony_embed, fastmnn_embed, scanorama_embed, liger_embed). Unscaled values are used so beam re-derives the normalization rather than inheriting scIB's. Code MIT, the article is CC-BY 4.0; cite Luecken et al. 2022.
+- `tran2020_metrics.csv`: per-method per-dataset ranks from Tran et al. (Genome Biology 2020, DOI 10.1186/s13059-019-1850-9, CC-BY 4.0), Additional file 8 (`13059_2019_1850_MOESM8_ESM.xlsx`), Table S7 "Rank and rank sums", columns ARI_rank, ASW_rank, LISI_rank, kBET_rank, for the five common methods over Tran's nine non-simulation datasets. Raw scores are also available in Additional file 5 (MOESM5) Table S4; the ranks (S7) are used here. Tran's dataset identities come from Additional file 1 (`13059_2019_1850_MOESM1_ESM.xlsx`) Table S1.
+- `integration_published_ranks.csv`: each benchmark's own reported ranking of the five methods, used as the baseline against which beam's consistent re-ranking is compared. Tran from MOESM8 Table S7 `final_rank` (averaged over datasets, then ranked among the five); scIB recomputed as its published 0.6 biological / 0.4 batch weighted overall on its full metric set (min-max scaled within the five common methods per dataset, from `scib-reproducibility` `data/metrics.csv`); OpenProblems from its `mean_score` leaderboard field in the batch_integration `results.json` at the pinned commit `76ce7f2` (the mean of the scaled per-metric scores).
+
+### Dataset crosswalk and overlap
+
+The benchmarks mostly use different datasets, with one confirmed overlap. Tran's Dataset 4 (human pancreas) is built from Muraro (GSE85241), Segerstolpe (E-MTAB-5061), Baron (GSE84133), Wang (GSE83139) and Xin (GSE81608), the same five studies scIB's `pancreas` task uses. Tran and scIB share the pancreas data; a same-data, different-pipeline contrast on it can isolate the benchmarker effect with no data confound. Tran's other datasets (from MOESM1 Table S1): D1 dendritic (Villani), D2 murine atlas (Han, Tabula Muris), D3 simulation, D5 PBMC (Zheng), D6 cell lines (293T, Jurkat), D7 mouse retina (Shekhar, Macosko), D8 mouse brain (Saunders, Rosenberg), D9 bone marrow and cord blood (HCA), D10 mouse haematopoietic (Nestorowa, Paul). OpenProblems uses cellxgene-census atlases (dkd, gtex, hypomap, immune_cell_atlas, mouse_pancreas_atlas, tabula_sapiens), none of which are the Baron/Muraro pancreas, so it does not overlap Tran or scIB.
+
+### Why these three, and what was discarded
+
+These three are the only single-cell integration benchmarks found to publish reusable per-method scores on the shared scIB metric family with overlapping classical methods. Candidates discarded: scIB-E (Genome Biology 2025, supplement MOESM2 Tables S4 and S12) shares the scIB metrics but its methods are deep-learning ones (scVI, scANVI and loss-function variants), with no overlap with the classical five; the Communications Biology 2025 reference-informed evaluation (DOI 10.1038/s42003-025-07947-7, Zenodo 14898612) covers one dataset with a bespoke RBET metric and overlaps only on combat and scanorama; BatchBench (NAR 2021) and sc_mixology (Nature Methods 2019) use off-family metrics; spatial and cross-species benchmarks use different methods. This scarcity is consistent with the reviewer survey of scRNA-seq benchmark reproducibility (Genome Biology 2023, DOI 10.1186/s13059-023-02962-5): most benchmarks release code but not per-method results.

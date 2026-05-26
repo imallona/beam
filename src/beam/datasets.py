@@ -611,3 +611,205 @@ def load_openproblems_svg_features() -> Duo2018Features:
     dataset_names = tuple(r["dataset_id"] for r in rows)
     categorical = {feat: tuple(r[feat] for r in rows) for feat in _OP_SVG_FEATURES}
     return Duo2018Features(dataset_names=dataset_names, numeric={}, categorical=categorical)
+
+
+# Cross-benchmark single-cell integration set for the cross-benchmark meta-analysis.
+# Three benchmarks publish reusable per-method scores on the shared scIB metric
+# family (ARI, ASW, kBET, LISI) for an overlapping set of classical integration
+# methods: scIB (Luecken 2022), the OpenProblems batch_integration task, and
+# Tran 2020. The five methods common to all three are combat, harmony, fastmnn,
+# scanorama and liger. Provenance and the keep/discard reasoning are in
+# src/beam/data/README.md.
+_INTEGRATION_METHODS: Final[tuple[str, ...]] = (
+    "combat",
+    "harmony",
+    "fastmnn",
+    "scanorama",
+    "liger",
+)
+_INTEGRATION_METRICS: Final[tuple[str, ...]] = ("ARI", "ASW", "kBET", "LISI")
+# OpenProblems metric ids for the four shared metrics (all higher is better).
+_OP_INTEGRATION_METRIC: Final[dict[str, str]] = {
+    "ARI": "ari",
+    "ASW": "asw_label",
+    "kBET": "kbet",
+    "LISI": "ilisi",
+}
+_OP_INTEGRATION_METHOD: Final[dict[str, str]] = {
+    "combat": "combat",
+    "harmony": "harmony",
+    "fastmnn": "batchelor_fastmnn",
+    "scanorama": "scanorama",
+    "liger": "liger",
+}
+
+
+@dataclass(frozen=True)
+class IntegrationBenchmarks:
+    """The harmonized cross-benchmark single-cell integration set.
+
+    Holds one record per (benchmark, dataset, method, metric): the rank of the
+    method among the common methods on that metric within that benchmark's
+    dataset, 1 best. Ranking within the common methods per benchmark, dataset
+    and metric is the scale-free common currency across benchmarks that score
+    on different native scales; for scIB and OpenProblems the rank is computed
+    from the raw (unscaled) higher-is-better scores, for Tran from its published
+    per-metric ranks. The five methods are common to all three benchmarks.
+
+    Attributes
+    ----------
+    benchmark, dataset, method, metric
+        Parallel label tuples, one entry per record.
+    rank
+        Float rank within the common methods, aligned with the labels.
+    """
+
+    benchmark: tuple[str, ...]
+    dataset: tuple[str, ...]
+    method: tuple[str, ...]
+    metric: tuple[str, ...]
+    rank: np.ndarray
+
+    def mean_rank_records(self) -> tuple[list[str], list[str], list[str], list[float]]:
+        """Collapse to the mean rank across metrics per (benchmark, dataset, method).
+
+        Returns four parallel lists ``(methods, datasets, benchmarks, scores)``
+        ready for ``beam.heterogeneity.source_variance_decomposition``, with the
+        dataset label namespaced by benchmark so datasets nest in benchmark.
+        """
+        from collections import defaultdict
+
+        groups: dict[tuple[str, str, str], list[float]] = defaultdict(list)
+        for b, d, m, _metric, r in zip(
+            self.benchmark, self.dataset, self.method, self.metric, self.rank, strict=True
+        ):
+            groups[(b, d, m)].append(float(r))
+        methods, datasets, benchmarks, scores = [], [], [], []
+        for (b, d, m), rs in groups.items():
+            methods.append(m)
+            datasets.append(f"{b}:{d}")
+            benchmarks.append(b)
+            scores.append(float(np.mean(rs)))
+        return methods, datasets, benchmarks, scores
+
+    def mean_rank_matrix(self) -> tuple[tuple[str, ...], tuple[str, ...], np.ndarray]:
+        """Method by benchmark matrix of the mean rank (over datasets and metrics).
+
+        Returns ``(methods, benchmarks, matrix)`` with the mean rank of each
+        method in each benchmark, the content of the rank-disagreement heatmap.
+        """
+        from collections import defaultdict
+
+        benchmarks = tuple(dict.fromkeys(self.benchmark))
+        cell: dict[tuple[str, str], list[float]] = defaultdict(list)
+        for b, _d, m, _metric, r in zip(
+            self.benchmark, self.dataset, self.method, self.metric, self.rank, strict=True
+        ):
+            cell[(m, b)].append(float(r))
+        matrix = np.full((len(_INTEGRATION_METHODS), len(benchmarks)), np.nan)
+        for i, m in enumerate(_INTEGRATION_METHODS):
+            for j, b in enumerate(benchmarks):
+                if cell[(m, b)]:
+                    matrix[i, j] = float(np.mean(cell[(m, b)]))
+        return _INTEGRATION_METHODS, benchmarks, matrix
+
+
+def _rank_within_common(
+    value_by_method: dict[str, float], higher_is_better: bool
+) -> dict[str, float]:
+    """Average-rank the common methods present in one (dataset, metric) cell, 1 best."""
+    from scipy.stats import rankdata
+
+    names = [m for m in _INTEGRATION_METHODS if m in value_by_method]
+    if len(names) < 2:
+        return {}
+    values = np.array([value_by_method[m] for m in names], dtype=float)
+    oriented = -values if higher_is_better else values  # rank 1 = best
+    ranks = rankdata(oriented, method="average")
+    return dict(zip(names, ranks, strict=True))
+
+
+def load_integration_benchmarks() -> IntegrationBenchmarks:
+    """Load the harmonized scIB, OpenProblems and Tran integration benchmark set.
+
+    Reads the bundled scIB raw scores and Tran ranks, plus the OpenProblems
+    batch_integration scores already shipped, restricts to the five common
+    methods and the four shared metrics (ARI, ASW, kBET, LISI), and reduces each
+    benchmark-dataset-metric cell to a rank within the common methods. The
+    result feeds the cross-benchmark analysis.
+
+    Returns
+    -------
+    IntegrationBenchmarks
+    """
+    records: list[tuple[str, str, str, str, float]] = []
+
+    # scIB: raw (unscaled) scores, higher is better; rank within common methods.
+    scib_text = resources.files(_CSV_PACKAGE).joinpath("scib2022_metrics.csv").read_text("utf-8")
+    scib_cells: dict[tuple[str, str], dict[str, float]] = {}
+    for row in csv.DictReader(scib_text.splitlines()):
+        scib_cells.setdefault((row["dataset"], row["metric"]), {})[row["method"]] = float(
+            row["score"]
+        )
+    for (dataset, metric), vals in scib_cells.items():
+        for method, r in _rank_within_common(vals, higher_is_better=True).items():
+            records.append(("scIB", dataset, method, metric, r))
+
+    # Tran: published per-metric ranks (lower is better); re-rank within common.
+    tran_text = resources.files(_CSV_PACKAGE).joinpath("tran2020_metrics.csv").read_text("utf-8")
+    tran_cells: dict[tuple[str, str], dict[str, float]] = {}
+    for row in csv.DictReader(tran_text.splitlines()):
+        tran_cells.setdefault((row["dataset"], row["metric"]), {})[row["method"]] = float(
+            row["rank"]
+        )
+    for (dataset, metric), vals in tran_cells.items():
+        for method, r in _rank_within_common(vals, higher_is_better=False).items():
+            records.append(("Tran", dataset, method, metric, r))
+
+    # OpenProblems batch_integration: raw scores, higher is better.
+    op = load_openproblems("batch_integration")
+    mi = {m: i for i, m in enumerate(op.method_names)}
+    ki = {k: i for i, k in enumerate(op.metric_ids)}
+    for di, dataset in enumerate(op.dataset_names):
+        for metric, op_metric in _OP_INTEGRATION_METRIC.items():
+            if op_metric not in ki:
+                continue
+            vals = {}
+            for canon, op_name in _OP_INTEGRATION_METHOD.items():
+                if op_name in mi:
+                    v = op.scores[mi[op_name], di, ki[op_metric]]
+                    if not np.isnan(v):
+                        vals[canon] = float(v)
+            for method, r in _rank_within_common(vals, higher_is_better=True).items():
+                records.append(("OpenProblems", dataset.split("/")[-1], method, metric, r))
+
+    records.sort()
+    return IntegrationBenchmarks(
+        benchmark=tuple(r[0] for r in records),
+        dataset=tuple(r[1] for r in records),
+        method=tuple(r[2] for r in records),
+        metric=tuple(r[3] for r in records),
+        rank=np.array([r[4] for r in records], dtype=float),
+    )
+
+
+def load_integration_published_ranks() -> dict[str, dict[str, int]]:
+    """Load the benchmarks' own published ranks of the common integration methods.
+
+    Returns a map ``{benchmark: {method: rank}}`` (rank 1 best) for the five
+    common methods, as each benchmark reported them with its own machinery:
+    Tran from its Table S7 final rank, scIB from its 0.6 biological / 0.4 batch
+    weighted overall on its full metric set, and OpenProblems from its
+    mean-of-scaled-scores leaderboard. These are the reported rankings the beam
+    consistent re-ranking is compared against; provenance is in
+    ``src/beam/data/README.md``.
+    """
+    text = (
+        resources.files(_CSV_PACKAGE)
+        .joinpath("integration_published_ranks.csv")
+        .read_text(encoding="utf-8")
+    )
+    out: dict[str, dict[str, int]] = {}
+    for row in csv.DictReader(text.splitlines()):
+        out.setdefault(row["benchmark"], {})[row["method"]] = int(row["published_rank"])
+    return out

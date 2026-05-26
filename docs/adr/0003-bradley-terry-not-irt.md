@@ -19,7 +19,7 @@ Two methods in the v1 heterogeneity module:
 1. Bradley-Terry trees: psychotree::bttree, on partykit.
 2. Mixed-effects on benchmark results: lme4, glmmTMB for bounded metrics.
 
-IRT held for Phase 8.
+IRT held for later.
 
 ## Consequences
 

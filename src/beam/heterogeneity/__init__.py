@@ -7,17 +7,23 @@ rather than a stable method effect, and which dataset properties reverse the
 ranking. It is the technical answer to the "against one method fits all"
 critique (Strobl and colleagues).
 
-Two tools are available, both wrapping R in a one-shot subprocess (ADR 0009):
+The tools all wrap R in a one-shot subprocess (ADR 0009):
 
 - ``mixed_effects``: a variance decomposition (Eugster, Hothorn and Leisch
   2008) that splits the score variation into a method effect, a between-dataset
-  shift, and a method-by-dataset interaction. Gated by ``r_available`` (lme4).
+  shift, and a method-by-dataset interaction. Gated by ``r_available`` (lme4);
+  pass ``engine="glmmtmb"`` for a beta family on bounded metrics, gated by
+  ``glmmtmb_available``.
 - ``bradley_terry_tree``: a Bradley-Terry tree (Strobl, Wickelmaier and
   Zeileis) that splits the datasets by their features so each leaf has its own
   method ranking, flagging where the pooled ranking reverses. Gated by
   ``bttree_available`` (psychotree).
-
-The Plackett-Luce extension named in PLAN Phase 4 is not implemented yet.
+- ``plackett_luce``: a Plackett-Luce model for full or partial rankings, with
+  per-method worth and quasi-standard errors. Gated by
+  ``plackett_luce_available`` (PlackettLuce).
+- ``source_variance_decomposition``: a cross-benchmark decomposition that
+  separates the method-by-benchmark disagreement from method-by-dataset
+  variation. Gated by ``r_available`` (lme4).
 """
 
 from .bradley_terry import (
@@ -42,6 +48,10 @@ from .plackett_luce import (
     plackett_luce_available,
     rankings_from_matrix,
 )
+from .source_variance import (
+    SourceVarianceReport,
+    source_variance_decomposition,
+)
 
 __all__ = [
     "BTNode",
@@ -50,6 +60,7 @@ __all__ = [
     "PlackettLuceReport",
     "RExecutionError",
     "RNotAvailableError",
+    "SourceVarianceReport",
     "bradley_terry_tree",
     "bttree_available",
     "glmmtmb_available",
@@ -60,4 +71,5 @@ __all__ = [
     "plackett_luce_available",
     "r_available",
     "rankings_from_matrix",
+    "source_variance_decomposition",
 ]

@@ -11,10 +11,10 @@ from __future__ import annotations
 
 import numpy as np
 
-from .figures import funky_heatmap
+from .figures import funky_heatmap, rank_bump
 from .render import write_report
 
-__all__ = ["funky_heatmap", "funky_heatmap_from_run", "write_report"]
+__all__ = ["funky_heatmap", "funky_heatmap_from_run", "rank_bump", "write_report"]
 
 
 _AGGREGATIONS = ("saw", "topsis", "vikor", "promethee_ii", "comet")

@@ -8,7 +8,7 @@
 
 ## Context
 
-PLAN Phase 4 lists two remaining model extensions after the mixed-effects (lme4) and Bradley-Terry (psychotree) work: glmmTMB for bounded and non-Gaussian benchmark metrics, and Plackett-Luce for full-ranking inputs. [ADR 0009](0009-heterogeneity-mixed-effects-via-r.md) already settled the boundary between Python and R, a one-shot R subprocess rather than reticulate. This ADR records the two additions and their design choices. Both reuse the shared subprocess machinery in `beam.heterogeneity._rsubprocess`.
+Two model extensions remained after the mixed-effects (lme4) and Bradley-Terry (psychotree) work: glmmTMB for bounded and non-Gaussian benchmark metrics, and Plackett-Luce for full-ranking inputs. [ADR 0009](0009-heterogeneity-mixed-effects-via-r.md) already settled the boundary between Python and R, a one-shot R subprocess rather than reticulate. This ADR records the two additions and their design choices. Both reuse the shared subprocess machinery in `beam.heterogeneity._rsubprocess`.
 
 ## Decision
 

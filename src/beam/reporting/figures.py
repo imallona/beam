@@ -147,6 +147,84 @@ _GROUP_COLORS = (
 )
 
 
+def rank_bump(
+    method_names: tuple[str, ...],
+    columns: tuple[str, ...],
+    ranks: np.ndarray,
+    *,
+    divider_after: int | None = None,
+    title: str | None = None,
+) -> Figure:
+    """A subway (bump) chart of method ranks across columns.
+
+    Each method is a line that connects its rank in each column, with rank 1 at
+    the top. Columns are benchmarks or aggregation rules. Where the lines cross
+    a lot the columns disagree on the order; where they run parallel the columns
+    agree. An optional vertical divider separates two groups of columns (for
+    example the benchmarks' published rankings on the left from beam's
+    consistent re-ranking on the right), so the eye can compare how tangled each
+    side is.
+
+    Parameters
+    ----------
+    method_names
+        The methods, one line each.
+    columns
+        Column labels along the x-axis.
+    ranks
+        ``(n_methods, n_columns)`` integer ranks, 1 best, aligned with
+        ``method_names`` and ``columns``.
+    divider_after
+        Draw a dashed vertical line after this column index (0-based) to split
+        the chart into two groups.
+    title
+        Optional figure title.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    ranks = np.asarray(ranks, dtype=float)
+    n_methods, n_cols = ranks.shape
+    fig = Figure(figsize=(1.7 * n_cols + 3.0, max(3.0, 0.5 * n_methods)))
+    ax = fig.subplots()
+    x = np.arange(n_cols)
+    for i, name in enumerate(method_names):
+        color = _GROUP_COLORS[i % len(_GROUP_COLORS)]
+        ax.plot(x, ranks[i], "-o", color=color, linewidth=2, markersize=7, label=name)
+        ax.annotate(
+            name,
+            (x[0], ranks[i, 0]),
+            xytext=(-6, 0),
+            textcoords="offset points",
+            ha="right",
+            va="center",
+            fontsize=9,
+            color=color,
+        )
+        ax.annotate(
+            name,
+            (x[-1], ranks[i, -1]),
+            xytext=(6, 0),
+            textcoords="offset points",
+            ha="left",
+            va="center",
+            fontsize=9,
+            color=color,
+        )
+    if divider_after is not None:
+        ax.axvline(divider_after + 0.5, color="#555555", linestyle="--", linewidth=1)
+    ax.set_xticks(x)
+    ax.set_xticklabels(columns, fontsize=9)
+    ax.set_yticks(range(1, n_methods + 1))
+    ax.set_ylim(n_methods + 0.5, 0.5)  # rank 1 at the top
+    ax.set_ylabel("rank (1 is best)")
+    ax.margins(x=0.18)
+    if title:
+        ax.set_title(title)
+    return fig
+
+
 def _rank_span_panel(ax, order, ranks, low, high, n_methods, xlabel):
     """Draw a per-method rank-span panel: a coloured bar from best to worst rank."""
     y = np.arange(n_methods)

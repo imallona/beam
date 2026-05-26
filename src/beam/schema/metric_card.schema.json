@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/imallona/beam/schema/metric_card.schema.json",
   "title": "Metric card",
-  "description": "Formalization of a benchmark performance metric. Language-neutral; readable from Python (jsonschema) and R (jsonvalidate). See PLAN.md Section 1.",
+  "description": "Formalization of a benchmark performance metric. Language-neutral; readable from Python (jsonschema) and R (jsonvalidate).",
   "type": "object",
   "additionalProperties": false,
   "required": [

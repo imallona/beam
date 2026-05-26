@@ -8,7 +8,7 @@
 
 ## Context
 
-What is the issue? What forces are at play (technical, organisational, social)? Short.
+What is the issue? What forces are at play (technical, organizational, social)? Short.
 
 ## Decision
 
