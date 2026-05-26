@@ -145,6 +145,47 @@ plt.show()
 
 The hourly band is the most influential. It has only a few hundred series and very different dynamics from the long yearly and quarterly series, so a method tuned for it moves a lot in the ranking when it is dropped. This is the forecasting version of the method-by-dataset interaction the other examples show.
 
+## Heterogeneity: how much of the sMAPE variance is the band
+
+The leave-one-band-out check asks whether the ranking leans on one band. A mixed-effects model asks the complementary question: how much of the sMAPE variation is a stable method effect and how much is the method-by-band interaction. It needs R's lme4, so the chunk runs only when it is available.
+
+```{python}
+from beam.heterogeneity import mixed_effects_from_matrix, r_available
+
+smape_matrix = m4.tensor(("smape",))[:, :, 0]
+
+if r_available():
+    me = mixed_effects_from_matrix(smape_matrix, m4.method_names, m4.frequency_names)
+    print(f"band shift (ICC):  {me.icc_dataset:.2f} of the sMAPE variance")
+    print(f"residual share:    {me.residual_share:.2f}")
+else:
+    print("R with lme4 not available; skipping the mixed-effects fit.")
+```
+
+On M4 the band intercept takes most of the sMAPE variance: the bands differ mostly in how hard they are to forecast for every method alike, which is the opposite of the transportation example, where the terrain decides which mode is best. A Bradley-Terry tree on the six bands, with the seasonal period as the splitting feature, has too few datasets to find a stable split, the same small-sample limit the Duo benchmark hits and the reason the OpenProblems spatial task (50 datasets) is where a split appears.
+
+```{python}
+from beam.heterogeneity import bradley_terry_tree, bttree_available
+
+seasonal_period = {
+    "Yearly": 1.0, "Quarterly": 4.0, "Monthly": 12.0,
+    "Weekly": 1.0, "Daily": 1.0, "Hourly": 24.0,
+}
+if bttree_available():
+    bt = bradley_terry_tree(
+        smape_matrix,
+        m4.method_names,
+        m4.frequency_names,
+        numeric_features={"seasonal_period": [seasonal_period[b] for b in m4.frequency_names]},
+        polarity="lower_is_better",
+        minsize=2,
+    )
+    print(f"split found: {bt.did_split}")
+    print(bt.summary())
+else:
+    print("R with psychotree not available; skipping the Bradley-Terry tree.")
+```
+
 ## Report
 
 `beam.report` writes the whole run to one self-contained HTML file: the ranking, the per-band sensitivity, a critical-difference diagram across the six bands (the input is a complete tensor), and a recommendation paragraph.

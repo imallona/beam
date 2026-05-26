@@ -352,6 +352,37 @@ if me is not None:
 
 The dataset intercept takes about 0.71 of the ARI variance, so most of the spread is datasets being uniformly easy or hard rather than methods reordering. SC3 and Seurat lead the marginal means and are not separable from each other given the standard errors, matching the critical-difference reading above. The residual share, the upper bound on the method-by-dataset interaction at one run per cell, concentrates on the two weakest methods (RaceID2 and FlowSOM) on a few simulated and four-group datasets, not on a reshuffling of the strong methods. See [the mixed-effects explanation](../../docs/explanations/heterogeneity-mixed-effects.md) and [findings 0002](../../docs/findings/0002-duo-2018-variance-decomposition.md).
 
+## Heterogeneity: does a dataset feature reverse the ranking
+
+The variance decomposition says how much interaction there is. The Bradley-Terry tree asks which dataset feature drives it. For one metric, each dataset becomes a set of pairwise method comparisons (the higher ARI wins), and `psychotree::bttree` splits the datasets by their features, so each leaf gets its own Bradley-Terry ranking and a parameter-stability test decides where a split is real. The dataset features (number of cells, number of true clusters, real vs simulated, family) ship next to the benchmark. The fit needs the R toolchain, so the section runs only when psychotree is available.
+
+```{python}
+from beam.datasets import load_duo2018_features
+from beam.heterogeneity import bradley_terry_tree, bttree_available
+
+if bttree_available():
+    features = load_duo2018_features()
+    numeric, categorical = features.aligned_to(duo.dataset_names)
+    bt = bradley_terry_tree(
+        ari,
+        duo.method_names,
+        duo.dataset_names,
+        numeric_features=numeric,
+        categorical_features=categorical,
+        polarity="higher_is_better",
+        minsize=4,
+    )
+    print(f"split found: {bt.did_split}")
+    print(f"global ranking (top 3): {', '.join(bt.global_ranking()[:3])}")
+    print(bt.summary())
+else:
+    bt = None
+    print("R with psychotree not available; skipping the Bradley-Terry tree.")
+    print("Provision it with envs/heterogeneity.yml (conda or mamba).")
+```
+
+On these 12 datasets the parameter-stability test finds no split, so the tree degrades to a single Bradley-Terry ranking led by SC3, the same order the net pairwise wins and the marginal means give. This is the honest small-sample limit: a dozen datasets is too few for the test to separate a feature-dependent regime from sampling noise, the same reason the critical-difference diagram and the variance decomposition both report a stable global ranking here. The tree earns its keep on a benchmark with many datasets carrying real feature variation; the OpenProblems spatially_variable_genes vignette is where a split appears. See [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md) and [findings 0003](../../docs/findings/0003-duo-2018-bradley-terry-tree.md).
+
 ## Recommendation
 
 Under the default pipeline (equal weights, SAW) on ARI, runtime and Shannon entropy difference pooled across the twelve datasets, Seurat ranks first, and it stays first across all sixteen weighting-by-method configurations tested above. The SMAA analysis puts Seurat top-ranked in about 99 percent of random weight draws, and the weight-perturbation check finds its top rank is not fragile: no single weight change within the threshold dislodges it. Leave-one-dataset-out adds the dataset axis to that account: Seurat keeps its first rank in all twelve runs that drop one dataset, so the recommendation does not hang on any single dataset. On the composite, RaceID2 and SAFE rank near the bottom.

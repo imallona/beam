@@ -35,68 +35,40 @@ the documented future extension (PLAN Phase 4).
 
 from __future__ import annotations
 
-import functools
-import json
-import os
-import shutil
-import subprocess
 from collections.abc import Sequence
 from dataclasses import dataclass
-from importlib import resources
 
 import numpy as np
 
+from ._rsubprocess import (
+    RExecutionError,
+    RNotAvailableError,
+    packages_available,
+    run_rscript,
+)
+
 _R_PACKAGE = "beam.heterogeneity"
 _R_SCRIPT = "mixed_effects.R"
-_PROBE_TIMEOUT_SECONDS = 30
+_R_PACKAGES = ("lme4", "jsonlite")
 _FIT_TIMEOUT_SECONDS = 300
 
-
-def _rscript() -> str:
-    """Return the Rscript executable to call.
-
-    Defaults to ``Rscript`` on PATH. Set the ``BEAM_RSCRIPT`` environment
-    variable to an explicit path or wrapper script to point beam at an R
-    living elsewhere, for example an ``Rscript`` shim that runs inside an
-    apptainer or singularity container.
-    """
-    return os.environ.get("BEAM_RSCRIPT", "Rscript")
+__all__ = [
+    "MixedEffectsReport",
+    "RExecutionError",
+    "RNotAvailableError",
+    "mixed_effects",
+    "mixed_effects_from_matrix",
+    "r_available",
+]
 
 
-class RNotAvailableError(RuntimeError):
-    """Raised when Rscript or a required R package is not on the system."""
-
-
-class RExecutionError(RuntimeError):
-    """Raised when the R subprocess exits with an error."""
-
-
-@functools.lru_cache(maxsize=1)
 def r_available() -> bool:
     """Return True when Rscript and the lme4 and jsonlite packages are present.
 
-    The result is cached for the process. Tests and vignettes use this to
-    skip the analysis cleanly on a machine without the R toolchain.
+    Tests and vignettes use this to skip the analysis cleanly on a machine
+    without the R toolchain.
     """
-    rscript = _rscript()
-    if shutil.which(rscript) is None and not os.path.exists(rscript):
-        return False
-    probe = (
-        "quit(status = if ("
-        'requireNamespace("lme4", quietly = TRUE) && '
-        'requireNamespace("jsonlite", quietly = TRUE)'
-        ") 0L else 1L)"
-    )
-    try:
-        completed = subprocess.run(
-            [rscript, "-e", probe],
-            capture_output=True,
-            timeout=_PROBE_TIMEOUT_SECONDS,
-            check=False,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return False
-    return completed.returncode == 0
+    return packages_available(_R_PACKAGES)
 
 
 @dataclass(frozen=True)
@@ -225,33 +197,7 @@ class MixedEffectsReport:
 
 def _run_r(payload: dict) -> dict:
     """Invoke the lme4 subprocess with a JSON payload and parse its JSON reply."""
-    if not r_available():
-        raise RNotAvailableError(
-            "Rscript with the lme4 and jsonlite packages is required for the "
-            "mixed-effects analysis; check beam.heterogeneity.r_available()"
-        )
-    script = str(resources.files(_R_PACKAGE).joinpath(_R_SCRIPT))
-    try:
-        completed = subprocess.run(
-            [_rscript(), script],
-            input=json.dumps(payload),
-            capture_output=True,
-            text=True,
-            timeout=_FIT_TIMEOUT_SECONDS,
-            check=False,
-        )
-    except subprocess.TimeoutExpired as exc:
-        raise RExecutionError(
-            f"the R mixed-effects fit timed out after {_FIT_TIMEOUT_SECONDS}s"
-        ) from exc
-    if completed.returncode != 0:
-        raise RExecutionError(f"the R mixed-effects fit failed:\n{completed.stderr.strip()}")
-    try:
-        return json.loads(completed.stdout)
-    except json.JSONDecodeError as exc:
-        raise RExecutionError(
-            f"could not parse the R output as JSON:\n{completed.stdout.strip()}"
-        ) from exc
+    return run_rscript(_R_PACKAGE, _R_SCRIPT, payload, _R_PACKAGES, _FIT_TIMEOUT_SECONDS)
 
 
 def mixed_effects(

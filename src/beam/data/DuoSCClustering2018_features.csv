@@ -1,0 +1,13 @@
+dataset,n_cells,n_clusters,source_type,family,quantification
+Koh,531,9,real,Koh,standard
+KohTCC,531,9,real,Koh,tcc
+Kumar,246,3,real,Kumar,standard
+KumarTCC,246,3,real,Kumar,tcc
+SimKumar4easy,500,4,simulated,SimKumar,standard
+SimKumar4hard,500,4,simulated,SimKumar,standard
+SimKumar8hard,500,8,simulated,SimKumar,standard
+Trapnell,222,3,real,Trapnell,standard
+TrapnellTCC,227,3,real,Trapnell,tcc
+Zhengmix4eq,4000,4,real,Zhengmix,standard
+Zhengmix4uneq,6500,4,real,Zhengmix,standard
+Zhengmix8eq,3994,8,real,Zhengmix,standard

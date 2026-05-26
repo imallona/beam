@@ -396,6 +396,27 @@ plt.show()
 
 Pooled over both terrains the plane ranks first, because its 750 km/h on the long leg pulls its mean speed far above the others. Drop the long distance and rank on open water alone, and the motorboat ranks first instead: it is the fastest mode actually on the water, where the plane is slow. Drop open water and the long-distance order stands, plane first. So the plane's first place is not a property of water travel; it is an artifact of including the long leg in the pool. The kayak ranks last in every run under speed-heavy weights. Leave-one-dataset-out turns that into a number: the plane and the motorboat each hold their rank in only half the runs, so the pooled recommendation between them hangs entirely on whether the long-distance terrain is in the pool. This is the same caution the per-terrain sections raise, now stated as a stability measure on a complete block.
 
+## Heterogeneity: the interaction dominates here
+
+The mixed-effects model puts a number on what the per-terrain sections show. Fit on speed, with the mode as a fixed effect and the terrain as a random intercept, it splits the speed variance into a between-terrain shift and the rest. The fit needs R's lme4, so the chunk runs only when it is available.
+
+```{python}
+from beam.heterogeneity import mixed_effects_from_matrix, r_available
+
+speed = tb.scores[:, :, 0]
+keep = ~np.isnan(speed).all(axis=1)
+speed_modes = [m for m, k in zip(tb.mode_names, keep) if k]
+
+if r_available():
+    me = mixed_effects_from_matrix(speed[keep], speed_modes, tb.terrain_names)
+    print(f"terrain shift (ICC): {me.icc_dataset:.2f} of the speed variance")
+    print(f"residual share:      {me.residual_share:.2f} (mode-by-terrain interaction plus noise)")
+else:
+    print("R with lme4 not available; skipping the mixed-effects fit.")
+```
+
+The contrast with the other examples is the point. On M4 the band intercept takes most of the variance, so the bands differ mostly in difficulty. Here the terrain intercept takes very little: almost all of the speed variance is the mode-by-terrain interaction, because the fast mode on one terrain is the slow mode on another. That is the sharpest form of the "against one method fits all" problem, and it is why a single pooled speed ranking is misleading even where it can be computed. A Bradley-Terry tree on the six terrains has too few datasets to find a stable split, the same small-sample limit the Duo and M4 examples hit; the OpenProblems spatial task is where a split appears.
+
 ## Why per-terrain is the honest output
 
 This example was built so that no mode runs on every terrain and no mode is fastest on every terrain it does run on. Both facts push the analysis to be per-terrain. The partial coverage means a pooled ranking over all modes is not even well defined, since different modes are measured on different terrains. The method-by-dataset interaction means that even where a pooled ranking is computable, it reports a single order that is wrong on at least some terrains: the fast modes lead on their own terrains and trail on others.

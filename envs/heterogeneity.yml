@@ -15,3 +15,5 @@ dependencies:
   - r-base>=4.3
   - r-lme4>=1.1
   - r-jsonlite>=1.8
+  - r-psychotree>=0.16
+  - r-partykit>=1.2

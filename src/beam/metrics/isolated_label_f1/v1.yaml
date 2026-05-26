@@ -1,0 +1,75 @@
+id: isolated_label_f1
+version: v1
+name: Isolated-label F1
+description: Single-cell data-integration metric from the scIB benchmark, a biological-conservation
+  score. Measures best F1 of clustering the isolated labels against the rest over
+  a clustering resolution sweep. scIB rescales it to the unit interval where higher
+  is better.
+citations:
+- text: Luecken MD, et al. Benchmarking atlas-level data integration in single-cell
+    genomics. Nature Methods, 2022.
+  doi: 10.1038/s41592-021-01336-8
+metric_kind: derived
+measurand: best F1 of clustering the isolated labels against the rest over a clustering
+  resolution sweep
+task:
+- integration
+requires_ground_truth: true
+inputs:
+- role: integrated_embedding
+  shape: matrix
+  dtype: float
+  description: the integrated cell-by-dimension embedding (or knn graph) produced
+    by the method under evaluation
+output:
+  shape: scalar
+  dtype: float
+  description: scIB-scaled score in [0, 1], higher is better
+semantics:
+  scale_type: interval
+  scale_rationale: scIB rescales the metric to a bounded [0, 1] range for cross-method
+    aggregation; the unit length is not invariant across benchmarks, so the scale
+    is interval rather than ratio.
+  range:
+    lower: 0
+    upper: 1
+    lower_inclusive: true
+    upper_inclusive: true
+  polarity: higher_is_better
+  monotonic: true
+  meaningful_zero: false
+  allowed_transformations:
+  - affine
+  - rank
+  uncertainty_model:
+    type: none
+comparability:
+  comparable_within:
+  - same_dataset
+  aggregation_rules:
+  - arithmetic_mean_across_datasets
+  recommended_aggregation_across_datasets: arithmetic_mean
+  recommended_normalization: min_max
+implementations:
+- name: scib
+  language: python
+  package: scib
+  function: scib.metrics.isolated_labels_f1
+  license: MIT
+  repo_url: https://github.com/theislab/scib
+examples:
+- description: perfect score (scIB scaled upper bound)
+  expected_output: 1.0
+- description: worst score (scIB scaled lower bound)
+  expected_output: 0.0
+provenance:
+  author: Izaskun Mallona
+  contact: izaskun.mallona@gmail.com
+  created: '2026-05-26'
+  modified: '2026-05-26'
+  license: CC-BY-4.0
+ground_truth:
+  description: reference cell-type labels and batch annotations for the integrated
+    cells
+  shape: vector
+  dtype: nominal_label

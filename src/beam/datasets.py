@@ -27,6 +27,7 @@ and the reduction script are documented in ``src/beam/data/README.md`` and
 from __future__ import annotations
 
 import csv
+from collections.abc import Sequence
 from dataclasses import dataclass
 from importlib import resources
 from typing import Final
@@ -326,6 +327,100 @@ def load_m4() -> M4Forecasting:
     )
 
 
+_FEATURES_CSV_NAME: Final = "DuoSCClustering2018_features.csv"
+
+# Dataset descriptors split by type so the heterogeneity module can pass them
+# as numeric covariates or factors to a Bradley-Terry tree. The numeric ones
+# are continuous splitters; the categorical ones are factors.
+_NUMERIC_FEATURES: Final[tuple[str, ...]] = ("n_cells", "n_clusters")
+_CATEGORICAL_FEATURES: Final[tuple[str, ...]] = ("source_type", "family", "quantification")
+
+
+@dataclass(frozen=True)
+class Duo2018Features:
+    """Dataset-level descriptors for the Duo 2018 benchmark.
+
+    These are the candidate splitting variables for a Bradley-Terry tree
+    (``beam.heterogeneity.bradley_terry_tree``): they describe each data set
+    rather than any method, so a tree can ask which data set properties
+    reverse the method ranking. The values are read from the bundled
+    ``DuoSCClustering2018_features.csv``; their provenance (the published
+    cell and subpopulation counts from the DuoClustering2018 package help
+    files) is documented in ``src/beam/data/README.md``.
+
+    Attributes
+    ----------
+    dataset_names
+        Data set labels, in the CSV row order.
+    numeric
+        Map from feature name (``n_cells``, ``n_clusters``) to a tuple of
+        floats aligned with ``dataset_names``.
+    categorical
+        Map from feature name (``source_type``, ``family``,
+        ``quantification``) to a tuple of strings aligned with
+        ``dataset_names``.
+    """
+
+    dataset_names: tuple[str, ...]
+    numeric: dict[str, tuple[float, ...]]
+    categorical: dict[str, tuple[str, ...]]
+
+    def aligned_to(
+        self, dataset_names: Sequence[str]
+    ) -> tuple[dict[str, list[float]], dict[str, list[str]]]:
+        """Reorder the features to match an external data set order.
+
+        Parameters
+        ----------
+        dataset_names
+            The data set order to align to, typically the data set axis of a
+            score tensor.
+
+        Returns
+        -------
+        tuple
+            ``(numeric, categorical)``, each a dict from feature name to a
+            list of values in the requested order.
+
+        Raises
+        ------
+        KeyError
+            If a requested data set has no feature row.
+        """
+        index = {name: i for i, name in enumerate(self.dataset_names)}
+        try:
+            order = [index[name] for name in dataset_names]
+        except KeyError as exc:
+            raise KeyError(f"no Duo 2018 features for data set {exc.args[0]!r}") from exc
+        numeric = {k: [v[i] for i in order] for k, v in self.numeric.items()}
+        categorical = {k: [v[i] for i in order] for k, v in self.categorical.items()}
+        return numeric, categorical
+
+
+def load_duo2018_features() -> Duo2018Features:
+    """Load the bundled Duo 2018 dataset-level descriptors.
+
+    Returns
+    -------
+    Duo2018Features
+        The data set names and their numeric and categorical descriptors,
+        read from ``DuoSCClustering2018_features.csv`` via
+        ``importlib.resources``.
+    """
+    csv_text = (
+        resources.files(_CSV_PACKAGE).joinpath(_FEATURES_CSV_NAME).read_text(encoding="utf-8")
+    )
+    rows = list(csv.DictReader(csv_text.splitlines()))
+    dataset_names = tuple(row["dataset"] for row in rows)
+    numeric = {feat: tuple(float(row[feat]) for row in rows) for feat in _NUMERIC_FEATURES}
+    categorical = {feat: tuple(row[feat] for row in rows) for feat in _CATEGORICAL_FEATURES}
+    return Duo2018Features(
+        dataset_names=dataset_names,
+        numeric=numeric,
+        categorical=categorical,
+    )
+
+
 def _parse_cell(value: str) -> float:
     """Parse one CSV cell, mapping the literal string NA to NaN."""
     if value == "NA":
@@ -390,3 +485,129 @@ def load_duo2018() -> Duo2018:
         polarity=_POLARITY,
         scores=scores,
     )
+
+
+# OpenProblems in Single-Cell Analysis (openproblems.bio, Nature Biotechnology
+# 2025). Each task publishes a method by dataset by metric result tensor as
+# CC-BY JSON. beam ships only small derived long-format tables (method_id,
+# dataset_id, metric_id, score), one per task, with the control or baseline
+# methods dropped. Provenance, the pinned source commit, and the metric
+# directions are in src/beam/data/README.md.
+_OP_TASKS: Final[dict[str, str]] = {
+    "batch_integration": "openproblems_batch_integration.csv",
+    "spatially_variable_genes": "openproblems_svg.csv",
+}
+_OP_SVG_FEATURES_CSV: Final = "openproblems_svg_features.csv"
+_OP_SVG_FEATURES: Final[tuple[str, ...]] = ("technology", "organism", "condition")
+
+
+@dataclass(frozen=True)
+class OpenProblems:
+    """One OpenProblems task as a method by dataset by metric tensor.
+
+    Built from a bundled derived table; missing cells are ``numpy.nan``.
+    Every OpenProblems metric here is reported with higher is better (the
+    platform's ``maximize`` flag is true for all of them), so ``polarity`` is
+    uniform; the canonical per-metric semantics live in the registry cards.
+
+    Attributes
+    ----------
+    task
+        The OpenProblems task id, for example ``"batch_integration"``.
+    method_names
+        Method ids, sorted, controls and baselines already dropped.
+    dataset_names
+        Dataset ids, sorted.
+    metric_ids
+        Metric ids, sorted; each resolves to a beam registry card.
+    polarity
+        ``"higher_is_better"`` per metric, aligned with ``metric_ids``.
+    scores
+        Float array of shape ``(n_methods, n_datasets, n_metrics)`` with NaN
+        in the cells the source reported as missing.
+    """
+
+    task: str
+    method_names: tuple[str, ...]
+    dataset_names: tuple[str, ...]
+    metric_ids: tuple[str, ...]
+    polarity: tuple[str, ...]
+    scores: np.ndarray
+
+    def tensor(self, metric_ids: tuple[str, ...] | None = None) -> np.ndarray:
+        """Return the (n_methods, n_datasets, len(metric_ids)) sub-tensor.
+
+        ``None`` returns every metric in the canonical (sorted) order.
+        """
+        if metric_ids is None:
+            return self.scores.copy()
+        try:
+            indices = [self.metric_ids.index(mid) for mid in metric_ids]
+        except ValueError as exc:
+            raise KeyError(f"unknown metric id; available: {self.metric_ids}") from exc
+        return self.scores[:, :, indices].copy()
+
+
+def load_openproblems(task: str) -> OpenProblems:
+    """Load a bundled OpenProblems task as a method by dataset by metric tensor.
+
+    Parameters
+    ----------
+    task
+        One of the bundled task ids: ``"batch_integration"`` (19 methods, 6
+        datasets, 13 scIB metrics) or ``"spatially_variable_genes"`` (14
+        methods, 50 datasets, one correlation metric).
+
+    Returns
+    -------
+    OpenProblems
+
+    Raises
+    ------
+    ValueError
+        If ``task`` is not one of the bundled tasks.
+    """
+    if task not in _OP_TASKS:
+        raise ValueError(f"unknown OpenProblems task {task!r}; bundled: {sorted(_OP_TASKS)}")
+    csv_text = resources.files(_CSV_PACKAGE).joinpath(_OP_TASKS[task]).read_text(encoding="utf-8")
+    rows = list(csv.DictReader(csv_text.splitlines()))
+    method_names = tuple(sorted({r["method_id"] for r in rows}))
+    dataset_names = tuple(sorted({r["dataset_id"] for r in rows}))
+    metric_ids = tuple(sorted({r["metric_id"] for r in rows}))
+    mi = {m: i for i, m in enumerate(method_names)}
+    di = {d: i for i, d in enumerate(dataset_names)}
+    ki = {k: i for i, k in enumerate(metric_ids)}
+
+    scores = np.full((len(method_names), len(dataset_names), len(metric_ids)), np.nan, dtype=float)
+    for r in rows:
+        value = r["score"]
+        if value not in ("", "NA"):
+            scores[mi[r["method_id"]], di[r["dataset_id"]], ki[r["metric_id"]]] = float(value)
+
+    return OpenProblems(
+        task=task,
+        method_names=method_names,
+        dataset_names=dataset_names,
+        metric_ids=metric_ids,
+        polarity=("higher_is_better",) * len(metric_ids),
+        scores=scores,
+    )
+
+
+def load_openproblems_svg_features() -> Duo2018Features:
+    """Load the dataset features for the OpenProblems spatially-variable-genes task.
+
+    Returns a ``Duo2018Features`` container (the same shape the Bradley-Terry
+    tree consumes) holding the categorical descriptors parsed from each
+    dataset id: the spatial assay ``technology`` (visium, merfish, slideseqv2,
+    and so on), the ``organism``, and a cancer or non-cancer ``condition``.
+    There are no numeric features. Provenance is in
+    ``src/beam/data/README.md``.
+    """
+    csv_text = (
+        resources.files(_CSV_PACKAGE).joinpath(_OP_SVG_FEATURES_CSV).read_text(encoding="utf-8")
+    )
+    rows = list(csv.DictReader(csv_text.splitlines()))
+    dataset_names = tuple(r["dataset_id"] for r in rows)
+    categorical = {feat: tuple(r[feat] for r in rows) for feat in _OP_SVG_FEATURES}
+    return Duo2018Features(dataset_names=dataset_names, numeric={}, categorical=categorical)

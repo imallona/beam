@@ -328,6 +328,59 @@ plt.show()
 
 With only five datasets the critical difference is wide. Every method falls inside the shaded band, and the Friedman test does not reject at alpha 0.05, so the data cannot separate the methods even though the MCDA composite puts m0 first. This is the honest complement to the composite: the recommendation holds under the stated weighting, but a claim that one method is better across datasets would need more datasets to support it.
 
+## Heterogeneity diagnostics on a synthetic interaction
+
+The canonical scenarios above are single-dataset (a method by metric matrix), so they exercise the MCDA layer but not the heterogeneity layer, which needs a dataset axis. To show the heterogeneity diagnostics with a known ground truth, here is a small synthetic method by dataset by metric case built to contain a feature-driven ranking reversal: method A leads on the "easy" datasets and method C leads on the "hard" ones, with method B in the middle. The datasets carry a `regime` feature that marks which group they belong to.
+
+```{python}
+rng = np.random.default_rng(0)
+het_methods = ["method_A", "method_B", "method_C"]
+het_datasets = [f"easy_{i}" for i in range(4)] + [f"hard_{i}" for i in range(4)]
+regime = ["easy"] * 4 + ["hard"] * 4
+het = np.empty((3, 8))
+for j in range(8):
+    means = [0.9, 0.6, 0.4] if regime[j] == "easy" else [0.4, 0.6, 0.9]
+    het[:, j] = np.clip(np.array(means) + rng.normal(0, 0.05, 3), 0, 1)
+```
+
+A mixed-effects model on this metric reports a small dataset intercept and a large residual: with one observation per cell the residual is the method-by-dataset interaction confounded with noise, and here it dominates because the methods reorder between the two regimes rather than the datasets differing in difficulty. The fits need the R toolchain, so the chunks run only when it is available.
+
+```{python}
+from beam.heterogeneity import (
+    bradley_terry_tree,
+    bttree_available,
+    mixed_effects_from_matrix,
+    r_available,
+)
+
+if r_available():
+    me = mixed_effects_from_matrix(het, het_methods, het_datasets)
+    print(f"dataset shift (ICC): {me.icc_dataset:.2f}")
+    print(f"residual share:      {me.residual_share:.2f} (interaction upper bound)")
+else:
+    print("R with lme4 not available; skipping the mixed-effects fit.")
+```
+
+The Bradley-Terry tree finds the feature behind the interaction. Unlike the small real benchmarks, this synthetic case has enough datasets and a clean signal, so the parameter-stability test splits the datasets on `regime` and assigns a different leading method to each leaf, exactly the ground-truth reversal built in.
+
+```{python}
+if bttree_available():
+    bt = bradley_terry_tree(
+        het,
+        het_methods,
+        het_datasets,
+        categorical_features={"regime": regime},
+        polarity="higher_is_better",
+        minsize=3,
+    )
+    print(f"split found: {bt.did_split}")
+    print(bt.summary())
+else:
+    print("R with psychotree not available; skipping the Bradley-Terry tree.")
+```
+
+This is the positive control for the diagnostics: the Duo, M4 and transportation vignettes show the small-sample case where no split is found, and the OpenProblems spatial vignette shows a split on real data. Here the split is recovered from a known construction.
+
 ## A cross-domain example: transportation
 
 The MCDA core is not specific to bioinformatics. A worked cross-domain example scores transport modes (the methods) across terrains (the datasets) on speed, cost, and CO2, with infeasible mode-terrain pairs left as NaN. It shows the method-by-dataset interaction (no mode is fastest on every terrain) and the partial-coverage problem (no mode runs on every terrain) more sharply than the bio scenarios do. It lives in its own vignette so the content is not duplicated here: see `examples/transportation/transportation.qmd`.
@@ -337,5 +390,5 @@ The MCDA core is not specific to bioinformatics. A worked cross-domain example s
 This vignette uses two metrics (ARI and runtime) and short tools lists for legibility. The next milestones widen it.
 
 1. Add cards for Shannon entropy difference and cluster-count deviation; rerun the canonical scenarios with four metrics so the SMAA simplex has higher dimension.
-2. Plug in the Bradley-Terry tree analysis on the odd-dataset scenario once `beam.heterogeneity` lands; it should split datasets by the odd-dataset flag and assign different per-leaf rankings.
+2. Done: the Bradley-Terry tree and the mixed-effects model are demonstrated above on a synthetic multi-dataset interaction with a known regime feature; extend the canonical scenarios with a dataset axis so the odd-dataset scenario itself carries the split.
 3. Add a noise-floor field on the metric card and report whether the weight-perturbation flip would survive a noise-floor-sized change.

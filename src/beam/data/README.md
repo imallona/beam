@@ -33,6 +33,18 @@ Missing cells are the literal string `NA`. The counts are 5 in `ARI`, 5 in `elap
 
 The Duo 2018 article is open access under CC-BY 4.0. The DuoClustering2018 Bioconductor package is released under GPL (>= 2), as listed on its Bioconductor landing page. This bundled CSV is redistributed under those terms; cite Duo, Robinson and Soneson (2018) when using it.
 
+## DuoSCClustering2018_features.csv
+
+Dataset-level descriptors for the 12 Duo 2018 data sets, used as the candidate splitting variables for the Bradley-Terry tree (`beam.heterogeneity.bradley_terry_tree`, loaded by `beam.datasets.load_duo2018_features`). One row per data set with columns `dataset, n_cells, n_clusters, source_type, family, quantification`.
+
+### Provenance of each column
+
+- `n_cells` and `n_clusters` (number of cells and number of true subpopulations) are taken from the DuoClustering2018 package help files for each data set (https://csoneson.github.io/DuoClustering2018/reference/): Koh 531 cells and 9 subpopulations, Kumar 246 and 3, Trapnell 222 and 3 (TrapnellTCC 227 cells), the SimKumar simulations 500 cells each (4, 4 and 8 subpopulations), and the Zheng mixtures Zhengmix4eq 4000 cells and 4 types, Zhengmix4uneq 6500 and 4, Zhengmix8eq 3994 and 8. The TCC quantification variants share their base data set's cell and cluster counts except where the help file records otherwise (TrapnellTCC).
+- `source_type` follows the Duo 2018 paper's own count of 9 real and 3 simulated data sets: the three SimKumar data sets are `simulated`, the rest `real`. The Zheng mixtures are real sorted cells recombined into artificial proportions; the cells are real, so they are labelled `real` to match the paper.
+- `family` is the source data set (Koh, Kumar, SimKumar, Trapnell, Zhengmix), and `quantification` is `standard` or `tcc` (transcript-compatibility counts), both parsed from the data set name.
+
+These are coarse descriptors for demonstrating the tree; the exact post-QC cell counts in the bundled `SingleCellExperiment` objects can differ slightly from these published nominal sizes. Cite Duo, Robinson and Soneson (2018) and the DuoClustering2018 package.
+
 ## M4_2018_by_frequency.csv
 
 A method by frequency by metric results table derived from the M4 forecasting competition (Makridakis, Spiliotis and Assimakopoulos 2020).
@@ -65,3 +77,29 @@ The official M4 ranking pools by OWA over all 100,000 series, so it is weighted 
 ### License
 
 `M4comp2018` is GPL-3. This table is derived from that GPL-3 data and is redistributed under the same terms. The unlicensed M4 results spreadsheet in the `Mcompetitions/M4-methods` repository was not used. Cite Makridakis, Spiliotis and Assimakopoulos (2020), The M4 Competition: 100,000 time series and 61 forecasting methods, International Journal of Forecasting, DOI 10.1016/j.ijforecast.2019.04.014.
+
+## openproblems_batch_integration.csv, openproblems_svg.csv, openproblems_svg_features.csv
+
+Derived results tables from OpenProblems in Single-Cell Analysis (openproblems.bio), the continuous community benchmarking platform. Loaded by `beam.datasets.load_openproblems` and `beam.datasets.load_openproblems_svg_features`.
+
+### Provenance
+
+OpenProblems consortium. Nature Biotechnology 2025, DOI 10.1038/s41587-025-02694-w. The results are committed as JSON in the `openproblems-bio/website` GitHub repository, one directory per task under `results/<task>/data/`. These tables were derived once from a pinned commit:
+
+```
+repo:   github.com/openproblems-bio/website
+commit: 76ce7f288da591b1b19c32cbfe8ce50bc3706ece
+files:  results/<task>/data/{results,metric_info,dataset_info,method_info}.json
+```
+
+Two tasks are bundled:
+
+- `openproblems_batch_integration.csv`: the batch_integration task, 19 methods (the 7 control and baseline methods such as `no_integration` and `shuffle_integration` were dropped) by 6 cellxgene-census datasets by 13 scIB metrics (Luecken et al. 2022). Long format `method_id, dataset_id, metric_id, score`, the raw `metric_values` with the source string `NA` left empty. The 13 metrics map to the bundled cards `ari`, `nmi`, `asw_batch`, `asw_label`, `cell_cycle_conservation`, `graph_connectivity`, `hvg_overlap`, `isolated_label_asw`, `isolated_label_f1`, `kbet`, `ilisi`, `clisi`, `pcr`. Coverage is uneven (some method-by-dataset cells and the `hvg_overlap` column are sparse); beam exposes the gaps as NaN.
+- `openproblems_svg.csv`: the spatially_variable_genes task, 14 methods (the 2 baselines `random_ranking` and `true_ranking` dropped) by 50 spatial datasets by one `correlation` metric. Same long format.
+- `openproblems_svg_features.csv`: dataset-level descriptors for the 50 spatial datasets, used as the Bradley-Terry tree splitting variables. `technology` (the spatial assay: visium, merfish, slideseqv2, stereoseq, dbitseq, seqfish, starmap, slidetags, post_xenium), `organism` (human, mouse, drosophila), and `condition` (cancer or noncancer) are parsed from the `<source>/<technology>/<name>` dataset id. The platform's `dataset_info.json` carries no structured numeric features (cell counts live only in free text), so no numeric features are provided.
+
+All scores are reported with higher is better (the platform's `maximize` flag is true for every metric here). The metric reference DOIs recorded on the cards come from the platform's `metric_info.json`. The exact fetch and reduction (curl of the four result files at the pinned commit, dropping baselines, mapping the source `NA` to empty, parsing the spatial features from the dataset id) is shown and reproduces these tables byte for byte in `examples/openproblems/openproblems.qmd`.
+
+### License
+
+The OpenProblems JSON data files are licensed CC-BY-4.0 (the `openproblems-bio/website` repository dual-licenses code as MIT and data and markdown as CC-BY-4.0). These derived tables are redistributed under CC-BY-4.0 with attribution; cite the OpenProblems consortium (Nature Biotechnology 2025, DOI 10.1038/s41587-025-02694-w) and, for the batch_integration metrics, Luecken et al. (Nature Methods 2022, DOI 10.1038/s41592-021-01336-8).

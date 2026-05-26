@@ -57,7 +57,7 @@ jobs:
         run: Rscript tests/validate_cards.R
 
   heterogeneity:
-    name: Mixed-effects heterogeneity (Python + R lme4)
+    name: Heterogeneity diagnostics (Python + R lme4, psychotree)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -73,7 +73,7 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Run the heterogeneity tests
-        run: pytest -q tests/test_heterogeneity_mixed_effects.py
+        run: pytest -q tests/test_heterogeneity_mixed_effects.py tests/test_heterogeneity_bradley_terry.py
 
   vignettes:
     name: Render Quarto vignettes
@@ -117,6 +117,11 @@ jobs:
           MPLBACKEND: Agg
         run: quarto render examples/m4/m4.qmd
 
+      - name: Render OpenProblems vignette
+        env:
+          MPLBACKEND: Agg
+        run: quarto render examples/openproblems/openproblems.qmd
+
       - name: Upload rendered Duo vignette as artefact
         uses: actions/upload-artifact@v4
         with:
@@ -143,4 +148,11 @@ jobs:
         with:
           name: m4-vignette
           path: examples/m4/m4.html
+          if-no-files-found: error
+
+      - name: Upload rendered OpenProblems vignette as artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openproblems-vignette
+          path: examples/openproblems/openproblems.html
           if-no-files-found: error

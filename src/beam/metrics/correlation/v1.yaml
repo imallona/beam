@@ -1,0 +1,72 @@
+id: correlation
+version: v1
+name: Spatial-variability rank correlation
+description: Spatial transcriptomics metric from the OpenProblems spatially variable
+  genes task. Correlation between a method's ranking of spatially variable genes and
+  a reference ranking; higher means closer agreement with the reference.
+citations:
+- text: Spearman C. The proof and measurement of association between two things (correlation
+    coefficient, as referenced by the OpenProblems spatially variable genes task).
+  doi: 10.1093/biomet/30.1-2.81
+metric_kind: derived
+measurand: agreement between a method's spatially-variable-gene ranking and a reference
+  ranking
+task:
+- spatial
+requires_ground_truth: true
+ground_truth:
+  description: reference ranking of spatially variable genes for the tissue
+  shape: vector
+  dtype: ordinal_label
+inputs:
+- role: gene_ranking
+  shape: vector
+  dtype: float
+  description: the method's per-gene spatial-variability score or ranking for the
+    tissue
+output:
+  shape: scalar
+  dtype: float
+  description: correlation in [-1, 1], higher is better
+semantics:
+  scale_type: interval
+  scale_rationale: a correlation coefficient has a meaningful zero (no association)
+    but its unit is not a ratio scale, so it is interval.
+  range:
+    lower: -1
+    upper: 1
+    lower_inclusive: true
+    upper_inclusive: true
+  polarity: higher_is_better
+  monotonic: true
+  meaningful_zero: true
+  allowed_transformations:
+  - affine
+  - rank
+  uncertainty_model:
+    type: none
+comparability:
+  comparable_within:
+  - same_dataset
+  aggregation_rules:
+  - arithmetic_mean_across_datasets
+  recommended_aggregation_across_datasets: arithmetic_mean
+  recommended_normalization: min_max
+implementations:
+- name: openproblems
+  language: python
+  package: openproblems
+  function: spatially_variable_genes correlation metric
+  license: MIT
+  repo_url: https://github.com/openproblems-bio/task_spatially_variable_genes
+examples:
+- description: perfect agreement with the reference ranking
+  expected_output: 1.0
+- description: no association with the reference ranking
+  expected_output: 0.0
+provenance:
+  author: Izaskun Mallona
+  contact: izaskun.mallona@gmail.com
+  created: '2026-05-26'
+  modified: '2026-05-26'
+  license: CC-BY-4.0

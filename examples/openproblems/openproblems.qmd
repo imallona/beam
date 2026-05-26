@@ -1,0 +1,223 @@
+---
+title: "OpenProblems: MCDA and heterogeneity on a real single-cell benchmark"
+author: "Izaskun Mallona"
+date: today
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-location: left
+    embed-resources: true
+    code-tools: true
+    fig-width: 6
+    fig-height: 3.5
+---
+
+## Goal
+
+This vignette runs beam on two tasks from OpenProblems in Single-Cell Analysis (openproblems.bio, Nature Biotechnology 2025), the continuous community benchmarking platform. OpenProblems scores every method on every dataset by every metric within a task and publishes the result as a method by dataset by metric tensor, so beam can ingest it directly. The two tasks are chosen for complementary reasons. The batch integration task is metric-rich (13 scIB metrics), so it exercises the multi-criteria decision layer. The spatially variable genes task is dataset-rich (50 spatial datasets), so it is where the Bradley-Terry tree can find a feature split, which the 12-dataset Duo benchmark could not show. See [the OpenProblems explanation](../../docs/explanations/openproblems-as-a-data-source.md).
+
+## Provenance of the bundled tables
+
+beam does not ship the raw single-cell data. It ships small derived long-format tables (`src/beam/data/openproblems_batch_integration.csv`, `openproblems_svg.csv`, `openproblems_svg_features.csv`), reduced once from the CC-BY-4.0 results JSON in the `openproblems-bio/website` repository at the pinned commit `76ce7f288da591b1b19c32cbfe8ce50bc3706ece`. The control and baseline methods were dropped at vendoring time. Provenance and license are recorded in `src/beam/data/README.md`. Cite the OpenProblems consortium (Nature Biotechnology 2025, DOI 10.1038/s41587-025-02694-w).
+
+The tables are reproducible from the published JSON. The steps below fetch the four result files for a task at the pinned commit and reduce them to the long table beam loads. They are shown for the record and are not run when this vignette renders, so the rendering needs no network access.
+
+```bash
+SHA=76ce7f288da591b1b19c32cbfe8ce50bc3706ece
+BASE=https://raw.githubusercontent.com/openproblems-bio/website/$SHA/results
+for task in batch_integration spatially_variable_genes; do
+  for f in results metric_info dataset_info method_info; do
+    curl -sf -o "$task.$f.json" "$BASE/$task/data/$f.json"
+  done
+done
+```
+
+```python
+import csv, json
+
+# beam loads these exact file names (see beam.datasets._OP_TASKS).
+OUTPUT = {
+    "batch_integration": "openproblems_batch_integration.csv",
+    "spatially_variable_genes": "openproblems_svg.csv",
+}
+
+def reduce_task(task):
+    results = json.load(open(f"{task}.results.json"))
+    method_info = json.load(open(f"{task}.method_info.json"))
+    baselines = {m["method_id"] for m in method_info if m["is_baseline"]}
+    rows = []
+    for r in results:
+        if r["method_id"] in baselines:        # drop controls and baselines
+            continue
+        for metric_id, value in r["metric_values"].items():
+            score = "" if value in ("NA", None) else value   # the source "NA" becomes empty
+            rows.append((r["method_id"], r["dataset_id"], metric_id, score))
+    rows.sort()
+    with open(OUTPUT[task], "w", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["method_id", "dataset_id", "metric_id", "score"])
+        w.writerows(rows)
+
+# The spatial dataset features are parsed from the dataset id <source>/<technology>/<name>.
+def svg_features():
+    datasets = sorted({r["dataset_id"] for r in json.load(open("spatially_variable_genes.results.json"))})
+    with open("openproblems_svg_features.csv", "w", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["dataset_id", "technology", "organism", "condition"])
+        for d in datasets:
+            _, technology, name = d.split("/")
+            organism = next((o for o in ("human", "mouse", "drosophila") if name.startswith(o)), "other")
+            condition = "cancer" if ("cancer" in name or "melanoma" in name) else "noncancer"
+            w.writerow([d, technology, organism, condition])
+```
+
+The metric directions and the reference DOIs on the metric cards come from each task's `metric_info.json` (every metric here has `maximize` true, so all are higher is better).
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+import beam
+from beam.datasets import load_openproblems, load_openproblems_svg_features
+```
+
+## Batch integration: many metrics, the MCDA layer
+
+The batch integration task has 19 methods, 6 datasets and 13 scIB metrics, all read from the registry. Coverage is uneven: the `hvg_overlap` column and some method-by-dataset cells are sparse, surfaced as NaN. We drop the sparse `hvg_overlap` metric and keep the methods that are observed on at least one dataset for every remaining metric, so the cross-dataset pooling is defined.
+
+```{python}
+op = load_openproblems("batch_integration")
+metrics = [m for m in op.metric_ids if m != "hvg_overlap"]
+tensor = op.tensor(tuple(metrics))
+keep = (~np.isnan(tensor).all(axis=1)).all(axis=1)
+methods = [m for m, k in zip(op.method_names, keep) if k]
+tensor = tensor[keep]
+print(f"{len(methods)} methods, {len(metrics)} metrics, {len(op.dataset_names)} datasets")
+```
+
+beam reads each metric card for its polarity and normalization, pools the six datasets per metric, and runs the chosen aggregation. We use equal weights and TOPSIS.
+
+```{python}
+scores = beam.Scores(
+    values=tensor,
+    tool_names=tuple(methods),
+    metric_ids=tuple(metrics),
+    dataset_names=op.dataset_names,
+    layout="long",
+)
+result = beam.rank(scores, weights="equal", method="topsis", sensitivity=False)
+beam_order = np.argsort(result.result.ranks)
+print("beam (equal weights, TOPSIS), top 5:")
+for i in beam_order[:5]:
+    print(f"  {result.tool_names[i]}")
+```
+
+OpenProblems builds its own leaderboard from the mean of the per-metric scaled scores. Pooling the raw scores the same way gives a different order, so the aggregation rule, not the data alone, decides the top method.
+
+```{python}
+mean_score = np.nanmean(np.nanmean(tensor, axis=1), axis=1)
+mean_order = np.argsort(-mean_score)
+print("mean of scores (OpenProblems-style), top 5:")
+for i in mean_order[:5]:
+    print(f"  {methods[i]}")
+print()
+print("beam top method:", result.tool_names[beam_order[0]])
+print("mean-of-scores top method:", methods[mean_order[0]])
+```
+
+The two rules disagree on the leading method. This is the same point the M4 and Duo vignettes make: a benchmark recommendation is partly a decision about how the criteria are combined, which beam makes explicit and the single leaderboard number hides.
+
+### Where the ARI variance lives
+
+A mixed-effects model on one metric splits the score variation into a stable method effect and the method-by-dataset interaction. We run it on ARI. The fit needs R's lme4, so the chunk runs only when it is available.
+
+```{python}
+from beam.heterogeneity import mixed_effects_from_matrix, r_available
+
+ari = op.tensor(("ari",))[:, :, 0]
+ari_keep = ~np.isnan(ari).all(axis=1)
+ari_methods = [m for m, k in zip(op.method_names, ari_keep) if k]
+ari = ari[ari_keep]
+
+if r_available():
+    me = mixed_effects_from_matrix(ari, ari_methods, op.dataset_names)
+    print(f"dataset shift (ICC): {me.icc_dataset:.2f} of the ARI variance")
+    print(f"residual share:      {me.residual_share:.2f}")
+    top = np.argsort(-me.method_effects)[:3]
+    print("leading ARI marginal means:")
+    for i in top:
+        print(f"  {me.method_names[i]:14s} {me.method_effects[i]:.3f} +/- {me.method_effect_se[i]:.3f}")
+else:
+    print("R with lme4 not available; skipping the mixed-effects fit.")
+    print("Provision it with envs/heterogeneity.yml.")
+```
+
+## Spatially variable genes: many datasets, the Bradley-Terry tree
+
+The spatially variable genes task has 14 methods, 50 spatial datasets and one correlation metric (higher is better). The 50 datasets carry real feature variation: the spatial assay technology, the organism, and a cancer or non-cancer condition, all parsed from the dataset id. This is the input the Bradley-Terry tree needs.
+
+```{python}
+svg = load_openproblems("spatially_variable_genes")
+svg_features = load_openproblems_svg_features()
+correlation = svg.tensor(("correlation",))[:, :, 0]
+_, categorical = svg_features.aligned_to(svg.dataset_names)
+print(f"{len(svg.method_names)} methods, {len(svg.dataset_names)} datasets")
+from collections import Counter
+print("technologies:", dict(Counter(categorical["technology"])))
+```
+
+The tree turns each dataset into pairwise method comparisons on the correlation score, then splits the datasets by their features so each leaf has its own ranking. The fit needs R's psychotree.
+
+```{python}
+from beam.heterogeneity import bradley_terry_tree, bttree_available
+
+if bttree_available():
+    bt = bradley_terry_tree(
+        correlation,
+        svg.method_names,
+        svg.dataset_names,
+        categorical_features=categorical,
+        polarity="higher_is_better",
+        minsize=6,
+    )
+    print(f"split found: {bt.did_split}")
+    print(f"pooled ranking, top 3: {', '.join(bt.global_ranking()[:3])}")
+    print(bt.summary())
+else:
+    bt = None
+    print("R with psychotree not available; skipping the Bradley-Terry tree.")
+    print("Provision it with envs/heterogeneity.yml.")
+```
+
+When the tree splits, each leaf has its own leading method. The plot shows the leading method per leaf and which assay technologies fall in it.
+
+```{python}
+if bt is not None and bt.did_split:
+    leaves = bt.terminal_nodes
+    labels = []
+    tops = []
+    for node in leaves:
+        members = bt.datasets_in_node(node.id)
+        techs = sorted({t for t, d in zip(categorical["technology"], svg.dataset_names) if d in members})
+        labels.append(f"leaf {node.id} (n={node.n})\n{', '.join(techs)}")
+        tops.append(bt.node_ranking(node.id)[0])
+    fig, ax = plt.subplots(figsize=(7.0, 3.5))
+    y = range(len(leaves))
+    ax.barh(list(y), [node.n for node in leaves], color="tab:green")
+    for i, t in enumerate(tops):
+        ax.text(0.3, i, f"leads: {t}", va="center", color="white", fontsize=9)
+    ax.set_yticks(list(y))
+    ax.set_yticklabels(labels, fontsize=8)
+    ax.set_xlabel("number of datasets in the leaf")
+    ax.set_ylabel("Bradley-Terry tree leaf (split by spatial assay)")
+    ax.set_title("Leading spatially-variable-genes method per leaf")
+    fig.tight_layout()
+    plt.show()
+```
+
+The pooled ranking is led by one method, but the leaves disagree: the leading spatially-variable-genes method depends on the spatial assay technology. This is the heterogeneity a single ranking hides, and the reason the 50-dataset task shows it where the 12-dataset Duo benchmark could not. See [findings 0004](../../docs/findings/0004-openproblems-svg-bradley-terry.md) and [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md).
+
+## Recommendation
+
+On batch integration, beam re-derives the per-metric normalization from the cards and runs explicit MCDA with sensitivity, which can place a different method first than the platform's mean-of-scores leaderboard. On spatially variable genes, the Bradley-Terry tree shows there is no single best method across assays. Both are the same message: a benchmark recommendation depends on how the criteria are combined and on which datasets it is read over, and beam makes both explicit rather than collapsing them into one number.
