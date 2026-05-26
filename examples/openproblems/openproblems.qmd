@@ -128,6 +128,21 @@ print("mean-of-scores top method:", methods[mean_order[0]])
 
 The two rules disagree on the leading method. This is the same point the M4 and Duo vignettes make: a benchmark recommendation is partly a decision about how the criteria are combined, which beam makes explicit and the single leaderboard number hides.
 
+```{python}
+composite = result.result.composite
+order = np.argsort(composite)
+fig, ax = plt.subplots(figsize=(6.5, 4.5))
+colors = ["#d1495b" if methods[i] == methods[mean_order[0]] else "#3a7ca5" for i in order]
+ax.barh(range(len(order)), composite[order], color=colors)
+ax.set_yticks(range(len(order)))
+ax.set_yticklabels([result.tool_names[i] for i in order])
+ax.set_xlabel("beam MCDA composite score (equal weights, TOPSIS)")
+ax.set_ylabel("integration method (ordered by composite)")
+ax.set_title("Batch integration: beam ranking; red marks the mean-of-scores top method")
+fig.tight_layout()
+plt.show()
+```
+
 ### Where the ARI variance lives
 
 A mixed-effects model on one metric splits the score variation into a stable method effect and the method-by-dataset interaction. We run it on ARI. The fit needs R's lme4, so the chunk runs only when it is available.
@@ -167,7 +182,35 @@ from collections import Counter
 print("technologies:", dict(Counter(categorical["technology"])))
 ```
 
-The tree turns each dataset into pairwise method comparisons on the correlation score, then splits the datasets by their features so each leaf has its own ranking. The fit needs R's psychotree.
+Before fitting any model, the mean correlation per method per assay technology already shows the structure: no method is best on every assay. This figure needs no R.
+
+```{python}
+import warnings
+
+technologies = sorted(set(categorical["technology"]))
+tech_array = np.array(categorical["technology"])
+heat = np.full((len(svg.method_names), len(technologies)), np.nan)
+for ti, tech in enumerate(technologies):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        heat[:, ti] = np.nanmean(correlation[:, tech_array == tech], axis=1)
+
+method_order = np.argsort(-np.nanmean(heat, axis=1))
+fig, ax = plt.subplots(figsize=(7.5, 5.0))
+im = ax.imshow(heat[method_order], aspect="auto", cmap="viridis")
+ax.set_xticks(range(len(technologies)))
+ax.set_xticklabels(technologies, rotation=45, ha="right")
+ax.set_yticks(range(len(svg.method_names)))
+ax.set_yticklabels([svg.method_names[i] for i in method_order])
+ax.set_xlabel("spatial assay technology")
+ax.set_ylabel("spatially-variable-genes method (ordered by mean correlation)")
+ax.set_title("Mean correlation per method per assay (the column maximum moves between methods)")
+fig.colorbar(im, ax=ax, label="mean correlation (higher is better)")
+fig.tight_layout()
+plt.show()
+```
+
+The tree turns each dataset into pairwise method comparisons on the correlation score, then splits the datasets by their features so each leaf has its own ranking, putting a statistical test behind the pattern the heatmap shows. The fit needs R's psychotree.
 
 ```{python}
 from beam.heterogeneity import bradley_terry_tree, bttree_available

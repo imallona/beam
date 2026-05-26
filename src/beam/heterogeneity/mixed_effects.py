@@ -132,6 +132,8 @@ class MixedEffectsReport:
     loglik: float
     aic: float
     warnings: tuple[str, ...]
+    engine: str = "lmer"
+    scale: str = "response"
 
     @property
     def total_variance(self) -> float:
@@ -170,16 +172,21 @@ class MixedEffectsReport:
 
     @property
     def residual_share(self) -> float:
-        """Share of variance in the residual.
+        """Share of the total in the observation-level term.
 
-        In the main-effects model this is the method-by-dataset interaction
-        confounded with measurement noise, so it is an upper bound on the
-        interaction.
+        In the lmer main-effects model this is the residual, the method-by-dataset
+        interaction confounded with measurement noise, so it is an upper bound on
+        the interaction. For a glmmTMB beta fit it is the dispersion term on the
+        link scale, which is the beta precision rather than a Gaussian variance,
+        so read it only as a rough share, not a variance ratio.
         """
         total = self.total_variance
         if total == 0.0:
             return float("nan")
-        return self.variance_components.get("Residual", 0.0) / total
+        observation = self.variance_components.get(
+            "Residual", self.variance_components.get("dispersion", 0.0)
+        )
+        return observation / total
 
     def top_outliers(self, k: int = 10) -> list[tuple[str, str, float]]:
         """Return the k (method, dataset, residual) cells with the largest absolute residual.
@@ -195,9 +202,22 @@ class MixedEffectsReport:
         ]
 
 
-def _run_r(payload: dict) -> dict:
-    """Invoke the lme4 subprocess with a JSON payload and parse its JSON reply."""
-    return run_rscript(_R_PACKAGE, _R_SCRIPT, payload, _R_PACKAGES, _FIT_TIMEOUT_SECONDS)
+_GLMMTMB_PACKAGES = ("glmmTMB", "jsonlite")
+
+
+def glmmtmb_available() -> bool:
+    """Return True when Rscript and the glmmTMB and jsonlite packages are present.
+
+    Gate for the ``engine="glmmtmb"`` path, the way ``r_available`` gates the
+    default lme4 path.
+    """
+    return packages_available(_GLMMTMB_PACKAGES)
+
+
+def _run_r(payload: dict, engine: str) -> dict:
+    """Invoke the R subprocess for the chosen engine and parse the JSON it prints."""
+    packages = _GLMMTMB_PACKAGES if engine == "glmmtmb" else _R_PACKAGES
+    return run_rscript(_R_PACKAGE, _R_SCRIPT, payload, packages, _FIT_TIMEOUT_SECONDS)
 
 
 def mixed_effects(
@@ -205,6 +225,8 @@ def mixed_effects(
     datasets: Sequence[str],
     scores: Sequence[float],
     formula_kind: str = "auto",
+    engine: str = "lmer",
+    family: str | None = None,
 ) -> MixedEffectsReport:
     """Fit a mixed-effects model on one metric's scores and decompose its variance.
 
@@ -222,23 +244,45 @@ def mixed_effects(
         ``score ~ method + (1 | dataset) + (1 | dataset:method)``, which is
         only identifiable with replicates and otherwise yields a singular
         fit.
+    engine
+        ``"lmer"`` (default) fits a Gaussian linear mixed model in lme4.
+        ``"glmmtmb"`` fits the same structure in glmmTMB, which allows a
+        non-Gaussian ``family`` for a bounded metric. The variance components
+        and marginal means it reports are then on the model's link scale, not
+        the response scale, so they are not directly comparable to the lmer
+        numbers; the method ordering is comparable.
+    family
+        Only used when ``engine="glmmtmb"``. ``None`` (default) resolves to
+        ``"beta"`` when every score lies strictly in (0, 1) and ``"gaussian"``
+        otherwise. Pass ``"beta"`` or ``"gaussian"`` to force one. The beta
+        family models a metric bounded in (0, 1) such as ARI; scores exactly
+        at 0 or 1 are squeezed inside the open interval before the fit.
 
     Returns
     -------
     MixedEffectsReport
+        With ``engine`` set to the engine used and ``scale`` set to
+        ``"response"`` for the Gaussian fits or ``"link"`` for a beta fit.
 
     Raises
     ------
     ValueError
-        If the three sequences differ in length, or fewer than two methods
-        or two datasets remain after dropping NaN scores.
+        If the three sequences differ in length, fewer than two methods or
+        two datasets remain after dropping NaN scores, or ``engine`` or
+        ``family`` is not recognised.
     RNotAvailableError
-        If the R toolchain with lme4 is not available.
+        If the R toolchain for the chosen engine is not available.
     RExecutionError
         If the R subprocess fails.
     """
     if formula_kind not in ("auto", "main", "interaction"):
         raise ValueError(f"formula_kind must be auto, main or interaction; got {formula_kind!r}")
+    if engine not in ("lmer", "glmmtmb"):
+        raise ValueError(f"engine must be lmer or glmmtmb; got {engine!r}")
+    if family is not None and family not in ("beta", "gaussian"):
+        raise ValueError(f"family must be beta, gaussian or None; got {family!r}")
+    if family is not None and engine != "glmmtmb":
+        raise ValueError("family only applies to engine='glmmtmb'")
     methods = [str(m) for m in methods]
     datasets = [str(d) for d in datasets]
     scores = np.asarray(scores, dtype=float)
@@ -263,8 +307,10 @@ def mixed_effects(
         "dataset": datasets,
         "score": scores.tolist(),
         "formula_kind": formula_kind,
+        "engine": engine,
+        "family": family,
     }
-    reply = _run_r(payload)
+    reply = _run_r(payload, engine)
 
     return MixedEffectsReport(
         method_names=tuple(reply["method_levels"]),
@@ -284,6 +330,8 @@ def mixed_effects(
         loglik=float(reply["loglik"]),
         aic=float(reply["aic"]),
         warnings=tuple(reply["warnings"]) if reply["warnings"] else (),
+        engine=str(reply.get("engine", engine)),
+        scale=str(reply.get("scale", "response")),
     )
 
 
@@ -292,6 +340,8 @@ def mixed_effects_from_matrix(
     method_names: Sequence[str],
     dataset_names: Sequence[str],
     formula_kind: str = "auto",
+    engine: str = "lmer",
+    family: str | None = None,
 ) -> MixedEffectsReport:
     """Fit the mixed-effects model from a method by dataset score matrix for one metric.
 
@@ -338,4 +388,6 @@ def mixed_effects_from_matrix(
             methods.append(str(method_names[mi]))
             datasets.append(str(dataset_names[di]))
             scores.append(float(matrix[mi, di]))
-    return mixed_effects(methods, datasets, scores, formula_kind=formula_kind)
+    return mixed_effects(
+        methods, datasets, scores, formula_kind=formula_kind, engine=engine, family=family
+    )

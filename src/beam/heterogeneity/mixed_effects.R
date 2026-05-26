@@ -4,16 +4,19 @@
 #
 # Called as a one-shot subprocess by beam.heterogeneity.mixed_effects. The
 # input is a JSON object on stdin with arrays method, dataset and score (one
-# entry per observation, already free of NaN) and a scalar formula_kind, one
-# of "auto", "main" or "interaction". The output is a JSON object on stdout.
-# See docs/adr/0009-heterogeneity-mixed-effects-via-r.md for the model choice.
-
-suppressPackageStartupMessages({
-    library(jsonlite)
-    library(lme4)
-})
+# entry per observation, already free of NaN), a scalar formula_kind (one of
+# "auto", "main", "interaction"), a scalar engine ("lmer" or "glmmtmb") and a
+# scalar family ("beta", "gaussian" or null). The output is a JSON object on
+# stdout. See docs/adr/0009 (lme4) and docs/adr/0011 (glmmTMB) for the model
+# choices.
 
 payload <- jsonlite::fromJSON(file("stdin"))
+
+engine <- if (is.null(payload$engine)) "lmer" else payload$engine
+suppressPackageStartupMessages({
+    library(jsonlite)
+    if (engine == "glmmtmb") library(glmmTMB) else library(lme4)
+})
 
 df <- data.frame(
     method = factor(as.character(payload$method)),
@@ -42,25 +45,51 @@ form <- if (kind == "interaction") {
     score ~ method + (1 | dataset)
 }
 
+# Resolve the glmmTMB family: beta when every score is strictly inside (0, 1)
+# and the caller did not force one, gaussian otherwise. The beta family models
+# a metric bounded in (0, 1); scores exactly at the bounds are squeezed inside
+# with the Smithson-Verkuilen transform so the likelihood is defined.
+family <- payload$family
+scale <- "response"
+if (engine == "glmmtmb") {
+    if (is.null(family)) {
+        family <- if (all(df$score > 0 & df$score < 1)) "beta" else "gaussian"
+    }
+    if (family == "beta") {
+        n <- nrow(df)
+        df$score <- (df$score * (n - 1) + 0.5) / n
+        scale <- "link"
+    }
+}
+
 warns <- character()
-model <- withCallingHandlers(
-    lme4::lmer(form, data = df, REML = TRUE),
-    warning = function(w) {
+catch <- function(expr) {
+    withCallingHandlers(expr, warning = function(w) {
         warns <<- c(warns, conditionMessage(w))
         invokeRestart("muffleWarning")
-    }
-)
+    })
+}
 
-# Per-method estimated marginal mean over datasets. The random dataset (and
-# interaction) effects are mean zero, so the marginal mean for method m is the
-# fixed-effect prediction intercept + effect(m). Build a contrast matrix L over
-# the fixed-effect coefficients and read the means and their standard errors
-# from L beta and diag(L V L').
-fe <- lme4::fixef(model)
-V <- as.matrix(stats::vcov(model))
+if (engine == "glmmtmb") {
+    fam <- if (family == "beta") glmmTMB::beta_family() else stats::gaussian()
+    model <- catch(glmmTMB::glmmTMB(form, data = df, family = fam, REML = TRUE))
+    fe <- glmmTMB::fixef(model)$cond
+    V <- as.matrix(stats::vcov(model)$cond)
+    is_singular <- isTRUE(!model$sdr$pdHess)
+} else {
+    model <- catch(lme4::lmer(form, data = df, REML = TRUE))
+    fe <- lme4::fixef(model)
+    V <- as.matrix(stats::vcov(model))
+    is_singular <- lme4::isSingular(model)
+}
+
+# Per-method estimated marginal mean over datasets, on the model scale (the
+# link scale for a beta fit). The random effects are mean zero, so the mean for
+# method m is the fixed-effect prediction intercept + effect(m). Build a
+# contrast matrix L over the fixed-effect coefficients and read the means and
+# their standard errors from L beta and diag(L V L').
 fe_names <- names(fe)
 levs <- levels(df$method)
-
 L <- matrix(0, nrow = length(levs), ncol = length(fe_names), dimnames = list(levs, fe_names))
 L[, "(Intercept)"] <- 1
 for (i in seq_along(levs)) {
@@ -73,28 +102,50 @@ emm <- as.vector(L %*% fe)
 emm_var <- diag(L %*% V %*% t(L))
 emm_se <- sqrt(pmax(emm_var, 0))
 
-# Variance components, one per grouping factor plus the residual. For random
-# intercepts var2 is NA and vcov holds the variance.
-vc <- as.data.frame(lme4::VarCorr(model))
-components <- as.list(vc$vcov)
-names(components) <- vc$grp
+# Variance components on the model scale. lme4 reports the random-effect
+# variances plus a Gaussian Residual. glmmTMB reports the random-effect
+# variances; the observation-level term is the residual variance for gaussian
+# and the dispersion parameter for beta (reported under "dispersion", which is
+# the beta precision, not a variance, so it is not comparable to a Gaussian
+# residual).
+if (engine == "glmmtmb") {
+    vc <- glmmTMB::VarCorr(model)$cond
+    components <- list()
+    for (grp in names(vc)) {
+        components[[grp]] <- as.numeric(vc[[grp]][1, 1])
+    }
+    if (family == "beta") {
+        components[["dispersion"]] <- as.numeric(sigma(model))
+    } else {
+        components[["Residual"]] <- as.numeric(sigma(model))^2
+    }
+    resids <- unname(stats::residuals(model, type = "pearson"))
+} else {
+    vc <- as.data.frame(lme4::VarCorr(model))
+    components <- as.list(vc$vcov)
+    names(components) <- vc$grp
+    resids <- unname(stats::residuals(model))
+}
 
 out <- list(
     formula = paste(deparse(form), collapse = " "),
     formula_kind = kind,
+    engine = engine,
+    family = if (engine == "glmmtmb") family else "gaussian",
+    scale = scale,
     method_levels = levs,
     method_effect = emm,
     method_effect_se = emm_se,
     variance_components = components,
-    residuals = unname(stats::residuals(model)),
+    residuals = resids,
     n_obs = nrow(df),
     n_methods = nlevels(df$method),
     n_datasets = nlevels(df$dataset),
     has_replicates = has_replicates,
-    singular = lme4::isSingular(model),
+    singular = is_singular,
     loglik = as.numeric(stats::logLik(model)),
     aic = stats::AIC(model),
-    warnings = warns
+    warnings = as.list(warns)
 )
 
 cat(jsonlite::toJSON(out, auto_unbox = TRUE, digits = NA, null = "null"))

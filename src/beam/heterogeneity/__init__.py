@@ -31,21 +31,33 @@ from .mixed_effects import (
     MixedEffectsReport,
     RExecutionError,
     RNotAvailableError,
+    glmmtmb_available,
     mixed_effects,
     mixed_effects_from_matrix,
     r_available,
+)
+from .plackett_luce import (
+    PlackettLuceReport,
+    plackett_luce,
+    plackett_luce_available,
+    rankings_from_matrix,
 )
 
 __all__ = [
     "BTNode",
     "BradleyTerryTreeReport",
     "MixedEffectsReport",
+    "PlackettLuceReport",
     "RExecutionError",
     "RNotAvailableError",
     "bradley_terry_tree",
     "bttree_available",
+    "glmmtmb_available",
     "mixed_effects",
     "mixed_effects_from_matrix",
     "paired_comparisons",
+    "plackett_luce",
+    "plackett_luce_available",
     "r_available",
+    "rankings_from_matrix",
 ]

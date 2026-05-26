@@ -17,3 +17,6 @@ dependencies:
   - r-jsonlite>=1.8
   - r-psychotree>=0.16
   - r-partykit>=1.2
+  - r-glmmtmb>=1.1
+  - r-plackettluce>=0.4
+  - r-qvcalc>=1.0

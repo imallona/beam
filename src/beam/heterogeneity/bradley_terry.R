@@ -172,7 +172,7 @@ out <- list(
     feature_names = feature_names,
     minsize = minsize,
     alpha = alpha,
-    warnings = warns
+    warnings = as.list(warns)
 )
 
 cat(jsonlite::toJSON(out, auto_unbox = TRUE, digits = NA, null = "null", na = "null"))

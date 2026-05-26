@@ -12,6 +12,7 @@ import pytest
 from beam.datasets import load_duo2018
 from beam.heterogeneity import (
     MixedEffectsReport,
+    glmmtmb_available,
     mixed_effects,
     mixed_effects_from_matrix,
     r_available,
@@ -19,6 +20,9 @@ from beam.heterogeneity import (
 
 HAVE_R = r_available()
 needs_r = pytest.mark.skipif(not HAVE_R, reason="Rscript with lme4 not available")
+needs_glmmtmb = pytest.mark.skipif(
+    not glmmtmb_available(), reason="Rscript with glmmTMB not available"
+)
 
 
 def test_r_available_returns_bool():
@@ -43,6 +47,21 @@ def test_too_few_datasets_rejected():
 def test_bad_formula_kind_rejected():
     with pytest.raises(ValueError, match="formula_kind"):
         mixed_effects(["a", "b"], ["d1", "d2"], [1.0, 2.0], formula_kind="nonsense")
+
+
+def test_bad_engine_rejected():
+    with pytest.raises(ValueError, match="engine"):
+        mixed_effects(["a", "b"], ["d1", "d2"], [0.4, 0.6], engine="ols")
+
+
+def test_family_requires_glmmtmb_engine():
+    with pytest.raises(ValueError, match="family only applies"):
+        mixed_effects(["a", "b"], ["d1", "d2"], [0.4, 0.6], family="beta")
+
+
+def test_bad_family_rejected():
+    with pytest.raises(ValueError, match="family must be"):
+        mixed_effects(["a", "b"], ["d1", "d2"], [0.4, 0.6], engine="glmmtmb", family="poisson")
 
 
 def test_matrix_shape_validation():
@@ -159,6 +178,50 @@ def test_duo_ari_decomposition():
     # RaceID2, the bottom method, produces the largest interaction residuals.
     top_methods = {m for m, _, _ in rep.top_outliers(3)}
     assert "RaceID2" in top_methods
+
+
+@needs_glmmtmb
+def test_glmmtmb_beta_agrees_with_lmer_ordering():
+    # A metric bounded in (0, 1): four methods at separated levels, eight
+    # datasets of varying difficulty. lmer (Gaussian) and glmmTMB (beta) should
+    # agree on the leading method while differing in how they treat the bounds.
+    method_levels = [-1.5, -0.5, 0.5, 1.5]
+    dataset_shifts = list(np.linspace(-1.0, 1.0, 8))
+    logit = _additive_matrix(method_levels, dataset_shifts, noise_sd=0.2, seed=7)
+    matrix = 1.0 / (1.0 + np.exp(-logit))  # squash into (0, 1)
+    methods = ["a", "b", "c", "d"]
+    datasets = [f"d{j}" for j in range(8)]
+
+    lmer = mixed_effects_from_matrix(matrix, methods, datasets)
+    beta = mixed_effects_from_matrix(matrix, methods, datasets, engine="glmmtmb", family="beta")
+
+    assert beta.engine == "glmmtmb"
+    assert beta.scale == "link"
+    # beta reports the dispersion term, not a Gaussian residual.
+    assert "dispersion" in beta.variance_components
+    assert "Residual" not in beta.variance_components
+    lmer_top = lmer.method_names[int(np.argmax(lmer.method_effects))]
+    beta_top = beta.method_names[int(np.argmax(beta.method_effects))]
+    assert lmer_top == beta_top == "d"
+
+
+@needs_glmmtmb
+def test_glmmtmb_gaussian_matches_lmer():
+    # On an unbounded metric the glmmTMB Gaussian fit recovers the lmer result.
+    matrix = _additive_matrix([0.0, 1.0, 2.0], list(np.linspace(-2, 2, 6)), 0.1, seed=8)
+    methods = ["a", "b", "c"]
+    datasets = [f"d{j}" for j in range(6)]
+
+    lmer = mixed_effects_from_matrix(matrix, methods, datasets)
+    gauss = mixed_effects_from_matrix(
+        matrix, methods, datasets, engine="glmmtmb", family="gaussian"
+    )
+
+    assert gauss.scale == "response"
+    assert "Residual" in gauss.variance_components
+    order_lmer = [lmer.method_names[i] for i in np.argsort(lmer.method_effects)]
+    order_gauss = [gauss.method_names[i] for i in np.argsort(gauss.method_effects)]
+    assert order_lmer == order_gauss
 
 
 @needs_r
