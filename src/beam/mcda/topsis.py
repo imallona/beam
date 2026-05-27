@@ -5,6 +5,8 @@ from __future__ import annotations
 import numpy as np
 from pymcdm.methods import TOPSIS
 
+from ._missing import require_complete
+
 
 def _identity_normalization(matrix: np.ndarray, cost: bool | None = None) -> np.ndarray:
     """Return the matrix unchanged.
@@ -68,6 +70,7 @@ def topsis(normalized: np.ndarray, weights: np.ndarray) -> np.ndarray:
         )
     if np.any(weights < 0):
         raise ValueError("weights must be non-negative")
+    require_complete(normalized, where="topsis")
 
     types = np.ones(normalized.shape[1])
     method = TOPSIS(normalization_function=_identity_normalization)

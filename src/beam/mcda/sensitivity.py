@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from ._missing import IncompleteMatrixError
 from .cross_dataset import reduce_tensor
 from .facade import Result, run
 
@@ -49,6 +50,7 @@ def leave_one_metric_out(
     normalization=None,
     bounds=None,
     baselines=None,
+    missing: str = "error",
 ) -> SensitivityReport:
     """Run the pipeline once with all metrics, then once per metric omission.
 
@@ -108,6 +110,7 @@ def leave_one_metric_out(
         normalization=normalization,
         bounds=bounds,
         baselines=baselines,
+        missing=missing,
     )
 
     loo: dict[int, Result] = {}
@@ -115,20 +118,27 @@ def leave_one_metric_out(
         cols = [j for j in range(n_metrics) if j != i]
         sub_scores = scores[:, cols]
         sub_polarity = [polarity[j] for j in cols]
-        loo[i] = run(
-            sub_scores,
-            sub_polarity,
-            weights=weights,
-            method=method,
-            normalization=_subset_columns(normalization, cols),
-            bounds=_subset_columns(bounds, cols),
-            baselines=_subset_columns(baselines, cols),
-        )
+        try:
+            loo[i] = run(
+                sub_scores,
+                sub_polarity,
+                weights=weights,
+                method=method,
+                normalization=_subset_columns(normalization, cols),
+                bounds=_subset_columns(bounds, cols),
+                baselines=_subset_columns(baselines, cols),
+                missing=missing,
+            )
+        except IncompleteMatrixError:
+            # Under available-case, dropping this metric can leave a tool with no
+            # observed metric; that omission is not rankable, so skip it.
+            continue
 
+    denominator = len(loo) if loo else 1
     held = np.zeros(n_tools, dtype=int)
     for r in loo.values():
         held += (r.ranks == base.ranks).astype(int)
-    rank_stability = held / n_metrics
+    rank_stability = held / denominator
 
     max_shift = 0
     most_influential = 0
@@ -183,6 +193,8 @@ def leave_one_dataset_out(
     normalization=None,
     bounds=None,
     baselines=None,
+    missing: str = "error",
+    on_zero_coverage: str = "error",
 ) -> DatasetSensitivityReport:
     """Pool all datasets and rank, then re-rank with each dataset left out.
 
@@ -250,18 +262,26 @@ def leave_one_dataset_out(
             normalization=normalization,
             bounds=bounds,
             baselines=baselines,
+            missing=missing,
         )
 
-    base = _run(reduce_tensor(tensor, reduction_rules, metric_ids=metric_ids))
+    def _reduce(sub):
+        return reduce_tensor(
+            sub, reduction_rules, metric_ids=metric_ids, on_zero_coverage=on_zero_coverage
+        )
+
+    base = _run(_reduce(tensor))
 
     loo: dict[int, Result] = {}
     for d in range(n_datasets):
         kept = [k for k in range(n_datasets) if k != d]
         sub = tensor[:, kept, :]
-        if not (~np.isnan(sub)).any(axis=1).all():
-            # Dropping this dataset leaves a tool unobserved on some metric.
+        if on_zero_coverage == "error" and not (~np.isnan(sub)).any(axis=1).all():
+            # Under the error policy, dropping this dataset leaves a tool
+            # unobserved on some metric, which is not rankable; skip it. Under a
+            # completing policy the missing-data policy resolves it instead.
             continue
-        loo[d] = _run(reduce_tensor(sub, reduction_rules, metric_ids=metric_ids))
+        loo[d] = _run(_reduce(sub))
 
     evaluated = tuple(sorted(loo))
     if evaluated:

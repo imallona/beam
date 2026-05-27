@@ -106,6 +106,7 @@ def rank(
     method: str = "saw",
     sensitivity: bool = True,
     *,
+    missing: str = "error",
     metric_ids: Sequence[str] | None = None,
     tool_names: Sequence[str] | None = None,
     smaa_samples: int = _DEFAULT_SMAA_SAMPLES,
@@ -130,6 +131,14 @@ def rank(
         When true (default), also run leave-one-metric-out, SMAA, and the
         smallest-weight-perturbation analysis, all on the same normalization
         context as the ranking.
+    missing
+        Missing-data policy for the tool by metric matrix. ``"error"``
+        (default) refuses any missing cell; ``"available"`` is available-case
+        SAW; ``"worst"`` treats a non-run as the worst score; ``"impute"`` is
+        mean imputation (discouraged). See ``beam.mcda.run``. A tool by dataset
+        by metric tensor is first summarized over the datasets where each tool
+        ran (available-case, never imputed); a tool with no run at all for a
+        metric leaves a missing cell that this policy then resolves.
     metric_ids
         Required only when ``scores`` is a bare array.
     tool_names
@@ -157,11 +166,14 @@ def rank(
     """
     reg = registry if registry is not None else Registry()
     score_obj = _coerce_scores(scores, metric_ids, tool_names, reg)
-    matrix = _matrix_for_ranking(score_obj, reg)
+    on_zero_coverage = "error" if missing == "error" else "nan"
+    matrix = _matrix_for_ranking(score_obj, reg, on_zero_coverage)
     ids = score_obj.metric_ids
 
     context = registry_context(ids, method, registry=reg)
-    result = run_from_registry(matrix, ids, weights=weights, method=method, registry=reg)
+    result = run_from_registry(
+        matrix, ids, weights=weights, method=method, registry=reg, missing=missing
+    )
 
     smaa_report: SMAAReport | None = None
     loo_report: SensitivityReport | None = None
@@ -177,6 +189,7 @@ def rank(
             normalization=list(context.normalization),
             bounds=list(context.bounds),
             baselines=list(context.baselines),
+            missing=missing,
         )
         loo_report = leave_one_metric_out(
             matrix,
@@ -187,6 +200,7 @@ def rank(
             normalization=list(context.normalization),
             bounds=list(context.bounds),
             baselines=list(context.baselines),
+            missing=missing,
         )
         pert_report = smallest_weight_perturbation(
             matrix,
@@ -196,6 +210,7 @@ def rank(
             bounds=list(context.bounds),
             normalization=list(context.normalization),
             baselines=list(context.baselines),
+            missing=missing,
         )
         if score_obj.is_tensor and score_obj.values.shape[1] >= 2:
             lodo_report = leave_one_dataset_out(
@@ -209,6 +224,8 @@ def rank(
                 normalization=list(context.normalization),
                 bounds=list(context.bounds),
                 baselines=list(context.baselines),
+                missing=missing,
+                on_zero_coverage=on_zero_coverage,
             )
 
     manifest = build_manifest(
@@ -265,20 +282,24 @@ def _coerce_scores(
     )
 
 
-def _matrix_for_ranking(scores: Scores, registry: Registry) -> np.ndarray:
+def _matrix_for_ranking(
+    scores: Scores, registry: Registry, on_zero_coverage: str = "error"
+) -> np.ndarray:
     """Fold a tool by dataset by metric tensor to a tool by metric matrix.
 
     Each metric column is reduced over the dataset axis with the rule on its
     card (``comparability.recommended_aggregation_across_datasets``), nan-aware
     so a tool missing on some datasets is summarized over the datasets where it
-    was observed. A tool with no observations at all for a metric raises, since
-    the single-matrix pipeline has no value to rank there. Per-dataset and
-    coverage-aware handling is the heterogeneity module.
+    was observed. A tool with no observation at all for a metric leaves a
+    missing cell; under the default ``on_zero_coverage="error"`` that raises,
+    and under ``"nan"`` it is left for the ranking call's missing-data policy.
     """
     if not scores.is_tensor:
         return scores.values
     rules = _reduction_rules(scores.metric_ids, registry)
-    return reduce_tensor(scores.values, rules, metric_ids=scores.metric_ids)
+    return reduce_tensor(
+        scores.values, rules, metric_ids=scores.metric_ids, on_zero_coverage=on_zero_coverage
+    )
 
 
 def _reduction_rules(metric_ids: Sequence[str], registry: Registry) -> list[str]:

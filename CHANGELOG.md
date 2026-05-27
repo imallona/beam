@@ -15,12 +15,15 @@ All notable changes to beam will be documented in this file. The format follows 
 - beam.reporting.funky_heatmap and funky_heatmap_from_run: the glyph-table benchmarking plot (methods by metrics, circle size for score, colour for metric group, overall bar) with an added panel that shows each method's rank span across the leave-one-dataset-out runs, so the figure carries its own rank robustness instead of reading as a settled order.
 - Registry grew from seven to twenty-six metric cards across clustering, efficiency, forecasting, transportation, and the scIB single-cell integration and spatial metrics.
 - Bundled datasets load_duo2018, load_m4, and load_openproblems (batch_integration and spatially_variable_genes), each a small derived table with provenance in src/beam/data/README.md.
-- Five worked vignettes (Duo 2018, simulated scenarios, transportation, M4, OpenProblems), all rendered in CI.
-- Documentation: ADRs 0008 to 0011, findings 0001 to 0004, and explanation essays on MCDA, normalization, and the heterogeneity diagnostics.
+- Cross-benchmark harmonisation: load_integration_benchmarks and load_integration_published_ranks align three single-cell integration benchmarks (scIB, OpenProblems, Tran et al. 2020) on the shared scIB metric family (ARI, ASW, kBET, LISI) for five common methods, the input to source_variance_decomposition and the cross-benchmark meta-analysis (finding 0005). Derived tables scib2022_metrics.csv, tran2020_metrics.csv and integration_published_ranks.csv vendored with provenance.
+- Six worked vignettes (Duo 2018, simulated scenarios, transportation, M4, OpenProblems, cross-benchmark meta-analysis), all rendered in CI.
+- Missing-data policy for the MCDA pipeline. The ranking entry points (beam.rank, mcda.run, run_from_registry, the CLI beam rank --on-missing, and the beam.yaml missing key) take an explicit missing= policy, default "error". "error" refuses any missing cell with a named IncompleteMatrixError; "available" is available-case ranking with SAW only (each tool scored on its observed metrics, weights renormalized over its support); "worst" treats a non-run as the worst score (missing normalized cells set to 0, the matrix completes, every method runs); "impute" is a discouraged mean-imputation opt-in. Every non-error policy warns. beam never imputes by default or silently. Normalization is now NaN-transparent. reduce_tensor gained on_zero_coverage="nan" so a tool never run on a metric flows into the policy. ADR 0013, docs/explanations/missing-data.md.
+- Documentation: ADRs 0008 to 0013, findings 0001 to 0005, and explanation essays on MCDA, normalization, the heterogeneity diagnostics, the funky-heatmap robustness plot, and missing data.
 
 ### Changed
 
 - pymcdm, scipy, jinja2, and matplotlib became core runtime dependencies; the metric registry and JSON Schema moved into the package under src/beam/.
+- TOPSIS, VIKOR, COMET, PROMETHEE II, the objective weight schemes (entropy, standard deviation, CRITIC, MEREC) and the Friedman-Nemenyi critical-difference test now refuse a tool by metric matrix with missing cells instead of silently propagating or masking NaN. The previous TOPSIS/VIKOR/COMET behavior masked a missing-derived NaN to 0.5, which fabricated a mid-range score; that mask is gone (0.5 stays only as a tie convention for genuinely complete but degenerate inputs).
 
 ## [0.1.3] - 2026-05-20
 

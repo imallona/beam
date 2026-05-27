@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Sequence
 
 import numpy as np
@@ -81,6 +82,7 @@ def reduce_tensor(
     tensor: np.ndarray,
     rules: Sequence[str],
     metric_ids: Sequence[str] | None = None,
+    on_zero_coverage: str = "error",
 ) -> np.ndarray:
     """Fold the dataset axis of a tool by dataset by metric tensor, nan-aware.
 
@@ -88,8 +90,15 @@ def reduce_tensor(
     the MCDA pipeline downstream sees a tool by metric matrix. Unlike
     ``aggregate_across_datasets``, this function tolerates missing cells: a tool
     measured on only some datasets is summarized over the datasets where it was
-    observed. A tool with no observed dataset for a metric cannot be summarized
-    and raises, since the single-matrix pipeline has no value to rank there.
+    observed. This available-case summary is not imputation; it estimates each
+    tool's performance from the runs that exist.
+
+    A tool with no observed dataset for a metric (zero coverage) has nothing to
+    summarize. By default ``on_zero_coverage="error"`` raises, since the pooled
+    matrix cannot rank a value that does not exist. ``on_zero_coverage="nan"``
+    instead leaves that cell missing, so the downstream missing-data policy on
+    the ranking call (``beam.rank(..., missing=...)``) decides what to do with
+    it, rather than this function deciding for the caller.
 
     When a metric column has no missing cells the reduction delegates to
     ``aggregate_across_datasets``, so the complete-data path supports every rule
@@ -107,6 +116,9 @@ def reduce_tensor(
         ``recommended_aggregation_across_datasets``.
     metric_ids
         Optional length ``n_metrics`` labels used only in error messages.
+    on_zero_coverage
+        ``"error"`` (default) raises when a tool has no observed dataset for a
+        metric; ``"nan"`` leaves that cell missing for the downstream policy.
 
     Returns
     -------
@@ -117,14 +129,17 @@ def reduce_tensor(
     ------
     ValueError
         If the tensor is not 3D, the rule count does not match the metric
-        count, a tool has no observed dataset for some metric, or a
-        geometric-mean column has a non-positive observed value.
+        count, ``on_zero_coverage="error"`` and a tool has no observed dataset
+        for some metric, or a geometric-mean column has a non-positive observed
+        value.
     NotImplementedError
         If ``rank_mean`` is requested on a column that has missing cells.
     """
     tensor = np.asarray(tensor, dtype=float)
     if tensor.ndim != 3:
         raise ValueError(f"tensor must be 3D; got shape {tensor.shape}")
+    if on_zero_coverage not in ("error", "nan"):
+        raise ValueError(f"on_zero_coverage must be 'error' or 'nan'; got {on_zero_coverage!r}")
     n_tools, _, n_metrics = tensor.shape
     if len(rules) != n_metrics:
         raise ValueError(f"rules has {len(rules)} entries but tensor has {n_metrics} metrics")
@@ -132,34 +147,43 @@ def reduce_tensor(
     out = np.empty((n_tools, n_metrics), dtype=float)
     for j in range(n_metrics):
         label = metric_ids[j] if metric_ids is not None else f"index {j}"
-        out[:, j] = _reduce_column(tensor[:, :, j], rules[j], label)
+        out[:, j] = _reduce_column(tensor[:, :, j], rules[j], label, on_zero_coverage)
     return out
 
 
-def _reduce_column(per_dataset: np.ndarray, rule: str, label: object) -> np.ndarray:
+def _reduce_column(
+    per_dataset: np.ndarray, rule: str, label: object, on_zero_coverage: str = "error"
+) -> np.ndarray:
     """Reduce one metric's tool by dataset slice to a tool vector, nan-aware."""
     if rule not in _KNOWN_RULES:
         raise ValueError(f"unknown rule {rule!r}; supported: {_KNOWN_RULES}")
 
     observed = ~np.isnan(per_dataset)
-    if not observed.any(axis=1).all():
+    if on_zero_coverage == "error" and not observed.any(axis=1).all():
         missing = np.where(~observed.any(axis=1))[0].tolist()
         raise ValueError(
             f"metric {label!r} has tool rows with no observed dataset (indices {missing}); "
-            "reduce or analyze per dataset, or use the heterogeneity module"
+            "reduce or analyze per dataset, use the heterogeneity module, or choose a "
+            "missing-data policy on the ranking call (beam.rank(..., missing=...))"
         )
 
     if observed.all():
         return aggregate_across_datasets(per_dataset, rule)
 
-    if rule == "arithmetic_mean":
-        return np.nanmean(per_dataset, axis=1)
-    if rule == "median":
-        return np.nanmedian(per_dataset, axis=1)
-    if rule == "geometric_mean":
-        if np.nanmin(per_dataset) <= 0:
-            raise ValueError(f"geometric_mean reduction for metric {label!r} needs positive scores")
-        return np.exp(np.nanmean(np.log(per_dataset), axis=1))
+    # A zero-coverage tool row reduces to NaN here (only reached when the caller
+    # asked for on_zero_coverage="nan"); silence the all-NaN-slice warning.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        if rule == "arithmetic_mean":
+            return np.nanmean(per_dataset, axis=1)
+        if rule == "median":
+            return np.nanmedian(per_dataset, axis=1)
+        if rule == "geometric_mean":
+            if np.nanmin(per_dataset) <= 0:
+                raise ValueError(
+                    f"geometric_mean reduction for metric {label!r} needs positive scores"
+                )
+            return np.exp(np.nanmean(np.log(per_dataset), axis=1))
     # rank_mean
     raise NotImplementedError(
         f"rank_mean cross-dataset reduction for metric {label!r} with missing cells is "

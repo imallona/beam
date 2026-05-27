@@ -25,6 +25,8 @@ from dataclasses import dataclass
 import numpy as np
 from scipy.stats import friedmanchisquare, studentized_range
 
+from ._missing import IncompleteMatrixError
+
 
 @dataclass(frozen=True)
 class CriticalDifferenceReport:
@@ -105,14 +107,24 @@ def critical_difference(
 
     Notes
     -----
-    Friedman needs at least three tools and two datasets. The cliques follow
-    the usual critical-difference-diagram convention: a clique is a maximal
-    run of tools, consecutive in rank order, whose first and last average
-    ranks differ by no more than the critical difference.
+    Friedman needs at least three tools and two datasets, and a complete tool
+    by dataset table: every tool ranked on every dataset. A missing cell is
+    refused rather than dropped or filled, since the Friedman ranks per dataset
+    are only defined over a complete column. The missing-data generalization is
+    the Skillings-Mack (1981) test, which is not implemented here; restrict the
+    diagram to the block of tools and datasets where all of them ran.
     """
     scores = np.asarray(scores, dtype=float)
     if scores.ndim != 2:
         raise ValueError(f"scores must be 2D; got shape {scores.shape}")
+    if np.isnan(scores).any():
+        raise IncompleteMatrixError(
+            "critical_difference: the tool by dataset table has missing cells. "
+            "The Friedman ranks are only defined over a complete column, so beam "
+            "neither drops nor fills the gaps. Restrict the diagram to the block "
+            "of tools and datasets where all of them ran (the Skillings-Mack 1981 "
+            "test generalizes Friedman to missing data and is not implemented here)."
+        )
     n_tools, n_datasets = scores.shape
     if n_tools < 3:
         raise ValueError(f"Friedman test needs at least 3 tools; got {n_tools}")

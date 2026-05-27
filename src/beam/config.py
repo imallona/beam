@@ -16,11 +16,14 @@ A minimal file::
       method: topsis
     sensitivity:
       smaa: {n: 1000, seed: 42}
+    missing: error
     outputs:
       report: report.html
       manifest: manifest.json
       scores_normalized: scores_norm.csv
 
+The optional top-level ``missing`` key sets the missing-cell policy passed to
+``beam.rank`` (``error`` by default, or ``available``, ``worst``, ``impute``).
 The dataset_features and heterogeneity blocks are parsed but ignored here.
 Per-metric version pins are recorded but not yet enforced; the registry
 resolves the latest version.
@@ -92,12 +95,14 @@ def run_config(path: str | Path, registry: Registry | None = None) -> RunResult:
     smaa_block = (sensitivity_block or {}).get("smaa", {}) if sensitivity else {}
     smaa_samples = int(smaa_block.get("n", 1000))
     seed = int(smaa_block.get("seed", 42))
+    missing = config.get("missing", "error")
 
     result = rank(
         scores,
         weights=weighting,
         method=method,
         sensitivity=sensitivity,
+        missing=missing,
         smaa_samples=smaa_samples,
         seed=seed,
         registry=reg,

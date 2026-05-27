@@ -5,6 +5,8 @@ from __future__ import annotations
 import numpy as np
 from pymcdm.methods import VIKOR
 
+from ._missing import require_complete
+
 
 def vikor(normalized: np.ndarray, weights: np.ndarray, v: float = 0.5) -> np.ndarray:
     """Compute VIKOR compromise scores per tool.
@@ -96,6 +98,7 @@ def vikor(normalized: np.ndarray, weights: np.ndarray, v: float = 0.5) -> np.nda
         raise ValueError("weights must be non-negative")
     if not 0.0 <= v <= 1.0:
         raise ValueError(f"v must be in [0, 1]; got {v}")
+    require_complete(normalized, where="vikor")
 
     column_range = normalized.max(axis=0) - normalized.min(axis=0)
     informative = column_range > 0

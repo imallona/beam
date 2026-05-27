@@ -5,6 +5,8 @@ from __future__ import annotations
 import numpy as np
 from pymcdm.methods import PROMETHEE_II
 
+from ._missing import require_complete
+
 
 def promethee_ii(normalized: np.ndarray, weights: np.ndarray) -> np.ndarray:
     """Compute PROMETHEE II net outranking flows per tool.
@@ -92,6 +94,7 @@ def promethee_ii(normalized: np.ndarray, weights: np.ndarray) -> np.ndarray:
         )
     if np.any(weights < 0):
         raise ValueError("weights must be non-negative")
+    require_complete(normalized, where="promethee_ii")
 
     n_tools = normalized.shape[0]
     if n_tools < 2:

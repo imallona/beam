@@ -88,6 +88,7 @@ def smallest_weight_perturbation(
     tolerance: float = 1e-9,
     normalization=None,
     baselines=None,
+    missing: str = "error",
 ) -> WeightPerturbationReport:
     """Compute the smallest single-weight change that swaps each pair of tools.
 
@@ -170,6 +171,7 @@ def smallest_weight_perturbation(
         bounds=bounds,
         normalization=normalization,
         baselines=baselines,
+        missing=missing,
     )
     x = base.normalized
     w = base.weights
@@ -234,7 +236,9 @@ def _closed_form_pairs(
         best_new_weight = math.nan
         for k in range(n_metrics):
             denom = float(x[a, k] - x[b, k])
-            if denom == 0.0:
+            if denom == 0.0 or not math.isfinite(denom):
+                # A non-finite gap means one of the pair lacks this metric under
+                # available-case SAW; that criterion cannot flip the pair.
                 continue
             delta_k = -diff_composite / denom
             new_w = float(w[k]) + delta_k

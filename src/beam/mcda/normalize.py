@@ -196,44 +196,61 @@ def normalization_warnings(
     return out
 
 
+def _constant_fill(col: np.ndarray, value: float) -> np.ndarray:
+    """Fill every observed cell of ``col`` with ``value``, keeping NaN cells NaN.
+
+    Used for a zero-range column, where the strategy cannot separate the tools
+    so every observed tool maps to the same value. A missing cell stays missing
+    rather than being assigned the fill value, since beam does not impute.
+    """
+    return np.where(np.isnan(col), np.nan, value)
+
+
 def _check_declared_range(col: np.ndarray, j: int, lo: float | None, hi: float | None) -> None:
-    if lo is not None and float(col.min()) < lo:
-        raise ValueError(f"column {j} has value {col.min()} below declared lower bound {lo}")
-    if hi is not None and float(col.max()) > hi:
-        raise ValueError(f"column {j} has value {col.max()} above declared upper bound {hi}")
+    if lo is not None and float(np.nanmin(col)) < lo:
+        raise ValueError(f"column {j} has value {np.nanmin(col)} below declared lower bound {lo}")
+    if hi is not None and float(np.nanmax(col)) > hi:
+        raise ValueError(f"column {j} has value {np.nanmax(col)} above declared upper bound {hi}")
 
 
 def _min_max_col(col: np.ndarray, pol: str, lo: float | None, hi: float | None) -> np.ndarray:
-    low = float(col.min()) if lo is None else float(lo)
-    high = float(col.max()) if hi is None else float(hi)
+    low = float(np.nanmin(col)) if lo is None else float(lo)
+    high = float(np.nanmax(col)) if hi is None else float(hi)
     if high == low:
-        return np.full_like(col, 0.5)
+        return _constant_fill(col, 0.5)
     if pol == "higher_is_better":
         return (col - low) / (high - low)
     return (high - col) / (high - low)
 
 
 def _log_min_max_col(col: np.ndarray, pol: str, j: int) -> np.ndarray:
-    if np.any(col <= 0):
+    observed = col[~np.isnan(col)]
+    if np.any(observed <= 0):
         raise ValueError(f"column {j}: log_min_max requires strictly positive values")
     logged = np.log(col)
     return _min_max_col(logged, pol, None, None)
 
 
 def _rank_col(col: np.ndarray, pol: str) -> np.ndarray:
-    n = col.shape[0]
+    observed = ~np.isnan(col)
+    n = int(observed.sum())
+    out = np.full_like(col, np.nan)
+    if n == 0:
+        return out
     if n == 1:
-        return np.full_like(col, 0.5)
-    oriented = col if pol == "higher_is_better" else -col
+        out[observed] = 0.5
+        return out
+    oriented = col[observed] if pol == "higher_is_better" else -col[observed]
     ranks = _average_rank(oriented)
-    return (ranks - 1.0) / (n - 1.0)
+    out[observed] = (ranks - 1.0) / (n - 1.0)
+    return out
 
 
 def _zscore_col(col: np.ndarray, pol: str) -> np.ndarray:
-    std = float(col.std())
+    std = float(np.nanstd(col))
     if std == 0.0:
-        return np.full_like(col, 0.5)
-    z = (col - float(col.mean())) / std
+        return _constant_fill(col, 0.5)
+    z = (col - float(np.nanmean(col))) / std
     if pol == "lower_is_better":
         z = -z
     return 1.0 / (1.0 + np.exp(-z))
@@ -250,9 +267,9 @@ def _baseline_relative_col(
         raise ValueError(
             f"column {j}: baseline_relative needs score_of_random_baseline on the card"
         )
-    top = float(col.max()) if hi is None else float(hi)
+    top = float(np.nanmax(col)) if hi is None else float(hi)
     if top <= baseline:
-        return np.full_like(col, 0.5)
+        return _constant_fill(col, 0.5)
     scaled = (col - baseline) / (top - baseline)
     return np.clip(scaled, 0.0, 1.0)
 

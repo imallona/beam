@@ -1,5 +1,6 @@
 """beam.mcda: multi-criteria decision analysis on a tool by metric matrix."""
 
+from ._missing import IncompleteMatrixError
 from .aggregate import rank, weighted_sum
 from .cd import (
     CriticalDifferenceReport,
@@ -46,6 +47,7 @@ __all__ = [
     "CriticalDifferenceReport",
     "DatasetSensitivityReport",
     "IncompatibleScaleError",
+    "IncompleteMatrixError",
     "InconsistentPairwiseMatrixError",
     "PairPerturbation",
     "RegistryContext",

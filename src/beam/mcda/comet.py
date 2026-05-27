@@ -33,6 +33,8 @@ import numpy as np
 from pymcdm.methods import COMET
 from pymcdm.methods.comet_tools import FunctionExpert
 
+from ._missing import require_complete
+
 
 def _weighted_sum_expert(weights: np.ndarray) -> Callable[[np.ndarray, np.ndarray], float]:
     """Build the pairwise expert function used by COMET.
@@ -132,6 +134,7 @@ def comet(
         )
     if np.any(weights < 0):
         raise ValueError("weights must be non-negative")
+    require_complete(normalized, where="comet")
 
     per_criterion_values = _resolve_characteristic_values(characteristic_values, n_metrics)
 

@@ -126,6 +126,11 @@ jobs:
           MPLBACKEND: Agg
         run: quarto render examples/openproblems/openproblems.qmd
 
+      - name: Render cross-benchmark vignette
+        env:
+          MPLBACKEND: Agg
+        run: quarto render examples/cross_benchmark/cross_benchmark.qmd
+
       - name: Upload rendered Duo vignette as artefact
         uses: actions/upload-artifact@v4
         with:
@@ -159,4 +164,11 @@ jobs:
         with:
           name: openproblems-vignette
           path: examples/openproblems/openproblems.html
+          if-no-files-found: error
+
+      - name: Upload rendered cross-benchmark vignette as artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cross_benchmark-vignette
+          path: examples/cross_benchmark/cross_benchmark.html
           if-no-files-found: error

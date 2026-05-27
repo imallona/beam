@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import warnings as _warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
 
 import numpy as np
 
 from ..cards import Registry, properties_for
+from ._missing import IncompleteMatrixError, require_complete
 from .aggregate import rank, weighted_sum
 from .comet import comet
 from .normalize import Bound, normalization_warnings, normalize
@@ -50,6 +52,8 @@ class Result:
 
 _KNOWN_WEIGHTINGS = ("equal", "entropy", "std", "critic", "merec")
 _KNOWN_METHODS = ("saw", "topsis", "vikor", "promethee_ii", "comet")
+_MISSING_POLICIES = ("error", "available", "worst", "impute")
+_OBJECTIVE_WEIGHTINGS = ("entropy", "std", "critic", "merec")
 
 _OBJECTIVE_WEIGHTS = {
     "std": standard_deviation_weights,
@@ -104,6 +108,78 @@ def _resolve_strategies(normalization, n_metrics: int) -> list[str]:
     return strategies
 
 
+def _describe_cells(mask: np.ndarray, metric_ids, limit: int = 4) -> str:
+    """Name up to ``limit`` missing cells as 'tool index i / metric m'."""
+    rows, cols = np.nonzero(mask)
+    parts = []
+    for i, j in zip(rows[:limit], cols[:limit], strict=True):
+        label = (
+            f"{metric_ids[j]!r}" if metric_ids is not None and j < len(metric_ids) else f"index {j}"
+        )
+        parts.append(f"tool index {int(i)} / metric {label}")
+    listing = "; ".join(parts)
+    extra = len(rows) - len(parts)
+    return f"{listing}; and {extra} more" if extra > 0 else listing
+
+
+def _apply_missing_policy(normalized, mask, missing, weighting, method, metric_ids):
+    """Resolve missing cells in the normalized matrix under the chosen policy.
+
+    Returns the (possibly completed) matrix and any warning strings. ``error``
+    raises; ``available`` leaves the missing cells for the available-case SAW
+    path and refuses the methods and weightings that cannot use it; ``worst``
+    maps a missing cell to the worst normalized score (0); ``impute`` fills it
+    with the per-metric mean of the observed normalized scores. Every non-error
+    policy returns a loud warning naming the affected cells.
+    """
+    count = int(mask.sum())
+    cells = _describe_cells(mask, metric_ids)
+    if missing == "error":
+        require_complete(normalized, where="run", metric_ids=metric_ids)
+    if missing == "available":
+        if method != "saw":
+            raise IncompleteMatrixError(
+                f"missing='available' is only defined for SAW (the available-case "
+                f"weighted mean). {method!r} cannot rank a matrix with missing cells "
+                "without completing it; use missing='worst' or missing='impute', or "
+                "analyze the feasible subset on its own."
+            )
+        if isinstance(weighting, str) and weighting in _OBJECTIVE_WEIGHTINGS:
+            raise IncompleteMatrixError(
+                f"missing='available' with objective weighting {weighting!r} is not "
+                "defined: the spread it measures needs a complete column. Pair "
+                "available-case SAW with equal or supplied weights, or complete the "
+                "matrix with missing='worst' or missing='impute'."
+            )
+        n_tools = int(np.unique(np.nonzero(mask)[0]).size)
+        return normalized, [
+            f"missing='available': {count} missing "
+            f"{'cell' if count == 1 else 'cells'} ({cells}); SAW scored {n_tools} "
+            f"{'tool' if n_tools == 1 else 'tools'} on a reduced metric set, so the "
+            "composites rest on different supports across tools."
+        ]
+    if missing == "worst":
+        filled = np.where(mask, 0.0, normalized)
+        return filled, [
+            f"missing='worst': {count} missing {'cell' if count == 1 else 'cells'} "
+            f"({cells}) were treated as the worst score (normalized 0). This is an "
+            "explicit choice that a non-run counts as a failure, not a measurement."
+        ]
+    if missing == "impute":
+        with _warnings.catch_warnings():
+            _warnings.simplefilter("ignore", RuntimeWarning)
+            col_means = np.nanmean(normalized, axis=0)
+        filled = np.where(mask, np.broadcast_to(col_means, normalized.shape), normalized)
+        return filled, [
+            f"missing='impute': {count} missing {'cell' if count == 1 else 'cells'} "
+            f"({cells}) were filled with the per-metric mean of the observed "
+            "normalized scores. Mean imputation fabricates values and biases toward "
+            "the column mean; prefer missing='available', missing='worst', or "
+            "per-subset analysis."
+        ]
+    raise ValueError(f"unknown missing policy {missing!r}; supported: {_MISSING_POLICIES}")
+
+
 def run(
     scores,
     polarity: Sequence[str],
@@ -113,6 +189,7 @@ def run(
     metric_ids: Sequence[str] | None = None,
     normalization=None,
     baselines: Sequence[float | None] | None = None,
+    missing: str = "error",
 ) -> Result:
     """Run a full MCDA pipeline from raw scores to per-tool ranks.
 
@@ -172,6 +249,27 @@ def run(
     baselines
         Optional per-column reference score required by the
         ``baseline_relative`` strategy. Forwarded to ``normalize``.
+    missing
+        Policy for missing cells (NaN) in the tool by metric matrix, applied
+        after normalization. beam never picks this for you, so the default
+        refuses. One of:
+
+        - ``"error"`` (default): raise ``IncompleteMatrixError`` naming the
+          missing cells and the alternatives.
+        - ``"available"``: available-case. SAW scores each tool on the metrics
+          it has, with weights renormalized over that tool's observed support.
+          Only SAW supports this; the distance methods and the objective
+          weightings refuse, since they cannot be defined without completing
+          the matrix.
+        - ``"worst"``: treat a non-run as the worst outcome, mapping each
+          missing cell to the worst normalized score (0). The matrix is then
+          complete and every method runs. An explicit failure policy, not
+          imputation of an unknown.
+        - ``"impute"``: fill each missing cell with the per-metric mean of the
+          observed normalized scores. Discouraged; provided only because a user
+          may explicitly want it.
+
+        Every non-error policy records a warning on the ``Result``.
 
     Returns
     -------
@@ -195,6 +293,8 @@ def run(
         raise ValueError(
             f"polarity has {len(polarity)} entries but scores has {scores.shape[1]} columns"
         )
+    if missing not in _MISSING_POLICIES:
+        raise ValueError(f"unknown missing policy {missing!r}; supported: {_MISSING_POLICIES}")
 
     bounds_tuple: tuple[Bound, ...] | None = (
         None if bounds is None else tuple((b[0], b[1]) for b in bounds)
@@ -205,6 +305,14 @@ def run(
     warnings = normalization_warnings(
         scores, strategies, bounds=bounds_tuple, metric_ids=metric_ids
     )
+
+    missing_mask = np.isnan(normalized)
+    if missing_mask.any():
+        normalized, missing_warnings = _apply_missing_policy(
+            normalized, missing_mask, missing, weights, method, metric_ids
+        )
+        warnings = list(warnings) + missing_warnings
+
     weight_array, weighting_name = _resolve_weights(weights, normalized)
     aggregate_fn = _resolve_method(method)
     composite = aggregate_fn(normalized, weight_array)
@@ -232,6 +340,7 @@ def run_from_registry(
     weights="equal",
     method: str = "saw",
     registry: Registry | None = None,
+    missing: str = "error",
 ) -> Result:
     """Run the MCDA pipeline with polarity, bounds, and scale checks pulled from the registry.
 
@@ -262,6 +371,9 @@ def run_from_registry(
     registry
         Optional ``Registry`` instance. Defaults to a fresh registry over
         the bundled metrics/ directory.
+    missing
+        Missing-data policy forwarded to ``run``: ``"error"`` (default),
+        ``"available"``, ``"worst"`` or ``"impute"``.
 
     Returns
     -------
@@ -272,6 +384,8 @@ def run_from_registry(
     IncompatibleScaleError
         If any metric's declared scale type or allowed transformations
         forbid the requested aggregation.
+    IncompleteMatrixError
+        If the matrix has missing cells and ``missing`` does not resolve them.
     """
     context = registry_context(metric_ids, method, registry=registry)
 
@@ -284,6 +398,7 @@ def run_from_registry(
         metric_ids=context.metric_ids,
         normalization=context.normalization,
         baselines=context.baselines,
+        missing=missing,
     )
 
 

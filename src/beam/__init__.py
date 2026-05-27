@@ -8,6 +8,7 @@ from importlib import metadata
 
 from .api import RunResult, rank
 from .io import Scores, load_scores
+from .mcda import IncompleteMatrixError
 from .reporting import write_report as report
 
 try:
@@ -15,4 +16,12 @@ try:
 except metadata.PackageNotFoundError:  # pragma: no cover - source tree without install
     __version__ = "0.0.0+unknown"
 
-__all__ = ["RunResult", "Scores", "__version__", "load_scores", "rank", "report"]
+__all__ = [
+    "IncompleteMatrixError",
+    "RunResult",
+    "Scores",
+    "__version__",
+    "load_scores",
+    "rank",
+    "report",
+]

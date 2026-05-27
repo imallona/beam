@@ -52,6 +52,7 @@ def smaa(
     normalization=None,
     bounds=None,
     baselines=None,
+    missing: str = "error",
 ) -> SMAAReport:
     """Run an SMAA-style weight-sampling sensitivity analysis on ``scores``.
 
@@ -95,6 +96,9 @@ def smaa(
         extrema). Pass the values resolved by
         ``beam.mcda.registry_context`` so the SMAA analysis normalizes the
         scores the same way as the headline ranking.
+    missing
+        Missing-data policy forwarded to every ``run`` call; see
+        ``beam.mcda.run``. Defaults to ``"error"``.
 
     Returns
     -------
@@ -133,6 +137,7 @@ def smaa(
         bounds=bounds,
         normalization=normalization,
         baselines=baselines,
+        missing=missing,
     )
 
     sampled_ranks = np.empty((n_samples, n_tools), dtype=int)
@@ -145,6 +150,7 @@ def smaa(
             bounds=bounds,
             normalization=normalization,
             baselines=baselines,
+            missing=missing,
         ).ranks
 
     rai = np.zeros((n_tools, n_tools), dtype=float)

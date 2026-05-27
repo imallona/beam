@@ -73,6 +73,12 @@ def _build_parser() -> argparse.ArgumentParser:
     p_rank.add_argument("scores", help="path to a score CSV (wide or long)")
     p_rank.add_argument("--weights", default="equal", help="equal, entropy, std, critic, merec")
     p_rank.add_argument("--method", default="saw", help="saw, topsis, vikor, promethee_ii, comet")
+    p_rank.add_argument(
+        "--on-missing",
+        default="error",
+        choices=("error", "available", "worst", "impute"),
+        help="missing-cell policy: error (default), available (SAW only), worst, impute",
+    )
     p_rank.add_argument("--no-sensitivity", action="store_true", help="skip sensitivity analysis")
     p_rank.add_argument("--seed", type=int, default=42, help="SMAA seed")
     p_rank.add_argument("--smaa-samples", type=int, default=1000, help="SMAA sample count")
@@ -118,6 +124,7 @@ def _cmd_rank(args: argparse.Namespace) -> int:
         weights=args.weights,
         method=args.method,
         sensitivity=not args.no_sensitivity,
+        missing=args.on_missing,
         seed=args.seed,
         smaa_samples=args.smaa_samples,
     )
@@ -148,6 +155,7 @@ def _cmd_report(args: argparse.Namespace) -> int:
         weights=params.get("weights", "equal"),
         method=params.get("method", "saw"),
         sensitivity=params.get("sensitivity", True),
+        missing=params.get("missing", "error"),
         seed=params.get("seed", 42),
         smaa_samples=params.get("smaa_samples", 1000),
     )
@@ -193,6 +201,7 @@ def _run_record(result, args: argparse.Namespace) -> dict[str, Any]:
             "weights": args.weights,
             "method": args.method,
             "sensitivity": not args.no_sensitivity,
+            "missing": args.on_missing,
             "seed": args.seed,
             "smaa_samples": args.smaa_samples,
         },

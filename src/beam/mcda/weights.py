@@ -12,6 +12,8 @@ import warnings
 
 import numpy as np
 
+from ._missing import require_complete
+
 
 def equal_weights(n_metrics: int) -> np.ndarray:
     """Return a vector of ``n_metrics`` equal weights that sum to 1."""
@@ -64,6 +66,7 @@ def entropy_weights(normalized: np.ndarray) -> np.ndarray:
     normalized = np.asarray(normalized, dtype=float)
     if normalized.ndim != 2:
         raise ValueError(f"normalized must be 2D; got shape {normalized.shape}")
+    require_complete(normalized, where="entropy_weights")
     n_tools, n_metrics = normalized.shape
     if n_tools < 2:
         raise ValueError(
@@ -114,6 +117,7 @@ def _check_objective_matrix(normalized: np.ndarray, caller: str) -> np.ndarray:
     normalized = np.asarray(normalized, dtype=float)
     if normalized.ndim != 2:
         raise ValueError(f"normalized must be 2D; got shape {normalized.shape}")
+    require_complete(normalized, where=caller)
     n_tools = normalized.shape[0]
     if n_tools < 2:
         raise ValueError(f"{caller} needs at least 2 tools to measure variability; got {n_tools}")
