@@ -61,6 +61,17 @@ class SourceVarianceReport:
     variance_components
         Map from grouping factor to variance: ``"benchmark"``,
         ``"benchmark:dataset"``, ``"method:benchmark"``, and ``"Residual"``.
+    lrt_statistic, lrt_pvalue
+        Per random term (``"benchmark"``, ``"benchmark:dataset"``,
+        ``"method:benchmark"``), the restricted likelihood-ratio statistic for
+        dropping that term and its boundary-corrected p-value. Testing whether a
+        variance component is zero is a boundary problem, so the null is a 50:50
+        mixture of a point mass at zero and a chi-square with one degree of
+        freedom (Self and Liang 1987; Stram and Lee 1994) and the p-value is
+        half the ordinary one-degree chi-square tail. A component estimated at
+        zero gives a statistic of zero and the largest possible p-value, 0.5.
+        Values are ``nan`` when the reduced model failed to fit. The residual is
+        not a droppable term and is not tested.
     formula
         The R model formula that was fit.
     singular
@@ -79,6 +90,8 @@ class SourceVarianceReport:
     method_effects: np.ndarray
     method_effect_se: np.ndarray
     variance_components: dict[str, float]
+    lrt_statistic: dict[str, float]
+    lrt_pvalue: dict[str, float]
     formula: str
     singular: bool
     n_obs: int
@@ -130,6 +143,13 @@ class SourceVarianceReport:
         on the genuine within-benchmark heterogeneity.
         """
         return self._share("Residual")
+
+
+def _float_map(raw: dict | None) -> dict[str, float]:
+    """Convert an R term-to-number map to floats, with R nulls becoming nan."""
+    if not raw:
+        return {}
+    return {k: (float("nan") if v is None else float(v)) for k, v in raw.items()}
 
 
 def source_variance_decomposition(
@@ -201,6 +221,8 @@ def source_variance_decomposition(
         method_effects=np.asarray(reply["method_effect"], dtype=float),
         method_effect_se=np.asarray(reply["method_effect_se"], dtype=float),
         variance_components={k: float(v) for k, v in reply["variance_components"].items()},
+        lrt_statistic=_float_map(reply["lrt_statistic"]),
+        lrt_pvalue=_float_map(reply["lrt_pvalue"]),
         formula=reply["formula"],
         singular=bool(reply["singular"]),
         n_obs=int(reply["n_obs"]),

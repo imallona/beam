@@ -59,12 +59,46 @@ vc <- as.data.frame(lme4::VarCorr(model))
 components <- as.list(vc$vcov)
 names(components) <- vc$grp
 
+# Significance of each random term by a restricted likelihood-ratio test that
+# drops the term and refits. Testing whether a variance component is zero is a
+# boundary problem (the null sits on the edge of the parameter space), so the
+# null distribution of the statistic is a 50:50 mixture of a point mass at zero
+# and a chi-square with one degree of freedom (Self and Liang 1987; Stram and
+# Lee 1994). The p-value is therefore half the ordinary one-degree chi-square
+# tail. A component estimated at zero gives a statistic of zero and the largest
+# possible p-value of 0.5. The fixed-effect structure is identical across the
+# compared fits, so the REML likelihoods are comparable.
+reduced_forms <- list(
+    "benchmark" = score ~ method + (1 | benchmark:dataset) + (1 | method:benchmark),
+    "benchmark:dataset" = score ~ method + (1 | benchmark) + (1 | method:benchmark),
+    "method:benchmark" = score ~ method + (1 | benchmark) + (1 | benchmark:dataset)
+)
+ll_full <- as.numeric(stats::logLik(model))
+lrt_statistic <- list()
+lrt_pvalue <- list()
+for (term in names(reduced_forms)) {
+    reduced <- tryCatch(
+        suppressWarnings(lme4::lmer(reduced_forms[[term]], data = df, REML = TRUE)),
+        error = function(e) NULL
+    )
+    if (is.null(reduced)) {
+        lrt_statistic[[term]] <- NA_real_
+        lrt_pvalue[[term]] <- NA_real_
+        next
+    }
+    stat <- max(0, 2 * (ll_full - as.numeric(stats::logLik(reduced))))
+    lrt_statistic[[term]] <- stat
+    lrt_pvalue[[term]] <- 0.5 * stats::pchisq(stat, df = 1, lower.tail = FALSE)
+}
+
 out <- list(
     formula = paste(deparse(form), collapse = " "),
     method_levels = levs,
     method_effect = emm,
     method_effect_se = emm_se,
     variance_components = components,
+    lrt_statistic = lrt_statistic,
+    lrt_pvalue = lrt_pvalue,
     n_obs = nrow(df),
     n_methods = nlevels(df$method),
     n_datasets = nlevels(df$dataset),
@@ -75,4 +109,4 @@ out <- list(
     warnings = as.list(warns)
 )
 
-cat(jsonlite::toJSON(out, auto_unbox = TRUE, digits = NA, null = "null"))
+cat(jsonlite::toJSON(out, auto_unbox = TRUE, digits = NA, null = "null", na = "null"))

@@ -85,3 +85,53 @@ def test_agreement_gives_small_method_benchmark_share():
         rep.benchmark_share + rep.dataset_share + rep.method_benchmark_share + rep.residual_share
     )
     assert abs(total - 1.0) < 1e-6
+
+
+def _dataset_effect_data(seed):
+    """Five methods on many datasets in three benchmarks, with a strong
+    dataset-within-benchmark level shift shared by all methods and no
+    method-by-benchmark interaction."""
+    rng = np.random.default_rng(seed)
+    methods = [f"m{i}" for i in range(5)]
+    M, D, B, S = [], [], [], []
+    for b in ("A", "B", "C"):
+        for j in range(8):
+            d_shift = rng.normal(0, 3.0)
+            for i, m in enumerate(methods):
+                M.append(m)
+                D.append(f"{b}_d{j}")
+                B.append(b)
+                S.append(d_shift + 0.2 * i + rng.normal(0, 0.2))
+    return M, D, B, S
+
+
+@needs_r
+def test_each_partition_is_tested():
+    methods, datasets, benchmarks, scores = _two_benchmark_data(interaction_sd=1.0, seed=2)
+    rep = source_variance_decomposition(methods, datasets, benchmarks, scores)
+    for term in ("benchmark", "benchmark:dataset", "method:benchmark"):
+        assert term in rep.lrt_statistic
+        assert term in rep.lrt_pvalue
+        p = rep.lrt_pvalue[term]
+        # boundary-corrected p-values are bounded by 0.5
+        assert np.isnan(p) or (0.0 <= p <= 0.5 + 1e-9)
+    # the residual is not a droppable term and is not tested
+    assert "Residual" not in rep.lrt_pvalue
+
+
+@needs_r
+def test_method_benchmark_partition_significant_when_injected():
+    methods, datasets, benchmarks, scores = _two_benchmark_data(interaction_sd=2.0, seed=0)
+    rep = source_variance_decomposition(methods, datasets, benchmarks, scores)
+    assert rep.lrt_pvalue["method:benchmark"] < 0.05
+
+
+@needs_r
+def test_dataset_partition_significant_and_others_at_the_boundary():
+    methods, datasets, benchmarks, scores = _dataset_effect_data(seed=3)
+    rep = source_variance_decomposition(methods, datasets, benchmarks, scores)
+    # the injected dataset-level shift makes benchmark:dataset clearly non-zero
+    assert rep.lrt_pvalue["benchmark:dataset"] < 0.01
+    # with no injected method-by-benchmark interaction that component sits at
+    # zero, so its boundary-corrected p-value is the maximum, 0.5
+    assert rep.lrt_pvalue["method:benchmark"] == pytest.approx(0.5)

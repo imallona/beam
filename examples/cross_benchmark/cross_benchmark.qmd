@@ -28,10 +28,12 @@ Only three single-cell integration benchmarks publish reusable per-method scores
 The five methods common to all three are combat, harmony, fastMNN, scanorama and LIGER. Benchmarks excluded: Tran's repository appeared empty until the scores were found in its supplement (a repository check is not sufficient); scIB-E (Genome Biology 2025) shares the scIB metrics but its methods are deep-learning ones (scVI, scANVI and loss-function variants) with no overlap with the classical five; the Communications Biology 2025 reference-informed evaluation covers one dataset with a bespoke RBET metric and overlaps only on combat and scanorama; BatchBench and sc_mixology use off-family metrics; spatial and cross-species benchmarks use different methods. The full provenance, licences and the dataset crosswalk are in `src/beam/data/README.md`.
 
 ```{python}
+%matplotlib inline
 import numpy as np
 from collections import defaultdict
 from itertools import combinations
 from scipy.stats import spearmanr, rankdata
+from IPython.display import display
 
 from beam.datasets import load_integration_benchmarks, load_integration_published_ranks
 from beam.reporting import rank_bump, funky_heatmap
@@ -93,10 +95,11 @@ consensus = dict(zip(
 ))
 columns = [f"{b}\n(reported)" for b in BENCH] + ["beam\nconsensus"]
 ranks = np.array([[published[b][m] for b in BENCH] + [int(consensus[m])] for m in CANON])
-rank_bump(
+fig = rank_bump(
     tuple(CANON), tuple(columns), ranks, divider_after=2,
     title="Reported method ranks across three benchmarks, and the beam consensus",
 )
+display(fig)
 ```
 
 Harmony holds the top rank consistently; combat, reported anywhere from first to last, settles to the bottom on the shared metrics; the consensus order is harmony, liger, fastMNN, scanorama, combat.
@@ -115,10 +118,11 @@ for b in BENCH:
         norm[:, j] = 1.0 - (np.array(ranks_bm) - 1.0) / (n - 1)  # best rank -> 1
     composite = np.nanmean(norm, axis=1)
     order = rankdata(-composite, method="ordinal")
-    funky_heatmap(
+    fig = funky_heatmap(
         norm, tuple(CANON), tuple(METRICS), composite, order,
         metric_groups=tuple(groups), title=f"{b}: standing of the common methods per metric",
     )
+    display(fig)
 ```
 
 ## How much of the variance is the benchmark
