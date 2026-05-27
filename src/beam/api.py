@@ -1,7 +1,7 @@
 """The five-line procedural API: load scores, rank, report.
 
 ``rank`` is the one call most users need. It resolves polarity, normalization,
-bounds and baselines from the metric registry, runs the MCDA pipeline, runs the
+bounds, baselines and targets from the metric registry, runs the MCDA pipeline, runs the
 default sensitivity primitives so the recommendation comes with a robustness
 account, builds the run manifest, and returns a ``RunResult`` that bundles all
 of it. ``beam.report`` (in ``beam.report``) turns a ``RunResult`` into a
@@ -189,6 +189,7 @@ def rank(
             normalization=list(context.normalization),
             bounds=list(context.bounds),
             baselines=list(context.baselines),
+            targets=list(context.targets),
             missing=missing,
         )
         loo_report = leave_one_metric_out(
@@ -200,6 +201,7 @@ def rank(
             normalization=list(context.normalization),
             bounds=list(context.bounds),
             baselines=list(context.baselines),
+            targets=list(context.targets),
             missing=missing,
         )
         pert_report = smallest_weight_perturbation(
@@ -210,6 +212,7 @@ def rank(
             bounds=list(context.bounds),
             normalization=list(context.normalization),
             baselines=list(context.baselines),
+            targets=list(context.targets),
             missing=missing,
         )
         if score_obj.is_tensor and score_obj.values.shape[1] >= 2:
@@ -224,6 +227,7 @@ def rank(
                 normalization=list(context.normalization),
                 bounds=list(context.bounds),
                 baselines=list(context.baselines),
+                targets=list(context.targets),
                 missing=missing,
                 on_zero_coverage=on_zero_coverage,
             )

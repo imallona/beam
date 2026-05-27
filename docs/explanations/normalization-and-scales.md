@@ -26,7 +26,7 @@ Min-max subtracts the minimum, so it is an affine transform with a nonzero offse
 
 Each metric card lists the transforms that are allowed on it. Runtime and peak memory list `affine` among them. Strictly, a pure ratio scale admits only multiplication by a positive constant, not the full affine family, so one could argue `affine` overstates what is meaning-preserving on these cards. We keep `affine` on the cards for two reasons. It records that a unit change, such as seconds to milliseconds, is a sensible operation, and removing it would block anyone who deliberately chooses min-max for a ratio metric. Instead of forbidding min-max on ratio metrics, the card steers the pipeline to a better default, and the guard warns when min-max is used on a heavy-tailed column. The decision stays with the analyst, and the card makes the safe choice the easy one.
 
-## The five strategies
+## The six strategies
 
 Each metric card declares `comparability.recommended_normalization`. The pipeline reads it and rescales that column accordingly.
 
@@ -35,6 +35,13 @@ Each metric card declares `comparability.recommended_normalization`. The pipelin
 - `rank` maps the position within the column to the unit interval. It drops the size of the gaps between methods but is immune to outliers and free of any scale assumption.
 - `zscore` standardizes the column and passes it through the logistic function, so the result stays in the open unit interval. The mean method maps to 0.5 and an outlier is compressed smoothly rather than setting the scale.
 - `baseline_relative` rescales relative to a declared chance score. A method no better than chance maps to 0 instead of the column midpoint. The Adjusted Rand Index uses it, with a chance baseline of 0. It is defined for higher-is-better metrics.
+- `target_relative` is for a metric whose ideal is a fixed value, not the highest or the lowest score. The calibration slope is the example: a value of 1 means the predicted risks are correctly scaled, below 1 means they are too extreme, above 1 means they are too moderate. The strategy takes the absolute deviation from the target and min-max scales it with inverted polarity, so the method nearest the target maps to 1 and the farthest to 0. It needs the card to declare `semantics.target`.
+
+## Metrics whose ideal is a fixed point
+
+The first five strategies all assume one direction is better: higher for the Adjusted Rand Index, lower for runtime. Some metrics break that assumption. A calibration slope of 1 is ideal, and a slope of 0.5 is as wrong as a slope of 2 is in the other direction. These carry `polarity: target_value` with a declared `target`, and the only strategy that fits them is `target_relative`. The pipeline enforces the pairing in both directions: a `target_value` column must use `target_relative`, and `target_relative` refuses a column that declares a monotone polarity, because there is no best direction for it to orient by.
+
+The deviation-then-min-max form is the distance-to-a-reference normalization of the OECD composite-indicators handbook. It is relative to the observed method set, like plain min-max, so the same caution applies: the scale rests on the spread of the methods in the table, not on an absolute tolerance. A tolerance-based variant, dividing the deviation by an acceptable error declared on the card, is a later option once a metric needs it.
 
 ## The guard
 
@@ -49,3 +56,4 @@ The `beam.scenarios` module ships two cases that make the failure concrete. In t
 - Stevens, S. S. On the theory of scales of measurement. Science (1946).
 - Smith, J. E. Characterizing computer performance with a single number. Communications of the ACM (1988).
 - OECD. Handbook on Constructing Composite Indicators (2008), on the choice of normalization method.
+- Van Calster, B., McLernon, D. J., van Smeden, M., Wynants, L., Steyerberg, E. W. Calibration: the Achilles heel of predictive analytics. BMC Medicine (2019), on the calibration slope and its ideal value of 1.

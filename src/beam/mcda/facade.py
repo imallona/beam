@@ -189,6 +189,7 @@ def run(
     metric_ids: Sequence[str] | None = None,
     normalization=None,
     baselines: Sequence[float | None] | None = None,
+    targets: Sequence[float | None] | None = None,
     missing: str = "error",
 ) -> Result:
     """Run a full MCDA pipeline from raw scores to per-tool ranks.
@@ -249,6 +250,9 @@ def run(
     baselines
         Optional per-column reference score required by the
         ``baseline_relative`` strategy. Forwarded to ``normalize``.
+    targets
+        Optional per-column ideal value required by the ``target_relative``
+        strategy. Forwarded to ``normalize``.
     missing
         Policy for missing cells (NaN) in the tool by metric matrix, applied
         after normalization. beam never picks this for you, so the default
@@ -301,7 +305,9 @@ def run(
     )
     strategies = _resolve_strategies(normalization, scores.shape[1])
 
-    normalized = normalize(scores, polarity, strategies, bounds=bounds_tuple, baselines=baselines)
+    normalized = normalize(
+        scores, polarity, strategies, bounds=bounds_tuple, baselines=baselines, targets=targets
+    )
     warnings = normalization_warnings(
         scores, strategies, bounds=bounds_tuple, metric_ids=metric_ids
     )
@@ -398,6 +404,7 @@ def run_from_registry(
         metric_ids=context.metric_ids,
         normalization=context.normalization,
         baselines=context.baselines,
+        targets=context.targets,
         missing=missing,
     )
 
@@ -408,7 +415,8 @@ class RegistryContext:
 
     Resolved once from the registry and reused by ``run_from_registry`` and by
     the sensitivity primitives so the headline ranking and its sensitivity
-    analysis share the same per-metric normalization, bounds, and baselines.
+    analysis share the same per-metric normalization, bounds, baselines, and
+    targets.
     """
 
     metric_ids: tuple[str, ...]
@@ -416,6 +424,7 @@ class RegistryContext:
     normalization: tuple[str, ...]
     bounds: tuple[Bound, ...]
     baselines: tuple[float | None, ...]
+    targets: tuple[float | None, ...]
 
 
 def registry_context(
@@ -460,4 +469,5 @@ def registry_context(
         normalization=tuple(strategies),
         bounds=tuple((p.range_lower, p.range_upper) for p in properties),
         baselines=tuple(p.score_of_random_baseline for p in properties),
+        targets=tuple(p.target for p in properties),
     )

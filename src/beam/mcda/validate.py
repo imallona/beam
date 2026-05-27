@@ -23,6 +23,7 @@ _STRATEGY_TRANSFORMS = {
     "log_min_max": frozenset({"log"}),
     "rank": frozenset({"rank"}),
     "zscore": frozenset({"z_score", "affine"}),
+    "target_relative": frozenset({"affine", "min_max"}),
 }
 
 
@@ -46,8 +47,9 @@ def validate_for_aggregation(
     2. Allowed transformations. The pipeline rescales each column with the
        strategy named in ``strategies`` (defaulting to ``min_max``). The
        card must permit the transform that strategy applies: ``affine`` or
-       ``min_max`` for min_max and baseline_relative, ``log`` for
-       log_min_max, ``rank`` for rank, ``z_score`` or ``affine`` for zscore.
+       ``min_max`` for min_max, baseline_relative and target_relative,
+       ``log`` for log_min_max, ``rank`` for rank, ``z_score`` or ``affine``
+       for zscore.
 
     Raises ``IncompatibleScaleError`` on the first failing column, naming
     the metric id, the offending field, and the rule that rejected it.

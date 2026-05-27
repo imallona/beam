@@ -52,6 +52,7 @@ def smaa(
     normalization=None,
     bounds=None,
     baselines=None,
+    targets=None,
     missing: str = "error",
 ) -> SMAAReport:
     """Run an SMAA-style weight-sampling sensitivity analysis on ``scores``.
@@ -90,7 +91,7 @@ def smaa(
     seed
         Optional integer seed for the random generator. Recorded in the
         report so the run can be reproduced.
-    normalization, bounds, baselines
+    normalization, bounds, baselines, targets
         Optional per-metric normalization context forwarded to ``run``.
         Default ``None`` keeps the ``run`` defaults (min-max with empirical
         extrema). Pass the values resolved by
@@ -137,6 +138,7 @@ def smaa(
         bounds=bounds,
         normalization=normalization,
         baselines=baselines,
+        targets=targets,
         missing=missing,
     )
 
@@ -150,6 +152,7 @@ def smaa(
             bounds=bounds,
             normalization=normalization,
             baselines=baselines,
+            targets=targets,
             missing=missing,
         ).ranks
 

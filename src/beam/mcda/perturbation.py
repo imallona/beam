@@ -88,6 +88,7 @@ def smallest_weight_perturbation(
     tolerance: float = 1e-9,
     normalization=None,
     baselines=None,
+    targets=None,
     missing: str = "error",
 ) -> WeightPerturbationReport:
     """Compute the smallest single-weight change that swaps each pair of tools.
@@ -139,7 +140,7 @@ def smallest_weight_perturbation(
         (numeric path).
     bounds
         Optional declared bounds, forwarded to ``run``.
-    normalization, baselines
+    normalization, baselines, targets
         Optional per-metric normalization context forwarded to ``run``.
         Default ``None`` keeps the ``run`` defaults. Pass the values from
         ``beam.mcda.registry_context`` so the perturbation search rests on
@@ -171,6 +172,7 @@ def smallest_weight_perturbation(
         bounds=bounds,
         normalization=normalization,
         baselines=baselines,
+        targets=targets,
         missing=missing,
     )
     x = base.normalized

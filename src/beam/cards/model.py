@@ -80,8 +80,8 @@ class MetricCard:
         """Recommended way to rescale this metric to [0, 1] before weighting.
 
         Set on the card under comparability.recommended_normalization. One of
-        min_max, log_min_max, rank, zscore, baseline_relative, or None if
-        unspecified (the pipeline then falls back to min_max).
+        min_max, log_min_max, rank, zscore, baseline_relative, target_relative,
+        or None if unspecified (the pipeline then falls back to min_max).
         """
         return self.comparability.get("recommended_normalization")
 
@@ -93,6 +93,15 @@ class MetricCard:
         baseline_relative normalization.
         """
         return self.semantics.get("score_of_random_baseline")
+
+    @property
+    def target(self) -> float | None:
+        """Ideal value of a target_value metric, if the card declares one.
+
+        Set under semantics.target. Consumed by the target_relative
+        normalization, which scales each method by its closeness to this value.
+        """
+        return self.semantics.get("target")
 
 
 @dataclass(frozen=True)
@@ -113,3 +122,4 @@ class MetricProperties:
     recommended_aggregation_across_datasets: str | None
     recommended_normalization: str | None = None
     score_of_random_baseline: float | None = None
+    target: float | None = None

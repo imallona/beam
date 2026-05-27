@@ -46,6 +46,18 @@ def test_pulls_recommended_aggregation_across_datasets():
     assert peak.recommended_aggregation_across_datasets == "geometric_mean"
 
 
+def test_pulls_target_for_a_target_value_metric():
+    [cal] = properties_for(["calibration_slope"])
+    assert cal.polarity == "target_value"
+    assert cal.target == 1.0
+    assert cal.recommended_normalization == "target_relative"
+
+
+def test_target_is_none_for_non_target_metrics():
+    [ari] = properties_for(["ari"])
+    assert ari.target is None
+
+
 def test_unknown_metric_id_raises():
     with pytest.raises(KeyError):
         properties_for(["definitely_not_a_metric"])

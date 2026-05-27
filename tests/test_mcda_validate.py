@@ -98,6 +98,19 @@ def test_log_min_max_needs_log_in_transformations():
         validate_for_aggregation([only_affine], "saw", strategies=["log_min_max"])
 
 
+def test_target_relative_is_licensed_by_affine():
+    """A target_value interval metric with affine passes under target_relative."""
+    target_metric = _interval_props(metric_id="cal_slope", allowed=("affine",))
+    validate_for_aggregation([target_metric], "saw", strategies=["target_relative"])
+
+
+def test_target_relative_needs_affine_or_min_max():
+    """target_relative is rejected when the card declares neither affine nor min_max."""
+    only_rank = _interval_props(metric_id="cal_slope", allowed=("rank",))
+    with pytest.raises(IncompatibleScaleError, match="target_relative"):
+        validate_for_aggregation([only_rank], "saw", strategies=["target_relative"])
+
+
 def test_log_min_max_accepted_when_log_declared():
     has_log = _ratio_props(allowed=("log", "rank"))
     validate_for_aggregation([has_log], "saw", strategies=["log_min_max"])

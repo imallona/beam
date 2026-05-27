@@ -22,6 +22,13 @@ different failure mode of plain min-max scaling:
   (the chance-level value of a corrected-for-chance metric), so a method
   no better than chance maps to 0 rather than to the column midpoint.
   Defined for higher-is-better metrics only.
+- ``target_relative``: rescale closeness to a declared target value, for a
+  metric whose ideal is neither the highest nor the lowest score but a
+  fixed point (polarity ``target_value``). The absolute deviation from the
+  target is min-max scaled with inverted polarity, so the method nearest
+  the target maps to 1 and the farthest to 0. This is the distance-to-a-
+  reference normalization of the OECD composite-indicators handbook (2008).
+  Requires the card to declare ``semantics.target``.
 
 ``normalization_warnings`` is the matching guard. It flags min-max columns
 that rest on an empirical bound (not comparable across method sets) or
@@ -36,7 +43,7 @@ import numpy as np
 
 Bound = tuple[float | None, float | None]
 
-STRATEGIES = ("min_max", "log_min_max", "rank", "zscore", "baseline_relative")
+STRATEGIES = ("min_max", "log_min_max", "rank", "zscore", "baseline_relative", "target_relative")
 
 _HEAVY_TAIL_RATIO = 10.0
 
@@ -78,6 +85,7 @@ def normalize(
     strategies: Sequence[str],
     bounds: Sequence[Bound] | None = None,
     baselines: Sequence[float | None] | None = None,
+    targets: Sequence[float | None] | None = None,
 ) -> np.ndarray:
     """Rescale each column of ``scores`` to [0, 1] under a per-column strategy.
 
@@ -86,7 +94,9 @@ def normalize(
     scores
         2D array, shape (n_tools, n_metrics).
     polarity
-        One ``"higher_is_better"`` or ``"lower_is_better"`` per column.
+        One ``"higher_is_better"``, ``"lower_is_better"`` or
+        ``"target_value"`` per column. A ``target_value`` column must use
+        the ``target_relative`` strategy and no other.
     strategies
         One entry per column, each from ``STRATEGIES``.
     bounds
@@ -97,6 +107,8 @@ def normalize(
     baselines
         Optional per-column reference score required by
         ``baseline_relative``.
+    targets
+        Optional per-column ideal value required by ``target_relative``.
 
     Returns
     -------
@@ -120,6 +132,8 @@ def normalize(
         raise ValueError(
             f"baselines has {len(baselines)} entries but scores has {n_metrics} columns"
         )
+    if targets is not None and len(targets) != n_metrics:
+        raise ValueError(f"targets has {len(targets)} entries but scores has {n_metrics} columns")
 
     result = np.empty_like(scores)
     for j in range(n_metrics):
@@ -128,8 +142,8 @@ def normalize(
         strat = strategies[j]
         lo, hi = (None, None) if bounds is None else bounds[j]
         base = None if baselines is None else baselines[j]
-        if pol not in ("higher_is_better", "lower_is_better"):
-            raise ValueError(f"unknown polarity {pol!r} for column {j}")
+        tgt = None if targets is None else targets[j]
+        _check_polarity_strategy(pol, strat, j)
         _check_declared_range(col, j, lo, hi)
         if strat == "min_max":
             result[:, j] = _min_max_col(col, pol, lo, hi)
@@ -141,9 +155,34 @@ def normalize(
             result[:, j] = _zscore_col(col, pol)
         elif strat == "baseline_relative":
             result[:, j] = _baseline_relative_col(col, pol, base, hi, j)
+        elif strat == "target_relative":
+            result[:, j] = _target_relative_col(col, tgt, j)
         else:
             raise ValueError(f"unknown normalization strategy {strat!r} for column {j}")
     return result
+
+
+def _check_polarity_strategy(pol: str, strat: str, j: int) -> None:
+    """Reject any (polarity, strategy) pairing the normalization cannot honour.
+
+    ``target_value`` is the only polarity ``target_relative`` accepts, and it
+    accepts no other strategy: a target-valued metric has no monotone best
+    direction for the other strategies to orient by.
+    """
+    if pol == "target_value":
+        if strat != "target_relative":
+            raise ValueError(
+                f"column {j}: polarity 'target_value' requires the 'target_relative' "
+                f"normalization, got {strat!r}"
+            )
+        return
+    if strat == "target_relative":
+        raise ValueError(
+            f"column {j}: 'target_relative' normalization is for 'target_value' metrics "
+            f"only, but polarity is {pol!r}"
+        )
+    if pol not in ("higher_is_better", "lower_is_better"):
+        raise ValueError(f"unknown polarity {pol!r} for column {j}")
 
 
 def normalization_warnings(
@@ -272,6 +311,20 @@ def _baseline_relative_col(
         return _constant_fill(col, 0.5)
     scaled = (col - baseline) / (top - baseline)
     return np.clip(scaled, 0.0, 1.0)
+
+
+def _target_relative_col(col: np.ndarray, target: float | None, j: int) -> np.ndarray:
+    """Rescale closeness to ``target`` onto [0, 1], best at the target.
+
+    The deviation ``|col - target|`` is a lower-is-better quantity, so min-max
+    on it with inverted polarity maps the method nearest the target to 1 and
+    the farthest to 0. NaN cells stay NaN; a column whose methods are all
+    equidistant from the target maps to 0.5.
+    """
+    if target is None:
+        raise ValueError(f"column {j}: target_relative needs semantics.target on the card")
+    deviation = np.abs(col - float(target))
+    return _min_max_col(deviation, "lower_is_better", None, None)
 
 
 def _average_rank(values: np.ndarray) -> np.ndarray:

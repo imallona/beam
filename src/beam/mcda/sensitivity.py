@@ -50,6 +50,7 @@ def leave_one_metric_out(
     normalization=None,
     bounds=None,
     baselines=None,
+    targets=None,
     missing: str = "error",
 ) -> SensitivityReport:
     """Run the pipeline once with all metrics, then once per metric omission.
@@ -76,7 +77,7 @@ def leave_one_metric_out(
         Forwarded to ``run``. ``"equal"``, ``"entropy"``, or an array.
     method
         Forwarded to ``run``. ``"saw"`` or ``"topsis"``.
-    normalization, bounds, baselines
+    normalization, bounds, baselines, targets
         Optional per-metric normalization context forwarded to ``run`` and
         subset to the kept columns on each omission. Default ``None`` keeps
         the ``run`` defaults. Pass the values from
@@ -110,6 +111,7 @@ def leave_one_metric_out(
         normalization=normalization,
         bounds=bounds,
         baselines=baselines,
+        targets=targets,
         missing=missing,
     )
 
@@ -127,6 +129,7 @@ def leave_one_metric_out(
                 normalization=_subset_columns(normalization, cols),
                 bounds=_subset_columns(bounds, cols),
                 baselines=_subset_columns(baselines, cols),
+                targets=_subset_columns(targets, cols),
                 missing=missing,
             )
         except IncompleteMatrixError:
@@ -193,6 +196,7 @@ def leave_one_dataset_out(
     normalization=None,
     bounds=None,
     baselines=None,
+    targets=None,
     missing: str = "error",
     on_zero_coverage: str = "error",
 ) -> DatasetSensitivityReport:
@@ -212,8 +216,8 @@ def leave_one_dataset_out(
     indices are reported in the result.
 
     The normalization context applies per metric and the metric axis is
-    unchanged when a dataset is dropped, so ``normalization``, ``bounds`` and
-    ``baselines`` are forwarded to every run unchanged.
+    unchanged when a dataset is dropped, so ``normalization``, ``bounds``,
+    ``baselines`` and ``targets`` are forwarded to every run unchanged.
 
     Parameters
     ----------
@@ -231,7 +235,7 @@ def leave_one_dataset_out(
         Optional length ``n_metrics`` labels used in reduction error messages.
     weights, method
         Forwarded to ``run``.
-    normalization, bounds, baselines
+    normalization, bounds, baselines, targets
         Optional per-metric normalization context forwarded to every run.
         Pass the values from ``beam.mcda.registry_context`` so the leave-one-out
         runs normalize the same way as the headline ranking.
@@ -262,6 +266,7 @@ def leave_one_dataset_out(
             normalization=normalization,
             bounds=bounds,
             baselines=baselines,
+            targets=targets,
             missing=missing,
         )
 

@@ -62,6 +62,20 @@ def test_forwards_weighting_and_method():
     assert out.method == "topsis"
 
 
+def test_target_value_metric_runs_through_the_registry_path():
+    """A target_value card (calibration_slope) resolves target_relative and ranks.
+
+    The method whose calibration slope sits on the target (1.0) and whose ARI is
+    highest must rank first, since target_relative maps the on-target method to 1.
+    """
+    # columns: calibration_slope (target 1.0), ari (higher is better)
+    scores = np.array([[1.0, 0.9], [0.5, 0.6], [1.4, 0.3]])
+    out = run_from_registry(scores, ["calibration_slope", "ari"], weights="equal", method="saw")
+    assert out.normalization[0] == "target_relative"
+    assert out.normalized[0, 0] == 1.0
+    assert out.ranks[0] == 1
+
+
 def test_validation_blocks_incompatible_scale(monkeypatch):
     """If a card declared nominal scale, run_from_registry must raise."""
     from beam.cards import MetricProperties

@@ -79,6 +79,7 @@ def properties_for(
                 recommended_aggregation_across_datasets=card.recommended_aggregation_across_datasets,
                 recommended_normalization=card.recommended_normalization,
                 score_of_random_baseline=card.score_of_random_baseline,
+                target=card.target,
             )
         )
     return out

@@ -1,0 +1,86 @@
+id: calibration_slope
+version: v1
+name: Calibration slope
+aliases:
+  - cal_slope
+  - recalibration_slope
+description: |
+  Slope of a logistic recalibration model that regresses the observed binary outcome on the linear predictor (the log-odds) of a risk model. A value of 1 means the predicted risks are correctly scaled. A slope below 1 means the predictions are too extreme, the usual signature of an overfit model; a slope above 1 means they are too moderate. The slope is therefore a target_value metric: neither the highest nor the lowest value is best, the ideal is exactly 1. It is one of the standard calibration summaries for clinical risk-prediction models alongside the calibration intercept and the calibration plot.
+citations:
+  - text: "Van Calster B, McLernon DJ, van Smeden M, Wynants L, Steyerberg EW. Calibration: the Achilles heel of predictive analytics. BMC Medicine 2019, 17:230."
+    doi: "10.1186/s12916-019-1466-7"
+metric_kind: derived
+measurand: slope of the observed outcome regressed on the model's linear predictor
+task:
+  - classification
+requires_ground_truth: true
+ground_truth:
+  description: the observed binary outcome for each instance
+  shape: vector
+  dtype: bool
+inputs:
+  - role: predicted_probability
+    shape: vector
+    dtype: float
+    description: predicted risk per instance from the model under evaluation, in [0, 1]
+  - role: observed_outcome
+    shape: vector
+    dtype: bool
+    description: observed binary outcome; same length as predicted_probability
+output:
+  shape: scalar
+  dtype: float
+  description: the recalibration slope, a real number whose ideal value is 1
+semantics:
+  scale_type: interval
+  scale_rationale: |
+    The slope is a coefficient of a logistic regression, so differences are
+    meaningful but there is no ratio origin: a negative slope (predictions
+    anti-correlated with the outcome) is possible, and a slope of zero means
+    no association rather than an absence of the quantity. That makes it an
+    interval scale, which admits affine transformations, the family the
+    target_relative normalization uses.
+  range:
+    lower: null
+    upper: null
+  polarity: target_value
+  target: 1.0
+  monotonic: false
+  meaningful_zero: false
+  allowed_transformations:
+    - affine
+  uncertainty_model:
+    type: analytic
+comparability:
+  comparable_within:
+    - same_dataset
+    - same_task
+  aggregation_rules:
+    - deviation_from_target_is_arithmetic_across_datasets
+  recommended_aggregation_across_datasets: arithmetic_mean
+  recommended_normalization: target_relative
+implementations:
+  - name: rms
+    language: r
+    package: rms
+    function: val.prob
+    license: GPL-2.0-or-later
+    repo_url: https://cran.r-project.org/package=rms
+    citation: "Harrell FE. Regression Modeling Strategies. Springer, 2015."
+examples:
+  - description: a correctly calibrated model has slope one
+    inputs:
+      note: predicted risks already on the right scale, so the recalibration slope is one
+    expected_output: 1.0
+    tolerance: 0.05
+  - description: an overfit model whose predictions are too extreme has slope below one
+    inputs:
+      note: predictions more extreme than warranted, shrunk by the recalibration
+    expected_output: 0.7
+    tolerance: 0.1
+provenance:
+  author: Izaskun Mallona
+  contact: izaskun.mallona@gmail.com
+  created: "2026-05-27"
+  modified: "2026-05-27"
+  license: CC-BY-4.0

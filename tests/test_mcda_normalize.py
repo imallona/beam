@@ -109,6 +109,50 @@ def test_baseline_relative_rejects_lower_is_better():
         )
 
 
+def test_target_relative_maps_the_target_to_one():
+    """The method at the target maps to 1, the farthest to 0, by deviation."""
+    scores = np.array([[1.0], [0.7], [1.3], [2.0]])
+    out = normalize(scores, ["target_value"], ["target_relative"], targets=[1.0])
+    # deviations 0, 0.3, 0.3, 1.0; min-max of a lower-is-better deviation gives 1 - d.
+    np.testing.assert_allclose(out.ravel(), [1.0, 0.7, 0.7, 0.0])
+
+
+def test_target_relative_is_symmetric_around_the_target():
+    """Equal deviations on either side of the target map to the same score."""
+    scores = np.array([[0.5], [1.5], [1.0]])
+    out = normalize(scores, ["target_value"], ["target_relative"], targets=[1.0])
+    assert out[0, 0] == out[1, 0]
+    assert out[2, 0] == 1.0
+
+
+def test_target_relative_keeps_nan_and_handles_zero_range():
+    """A missing cell stays NaN; all-equidistant methods map to 0.5."""
+    scores = np.array([[0.5], [1.5], [np.nan]])
+    out = normalize(scores, ["target_value"], ["target_relative"], targets=[1.0])
+    assert np.isnan(out[2, 0])
+    np.testing.assert_allclose(out[:2, 0], [0.5, 0.5])
+
+
+def test_target_relative_needs_a_target():
+    with pytest.raises(ValueError, match=r"semantics\.target"):
+        normalize(np.array([[0.8], [1.2]]), ["target_value"], ["target_relative"])
+
+
+def test_target_value_polarity_requires_target_relative():
+    with pytest.raises(ValueError, match="requires the 'target_relative'"):
+        normalize(np.array([[0.8], [1.2]]), ["target_value"], ["min_max"])
+
+
+def test_target_relative_rejects_a_monotone_polarity():
+    with pytest.raises(ValueError, match="for 'target_value' metrics only"):
+        normalize(
+            np.array([[0.8], [1.2]]),
+            ["higher_is_better"],
+            ["target_relative"],
+            targets=[1.0],
+        )
+
+
 def test_out_of_range_check_applies_to_every_strategy():
     """The declared-range guard fires regardless of the strategy chosen."""
     with pytest.raises(ValueError, match="above declared upper bound"):
