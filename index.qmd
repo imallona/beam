@@ -26,11 +26,6 @@ Each vignette doubles as a CI integration test (rendered on every push):
 - [OpenProblems batch integration](examples/openproblems/openproblems.qmd): MCDA contrasted with the platform's own mean-of-scores rule, plus a Bradley-Terry tree on 50 spatial datasets.
 - [Cross-benchmark meta-analysis](examples/cross_benchmark/cross_benchmark.qmd): four single-cell integration benchmarks under one consistent rule.
 
-## Decisions and findings
-
-- [Architectural decision records](docs/adr/): the design choices and the alternatives that were rejected.
-- [Findings log](docs/findings/): empirical results with reproducibility metadata.
-
 ## Source
 
 [github.com/imallona/beam](https://github.com/imallona/beam). GPL-3 code, CC-BY-4.0 metric cards.

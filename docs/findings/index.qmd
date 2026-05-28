@@ -1,0 +1,18 @@
+---
+title: "Findings"
+---
+
+Each finding is a citable empirical claim with a status (Active, Tentative or Refuted), the date and the script or vignette that produced the number. Findings are the records the manuscript and any external citation point at.
+
+## Active
+
+- [0001 — Duo 2018 MCDA result](0001-duo-2018-mcda.md). Seurat ranks first on the 14-method, 12-dataset Duo 2018 clustering benchmark across all weighting schemes; the upper-middle methods are not separable at 12 datasets.
+- [0002 — Duo 2018 variance decomposition](0002-duo-2018-variance-decomposition.md). Dataset accounts for 0.71 of the score variance under a Gaussian mixed-effects fit; the interaction is confounded with noise at one run per cell.
+- [0003 — Duo 2018 Bradley-Terry tree](0003-duo-2018-bradley-terry-tree.md). No stable feature split at 12 datasets; the tree falls back to the flat ranking. Same small-N limit as 0001 and 0002.
+- [0004 — OpenProblems SVG Bradley-Terry tree](0004-openproblems-svg-bradley-terry.md). On the 50-dataset spatially variable genes task, the tree splits on the spatial assay technology. spark_x ranks first overall; spanve ranks first on visium/xenium; nnsvg ranks first on seqfish/slideseq.
+- [0005 — Cross-benchmark integration agreement](0005-cross-benchmark-integration-agreement.md). Reported rankings across three integration benchmarks (scIB, OpenProblems, Tran 2020) barely agree (mean Spearman -0.10). Re-ranking under one consistent rule raises it to +0.50. Adding Tyler 2023 as a fourth source lifts the method-by-benchmark variance share from 0.15 to 0.23.
+- [0006 — Same-data pancreas contrast](0006-pancreas-same-data-contrast.md). On the shared human pancreas data, Tran D4 and scIB pancreas agree harmony ranks first but the rest of the order has a Spearman of only +0.46. The pipeline contribution is real and visible with no data confound.
+
+## Template
+
+Findings follow the [template](0000-template.md) with sections: Observation, Method, Implications, Reproducibility, Related.

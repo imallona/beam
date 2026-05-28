@@ -2,59 +2,9 @@
 
 `beam` provides `b`enchmark `e`valuation `a`nd `m`etrics.
 
-We store open and reusable performance metrics so anyone running a method comparison (a benchmark) can pick them up. We also aim to automate decisions and reduce implicit bias.
+We store and manage open and reusable performance metrics so anyone running a method comparison (a benchmark) can automate decisions and reduce implicit bias.
 
-The design borrows from measurement theory.
-
-`beam` is under development.
-
-## Background
-
-A metric procedure (not the result of running it), such as *accuracy*, *kBet* or *max RSS*, takes inputs of a similar shape and returns outputs of a similar shape. It can be written in more than one implementation.
-
-- Implementations:` [{name : blabla, version: v1, language: python, license: MIT}; {name: fastbla, version: v2.2.2, language: Rust, license: GPL}]`
-- Syntax
-  - Dimension: vector, matrix, scalar, graph, complex (if complex, specify schema) etc
-     - Schema: json schema for shape validation
-  - Values: str, int, float32, bool, etc
-  - File format: matrix market, csv, json, etc
-- Semantics
-  - Interpretation: low is good, A better than B better than C, etc; linear or not linear
-  - Range: ratio, natural plus zero, (0 - 11.5), etc
-  - Scale: nominal, ordinal, interval, ratio
-    - Allowed transformations: e.g `poor = 0, mid = 1`; or `sqrt(x)`, `arcsin(x)` etc
-  - Timeseries: no (whether repeated measures are taken at perhaps regular intervals)
-- Documentation
-  - Description (human readable)
-- QA/QC
-  - Example inputs for CI/CD / validity testing and their expected outputs
-- Taxonomy
-  - Intrinsic or depending on a truth; if dependending on a truth, specify the truth
-  - Truth
-    - Syntax (borrow specs from above)
-    - Documentation
-- Known applications: `[clustering, classification]`
-- Example applications: `Anthony's clustering benchmark v1 with permalink X`, `spacehack v99.9 with permalink Y`
-
-Measurement scales constrain which comparisons make sense. Distances on nominal data, or variance on ordinal labels, do not. Cross-tabulating nominal data, or log-transforming ratios, does.
-
-## Metric repository and formalization
-
-We provide tested software implementations for common metrics (TPR and others), annotated with _metric nutrition labels_, similar to [dataset nutrition labels](https://datanutrition.org/). The syntax and semantics fix the input and output interfaces, so the same card is reusable across languages and interpreters.
-
-## Why?
-
-This project is inspired by [omnibenchmark](https://github.com/omnibenchmark/omnibenchmark), a tool for open and continuous community benchmarking.
-
-# Resources
-
-- [Commonly used software tools produce conflicting and overly-optimistic AUPRC values](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-024-03266-y)
-- [Performance Evaluation in Machine Learning: The Good, The Bad, The Ugly and The Way Forward](http://people.cs.bris.ac.uk/~flach/papers/Performance-AAAI19.pdf)
-- [Measurement theory and paleobiology](https://www.sciencedirect.com/science/article/pii/S0169534723002161)
-
-# Started
-
-21st Feb 2025
+Our [documentation](https://imallona.github.io/beam/) includes howtos, vignettes, and explanations.
 
 ## Install
 
@@ -78,22 +28,11 @@ beam::install_beam_python()
 
 ## Usage
 
-The five-line path, from a CSV to an HTML report:
+We have a detailed [documentation](https://imallona.github.io/beam/). TL/DR from a CSV to an HTML report:
 
-```python
-import beam
+On a shell:
 
-scores = beam.load_scores("scores.csv")          # tool by metric, or a tool by dataset by metric tensor
-result = beam.rank(scores, weights="entropy", method="topsis")
-beam.report(result, "report.html")
-print(result.top_tool, "ranks first")
-```
-
-`beam.rank` reads polarity, normalization, bounds and baselines from the metric cards, runs the MCDA pipeline, runs the default sensitivity analysis on the same normalization context, and builds a run manifest. The returned `RunResult` carries the ranking, the sensitivity reports, and the manifest. `beam.report` writes one self-contained HTML file with the ranking, the sensitivity, a critical-difference section when the input has more than one dataset, and a plain-language recommendation.
-
-The same from the command line:
-
-```
+```bash
 beam validate scores.csv
 beam rank scores.csv --weights entropy --method topsis --out result.json --report report.html
 beam report result.json --out report.html
@@ -101,7 +40,31 @@ beam metric show ari
 beam run beam.yaml
 ```
 
-The lower-level entry point `beam.mcda.run_from_registry(scores, metric_ids, weights=, method=)` takes a 2D array directly and returns just the MCDA `Result`. See `examples/duo2018/duo2018.qmd` for the longer walkthrough and `docs/tutorials/quickstart.md` for a runnable quickstart.
+In python:
+
+```python
+import beam
+from beam.cards import Registry
+from beam.config import run_config
+
+beam.load_scores("scores.csv")
+result = beam.rank("scores.csv", weights="entropy", method="topsis")
+beam.report(result, "report.html")
+print(Registry().get("ari"))
+run_config("beam.yaml")
+```
+
+In R
+
+```r
+library(beam)
+
+result <- beam_rank("scores.csv", weights = "entropy", method = "topsis")
+beam_validate("scores.csv")
+beam_report(result, "report.html")
+beam_metric_show("ari")
+beam_run("beam.yaml")
+```
 
 ## Repository layout
 
@@ -180,3 +143,13 @@ docs/
 ## Citation
 
 See `CITATION.cff`.
+
+## Inspiration
+
+- [Commonly used software tools produce conflicting and overly-optimistic AUPRC values](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-024-03266-y)
+- [Performance Evaluation in Machine Learning: The Good, The Bad, The Ugly and The Way Forward](http://people.cs.bris.ac.uk/~flach/papers/Performance-AAAI19.pdf)
+- [Measurement theory and paleobiology](https://www.sciencedirect.com/science/article/pii/S0169534723002161)
+
+## Started
+
+21st Feb 2025

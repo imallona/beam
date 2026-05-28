@@ -2,12 +2,12 @@ project:
   type: website
   output-dir: _site
   render:
-    - "docs/*.md"
     - "docs/tutorials/*.md"
     - "docs/how-to/*.md"
     - "docs/explanations/*.md"
     - "docs/adr/*.md"
     - "docs/findings/*.md"
+    - "docs/findings/index.qmd"
     - "examples/*/*.qmd"
     - "index.qmd"
 
@@ -64,12 +64,6 @@ website:
             text: Ontology mappings
           - href: docs/explanations/openproblems-as-a-data-source.md
             text: OpenProblems as a data source
-      - text: Reference
-        href: docs/reference/index.qmd
-      - text: ADRs
-        href: docs/adr/
-      - text: Findings
-        href: docs/findings/
       - text: Vignettes
         menu:
           - href: examples/duo2018/duo2018.qmd
