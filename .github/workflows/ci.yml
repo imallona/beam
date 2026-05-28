@@ -131,44 +131,46 @@ jobs:
           MPLBACKEND: Agg
         run: quarto render examples/cross_benchmark/cross_benchmark.qmd
 
+      # The repo-root _quarto.yml turns the tree into a Quarto project with
+      # output-dir: _site, so the rendered vignettes land under _site/.
       - name: Upload rendered Duo vignette as artefact
         uses: actions/upload-artifact@v4
         with:
           name: duo2018-vignette
-          path: examples/duo2018/duo2018.html
+          path: _site/examples/duo2018/duo2018.html
           if-no-files-found: error
 
       - name: Upload rendered scenarios vignette as artefact
         uses: actions/upload-artifact@v4
         with:
           name: scenarios-vignette
-          path: examples/scenarios/scenarios.html
+          path: _site/examples/scenarios/scenarios.html
           if-no-files-found: error
 
       - name: Upload rendered transportation vignette as artefact
         uses: actions/upload-artifact@v4
         with:
           name: transportation-vignette
-          path: examples/transportation/transportation.html
+          path: _site/examples/transportation/transportation.html
           if-no-files-found: error
 
       - name: Upload rendered M4 vignette as artefact
         uses: actions/upload-artifact@v4
         with:
           name: m4-vignette
-          path: examples/m4/m4.html
+          path: _site/examples/m4/m4.html
           if-no-files-found: error
 
       - name: Upload rendered OpenProblems vignette as artefact
         uses: actions/upload-artifact@v4
         with:
           name: openproblems-vignette
-          path: examples/openproblems/openproblems.html
+          path: _site/examples/openproblems/openproblems.html
           if-no-files-found: error
 
       - name: Upload rendered cross-benchmark vignette as artefact
         uses: actions/upload-artifact@v4
         with:
           name: cross_benchmark-vignette
-          path: examples/cross_benchmark/cross_benchmark.html
+          path: _site/examples/cross_benchmark/cross_benchmark.html
           if-no-files-found: error

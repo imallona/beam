@@ -53,10 +53,16 @@ jobs:
           working-directory: r/beam
           extra-packages: |
             any::rcmdcheck
+            any::roxygen2
             any::testthat
             any::knitr
             any::rmarkdown
             any::reticulate
+
+      - name: Generate man pages with roxygen2
+        shell: Rscript {0}
+        run: |
+          roxygen2::roxygenise("r/beam")
 
       - name: Verify reticulate sees the workflow Python
         shell: Rscript {0}
