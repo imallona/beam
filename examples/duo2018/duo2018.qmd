@@ -370,7 +370,7 @@ if me is not None:
     plt.show()
 ```
 
-The dataset intercept takes about 0.71 of the ARI variance, so most of the spread is datasets being uniformly easy or hard rather than methods reordering. SC3 and Seurat lead the marginal means and are not separable from each other given the standard errors, which matches the critical-difference reading above. The residual share, the upper bound on the method-by-dataset interaction at one run per cell, concentrates on the two weakest methods (RaceID2 and FlowSOM) on a few simulated and four-group datasets, not on a reshuffling of the strong methods. See [the mixed-effects explanation](../../docs/explanations/heterogeneity-mixed-effects.md) and [findings 0002](../../docs/findings/0002-duo-2018-variance-decomposition.md).
+The dataset intercept takes about 0.71 of the ARI variance, so most of the spread is datasets being uniformly easy or hard rather than methods reordering. SC3 and Seurat lead the marginal means and are not separable from each other given the standard errors, which matches the critical-difference reading above. The residual share, the upper bound on the method-by-dataset interaction at one run per cell, concentrates on the two weakest methods (RaceID2 and FlowSOM) on a few simulated and four-group datasets, not on a reshuffling of the strong methods. See [the mixed-effects explanation](../../docs/explanations/heterogeneity-mixed-effects.md).
 
 ## Heterogeneity: does a dataset feature reverse the ranking
 
@@ -401,7 +401,7 @@ else:
     print("Provision it with envs/heterogeneity.yml (conda or mamba).")
 ```
 
-On these 12 datasets the parameter-stability test finds no split, so the tree reduces to a single Bradley-Terry ranking led by SC3, the same order the net pairwise wins and the marginal means give. A dozen datasets is too few for the test to separate a feature-dependent regime from sampling noise, which is also why the critical-difference diagram and the variance decomposition both report a stable global ranking here. The tree is more informative on a benchmark with many datasets carrying real feature variation; the OpenProblems spatially_variable_genes vignette is where a split appears. See [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md) and [findings 0003](../../docs/findings/0003-duo-2018-bradley-terry-tree.md).
+On these 12 datasets the parameter-stability test finds no split, so the tree reduces to a single Bradley-Terry ranking led by SC3, the same order the net pairwise wins and the marginal means give. A dozen datasets is too few for the test to separate a feature-dependent regime from sampling noise, which is also why the critical-difference diagram and the variance decomposition both report a stable global ranking here. The tree is more informative on a benchmark with many datasets carrying real feature variation; the OpenProblems spatially_variable_genes vignette is where a split appears. See [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md).
 
 ## Recommendation
 

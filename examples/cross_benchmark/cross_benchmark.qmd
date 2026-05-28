@@ -144,7 +144,7 @@ else:
     print("Provision it with envs/heterogeneity.yml.")
 ```
 
-Tyler 2023 raises the method-by-benchmark share above the three-source value (the earlier 0.15 result, recorded in finding 0005 before the Tyler update). Tyler's in silico runs carry a controlled biological signal with known ground truth, which is exactly the regime in which their preprint argues unsupervised methods erase real biology; adding it to the pool gives a sharper estimate of the share of variance that depends on which benchmarker did the analysis rather than which method was run.
+Tyler 2023 raises the method-by-benchmark share above the three-source value. Their in silico runs carry a controlled biological signal with known ground truth, which is exactly the regime in which their preprint argues unsupervised methods erase real biology. Adding it to the pool gives a sharper estimate of the share of variance that depends on which benchmarker did the analysis rather than which method was run.
 
 ## Same data, two pipelines: the human pancreas
 

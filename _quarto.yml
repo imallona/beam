@@ -6,8 +6,6 @@ project:
     - "docs/how-to/*.md"
     - "docs/explanations/*.md"
     - "docs/adr/*.md"
-    - "docs/findings/*.md"
-    - "docs/findings/index.qmd"
     - "examples/*/*.qmd"
     - "index.qmd"
 

@@ -171,7 +171,7 @@ def test_duo_ari_decomposition():
     assert rep.n_obs == 163
     assert len(rep.residuals) == rep.n_obs
     assert len(rep.residual_methods) == rep.n_obs
-    # SC3 and Seurat lead the ARI marginal means, matching findings 0001.
+    # SC3 and Seurat lead the ARI marginal means on Duo 2018.
     leaders = {rep.method_names[i] for i in np.argsort(-rep.method_effects)[:2]}
     assert leaders == {"SC3", "Seurat"}
     assert 0.0 < rep.icc_dataset < 1.0

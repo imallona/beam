@@ -28,7 +28,6 @@ Every non-trivial PR ships:
 - a unit test
 - updated docstring on every public function the PR touches
 - an ADR in `docs/adr/` if the change reflects a design decision
-- a findings entry in `docs/findings/` if the change produces a new empirical claim (e.g. "method X is consistently ranked first under weighting Y on dataset Z")
 - a CHANGELOG entry (Keep a Changelog format)
 
 Commits do not bundle unrelated edits. One commit = one coherent change.
@@ -49,10 +48,6 @@ See `src/beam/metrics/ari/v1.yaml` and `src/beam/metrics/runtime/v1.yaml` for tw
 ## ADR template
 
 See `docs/adr/0000-template.md`. Number sequentially. Start in status "Proposed"; move to "Accepted" after review. Never edit an accepted ADR silently; if it changes, supersede it with a new one.
-
-## Findings template
-
-See `docs/findings/0000-template.md`. Include a commit hash and a run manifest path so the result is reproducible.
 
 ## Conventions
 

@@ -91,7 +91,7 @@ def test_plackett_luce_on_duo_agrees_with_other_diagnostics():
     assert rep.n_rankings == 12
     assert abs(float(np.nansum(rep.worth)) - 1.0) < 1e-9
     # SC3 leads the Plackett-Luce worth, matching the Bradley-Terry global
-    # ranking (findings 0003) and the mixed-effects marginal means (findings 0002).
+    # ranking and the mixed-effects marginal means on Duo 2018.
     assert rep.top_tool() == "SC3"
     # RaceID2 and FlowSOM are the weakest, as in the other diagnostics.
     bottom_two = set(rep.ranking()[-2:])

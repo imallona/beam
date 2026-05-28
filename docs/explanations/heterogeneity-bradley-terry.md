@@ -32,4 +32,4 @@ The fit runs in R's psychotree through a subprocess, so it needs the R toolchain
 
 The mixed-effects model measures how much interaction there is; the Bradley-Terry tree localizes it to dataset features and reports the subgroup rankings. Leave-one-dataset-out asks whether the composite ranking hangs on any one dataset; the Friedman-Nemenyi diagram asks whether the methods are statistically separable on a metric. Read together they move from "is there heterogeneity" to "where is it and what do I do about it".
 
-[Findings 0003](../findings/0003-duo-2018-bradley-terry-tree.md) works this through on the Duo 2018 ARI scores, where the tree degrades to a flat ranking on 12 datasets, and [ADR 0010](../adr/0010-bradley-terry-trees.md) records the input design and why a tree over a flat model.
+The Duo 2018 vignette works this through on the ARI scores, where the tree degrades to a flat ranking on 12 datasets. [ADR 0010](../adr/0010-bradley-terry-trees.md) records the input design and why a tree over a flat model.

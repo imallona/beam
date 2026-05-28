@@ -28,7 +28,7 @@ Wrap lme4 in a one-shot R subprocess. `beam.heterogeneity.mixed_effects` seriali
 
 ## References
 
-- [Mixed-effects explanation](../explanations/heterogeneity-mixed-effects.md), [findings 0002](../findings/0002-duo-2018-variance-decomposition.md)
+- [Mixed-effects explanation](../explanations/heterogeneity-mixed-effects.md)
 - [ADR 0002 (python-first)](0002-python-first.md), [ADR 0003 (bradley-terry-not-irt)](0003-bradley-terry-not-irt.md)
 - Eugster, Hothorn, Leisch (2008): https://epub.ub.uni-muenchen.de/11425/
 - lme4: https://cran.r-project.org/package=lme4 ; glmmTMB: https://cran.r-project.org/package=glmmTMB

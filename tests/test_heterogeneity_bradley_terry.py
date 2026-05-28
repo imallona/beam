@@ -226,7 +226,7 @@ def test_tree_on_duo_ari_runs():
     assert isinstance(rep, BradleyTerryTreeReport)
     assert len(rep.leaf_assignment) == 12
     assert rep.global_worth.shape == (14,)
-    # SC3 and Seurat lead the ARI comparisons, consistent with findings 0001.
+    # SC3 and Seurat lead the ARI comparisons on Duo 2018.
     assert rep.global_ranking()[0] in {"SC3", "Seurat"}
     # The summary is a non-empty plain-language paragraph either way.
     assert len(rep.summary()) > 0

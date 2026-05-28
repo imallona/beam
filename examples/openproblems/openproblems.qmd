@@ -299,7 +299,7 @@ if bt is not None and bt.did_split:
     plt.show()
 ```
 
-The pooled ranking has one method at the top, but the leaves disagree: which spatially-variable-genes method leads depends on the spatial assay technology. This is the heterogeneity a single ranking hides. The 50-dataset task shows it where the 12-dataset Duo benchmark could not. See [findings 0004](../../docs/findings/0004-openproblems-svg-bradley-terry.md) and [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md).
+The pooled ranking has one method at the top, but the leaves disagree: which spatially-variable-genes method leads depends on the spatial assay technology. This is the heterogeneity a single ranking hides. The 50-dataset task shows it where the 12-dataset Duo benchmark could not. See [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md).
 
 ## Recommendation
 

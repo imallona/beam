@@ -113,7 +113,6 @@ examples/
   cross_benchmark/cross_benchmark.qmd  Meta-analysis of four integration benchmarks
 docs/
   adr/                          Architectural decision records
-  findings/                     Empirical findings log
   explanations/                 Conceptual essays (measurement theory, cards-and-pipeline)
   tutorials/                    Learning-oriented walkthroughs
   how-to/                       Task-oriented recipes
@@ -128,7 +127,7 @@ docs/
 ## Build artefacts
 
 - Rendered vignettes: CI renders and uploads each `examples/` vignette as a self-contained HTML workflow artefact on every push and pull request, downloadable from the Actions tab on GitHub. The artefacts are `duo2018-vignette`, `scenarios-vignette`, `transportation-vignette`, `m4-vignette`, `openproblems-vignette` and `cross_benchmark-vignette`.
-- Documentation site: `.github/workflows/docs.yml` builds the Quarto site from `_quarto.yml` and deploys it to GitHub Pages on every push to main. The site indexes the tutorials, how-tos, explanations, ADRs and findings, and includes a quartodoc-generated Python API reference.
+- Documentation site: `.github/workflows/docs.yml` builds the Quarto site from `_quarto.yml` and deploys it to GitHub Pages on every push to main. The site indexes the tutorials, how-tos and explanations, and includes a quartodoc-generated Python API reference.
 - `metric_card.schema.json`: the canonical schema. Any tool that validates JSON against it can ingest beam metric cards.
 - `docs/beam.owl.ttl`: OWL artefact in Turtle, one instance per metric card under its STATO, UO or OBI parent where a mapping is declared. Regenerated from the cards and the schema by `python -m beam.owl.generate`; ships with each release.
 - `CITATION.cff`: cff-version 1.2.0; GitHub renders a citation widget from it.
