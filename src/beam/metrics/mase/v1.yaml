@@ -101,6 +101,10 @@ examples:
       insample: [1.0, 2.0, 3.0, 4.0]
     expected_output: 2.0
     tolerance: 1.0e-9
+mappings:
+  huggingface_evaluate: https://github.com/huggingface/evaluate/tree/main/metrics/mase
+# No STATO term for the mean absolute scaled error (Hyndman & Koehler 2006) as
+# of 2026-05-28. Documented as a proposed-upstream gap.
 provenance:
   author: Izaskun Mallona
   contact: izaskun.mallona@gmail.com

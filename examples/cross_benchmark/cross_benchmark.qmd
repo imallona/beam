@@ -17,15 +17,16 @@ format:
 
 Single-cell data-integration benchmarks reach different conclusions about which method to use. This vignette asks where the disagreement comes from: the methods, the datasets, or the benchmarker's own analysis choices (which metrics, how they are scaled, how they are weighted). It runs the meta-analysis on three benchmarks that publish reusable per-method scores on a shared metric set, and shows that re-ranking them all with one consistent rule removes much of the disagreement.
 
-## The benchmarks, and why these three
+## The benchmarks, and why these four
 
-Only three single-cell integration benchmarks publish reusable per-method scores on the shared scIB metric family (ARI, ASW, kBET, LISI) for an overlapping set of classical methods:
+Four single-cell integration benchmarks publish reusable per-method scores on the shared scIB metric family (ARI, ASW, kBET, LISI) for an overlapping set of classical methods:
 
 - scIB (Luecken et al., Nature Methods 2022, DOI 10.1038/s41592-021-01336-8), scores from the scib-reproducibility repository.
 - OpenProblems batch integration (Nature Biotechnology 2025, DOI 10.1038/s41587-025-02694-w), the bundled CC-BY scores.
 - Tran et al. (Genome Biology 2020, DOI 10.1186/s13059-019-1850-9), scores from the paper's supplementary Tables S4 and S7.
+- Tyler, Guccione and Schadt (bioRxiv 2021.11.15.468733 v2, 2023-10-26, preprint only as of 2026-05-28), scores from Extended Data Table 2 of the preprint. Tyler covers three of the five methods (harmony, scanorama, liger) and three of the four metrics (ARI, ASW, kBET; the cLISI Tyler reports is a different quantity from the iLISI the others report), so it enters the four-source set as a partial-coverage block.
 
-The five methods common to all three are combat, harmony, fastMNN, scanorama and LIGER. Benchmarks excluded: Tran's repository appeared empty until the scores were found in its supplement (a repository check is not sufficient); scIB-E (Genome Biology 2025) shares the scIB metrics but its methods are deep-learning ones (scVI, scANVI and loss-function variants) with no overlap with the classical five; the Communications Biology 2025 reference-informed evaluation covers one dataset with a bespoke RBET metric and overlaps only on combat and scanorama; BatchBench and sc_mixology use off-family metrics; spatial and cross-species benchmarks use different methods. The full provenance, licences and the dataset crosswalk are in `src/beam/data/README.md`.
+The five methods common to the first three benchmarks are combat, harmony, fastMNN, scanorama and LIGER. Tyler's per-source polarity differs on kBET (Tyler reports raw rejection rate, lower is better; the others report 1-rejection or its scaled form, higher is better); the loader handles this per source so the within-cell ranking is consistent. Benchmarks excluded: Tran's repository appeared empty until the scores were found in its supplement (a repository check is not sufficient); scIB-E (Genome Biology 2025) shares the scIB metrics but its methods are deep-learning ones (scVI, scANVI and loss-function variants) with no overlap with the classical five; the Communications Biology 2025 reference-informed evaluation covers one dataset with a bespoke RBET metric and overlaps only on combat and scanorama; BatchBench and sc_mixology use off-family metrics; spatial and cross-species benchmarks use different methods. The full provenance, licences and the dataset crosswalk are in `src/beam/data/README.md`.
 
 ```{python}
 %matplotlib inline
@@ -127,7 +128,7 @@ for b in BENCH:
 
 ## How much of the variance is the benchmark
 
-A cross-benchmark variance decomposition puts a number on the split. The model is `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)`, where the method-by-benchmark component is the disagreement attributable to the benchmark rather than the method. The fit needs R's lme4, so the chunk runs only when it is available.
+A cross-benchmark variance decomposition puts a number on the split. The model is `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)`, where the method-by-benchmark component is the disagreement attributable to the benchmark rather than the method. The fit pools all four sources (the three full-coverage benchmarks plus Tyler 2023 on the three methods and three metrics it covers). The fit needs R's lme4, so the chunk runs only when it is available.
 
 ```{python}
 from beam.heterogeneity import r_available, source_variance_decomposition
@@ -135,6 +136,7 @@ from beam.heterogeneity import r_available, source_variance_decomposition
 methods, datasets, benchmarks, scores = ib.mean_rank_records()
 if r_available():
     rep = source_variance_decomposition(methods, datasets, benchmarks, scores)
+    print(f"benchmarks in the fit: {rep.n_benchmarks}, datasets: {rep.n_datasets}, observations: {rep.n_obs}")
     print(f"method-by-benchmark share: {rep.method_benchmark_share:.2f}")
     print(f"residual (method-by-dataset plus noise): {rep.residual_share:.2f}")
 else:
@@ -142,6 +144,73 @@ else:
     print("Provision it with envs/heterogeneity.yml.")
 ```
 
+Tyler 2023 raises the method-by-benchmark share above the three-source value (the earlier 0.15 result, recorded in finding 0005 before the Tyler update). Tyler's in silico runs carry a controlled biological signal with known ground truth, which is exactly the regime in which their preprint argues unsupervised methods erase real biology; adding it to the pool gives a sharper estimate of the share of variance that depends on which benchmarker did the analysis rather than which method was run.
+
+## Same data, two pipelines: the human pancreas
+
+The pooled decomposition above mixes pipeline differences with dataset differences, because the first three benchmarks barely share datasets and Tyler's in silico runs share none of them. The one confirmed overlap removes the data confound: Tran's Dataset 4 is built from Muraro, Segerstolpe, Baron, Wang and Xin, the same five studies scIB's pancreas task uses. Running both pipelines on this shared block reads off the pipeline effect with no data variability in the way.
+
+```{python}
+from beam.datasets import load_pancreas_contrast
+
+pc = load_pancreas_contrast()
+tran_top, scib_top = pc.top_method()
+print(f"top method on Tran D4:           {tran_top}")
+print(f"top method on scIB pancreas:     {scib_top}")
+print(f"Spearman of mean ranks (5 methods): {pc.spearman():+.2f}")
+print()
+print("mean rank per method (1 best, 5 worst):")
+for i, m in enumerate(pc.methods):
+    print(f"  {m:10s}  Tran D4 {pc.tran_mean_rank[i]:.2f}    scIB pancreas {pc.scib_mean_rank[i]:.2f}")
+```
+
+Both pipelines agree on the leader on the shared data, but the rest of the order disagrees more than the pooled Spearman in the previous section would predict. LIGER ranks second on Tran D4 (it took first on kBET and LISI in Tran's per-metric ranks) and tied last on scIB pancreas, where the same metrics put it near the bottom. The disagreement is not the data; it is in the pipeline.
+
+```{python}
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(6, 3.2))
+xs = np.arange(len(pc.methods))
+ax.bar(xs - 0.18, pc.tran_mean_rank, width=0.34, label="Tran D4")
+ax.bar(xs + 0.18, pc.scib_mean_rank, width=0.34, label="scIB pancreas")
+ax.set_xticks(xs)
+ax.set_xticklabels(pc.methods)
+ax.set_ylabel("mean rank across 4 metrics (lower ranks first)")
+ax.set_xlabel("method")
+ax.set_title("Same pancreas data, two pipelines")
+ax.invert_yaxis()
+ax.legend(loc="upper right")
+fig.tight_layout()
+plt.show()
+```
+
+## Per-benchmark fragility: which top method is closest to flipping
+
+Within each benchmark, the smallest single-weight change that swaps the top-ranked method tells the reader how much the recommendation hangs on the analyst's weighting. beam uses the Triantaphyllou-Sanchez closed-form weight delta on the mean-rank matrix; SAW with equal weights is the baseline so the perturbation is interpretable as "how much weight off one metric is needed to flip the top".
+
+```{python}
+from beam.mcda import smallest_weight_perturbation
+
+polarity = ("lower_is_better",) * 4
+print("smallest single-weight change that flips the top method:")
+print(f"  {'benchmark':12s} {'top':10s} {'flipped to':10s}  {'metric':6s}  abs delta")
+for bench in BENCH:
+    _, metrics_b, matrix = ib.method_metric_matrix(bench)
+    rep = smallest_weight_perturbation(matrix, polarity=polarity, weights="equal", method="saw")
+    top_idx = int(rep.base.ranks.argmin())
+    p = rep.top_rank_perturbation
+    if p is None:
+        print(f"  {bench:12s} {CANON[top_idx]:10s} {'-':10s}  {'-':6s}  none found")
+    else:
+        challenger = CANON[p.lower]
+        print(
+            f"  {bench:12s} {CANON[top_idx]:10s} {challenger:10s}  "
+            f"{metrics_b[p.criterion]:6s}  {p.absolute_delta:.3f}"
+        )
+```
+
+OpenProblems is the most fragile of the three: a 0.11 absolute change to the ASW weight (out of 0.25 equal-weighted baseline) flips fastMNN to harmony. Tran's harmony lead needs a 0.24 ASW shift before LIGER takes top. scIB's fastMNN lead is the most stable: a 0.90 shift on LISI is needed before LIGER takes top, well past the [0, 1] feasible range and so practically out of reach. Each benchmark sits at a different point on the fragility axis, even though the analysis rule is the same.
+
 ## Limits
 
-This is three benchmarks and five methods, so the numbers are indicative, not precise: a Spearman over five methods is coarse, and three benchmarks is too few for a sharp benchmark-variance estimate. The reported rankings are reconstructed (Tran's final rank directly, scIB's 0.6/0.4 overall and OpenProblems' mean score recomputed). The benchmarks also use mostly different datasets, so part of the residual disagreement is genuine data differences, not the benchmarker. The one shared dataset, the human pancreas (Tran's Dataset 4 is the same Baron, Muraro, Segerstolpe, Wang and Xin studies scIB's pancreas task uses), is where a same-data, different-pipeline contrast could isolate the pure benchmarker effect with no data confound; that finer analysis is future work. With those caveats, the direction is clear: standardizing the analysis layer, which is what beam's metric cards and explicit aggregation do, removes much of the apparent disagreement between these benchmarks.
+The published-rank chart and the within-five-methods Spearman comparison are computed on the first three benchmarks because Tyler does not publish an overall ranking (its paper is a methodological critique, not a recommendation). The variance decomposition pools all four sources. Numbers stay indicative, not precise: a Spearman over five methods is coarse, four benchmarks is still few for a sharp method-by-benchmark variance estimate, and the reported rankings are reconstructed (Tran's final rank directly, scIB's 0.6/0.4 overall and OpenProblems' mean score recomputed). For the pooled comparison the benchmarks also use mostly different datasets, so part of that disagreement is genuine data variability, not the benchmarker; the human pancreas section removes that confound on the one block where it can be removed. With those caveats, the direction is clear: standardizing the analysis layer, which is what beam's metric cards and explicit aggregation do, removes much of the apparent disagreement between these benchmarks, and even on the same data the pipeline contributes a measurable share.

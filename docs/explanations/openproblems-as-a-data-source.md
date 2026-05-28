@@ -1,10 +1,10 @@
 # OpenProblems as a data source
 
-beam needs benchmark results that are already a method by dataset by metric tensor with declared metric directions. Most published benchmarks are not in that shape, and assembling them is the data-engineering bottleneck that the broader cross-benchmark meta-analysis runs into. OpenProblems in Single-Cell Analysis (openproblems.bio, Nature Biotechnology 2025, DOI 10.1038/s41587-025-02694-w) already produces that shape, so beam ingests it directly.
+beam needs benchmark results that are already a method by dataset by metric tensor with declared metric directions. Most published benchmarks are not in that shape, and putting them together is the data-engineering bottleneck the cross-benchmark meta-analysis runs into. OpenProblems in Single-Cell Analysis (openproblems.bio, Nature Biotechnology 2025, DOI 10.1038/s41587-025-02694-w) already produces that shape, so beam ingests it directly.
 
 ## What OpenProblems publishes
 
-OpenProblems runs a continuous automated single-cell benchmark. Within a task, every method is scored on every dataset by every metric, and the complete results are published as CC-BY JSON per task in the openproblems-bio/website GitHub repository. So one task is a clean method by dataset by metric tensor with the metric directions stated. That is the harmonization beam would otherwise have to do by hand.
+OpenProblems runs a continuous automated single-cell benchmark. Within a task, every method is scored on every dataset by every metric, and the full results are published as CC-BY JSON per task in the openproblems-bio/website GitHub repository. So one task is a clean method by dataset by metric tensor with the metric directions stated. That is the harmonization beam would otherwise have to do by hand.
 
 beam vendors small derived tables in long format, with columns `method_id`, `dataset_id`, `metric_id` and `score`, not the raw single-cell data, from a pinned commit. `beam.datasets.load_openproblems(task)` loads them. The provenance and the CC-BY-4.0 license are recorded in `src/beam/data/README.md`.
 
@@ -14,7 +14,7 @@ No single OpenProblems task gives both many metrics and many datasets, so beam b
 
 `batch_integration` has 19 methods, 6 datasets and 13 scIB metrics (Luecken et al. 2022). It is metric-rich, so it exercises the MCDA layer over many criteria. beam re-derives the per-metric normalization from the metric cards and runs explicit MCDA with sensitivity. This can place a different method first than the platform's own mean-of-scaled-scores leaderboard rule. In the bundled data, beam with equal weights and TOPSIS leads with combat while the mean-of-scores rule leads with scanvi. The aggregation rule, not the data alone, decides the top method. Coverage is uneven: the `hvg_overlap` column and some method-by-dataset cells are sparse, which beam surfaces as NaN rather than hiding.
 
-`spatially_variable_genes` has 14 methods, 50 datasets and one correlation metric. It is dataset-rich, which is what the Bradley-Terry tree needs to find feature-based splits. The dataset features (spatial assay technology, organism, cancer condition) parse out of the dataset id. The tree splits on technology: spark_x leads the pooled ranking, but spanve leads on the visium and xenium datasets and nnsvg leads on the seqfish, slideseqv2 and slidetags datasets. The best spatially-variable-gene method depends on the assay. See findings 0004.
+`spatially_variable_genes` has 14 methods, 50 datasets and one correlation metric. It is dataset-rich, which is what the Bradley-Terry tree needs to find feature-based splits. The dataset features (spatial assay technology, organism, cancer condition) parse out of the dataset id. The tree splits on technology: spark_x leads the pooled ranking, but spanve leads on the visium and xenium datasets and nnsvg leads on the seqfish, slideseqv2 and slidetags datasets. The top spatially-variable-gene method depends on the assay. See findings 0004.
 
 ## The honest tradeoff
 

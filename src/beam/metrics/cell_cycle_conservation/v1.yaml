@@ -65,6 +65,12 @@ examples:
   expected_output: 1.0
 - description: worst score (scIB scaled lower bound)
   expected_output: 0.0
+mappings:
+  obi: http://purl.obolibrary.org/obo/OBI_0002631
+# OBI_0002631 (single-cell RNA sequencing assay) gives the assay context. GO
+# carries cell cycle (GO_0007049) but the variance-explained-by-cell-cycle
+# scIB score has no STATO term as of 2026-05-28; documented as a proposed-
+# upstream gap.
 provenance:
   author: Izaskun Mallona
   contact: izaskun.mallona@gmail.com

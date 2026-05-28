@@ -94,6 +94,11 @@ examples:
       actual: [110.0, 110.0]
     expected_output: 20.0
     tolerance: 1.0e-9
+mappings:
+  huggingface_evaluate: https://github.com/huggingface/evaluate/tree/main/metrics/smape
+# No STATO term for symmetric mean absolute percentage error as of 2026-05-28;
+# STATO carries percentage (STATO_0000639) and statistical error
+# (STATO_0000242) but not SMAPE. Documented as a proposed-upstream gap.
 provenance:
   author: Izaskun Mallona
   contact: izaskun.mallona@gmail.com

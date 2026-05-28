@@ -76,6 +76,9 @@ examples:
       true_n_clusters: 4
     expected_output: 3.0
     tolerance: 1.0e-12
+# No STATO term for the cluster-count deviation as of 2026-05-28; STATO covers
+# cluster sampling design but not cluster-count error. Documented as a
+# proposed-upstream gap.
 provenance:
   author: Izaskun Mallona
   contact: izaskun.mallona@gmail.com

@@ -1,6 +1,6 @@
 # Run a benchmark from a beam.yaml file
 
-Use this recipe when you want a whole beam run captured in one file: the input scores, the metric selection, the weighting and aggregation, the sensitivity settings, and the output paths. Together, the beam.yaml and the written manifest.json are the artifact a reviewer reruns to reproduce your ranking.
+Use this recipe when you want a whole beam run captured in one file: the input scores, the metric selection, the weighting and aggregation, the sensitivity settings, and the output paths. The beam.yaml and the written manifest.json together are the artifact a reviewer reruns to reproduce your ranking.
 
 ## Write the beam.yaml
 
@@ -43,7 +43,7 @@ and writes the files named under outputs, relative to the beam.yaml directory.
 
 inputs.scores is the only required field. It points at the score CSV (wide or long layout). If it is missing, the run stops with an error.
 
-metrics is optional. It selects and reorders the metric columns to use. Each entry names a metric id that must be a column in the scores file. Leave the block out to use every column. A listed metric that is not in the file stops the run with a clear error.
+metrics is optional. It picks and reorders the metric columns to use. Each entry names a metric id that must be a column in the scores file. Leave the block out to use every column. A listed metric that is not in the file stops the run with a clear error.
 
 weighting.method sets how the metric weights are derived. It accepts equal (the default when the block is absent), entropy, std, critic or merec.
 
@@ -55,7 +55,7 @@ outputs is optional and each entry is optional. report writes the self-contained
 
 ## The reproducible artifact
 
-Keep beam.yaml and the written manifest.json together with the scores file. manifest.json records the input and its hash, the metrics, the parameters and the normalization that beam resolved from the cards. A reviewer with the same scores file reruns the ranking with one command. The manifest lets them confirm they got the same inputs and parameters you did.
+Keep beam.yaml and the written manifest.json together with the scores file. manifest.json records the input and its hash, the metrics, the parameters and the normalization that beam read from the cards. A reviewer with the same scores file reruns the ranking with one command. The manifest lets them confirm they got the same inputs and parameters you did.
 
 ## Note on the dataset_features and heterogeneity blocks
 

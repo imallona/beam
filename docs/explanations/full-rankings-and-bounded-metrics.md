@@ -16,7 +16,7 @@ Plackett-Luce and the Bradley-Terry tree answer different questions. Plackett-Lu
 
 The lme4 mixed-effects model assumes a Gaussian residual. That is an approximation for a metric bounded in (0, 1), and it is worst near the bounds, where the Gaussian tail runs past 0 or 1 but the metric cannot. The glmmTMB beta engine models the bound directly with a beta likelihood.
 
-Call `mixed_effects(engine="glmmtmb", family="beta")`. It fits the same `score ~ method + (1 | dataset)` structure with a beta likelihood. The marginal means and the variance components come back on the link (logit) scale, and the report's `scale` field says "link". The variance components are not directly comparable to the Gaussian-scale lme4 numbers, but the method ordering is comparable across the two fits. Auto family resolution uses beta only for scores strictly in (0, 1), so an unbounded metric stays Gaussian.
+Call `mixed_effects(engine="glmmtmb", family="beta")`. It fits the same `score ~ method + (1 | dataset)` structure with a beta likelihood. The marginal means and the variance components come back on the link (logit) scale, and the report's `scale` field says "link". The variance components are not directly comparable to the Gaussian-scale lme4 numbers, but the method ordering is comparable across the two fits. Auto family resolution picks beta only for scores strictly in (0, 1), so an unbounded metric stays Gaussian.
 
 ## How to use them
 

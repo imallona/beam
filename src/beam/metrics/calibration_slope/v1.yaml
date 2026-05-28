@@ -78,6 +78,8 @@ examples:
       note: predictions more extreme than warranted, shrunk by the recalibration
     expected_output: 0.7
     tolerance: 0.1
+mappings:
+  stato: http://purl.obolibrary.org/obo/STATO_0000687
 provenance:
   author: Izaskun Mallona
   contact: izaskun.mallona@gmail.com

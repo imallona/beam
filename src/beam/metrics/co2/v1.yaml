@@ -61,6 +61,14 @@ examples:
       distance_km: 10.0
     expected_output: 0.0
     tolerance: 1.0e-9
+mappings:
+  uo: http://purl.obolibrary.org/obo/UO_0000021
+# UO_0000021 is gram, the mass unit; the card reports grams of CO2 per
+# kilometer travelled. UO does not currently expose a compound g/km term, so
+# only the mass unit is recorded; the per-distance dimension is implicit in
+# the measurand string. CHEBI_16526 (carbon dioxide) is the chemical identity
+# but is out of scope for this card (the metric is an emission rate, not the
+# molecule itself).
 provenance:
   author: Izaskun Mallona
   contact: izaskun.mallona@gmail.com

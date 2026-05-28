@@ -1,12 +1,12 @@
 # Funky heatmaps and robustness
 
-The funky heatmap is the glyph table that dynbenchmark and OpenProblems use to read a multi-metric benchmark at a glance. Methods are the rows, sorted best first. Metrics are the columns. Each cell is a circle whose radius grows with the score, with its colour marking the metric group, and a final overall column carries the aggregate. It is a dense, readable summary. Its weakness is that read alone it looks like a settled ranking. Both the circle sizes and the row order depend on the normalization, which is usually min-max, and a different normalization moves the circles and can reorder the rows. beam resolves the normalization from the metric cards instead of fixing min-max, and then adds panels that let the table carry its own robustness.
+The funky heatmap is the glyph table that dynbenchmark and OpenProblems use to read a multi-metric benchmark at a glance. Methods are the rows, sorted best first. Metrics are the columns. Each cell is a circle whose radius grows with the score, with its colour marking the metric group, and a final overall column carries the aggregate. It is a dense, readable summary. Its weakness is that read alone it looks like a settled ranking. Both the circle sizes and the row order depend on the normalization, which is usually min-max, and a different normalization moves the circles and can reorder the rows. beam reads the normalization from the metric cards rather than fixing min-max, and then adds panels that let the table carry its own robustness.
 
 ## The glyph grid and its overlays
 
 `beam.reporting.funky_heatmap` draws the glyph grid and the optional robustness panels beside it. `beam.reporting.funky_heatmap_from_run` builds the whole figure from a `beam.rank` `RunResult`. Each overlay answers one question about whether the row order is real, and each is fed by a beam primitive.
 
-The leave-one-dataset-out rank span answers whether the order hangs on any single dataset. For each method it draws the span of ranks the method takes when each dataset is dropped in turn, with the pooled rank marked on the span. The values are `rank_low`, `rank_high` and `rank_stability` from `beam.mcda.leave_one_dataset_out`. A single point means the rank does not change regardless of which dataset is dropped. A wide span means the order depends on which datasets are in the pool.
+The leave-one-dataset-out rank span answers whether the order hangs on any single dataset. For each method it draws the span of ranks the method takes when each dataset is dropped in turn, with the pooled rank marked on the span. The values are `rank_low`, `rank_high` and `rank_stability` from `beam.mcda.leave_one_dataset_out`. A single point means the rank does not change whatever dataset is dropped. A wide span means the order depends on which datasets are in the pool.
 
 The aggregation-consensus rank span answers whether the order is an artefact of the chosen aggregation. Holding the weighting fixed, it draws the span of ranks a method takes across the five aggregations: SAW, TOPSIS, VIKOR, PROMETHEE II and COMET. The values are `consensus_low` and `consensus_high`. A wide span means the order reflects the aggregation rule rather than the methods.
 
@@ -14,7 +14,7 @@ The SMAA rank-acceptability stacked bar answers what the ranks look like under w
 
 The worth panel answers whether two adjacent methods are separable. It draws the latent strength per method from a model as points with horizontal confidence intervals, the `worth` and `worth_ci`. The model is Plackett-Luce with reference-free quasi-standard-errors, Bradley-Terry, or the mixed-effects marginal means. When two adjacent intervals overlap the methods are not separable, which the overall bar hides. This is where the heterogeneity models reach the heatmap.
 
-The critical-difference cliques answer whether the methods are statistically distinguishable across datasets. They draw brackets grouping the rows that the Friedman-Nemenyi test cannot separate, the `cliques` from `beam.mcda.critical_difference`. A bracket over the top several rows says those methods are indistinguishable from the data at hand.
+The critical-difference cliques answer whether the methods are statistically separable across datasets. They draw brackets grouping the rows that the Friedman-Nemenyi test cannot separate, the `cliques` from `beam.mcda.critical_difference`. A bracket over the top several rows says those methods cannot be told apart from the data at hand.
 
 ## The thesis
 

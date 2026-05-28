@@ -28,6 +28,11 @@ from .sensitivity import (
     leave_one_dataset_out,
     leave_one_metric_out,
 )
+from .skillings_mack import (
+    SkillingsMackReport,
+    coverage_aware_critical_difference,
+    skillings_mack,
+)
 from .smaa import SMAAReport, smaa
 from .topsis import topsis
 from .validate import IncompatibleScaleError, validate_for_aggregation
@@ -54,10 +59,12 @@ __all__ = [
     "Result",
     "SMAAReport",
     "SensitivityReport",
+    "SkillingsMackReport",
     "WeightPerturbationReport",
     "aggregate_across_datasets",
     "ahp_weights",
     "comet",
+    "coverage_aware_critical_difference",
     "critic_weights",
     "critical_difference",
     "entropy_weights",
@@ -75,6 +82,7 @@ __all__ = [
     "registry_context",
     "run",
     "run_from_registry",
+    "skillings_mack",
     "smaa",
     "smallest_weight_perturbation",
     "standard_deviation_weights",

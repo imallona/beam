@@ -100,6 +100,8 @@ examples:
       true_partition: [0, 0, 1, 1, 2, 2]
     expected_output: 0.0
     tolerance: 1.0e-12
+mappings:
+  stato: http://purl.obolibrary.org/obo/STATO_0000593
 provenance:
   author: Izaskun Mallona
   contact: izaskun.mallona@gmail.com

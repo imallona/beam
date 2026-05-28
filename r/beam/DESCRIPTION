@@ -1,0 +1,37 @@
+Package: beam
+Type: Package
+Title: Benchmark Evaluation and Metrics (R Interface)
+Version: 0.1.3
+Authors@R: c(
+    person("Izaskun", "Mallona", email = "izaskun.mallona@gmail.com",
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-2853-7526"))
+    )
+Description: Thin R interface to the beam Python package. beam is a metric
+    formalization layer for bioinformatics benchmarks: it ships metric cards
+    (YAML, JSON Schema) with measurement-theory grounded metadata (scale type,
+    polarity, range, allowed transformations), a multi-criteria decision
+    analysis pipeline with sensitivity primitives (SMAA, leave-one-out,
+    Triantaphyllou-Sanchez weight perturbation, the Skillings-Mack
+    coverage-aware Friedman test), and method-dataset heterogeneity
+    diagnostics (mixed-effects variance decomposition, Bradley-Terry trees,
+    Plackett-Luce models). This R package exposes the canonical Python
+    implementation via 'reticulate'.
+URL: https://github.com/imallona/beam
+BugReports: https://github.com/imallona/beam/issues
+License: GPL (>= 3)
+Encoding: UTF-8
+LazyData: true
+SystemRequirements: Python (>= 3.12)
+Depends:
+    R (>= 4.2)
+Imports:
+    reticulate (>= 1.34)
+Suggests:
+    testthat (>= 3.2),
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2

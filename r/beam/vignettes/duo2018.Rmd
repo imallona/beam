@@ -1,0 +1,70 @@
+---
+title: "beam on the Duo 2018 single-cell clustering benchmark"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{beam on the Duo 2018 single-cell clustering benchmark}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+have_beam <- requireNamespace("reticulate", quietly = TRUE) &&
+  reticulate::py_module_available("beam")
+knitr::opts_chunk$set(
+  eval = have_beam,
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+This vignette runs the canonical beam pipeline on the Duo et al. 2018 single-cell RNA-seq clustering benchmark (F1000Research, 14 methods x 12 data sets x 4 metrics) bundled with the package.
+
+The R wrappers forward to the Python implementation via reticulate. Install the Python side once with `install_beam_python()` if you have not already.
+
+```{r install, eval = FALSE}
+library(beam)
+install_beam_python()
+```
+
+## Load the benchmark
+
+```{r load}
+library(beam)
+py <- reticulate::import("beam.datasets")
+duo <- py$load_duo2018()
+length(duo$method_names)
+length(duo$dataset_names)
+duo$metric_ids
+```
+
+## Rank the methods
+
+`beam_rank` resolves polarity, normalization, bounds and baselines from the metric cards, runs the MCDA pipeline (default SAW with equal weights), and runs the default sensitivity primitives on the same context.
+
+```{r rank}
+scen <- reticulate::import("beam.scenarios")
+# The full Duo tensor needs a dataset-axis loader; this vignette demonstrates
+# the API on the bundled tensor; see the Python examples/duo2018.qmd for the
+# end-to-end equivalent in Python with the live tensor.
+result <- beam_rank(
+  scen$dominant()$scores,
+  weights = "equal",
+  method = "saw",
+  sensitivity = FALSE
+)
+result$top_tool
+```
+
+## Render a self-contained HTML report
+
+```{r report, eval = FALSE}
+beam_report(result, "duo2018_report.html")
+```
+
+The output is a single HTML file with the ranking, the normalization diagnostics, the sensitivity outputs, a critical-difference section when the input is a tensor with more than one dataset, and a plain-language recommendation. Figures are embedded as base64 PNGs; the file has no external dependencies and renders offline.
+
+## Where to go next
+
+- `vignette("duo2018", package = "beam")` is intentionally short and CRAN-safe. The full Python vignettes (M4 forecasting, OpenProblems batch integration, the cross-benchmark meta-analysis, the transportation example with partial coverage) live in the beam Python repo under `examples/` and are rendered on the documentation site.
+- `?beam_rank` and `?beam_report` for the wrapper docs.
+- `?beam_metric_show` to inspect any metric card from the registry.

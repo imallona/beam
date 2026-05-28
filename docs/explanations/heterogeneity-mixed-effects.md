@@ -14,7 +14,7 @@ The variance splits into two parts: the dataset variance and the residual varian
 
 ## Why the interaction matters
 
-A single global ranking is safe when the interaction is small: the method that leads on average leads nearly everywhere. When the interaction is large, the average hides reversals, and the better answer is "use method A on data like this, method B on data like that". This is the Strobl critique, that one method does not fit all datasets, stated as a variance component.
+A single global ranking is safe when the interaction is small: the method that leads on average leads nearly everywhere. When the interaction is large, the average hides reversals, and the better answer is "use method A on data like this, method B on data like that". This is the Strobl critique, that one method does not fit all datasets, written as a variance component.
 
 ## The identifiability limit
 
@@ -36,6 +36,6 @@ The fit runs in R's lme4 through a subprocess, so it needs the R toolchain. Chec
 
 ## Relation to leave-one-dataset-out
 
-Both qualify a pooled ranking along the dataset axis, and they answer different questions. Leave-one-dataset-out (`beam.mcda.leave_one_dataset_out`) re-ranks with each dataset removed and asks whether the recommendation depends on any single dataset. The mixed-effects model asks how much of the score variance is interaction at all. The first is a stability check on the composite; the second is a decomposition of the raw metric. Read together, a stable leave-one-dataset-out result with a low interaction share is a ranking you can trust across the datasets at hand. The separate question of whether the methods are statistically separable on a metric is the [Friedman-Nemenyi check](comparing-methods-across-datasets.md).
+Both qualify a pooled ranking along the dataset axis, and they answer different questions. Leave-one-dataset-out (`beam.mcda.leave_one_dataset_out`) re-ranks with each dataset removed and asks whether the recommendation depends on any single dataset. The mixed-effects model asks how much of the score variance is interaction at all. The first is a stability check on the composite; the second is a split of the raw metric. Read together, a stable leave-one-dataset-out result with a low interaction share is a ranking you can trust across the datasets at hand. The separate question of whether the methods are statistically separable on a metric is the [Friedman-Nemenyi check](comparing-methods-across-datasets.md).
 
 [Findings 0002](../findings/0002-duo-2018-variance-decomposition.md) works this through on the Duo 2018 ARI scores, and [ADR 0009](../adr/0009-heterogeneity-mixed-effects-via-r.md) records why the fit runs in R through a subprocess.

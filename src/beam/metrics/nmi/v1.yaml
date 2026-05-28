@@ -74,6 +74,9 @@ examples:
       true_partition: [0, 0, 1, 1, 2, 2]
     expected_output: 1.0
     tolerance: 1.0e-12
+# No STATO term for normalized mutual information as of 2026-05-28; STATO covers
+# AIC, BIC, DIC variants but not the partition-similarity NMI. Documented as a
+# proposed-upstream gap in docs/explanations/ontology-mappings.md.
 provenance:
   author: Izaskun Mallona
   contact: izaskun.mallona@gmail.com

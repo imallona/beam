@@ -67,6 +67,11 @@ examples:
       method: noop
     expected_output: 0.0
     tolerance: 1.0
+mappings:
+  uo: http://purl.obolibrary.org/obo/UO_0000010
+# UO_0000010 is second. No STATO term for wall-clock execution time as of
+# 2026-05-28; runtime is a measured operational quantity rather than a
+# statistical estimator. Documented as a proposed-upstream gap.
 provenance:
   author: Izaskun Mallona
   contact: izaskun.mallona@gmail.com

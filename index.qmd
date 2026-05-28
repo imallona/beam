@@ -1,0 +1,36 @@
+---
+title: "beam"
+subtitle: "Benchmark Evaluation and Metrics"
+---
+
+beam is a metric formalization layer for bioinformatics benchmarks. It ships metric cards (YAML, JSON Schema) with measurement-theory grounded metadata, a multi-criteria decision pipeline with sensitivity primitives, and method-dataset heterogeneity diagnostics.
+
+The metric cards are mapped to STATO, UO, OBI and HuggingFace evaluate where external terms exist; the OWL release artefact at [docs/beam.owl.ttl](docs/beam.owl.ttl) is regenerated from the cards on each release.
+
+## Where to start
+
+- [Quick start](docs/tutorials/quickstart.md). The five-line path from a CSV to an HTML report.
+- [How to run from beam.yaml](docs/how-to/run-from-beam-yaml.md). The declarative runner that produces a reproducible artefact.
+- [How to use beam from R](docs/how-to/use-beam-from-r.md). The R interface (reticulate-backed; same metric cards and pipeline).
+- [Cards and pipeline](docs/explanations/cards-and-pipeline.md). What a metric card carries and how the pipeline consumes it.
+- [Comparing methods across datasets](docs/explanations/comparing-methods-across-datasets.md). Friedman-Nemenyi and Skillings-Mack.
+
+## Worked vignettes
+
+Each vignette doubles as a CI integration test (rendered on every push):
+
+- [Duo 2018 clustering](examples/duo2018/duo2018.qmd): the canonical walkthrough, 14 methods on 12 single-cell RNA-seq datasets.
+- [Simulated scenarios](examples/scenarios/scenarios.qmd): consistency checks against documented ground truth.
+- [Transportation modes](examples/transportation/transportation.qmd): cross-domain example with partial coverage.
+- [M4 forecasting](examples/m4/m4.qmd): 25 methods on six frequency bands.
+- [OpenProblems batch integration](examples/openproblems/openproblems.qmd): MCDA contrasted with the platform's own mean-of-scores rule, plus a Bradley-Terry tree on 50 spatial datasets.
+- [Cross-benchmark meta-analysis](examples/cross_benchmark/cross_benchmark.qmd): four single-cell integration benchmarks under one consistent rule.
+
+## Decisions and findings
+
+- [Architectural decision records](docs/adr/): the design choices and the alternatives that were rejected.
+- [Findings log](docs/findings/): empirical results with reproducibility metadata.
+
+## Source
+
+[github.com/imallona/beam](https://github.com/imallona/beam). GPL-3 code, CC-BY-4.0 metric cards.

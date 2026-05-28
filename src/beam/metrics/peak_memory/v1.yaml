@@ -68,6 +68,11 @@ examples:
       method: noop
     expected_output: 10000000
     tolerance: 100000000
+mappings:
+  uo: http://purl.obolibrary.org/obo/UO_0000233
+# UO_0000233 is byte. No STATO term for peak resident set size as of
+# 2026-05-28; like runtime, this is a measured operational quantity rather
+# than a statistical estimator. Documented as a proposed-upstream gap.
 provenance:
   author: Izaskun Mallona
   contact: izaskun.mallona@gmail.com

@@ -1,8 +1,8 @@
-# What the MCDA pipeline consumes from the metric cards
+# What the MCDA pipeline reads from the metric cards
 
-A metric card declares fields covering identity, kind, inputs, output, semantics, comparability, implementations, examples, and provenance. The pipeline binds to a growing subset of these. As of the current release the ontology-aware entry `run_from_registry` consumes per-metric `polarity`, declared `range` bounds, declared `scale_type`, the set of `allowed_transformations`, the `comparability.recommended_normalization` strategy, and `semantics.score_of_random_baseline`. The cross-dataset aggregation primitive consumes `comparability.recommended_aggregation_across_datasets`. The remaining fields are recorded as metadata and are not enforced.
+A metric card declares fields covering identity, kind, inputs, output, semantics, comparability, implementations, examples, and provenance. The pipeline binds to a growing subset of these. In the current release the ontology-aware entry `run_from_registry` reads per-metric `polarity`, declared `range` bounds, declared `scale_type`, the set of `allowed_transformations`, the `comparability.recommended_normalization` strategy, and `semantics.score_of_random_baseline`. The cross-dataset aggregation primitive reads `comparability.recommended_aggregation_across_datasets`. The remaining fields are kept as metadata and are not enforced.
 
-For why the normalization strategy depends on the measurement scale of the metric, and where plain min-max scaling fails, see the explanation page on normalization and scales.
+For why the normalization strategy depends on the measurement scale of the metric, and where plain min-max scaling fails, see the page on normalization and scales.
 
 ## Data flow
 
@@ -30,31 +30,31 @@ flowchart LR
     CD -->|per-tool vector| S
 ```
 
-Solid edges denote fields read by the current pipeline. Dashed edges mark fields declared in the metric cards but not yet consumed.
+Solid edges mark fields read by the current pipeline. Dashed edges mark fields declared in the metric cards but not yet read.
 
-## Fields consumed
+## Fields read
 
-- `polarity`: passed to `normalize`, which inverts columns marked `lower_is_better` and rescales each column to [0, 1]. The resulting matrix is oriented so that higher values denote better performance for every column.
-- `range_lower`, `range_upper`: when both bounds are declared on a card, `run_from_registry` forwards them to `normalize`. The min-max and baseline-relative strategies use the theoretical range rather than the empirical extrema, so two benchmarks using the same metric on different score subsets produce comparable rescaled values. Observations outside the declared range raise, whatever the strategy.
-- `comparability.recommended_normalization`: `run_from_registry` reads this per metric and rescales that column with the named strategy, defaulting to `min_max`. The options are `min_max`, `log_min_max`, `rank`, `zscore`, and `baseline_relative`. The choice depends on the measurement scale of the metric; see the explanation page on normalization and scales. Runtime and peak memory use `log_min_max`; the Adjusted Rand Index uses `baseline_relative`.
-- `semantics.score_of_random_baseline`: the chance-level value of a metric, consumed by the `baseline_relative` strategy so a method no better than chance maps to 0 rather than the column midpoint.
+- `polarity`: passed to `normalize`, which inverts columns marked `lower_is_better` and rescales each column to [0, 1]. The output matrix is oriented so higher values mean better performance for every column.
+- `range_lower`, `range_upper`: when both bounds are declared on a card, `run_from_registry` passes them to `normalize`. The min-max and baseline-relative strategies use the theoretical range rather than the empirical extrema, so two benchmarks that use the same metric on different score subsets produce comparable rescaled values. Observations outside the declared range raise, whatever the strategy.
+- `comparability.recommended_normalization`: `run_from_registry` reads this per metric and rescales that column with the named strategy, defaulting to `min_max`. The options are `min_max`, `log_min_max`, `rank`, `zscore`, and `baseline_relative`. The choice depends on the measurement scale of the metric; see the page on normalization and scales. Runtime and peak memory use `log_min_max`; the Adjusted Rand Index uses `baseline_relative`.
+- `semantics.score_of_random_baseline`: the chance-level value of a metric, read by the `baseline_relative` strategy so a method no better than chance maps to 0 rather than the column midpoint.
 - `scale_type`: `validate_for_aggregation` refuses SAW or TOPSIS on columns whose declared scale type is `nominal` or `ordinal`. Only `interval` and `ratio` columns pass.
 - `allowed_transformations`: `validate_for_aggregation` checks that the card permits the transform the chosen strategy applies. Min-max and baseline-relative need `affine` or `min_max`; `log_min_max` needs `log`; `rank` needs `rank`; `zscore` needs `z_score` or `affine`. This replaces the earlier blanket check for `affine`, so a ratio metric normalized by `log_min_max` is validated against `log` rather than against an `affine` grant it does not need.
-- `comparability.recommended_aggregation_across_datasets`: `aggregate_across_datasets` consumes this when reducing a tool by dataset matrix to a tool vector for one metric. Ratio metrics whose values span orders of magnitude (runtime, peak memory) declare `geometric_mean` per Smith 1988; bounded interval and ratio metrics declare `arithmetic_mean`.
+- `comparability.recommended_aggregation_across_datasets`: `aggregate_across_datasets` reads this when reducing a tool by dataset matrix to a tool vector for one metric. Ratio metrics whose values span orders of magnitude (runtime, peak memory) declare `geometric_mean` per Smith 1988; bounded interval and ratio metrics declare `arithmetic_mean`.
 
 `run_from_registry` also runs a guard after it picks the strategies. For any column still using min-max, it warns when a declared bound is missing (the scale rests on the data and shifts when the method set changes) and when the column is heavy-tailed (one outlier dominates the rescale). The warnings travel on the `Result` and do not block the run.
 
 ## Fields declared but not enforced
 
-- `meaningful_zero`: declared on every card; no current consumer.
+- `meaningful_zero`: declared on every card; no current reader.
 - `uncertainty_model`: declared on derived metrics; the pipeline does not propagate uncertainty through aggregation.
-- `monotonic`: declared on every card; no current consumer.
-- `comparability.comparable_within` and free-form `aggregation_rules` notes: declared on every card; used only by humans reading the cards.
+- `monotonic`: declared on every card; no current reader.
+- `comparability.comparable_within` and free-form `aggregation_rules` notes: declared on every card; read only by humans.
 
 ## Planned enforcement
 
 1. Use the declared `uncertainty_model` to propagate standard errors through normalization and aggregation, so the composite carries a usable error bar.
 2. Enforce `comparability.comparable_within` to refuse cross-task aggregation when no card permits it.
-3. Translate free-form `aggregation_rules` notes into machine-readable constraints over time; the `recommended_aggregation_across_datasets` enum is the first such migration.
+3. Turn free-form `aggregation_rules` notes into machine-readable constraints over time; the `recommended_aggregation_across_datasets` enum is the first such migration.
 
-As each item lands, the corresponding edge in the diagram is reclassified from dashed to solid.
+As each item lands, the matching edge in the diagram moves from dashed to solid.

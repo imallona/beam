@@ -1,0 +1,168 @@
+project:
+  type: website
+  output-dir: _site
+  render:
+    - "docs/*.md"
+    - "docs/tutorials/*.md"
+    - "docs/how-to/*.md"
+    - "docs/explanations/*.md"
+    - "docs/adr/*.md"
+    - "docs/findings/*.md"
+    - "examples/*/*.qmd"
+    - "index.qmd"
+
+website:
+  title: "beam"
+  description: "Benchmark Evaluation and Metrics"
+  repo-url: https://github.com/imallona/beam
+  repo-actions: [edit, issue]
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: docs/tutorials/quickstart.md
+        text: Quick start
+      - text: How-to
+        menu:
+          - href: docs/how-to/run-from-beam-yaml.md
+            text: Run from beam.yaml
+          - href: docs/how-to/use-beam-from-r.md
+            text: Use beam from R
+          - href: docs/how-to/add-a-metric-card.md
+            text: Add a new metric card
+          - href: docs/how-to/rerun-from-manifest.md
+            text: Rerun from a manifest
+      - text: Explanations
+        menu:
+          - href: docs/explanations/cards-and-pipeline.md
+            text: Cards and pipeline
+          - href: docs/explanations/measurement-theory.md
+            text: Measurement theory
+          - href: docs/explanations/normalization-and-scales.md
+            text: Normalization and scales
+          - href: docs/explanations/aggregation-methods.md
+            text: Aggregation methods
+          - href: docs/explanations/weighting-schemes.md
+            text: Weighting schemes
+          - href: docs/explanations/comparing-methods-across-datasets.md
+            text: Comparing methods across datasets
+          - href: docs/explanations/skillings-mack.md
+            text: Skillings-Mack
+          - href: docs/explanations/missing-data.md
+            text: Missing data
+          - href: docs/explanations/heterogeneity-mixed-effects.md
+            text: Mixed-effects heterogeneity
+          - href: docs/explanations/heterogeneity-bradley-terry.md
+            text: Bradley-Terry trees
+          - href: docs/explanations/full-rankings-and-bounded-metrics.md
+            text: Plackett-Luce and bounded metrics
+          - href: docs/explanations/comet.md
+            text: COMET
+          - href: docs/explanations/funky-heatmaps-and-robustness.md
+            text: Funky heatmaps
+          - href: docs/explanations/ontology-mappings.md
+            text: Ontology mappings
+          - href: docs/explanations/openproblems-as-a-data-source.md
+            text: OpenProblems as a data source
+      - text: Reference
+        href: docs/reference/index.qmd
+      - text: ADRs
+        href: docs/adr/
+      - text: Findings
+        href: docs/findings/
+      - text: Vignettes
+        menu:
+          - href: examples/duo2018/duo2018.qmd
+            text: Duo 2018 clustering
+          - href: examples/scenarios/scenarios.qmd
+            text: Simulated scenarios
+          - href: examples/transportation/transportation.qmd
+            text: Transportation modes
+          - href: examples/m4/m4.qmd
+            text: M4 forecasting
+          - href: examples/openproblems/openproblems.qmd
+            text: OpenProblems batch integration
+          - href: examples/cross_benchmark/cross_benchmark.qmd
+            text: Cross-benchmark meta-analysis
+    right:
+      - icon: github
+        href: https://github.com/imallona/beam
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-location: left
+    code-copy: true
+    code-overflow: wrap
+    css: docs/styles.css
+
+quartodoc:
+  package: beam
+  dir: docs/reference
+  title: API reference
+  sidebar: docs/reference/_sidebar.yml
+  sections:
+    - title: Pipeline
+      desc: The top-level procedural API.
+      contents:
+        - rank
+        - load_scores
+        - report
+        - RunResult
+        - Scores
+    - title: MCDA
+      desc: Normalization, weights, aggregation, ranking.
+      package: beam.mcda
+      contents:
+        - run
+        - run_from_registry
+        - normalize
+        - weighted_sum
+        - topsis
+        - vikor
+        - promethee_ii
+        - comet
+        - rank
+        - equal_weights
+        - entropy_weights
+        - standard_deviation_weights
+        - critic_weights
+        - merec_weights
+        - ahp_weights
+    - title: Sensitivity
+      desc: Stability and perturbation primitives.
+      package: beam.mcda
+      contents:
+        - leave_one_metric_out
+        - leave_one_dataset_out
+        - smaa
+        - smallest_weight_perturbation
+        - critical_difference
+        - skillings_mack
+        - coverage_aware_critical_difference
+    - title: Heterogeneity
+      desc: Mixed-effects, Bradley-Terry trees, Plackett-Luce.
+      package: beam.heterogeneity
+      contents:
+        - mixed_effects
+        - bradley_terry_tree
+        - plackett_luce
+        - source_variance_decomposition
+        - paired_comparisons
+        - rankings_from_matrix
+    - title: Cards and registry
+      package: beam.cards
+      contents:
+        - Registry
+        - MetricCard
+        - polarities_for
+        - properties_for
+    - title: Datasets
+      package: beam.datasets
+      contents:
+        - load_duo2018
+        - load_m4
+        - load_openproblems
+        - load_integration_benchmarks
+        - load_pancreas_contrast

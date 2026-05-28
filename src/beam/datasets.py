@@ -654,7 +654,10 @@ class IntegrationBenchmarks:
     and metric is the scale-free common currency across benchmarks that score
     on different native scales; for scIB and OpenProblems the rank is computed
     from the raw (unscaled) higher-is-better scores, for Tran from its published
-    per-metric ranks. The five methods are common to all three benchmarks.
+    per-metric ranks, for Tyler from the raw per-metric scores with the metric's
+    own polarity (kBET rejection rate is lower-is-better, ARI and ASW are
+    higher-is-better). Tyler covers three of the five common methods (harmony,
+    scanorama, liger), so its records cover three rather than five method slots.
 
     Attributes
     ----------
@@ -713,6 +716,61 @@ class IntegrationBenchmarks:
                     matrix[i, j] = float(np.mean(cell[(m, b)]))
         return _INTEGRATION_METHODS, benchmarks, matrix
 
+    def method_metric_matrix(
+        self, benchmark: str
+    ) -> tuple[tuple[str, ...], tuple[str, ...], np.ndarray]:
+        """Method by metric mean-rank matrix for one benchmark.
+
+        Each cell is the mean rank of the method on that metric across all of
+        the benchmark's datasets, in the within-common-methods rank scale (so
+        lower is better, range 1 to 5). Methods or metrics with no observation
+        in that benchmark surface as NaN.
+
+        Parameters
+        ----------
+        benchmark
+            One of ``"Tran"``, ``"scIB"``, ``"OpenProblems"``.
+
+        Returns
+        -------
+        tuple
+            ``(methods, metrics, matrix)`` with ``matrix.shape == (5, 4)``.
+        """
+        from collections import defaultdict
+
+        metrics = ("ARI", "ASW", "kBET", "LISI")
+        cell: dict[tuple[str, str], list[float]] = defaultdict(list)
+        for b, _d, m, mk, r in zip(
+            self.benchmark, self.dataset, self.method, self.metric, self.rank, strict=True
+        ):
+            if b == benchmark:
+                cell[(m, mk)].append(float(r))
+        matrix = np.full((len(_INTEGRATION_METHODS), len(metrics)), np.nan)
+        for i, m in enumerate(_INTEGRATION_METHODS):
+            for j, mk in enumerate(metrics):
+                if cell[(m, mk)]:
+                    matrix[i, j] = float(np.mean(cell[(m, mk)]))
+        return _INTEGRATION_METHODS, metrics, matrix
+
+
+def _load_scib_cells() -> dict[tuple[str, str], dict[str, float]]:
+    """Read scIB raw scores, averaging duplicate feature-space rows per cell.
+
+    The bundled ``scib2022_metrics.csv`` typically holds two rows per
+    ``(dataset, method, metric)``, one per scIB feature space (HVG and full),
+    both unscaled. Average them so the result does not depend on row order.
+    """
+    from collections import defaultdict
+
+    text = resources.files(_CSV_PACKAGE).joinpath("scib2022_metrics.csv").read_text("utf-8")
+    raw: dict[tuple[str, str, str], list[float]] = defaultdict(list)
+    for row in csv.DictReader(text.splitlines()):
+        raw[(row["dataset"], row["metric"], row["method"])].append(float(row["score"]))
+    out: dict[tuple[str, str], dict[str, float]] = {}
+    for (dataset, metric, method), scores in raw.items():
+        out.setdefault((dataset, metric), {})[method] = float(np.mean(scores))
+    return out
+
 
 def _rank_within_common(
     value_by_method: dict[str, float], higher_is_better: bool
@@ -745,12 +803,11 @@ def load_integration_benchmarks() -> IntegrationBenchmarks:
     records: list[tuple[str, str, str, str, float]] = []
 
     # scIB: raw (unscaled) scores, higher is better; rank within common methods.
-    scib_text = resources.files(_CSV_PACKAGE).joinpath("scib2022_metrics.csv").read_text("utf-8")
-    scib_cells: dict[tuple[str, str], dict[str, float]] = {}
-    for row in csv.DictReader(scib_text.splitlines()):
-        scib_cells.setdefault((row["dataset"], row["metric"]), {})[row["method"]] = float(
-            row["score"]
-        )
+    # The source table carries two rows per (dataset, method, metric) for most
+    # cells, one per feature space (HVG and full); take the mean across feature
+    # spaces so the data is not silently halved by row order. The remaining
+    # singletons are kept as is.
+    scib_cells = _load_scib_cells()
     for (dataset, metric), vals in scib_cells.items():
         for method, r in _rank_within_common(vals, higher_is_better=True).items():
             records.append(("scIB", dataset, method, metric, r))
@@ -783,6 +840,26 @@ def load_integration_benchmarks() -> IntegrationBenchmarks:
             for method, r in _rank_within_common(vals, higher_is_better=True).items():
                 records.append(("OpenProblems", dataset.split("/")[-1], method, metric, r))
 
+    # Tyler 2023: raw per-(dataset, method, metric) scores from ED Table 2 sheet A
+    # (the observed-state condition, averaged across the two ref_clust_method
+    # variants spear_euc and pca_euc). Tyler covers three of the five common
+    # methods (harmony, scanorama, liger) on two in silico datasets, on three of
+    # the four shared metrics (ARI, ASW, kBET). cLISI is not slotted in because
+    # the existing LISI column is iLISI, a different quantity. The kBET column
+    # is the raw rejection rate (lower is better), the opposite polarity of
+    # scIB's kBET, so the per-metric polarity is set per source.
+    tyler_text = resources.files(_CSV_PACKAGE).joinpath("tyler2023_metrics.csv").read_text("utf-8")
+    tyler_higher_is_better = {"ARI": True, "ASW": True, "kBET": False}
+    tyler_cells: dict[tuple[str, str], dict[str, float]] = {}
+    for row in csv.DictReader(tyler_text.splitlines()):
+        tyler_cells.setdefault((row["dataset"], row["metric"]), {})[row["method"]] = float(
+            row["score"]
+        )
+    for (dataset, metric), vals in tyler_cells.items():
+        ranked = _rank_within_common(vals, higher_is_better=tyler_higher_is_better[metric])
+        for method, r in ranked.items():
+            records.append(("Tyler", dataset, method, metric, r))
+
     records.sort()
     return IntegrationBenchmarks(
         benchmark=tuple(r[0] for r in records),
@@ -813,3 +890,101 @@ def load_integration_published_ranks() -> dict[str, dict[str, int]]:
     for row in csv.DictReader(text.splitlines()):
         out.setdefault(row["benchmark"], {})[row["method"]] = int(row["published_rank"])
     return out
+
+
+@dataclass(frozen=True)
+class PancreasContrast:
+    """Same-data, different-pipeline contrast on the human pancreas data.
+
+    Tran's Dataset 4 is built from the Muraro, Segerstolpe, Baron, Wang and Xin
+    studies, the same five studies scIB's ``pancreas`` task uses. The data is
+    shared; the pipelines are not. This holds the per-method-per-metric
+    ranking each paper assigned to the five common methods (combat, harmony,
+    fastMNN, scanorama, LIGER) on those shared studies, plus the mean rank,
+    so the disagreement attributable to the benchmarker can be read directly.
+
+    Attributes
+    ----------
+    methods
+        The five common integration methods, in canonical order.
+    metrics
+        The four shared metrics ARI, ASW, kBET and LISI.
+    tran_rank
+        Float array of shape ``(5, 4)``: Tran's published per-metric rank on
+        Dataset 4 (Table S7 from Additional file 8), re-ranked among the five
+        common methods so 1 is the best.
+    scib_rank
+        Float array of shape ``(5, 4)``: ranks among the five common methods
+        on the scIB pancreas raw unscaled scores (averaged across feature
+        spaces), higher score takes rank 1.
+    tran_mean_rank
+        Float array of shape ``(5,)``: each method's mean rank across the
+        four metrics on Tran's pancreas pipeline.
+    scib_mean_rank
+        Float array of shape ``(5,)``: each method's mean rank across the
+        four metrics on scIB's pancreas pipeline.
+    """
+
+    methods: tuple[str, ...]
+    metrics: tuple[str, ...]
+    tran_rank: np.ndarray
+    scib_rank: np.ndarray
+    tran_mean_rank: np.ndarray
+    scib_mean_rank: np.ndarray
+
+    def spearman(self) -> float:
+        """Spearman correlation of the two mean-rank vectors over the five methods."""
+        from scipy.stats import spearmanr
+
+        return float(spearmanr(self.tran_mean_rank, self.scib_mean_rank).correlation)
+
+    def top_method(self) -> tuple[str, str]:
+        """Top method under each pipeline as ``(tran_top, scib_top)``."""
+        return (
+            self.methods[int(np.argmin(self.tran_mean_rank))],
+            self.methods[int(np.argmin(self.scib_mean_rank))],
+        )
+
+
+def load_pancreas_contrast() -> PancreasContrast:
+    """Load Tran D4 versus scIB pancreas, the unconfounded benchmarker contrast.
+
+    Tran reports per-metric ranks across its 14 methods; here those ranks are
+    re-ranked among the five common methods so the scale matches scIB. scIB
+    reports raw scores; the loader averages duplicate feature-space rows per
+    cell (see ``_load_scib_cells``) and then ranks within the five common
+    methods, higher is better.
+
+    Returns
+    -------
+    PancreasContrast
+    """
+    tran_text = resources.files(_CSV_PACKAGE).joinpath("tran2020_metrics.csv").read_text("utf-8")
+    tran_raw: dict[tuple[str, str], float] = {}
+    for row in csv.DictReader(tran_text.splitlines()):
+        if row["dataset"] != "Dataset_4":
+            continue
+        tran_raw[(row["method"], row["metric"])] = float(row["rank"])
+
+    scib_cells = _load_scib_cells()
+
+    tran_rank = np.full((len(_INTEGRATION_METHODS), len(_INTEGRATION_METRICS)), np.nan)
+    scib_rank = np.full((len(_INTEGRATION_METHODS), len(_INTEGRATION_METRICS)), np.nan)
+    for j, metric in enumerate(_INTEGRATION_METRICS):
+        tran_vals = {
+            m: tran_raw[(m, metric)] for m in _INTEGRATION_METHODS if (m, metric) in tran_raw
+        }
+        for m, r in _rank_within_common(tran_vals, higher_is_better=False).items():
+            tran_rank[_INTEGRATION_METHODS.index(m), j] = r
+        scib_vals = scib_cells.get(("pancreas", metric), {})
+        for m, r in _rank_within_common(scib_vals, higher_is_better=True).items():
+            scib_rank[_INTEGRATION_METHODS.index(m), j] = r
+
+    return PancreasContrast(
+        methods=_INTEGRATION_METHODS,
+        metrics=_INTEGRATION_METRICS,
+        tran_rank=tran_rank,
+        scib_rank=scib_rank,
+        tran_mean_rank=np.nanmean(tran_rank, axis=1),
+        scib_mean_rank=np.nanmean(scib_rank, axis=1),
+    )

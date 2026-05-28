@@ -37,6 +37,7 @@ dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
     "ruff>=0.6",
+    "rdflib>=7.0",
 ]
 io = [
     "pandas>=2.0",

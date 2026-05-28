@@ -14,7 +14,7 @@ pip install /path/to/beam
 
 ## Step 1: write a small scores file
 
-beam reads a wide CSV. The first column holds the tool name. Every other column header is a metric id that must resolve to a metric card. Here we use three cards that ship with beam: ari (adjusted Rand index, higher is better), nmi (normalized mutual information, higher is better) and runtime (seconds, lower is better). beam reads the polarity from the cards, so you do not flip the runtime column yourself.
+beam reads a wide CSV. The first column holds the tool name. Every other column header is a metric id that must resolve to a metric card. Here we use three cards that ship with beam: ari (adjusted Rand index, higher is better), nmi (normalized mutual information, higher is better) and runtime (seconds, lower is better). beam reads the polarity from the cards, so you do not need to flip the runtime column yourself.
 
 Save this as scores.csv:
 
@@ -35,7 +35,7 @@ result = beam.rank(scores)
 beam.report(result, "report.html")
 ```
 
-`beam.load_scores` reads the CSV and checks every metric id against the registry. An unknown id raises `UnknownMetricError`, so a typo in a header fails early rather than ranking on the wrong column. `beam.rank` normalizes each column per its card, applies equal weights and the SAW aggregation by default, runs the default sensitivity analysis, and builds a run manifest. `beam.report` writes one self-contained HTML file with the figures embedded, so report.html opens in a browser with no other files.
+`beam.load_scores` reads the CSV and checks every metric id against the registry. An unknown id raises `UnknownMetricError`, so a typo in a header fails early rather than ranking on the wrong column. `beam.rank` normalizes each column per its card, applies equal weights and the SAW aggregation by default, runs the default sensitivity analysis, and builds a run manifest. `beam.report` writes one self-contained HTML file with the figures embedded, so report.html opens in a browser without any other files.
 
 ## Step 3: read the RunResult
 
@@ -88,6 +88,6 @@ beam validate scores.csv --metrics ari,nmi,runtime
 
 ## Where to go next
 
-To drive a whole run from one declarative file (so a reviewer reruns it with a single command), see the how-to: [Run a benchmark from a beam.yaml file](../how-to/run-from-beam-yaml.md).
+To run a whole pipeline from one declarative file (so a reviewer reruns it with a single command), see the how-to: [Run a benchmark from a beam.yaml file](../how-to/run-from-beam-yaml.md).
 
 For the concepts behind the steps above, see the explanations: [normalization and scales](../explanations/normalization-and-scales.md), [weighting schemes](../explanations/weighting-schemes.md) and [aggregation methods](../explanations/aggregation-methods.md).

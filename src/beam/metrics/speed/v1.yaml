@@ -57,6 +57,9 @@ examples:
       time_h: 2.0
     expected_output: 60.0
     tolerance: 1.0e-9
+mappings:
+  uo: http://purl.obolibrary.org/obo/UO_0010008
+# UO_0010008 is kilometer per hour, matching the card's measurand units.
 provenance:
   author: Izaskun Mallona
   contact: izaskun.mallona@gmail.com

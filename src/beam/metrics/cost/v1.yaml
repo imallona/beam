@@ -58,6 +58,10 @@ examples:
       distance_km: 150.0
     expected_output: 0.2
     tolerance: 1.0e-9
+# No UO term for a generic currency unit per kilometer as of 2026-05-28;
+# UO does not carry monetary units. No STATO term applies either because cost
+# is a measured economic quantity, not a statistical estimator. Documented as
+# a deliberate gap; the toy transportation example uses a generic currency.
 provenance:
   author: Izaskun Mallona
   contact: izaskun.mallona@gmail.com

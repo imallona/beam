@@ -5,9 +5,11 @@ description: Spatial transcriptomics metric from the OpenProblems spatially vari
   genes task. Correlation between a method's ranking of spatially variable genes and
   a reference ranking; higher means closer agreement with the reference.
 citations:
-- text: Spearman C. The proof and measurement of association between two things (correlation
-    coefficient, as referenced by the OpenProblems spatially variable genes task).
-  doi: 10.1093/biomet/30.1-2.81
+- text: Spearman C. The proof and measurement of association between two things.
+    American Journal of Psychology 1904, 15:72-101. The Spearman rank correlation
+    coefficient is what the OpenProblems spatially variable genes task uses to
+    score a method's ranking against the reference ranking.
+  doi: 10.2307/1412159
 metric_kind: derived
 measurand: agreement between a method's spatially-variable-gene ranking and a reference
   ranking
@@ -64,6 +66,12 @@ examples:
   expected_output: 1.0
 - description: no association with the reference ranking
   expected_output: 0.0
+mappings:
+  stato: http://purl.obolibrary.org/obo/STATO_0000201
+  huggingface_evaluate: https://github.com/huggingface/evaluate/tree/main/metrics/spearmanr
+# STATO_0000201 is Spearman's rank correlation coefficient, matching the
+# OpenProblems spatial-variable-genes ranking correlation used here. If a card
+# author needs Pearson's correlation instead, STATO_0000280 is the parent.
 provenance:
   author: Izaskun Mallona
   contact: izaskun.mallona@gmail.com

@@ -76,6 +76,9 @@ examples:
       true_labels: [0, 1, 1, 0]
     expected_output: 1.0
     tolerance: 1.0e-12
+mappings:
+  stato: http://purl.obolibrary.org/obo/STATO_0000628
+  huggingface_evaluate: https://github.com/huggingface/evaluate/tree/main/metrics/f1
 provenance:
   author: Izaskun Mallona
   contact: izaskun.mallona@gmail.com

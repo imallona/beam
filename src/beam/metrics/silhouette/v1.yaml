@@ -75,6 +75,9 @@ examples:
       cluster_labels: [0, 0, 1, 1]
     expected_output: 0.9
     tolerance: 0.1
+# No STATO term for the Rousseeuw silhouette coefficient as of 2026-05-28;
+# STATO covers correlation and regression coefficients but not silhouette.
+# Documented as a proposed-upstream gap in docs/explanations/ontology-mappings.md.
 provenance:
   author: Izaskun Mallona
   contact: izaskun.mallona@gmail.com

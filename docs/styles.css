@@ -1,0 +1,27 @@
+/* beam docs site styles */
+
+.navbar {
+  font-size: 0.95rem;
+}
+
+.sidebar-title {
+  font-weight: 600;
+}
+
+pre.sourceCode {
+  font-size: 0.85em;
+}
+
+table {
+  font-size: 0.9rem;
+}
+
+table th {
+  background-color: #f8f9fa;
+}
+
+blockquote {
+  border-left: 3px solid #6c757d;
+  padding-left: 1rem;
+  color: #495057;
+}
