@@ -6,7 +6,7 @@ For why the normalization strategy depends on the measurement scale of the metri
 
 ## Data flow
 
-```mermaid
+```{mermaid}
 flowchart LR
     A[metric cards<br/>YAML] -->|polarity| B[properties_for]
     A -->|scale_type<br/>allowed_transformations| V[validate_for_aggregation]
