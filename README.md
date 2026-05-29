@@ -94,7 +94,7 @@ src/beam/
                                 rankings_from_matrix, the availability probes, and the .R scripts
   data/                         DuoSCClustering2018.csv (Duo et al. 2018), its features CSV, and provenance
   owl/                          generate.py: regenerates docs/beam.owl.ttl from the cards and the schema
-r/beam/                         R wrapper for CRAN (thin reticulate shim around beam.rank, beam.report, etc.)
+r/beam/                         rbeam R package: reticulate shim for the MCDA wrappers (beam_rank, beam_report, ...), native R for the heterogeneity diagnostics
 scripts/                        one-shot helpers: ols_query.py and ols_verify.py used during the ontology lift
 tests/
   test_schema.py                Python-side metric card validation

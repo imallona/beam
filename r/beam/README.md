@@ -1,6 +1,6 @@
 # rbeam: R interface to beam
 
-Thin R interface to the [beam](https://github.com/imallona/beam) Python package via `reticulate`. Mirrors the Python entry points (`beam.rank`, `beam.report`, `beam.validate`, `beam.run`, `beam.metric.show`) plus the heterogeneity diagnostics (mixed-effects, Bradley-Terry trees, Plackett-Luce, cross-benchmark variance decomposition).
+R interface to the [beam](https://github.com/imallona/beam) Python package. The MCDA wrappers (`beam_rank`, `beam_report`, `beam_validate`, `beam_run`, `beam_metric_show`) forward to Python through `reticulate`. The heterogeneity diagnostics (mixed-effects, Bradley-Terry trees, Plackett-Luce, cross-benchmark variance decomposition) are implemented natively in R.
 
 For the MCDA pipeline, the metric cards and reporting, the canonical implementation is the Python package and the R side is a typed reticulate shim. The heterogeneity diagnostics are implemented natively in R.
 

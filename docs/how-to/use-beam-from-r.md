@@ -1,6 +1,6 @@
 # Use beam from R
 
-beam ships an R package alongside the Python one. The R package is a thin reticulate wrapper: every R function forwards to the Python implementation. So R users get the same metric cards, the same MCDA pipeline, the same sensitivity primitives, and the same heterogeneity diagnostics, called from R syntax.
+beam ships an R package (rbeam) alongside the Python one. The MCDA wrappers forward to the Python implementation through reticulate, so R users get the same metric cards, pipeline and sensitivity primitives. The heterogeneity diagnostics are implemented natively in R (lme4, psychotree, glmmTMB, PlackettLuce).
 
 This recipe goes from install to a first run.
 
