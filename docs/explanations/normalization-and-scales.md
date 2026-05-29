@@ -16,7 +16,7 @@ Third, an empirical bound is not stable. Runtime has no upper limit, so min-max 
 
 Stevens described four measurement scales. Two of them matter here.
 
-An interval scale has a meaningful zero only by convention, and equal differences are comparable but ratios are not. The Adjusted Rand Index and the silhouette coefficient are interval. An affine transform, of the form a times x plus b, keeps the meaning of an interval scale.
+An interval scale has a meaningful zero only by convention, and equal differences are comparable but ratios are not. The Adjusted Rand Index and the silhouette coefficient are interval. An affine transform, of the form $a x + b$, keeps the meaning of an interval scale.
 
 A ratio scale has a true zero and ratios are meaningful: twice as long is twice as long. Runtime and peak memory are ratio. Only a similarity transform, multiplication by a positive constant, keeps the meaning of a ratio scale. Adding a constant moves the zero and breaks it.
 

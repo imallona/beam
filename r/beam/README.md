@@ -6,8 +6,15 @@ The R package does not reimplement the science. The canonical implementation is 
 
 ## Install
 
+Clone the repository first, then install from the checkout:
+
+```sh
+git clone https://github.com/imallona/beam.git
+cd beam
+```
+
 ```r
-# From the monorepo (development install):
+# Development install from the monorepo checkout:
 devtools::install_local("r/beam", dependencies = TRUE)
 
 # After CRAN release:

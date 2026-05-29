@@ -19,7 +19,7 @@ This vignette runs beam on two tasks from OpenProblems in Single-Cell Analysis (
 
 ## Provenance of the bundled tables
 
-beam does not ship the raw single-cell data. It ships small derived long-format tables (`src/beam/data/openproblems_batch_integration.csv`, `openproblems_svg.csv`, `openproblems_svg_features.csv`), reduced once from the CC-BY-4.0 results JSON in the `openproblems-bio/website` repository at the pinned commit `76ce7f288da591b1b19c32cbfe8ce50bc3706ece`. The control and baseline methods were dropped at vendoring time. Provenance and license are recorded in `src/beam/data/README.md`. Cite the OpenProblems consortium (Nature Biotechnology 2025, DOI 10.1038/s41587-025-02694-w).
+beam does not ship the raw single-cell data. It ships small derived long-format tables (`src/beam/data/openproblems_batch_integration.csv`, `openproblems_svg.csv`, `openproblems_svg_features.csv`), reduced once from the CC-BY-4.0 results JSON in the `openproblems-bio/website` repository at the pinned commit `76ce7f288da591b1b19c32cbfe8ce50bc3706ece`. The control and baseline methods were dropped at vendoring time. Provenance and license are recorded in `src/beam/data/README.md`. Cite the OpenProblems consortium (Nature Biotechnology 2025, DOI [10.1038/s41587-025-02694-w](https://doi.org/10.1038/s41587-025-02694-w)).
 
 The tables are reproducible from the published JSON. The steps below fetch the four result files for a task at the pinned commit and reduce them to the long table beam loads. They are shown for the record and are not run when this vignette renders, so the rendering needs no network access.
 

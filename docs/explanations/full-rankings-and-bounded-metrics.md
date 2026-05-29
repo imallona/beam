@@ -24,4 +24,4 @@ Both need the R toolchain. Check `plackett_luce_available()` and `glmmtmb_availa
 
 ## Relation to the rest
 
-[ADR 0011](../adr/0011-glmmtmb-and-plackett-luce.md) records the design choices behind both additions. With them, the heterogeneity model set is complete: the mixed-effects variance decomposition, the Bradley-Terry trees, the glmmTMB beta engine, and Plackett-Luce.
+With these two models the heterogeneity model set is complete: the mixed-effects variance decomposition, the Bradley-Terry trees, the glmmTMB beta engine, and Plackett-Luce.

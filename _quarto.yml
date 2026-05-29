@@ -5,7 +5,6 @@ project:
     - "docs/tutorials/*.md"
     - "docs/how-to/*.md"
     - "docs/explanations/*.md"
-    - "docs/adr/*.md"
     - "examples/*/*.qmd"
     - "index.qmd"
 

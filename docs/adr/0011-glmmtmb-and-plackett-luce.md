@@ -40,6 +40,6 @@ Worths are read from `coef` rather than `itempar`. `itempar` and `qvcalc` refit 
 
 - [Full rankings and bounded metrics explanation](../explanations/full-rankings-and-bounded-metrics.md)
 - [ADR 0009 (mixed-effects via R)](0009-heterogeneity-mixed-effects-via-r.md), [ADR 0010 (bradley-terry-trees)](0010-bradley-terry-trees.md)
-- Brooks ME, Kristensen K, van Benthem KJ, Magnusson A, Berg CW, Nielsen A, Skaug HJ, Maechler M, Bolker BM. glmmTMB balances speed and flexibility among packages for zero-inflated generalized linear mixed models. The R Journal 2017. DOI 10.32614/RJ-2017-066.
-- Turner HL, van Etten J, Firth D, Kosmidis I. Modelling rankings in R: the PlackettLuce package. Computational Statistics 2020, 35:1027-1057. DOI 10.1007/s00180-020-00959-3.
-- Smithson M, Verkuilen J. A better lemon squeezer? Maximum-likelihood regression with beta-distributed dependent variables. Psychological Methods 2006. DOI 10.1037/1082-989X.11.1.54. Used for the beta squeeze.
+- Brooks ME, Kristensen K, van Benthem KJ, Magnusson A, Berg CW, Nielsen A, Skaug HJ, Maechler M, Bolker BM. glmmTMB balances speed and flexibility among packages for zero-inflated generalized linear mixed models. The R Journal 2017. DOI [10.32614/RJ-2017-066](https://doi.org/10.32614/RJ-2017-066).
+- Turner HL, van Etten J, Firth D, Kosmidis I. Modelling rankings in R: the PlackettLuce package. Computational Statistics 2020, 35:1027-1057. DOI [10.1007/s00180-020-00959-3](https://doi.org/10.1007/s00180-020-00959-3).
+- Smithson M, Verkuilen J. A better lemon squeezer? Maximum-likelihood regression with beta-distributed dependent variables. Psychological Methods 2006. DOI [10.1037/1082-989X.11.1.54](https://doi.org/10.1037/1082-989X.11.1.54). Used for the beta squeeze.

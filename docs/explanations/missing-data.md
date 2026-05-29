@@ -6,7 +6,7 @@ This page explains how beam treats missing cells and why it refuses to choose fo
 
 ## A missing score is not a number
 
-The tempting shortcut is to fill a gap with something: the column mean, a zero, the midpoint of the scale. Each one of these invents a value the method never earned, and the invented value changes the ranking. Filling a missing accuracy with the mean pulls a method toward the middle of the field; filling it with zero treats a crash as the worst possible result; filling it with the midpoint quietly rewards a method for not running. None of these is wrong in the abstract. Which one is right depends on the benchmark, so beam will not pick one in silence.
+The tempting shortcut is to fill a gap with something: the column mean, a zero, the midpoint of the scale. Each one of these imputes a value the method never generated, and the imputed value changes the ranking. Filling a missing accuracy with the mean pulls a method toward the middle of the field; filling it with zero treats a crash as the worst possible result; filling it with the midpoint quietly rewards a method for not running. None of these is wrong per se. Which one is right depends on the benchmark, so beam will not pick one without asking the user. We also note that a missing value is, frequently, synonym of not being able to run, so a missing value could, in principle, be considered the worst performing outcome.
 
 There are two axes where data can be missing, and beam handles them in different places.
 
@@ -18,7 +18,7 @@ This lives in `beam.mcda.reduce_tensor` and runs first, before any ranking. A me
 
 ## The tool by metric axis: an explicit policy
 
-After the dataset axis is folded away, what remains is a tool by metric matrix that may still have holes (a method with zero coverage on a metric, or a wide table that came with blanks). Here beam asks you to choose, through the `missing` argument on `beam.rank`, `run`, the CLI `beam rank --on-missing`, and the `missing` key in beam.yaml. The default is `error`.
+Once the dataset axis has been summarized, what remains is a tool by metric matrix that may still have holes (a method with zero coverage on a metric, or a wide table that came with blanks). Here beam asks you to choose, through the `missing` argument on `beam.rank`, `run`, the CLI `beam rank --on-missing`, and the `missing` key in beam.yaml. The default is `error`.
 
 `error` refuses any missing cell and names the alternatives. This is the default because a recommendation must not rest on a choice you did not make.
 
@@ -30,7 +30,7 @@ After the dataset axis is folded away, what remains is a tool by metric matrix t
 
 ## The critical-difference test
 
-The Friedman test and its Nemenyi post-hoc rank the methods within each dataset, which is only defined over a complete column. beam refuses a tool by dataset table with missing cells rather than dropping or filling them, and suggests restricting the diagram to the block of methods and datasets where all of them ran. The missing-data generalization of the Friedman test is the Skillings-Mack (1981) test, which beam does not yet implement.
+The Friedman test and its Nemenyi post-hoc rank the methods within each dataset, which is only defined over a complete column. beam refuses a tool by dataset table with missing cells rather than dropping or filling them, and suggests restricting the diagram to the block of methods and datasets where all of them ran. The missing-data generalization of the Friedman test is the Skillings-Mack (1981) test, available as `beam.mcda.skillings_mack`.
 
 ## What never happens
 
@@ -38,5 +38,4 @@ beam does not fill by default and does not fill in silence. A missing value is o
 
 ## See also
 
-- [ADR 0013](../adr/0013-missing-data-policy.md) records the decision and the alternatives.
 - [Normalization and scales](normalization-and-scales.md) explains the per-column normalization the policy acts on.

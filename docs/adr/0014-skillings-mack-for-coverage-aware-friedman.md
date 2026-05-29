@@ -34,7 +34,7 @@ A convenience alias `coverage_aware_critical_difference` returns the same `Skill
 
 ## References
 
-- Skillings JH, Mack GA. On the use of a Friedman-type statistic in balanced and unbalanced block designs. Technometrics 1981, 23(2):171-177. DOI 10.1080/00401706.1981.10486261.
+- Skillings JH, Mack GA. On the use of a Friedman-type statistic in balanced and unbalanced block designs. Technometrics 1981, 23(2):171-177. DOI [10.1080/00401706.1981.10486261](https://doi.org/10.1080/00401706.1981.10486261).
 - [ADR 0013 (missing-data policy)](0013-missing-data-policy.md) for the never-impute rule that motivates this test.
 - [docs/explanations/skillings-mack.md](../explanations/skillings-mack.md) for the user-facing explanation.
 - [docs/explanations/comparing-methods-across-datasets.md](../explanations/comparing-methods-across-datasets.md) for the complete-case Friedman-Nemenyi test.

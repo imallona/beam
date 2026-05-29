@@ -6,7 +6,12 @@ This recipe goes from install to a first run.
 
 ## 1. Install the R package
 
-While beam is pre-CRAN, install from the repo checkout:
+While beam is pre-CRAN, clone the repository and install the R package from the checkout:
+
+```sh
+git clone https://github.com/imallona/beam.git
+cd beam
+```
 
 ```r
 devtools::install_local("r/beam", dependencies = TRUE)

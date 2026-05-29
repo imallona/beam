@@ -6,10 +6,11 @@ This tutorial goes from a small CSV to an HTML report, first in Python and then 
 
 ## What you need
 
-Install beam and work in an empty directory. beam is not on PyPI yet, so install it from a checkout of the repository.
+Install beam and work in an empty directory. beam is not on PyPI yet, so clone the repository and install from the checkout.
 
 ```
-pip install /path/to/beam
+git clone https://github.com/imallona/beam.git
+pip install ./beam
 ```
 
 ## Step 1: write a small scores file

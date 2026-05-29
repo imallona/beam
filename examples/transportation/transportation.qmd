@@ -313,7 +313,7 @@ print(f"\nmost confident top-ranked mode: {most} "
       f"({smaa_report.confidence_factor.max():.2f} of samples)")
 ```
 
-The confidence is split between the train (about 0.37) and the plane (about 0.35), with running and bicycle taking the rest. No mode crosses half, so the long-distance top rank depends on the weighting: depending on how a user trades speed against cost and CO2, either the train or the plane comes out first. The SMAA confidence summarises that honestly, rather than a single composite that would pick one and hide the split.
+The confidence is split between the train (about 0.37) and the plane (about 0.35), with running and bicycle taking the rest. No mode crosses half, so the long-distance top rank depends on the weighting: depending on how a user trades speed against cost and CO2, either the train or the plane comes out first. The SMAA confidence summarizes that, rather than a single composite that would pick one and hide the split.
 
 ## Weight perturbation on one terrain
 
@@ -434,7 +434,7 @@ else:
 
 The contrast with the other examples is clear. On M4 the band intercept takes most of the variance, so the bands differ mostly in difficulty. Here the terrain intercept takes very little: almost all of the speed variance is the mode-by-terrain interaction, because the fast mode on one terrain is the slow mode on another. That is why a single pooled speed ranking is misleading even where it can be computed. A Bradley-Terry tree on the six terrains has too few datasets to find a stable split, the same small-sample limit the Duo and M4 examples hit; the OpenProblems spatial task is where a split appears.
 
-## Why per-terrain is the honest output
+## Why per-terrain is the informative output
 
 This example was built so that no mode runs on every terrain and no mode is fastest on every terrain it does run on. Both facts push the analysis to be per-terrain. Partial coverage means a pooled ranking over all modes is not even well defined, since different modes are measured on different terrains. The method-by-dataset interaction means that even where a pooled ranking is computable, it reports a single order that is wrong on at least some terrains: the fast modes lead on their own terrains and trail on others.
 

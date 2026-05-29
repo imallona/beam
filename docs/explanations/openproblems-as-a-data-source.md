@@ -1,6 +1,6 @@
 # OpenProblems as a data source
 
-beam needs benchmark results that are already a method by dataset by metric tensor with declared metric directions. Most published benchmarks are not in that shape, and putting them together is the data-engineering bottleneck the cross-benchmark meta-analysis runs into. OpenProblems in Single-Cell Analysis (openproblems.bio, Nature Biotechnology 2025, DOI 10.1038/s41587-025-02694-w) already produces that shape, so beam ingests it directly.
+beam needs benchmark results that are already a method by dataset by metric tensor with declared metric directions. Most published benchmarks are not in that shape, and putting them together is the data-engineering bottleneck the cross-benchmark meta-analysis runs into. OpenProblems in Single-Cell Analysis (openproblems.bio, Nature Biotechnology 2025, DOI [10.1038/s41587-025-02694-w](https://doi.org/10.1038/s41587-025-02694-w)) already produces that shape, so beam ingests it directly.
 
 ## What OpenProblems publishes
 
@@ -16,7 +16,7 @@ No single OpenProblems task gives both many metrics and many datasets, so beam b
 
 `spatially_variable_genes` has 14 methods, 50 datasets and one correlation metric. It is dataset-rich, which is what the Bradley-Terry tree needs to find feature-based splits. The dataset features (spatial assay technology, organism, cancer condition) parse out of the dataset id. The tree splits on technology: spark_x leads the pooled ranking, but spanve leads on the visium and xenium datasets and nnsvg leads on the seqfish, slideseqv2 and slidetags datasets. The top spatially-variable-gene method depends on the assay.
 
-## The honest tradeoff
+## The informative tradeoff
 
 Because no one task carries both breadth in metrics and breadth in datasets, `batch_integration` exercises the MCDA breadth and `spatially_variable_genes` exercises the heterogeneity depth. The published results JSON does not include dataset-level numeric features such as cell counts or batch design, so beam uses only the categorical descriptors parseable from the dataset id, and for the spatial data the technology and organism are partly confounded. This bounds what the tree can attribute a split to.
 

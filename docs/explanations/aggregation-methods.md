@@ -20,13 +20,13 @@ TOPSIS measures each tool's distance to two reference points. It weights the mat
 
 ## VIKOR
 
-VIKOR ranks tools by a compromise between two competing views of a good tool. The group utility S is the weighted Manhattan distance from the ideal, summed across metrics, so it rewards a tool that does well on the whole set. The individual regret R is the weighted Chebyshev distance, the single worst weighted gap, so it penalizes a tool's weakest metric. The compromise index Q blends them with a parameter v in [0, 1]:
+VIKOR ranks tools by a compromise between two competing views of a good tool. The group utility $S$ is the weighted Manhattan distance from the ideal, summed across metrics, so it rewards a tool that does well on the whole set. The individual regret $R$ is the weighted Chebyshev distance, the single worst weighted gap, so it penalizes a tool's weakest metric. The compromise index $Q$ blends them with a parameter $v$ in $[0, 1]$:
 
-Q = v times the rescaled S plus (1 - v) times the rescaled R.
+$$Q = v \cdot \text{rescaled } S + (1 - v) \cdot \text{rescaled } R$$
 
-With v = 1 the index follows S alone, the majority or maximum-group-utility view. With v = 0 it follows R alone, the minimum-regret view that protects against a single bad metric. The usual default is v = 0.5. Both S and R are rescaled by their own range across tools before they enter Q. VIKOR shares the interval-scale assumption of SAW and TOPSIS, since it sums and compares weighted gaps. Its distinctive feature is the explicit S versus R trade-off, which makes it sensitive to a single poor metric in a way SAW is not.
+With $v = 1$ the index follows $S$ alone, the majority or maximum-group-utility view. With $v = 0$ it follows $R$ alone, the minimum-regret view that protects against a single bad metric. The usual default is $v = 0.5$. Both $S$ and $R$ are rescaled by their own range across tools before they enter $Q$. VIKOR shares the interval-scale assumption of SAW and TOPSIS, since it sums and compares weighted gaps. Its distinctive feature is the explicit $S$ versus $R$ trade-off, which makes it sensitive to a single poor metric in a way SAW is not.
 
-The canonical VIKOR Q is lower is better: the preferred compromise has the smallest Q. To match beam's higher-is-better convention, the implementation returns -Q. Negation keeps the order exactly, so the tool with the smallest Q has the largest score and ranks first. beam returns -Q rather than a rescaled 1 - Q so that a second normalization step does not discard the absolute spacing of the Q values; the ranking is identical either way.
+The canonical VIKOR $Q$ is lower is better: the preferred compromise has the smallest $Q$. To match beam's higher-is-better convention, the implementation returns $-Q$. Negation keeps the order exactly, so the tool with the smallest $Q$ has the largest score and ranks first. beam returns $-Q$ rather than a rescaled $1 - Q$ so that a second normalization step does not discard the absolute spacing of the $Q$ values; the ranking is identical either way.
 
 ## PROMETHEE II
 

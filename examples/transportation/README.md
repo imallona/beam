@@ -5,7 +5,7 @@ This folder holds a standalone vignette that runs the beam MCDA core on a made-u
 The example makes three facts visible that the bio scenarios state but do not show as sharply:
 
 1. No mode is fastest on every terrain (the method-by-dataset interaction). A train leads on the flat road and the urban hop, a motorcycle on mud and uphill, a boat on open water, a plane on the long distance. A single global ranking cannot report all of these at once.
-2. No mode runs on every terrain (partial coverage). Infeasible mode-terrain pairs are NaN. Because the coverage is incomplete, a single pooled ranking over all modes is not even well defined, so the honest output is per-terrain.
+2. No mode runs on every terrain (partial coverage). Infeasible mode-terrain pairs are NaN. Because the coverage is incomplete, a single pooled ranking over all modes is not even well defined, so the informative output is per-terrain.
 3. The slower modes cross over within the land terrains. Trail running is slower than road running on the flat road but faster on mud and uphill, and an e-bike is faster than a bicycle on the flat road and the urban hop but slower uphill. On the water the kayak is slower than the motorboat but cheaper and zero CO2. The mode that is faster on one terrain is slower on another, so a pooled order is wrong on at least one terrain.
 
 `transportation.qmd` walks through:

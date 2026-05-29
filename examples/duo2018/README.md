@@ -4,7 +4,7 @@ This folder holds the walkthrough vignette for the re-analysis of the fourteen s
 
 `duo2018.qmd` runs on the real published data, loaded with `beam.datasets.load_duo2018` (the bundled `DuoSCClustering2018.csv`, provenance in `src/beam/data/README.md`). The vignette loads the 14 methods by 12 datasets by 4 metrics tensor and reports the missing cells. It pulls the metric cards for ARI, runtime and Shannon entropy difference, then pools each metric across the twelve datasets with the rule its card recommends (NaN-aware, at the example level). It runs `run_from_registry`, compares rankings across four weightings crossed with four aggregation methods, and draws a Demsar critical-difference diagram on ARI. It reports SMAA confidence and a smallest-weight-perturbation check, and closes with a recommendation paragraph that reports what the data show.
 
-Cluster-count deviation is left out of the pooled analysis: 101 of its 168 cells are missing, too sparse to pool without an imputation choice that would drive the result.
+Cluster-count deviation is left out of the pooled analysis: 101 of its 168 cells are missing, too sparse to pool without an imputation choice that would dictate the outcome.
 
 ## Rendering
 

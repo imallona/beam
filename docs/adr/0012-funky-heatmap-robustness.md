@@ -14,7 +14,7 @@ The funky heatmap, the glyph table from dynbenchmark and OpenProblems drawn by t
 
 Draw the funky heatmap in matplotlib inside beam rather than calling the R funkyheatmap package, so it renders anywhere beam is installed and can be augmented.
 
-- Glyph grid. `beam.reporting.funky_heatmap` draws the glyph grid with methods as rows sorted best first, metrics as circles sized by the normalized score and coloured by group, and an overall composite bar. The normalization is resolved from the metric cards, not defaulted to min-max.
+- Glyph grid. `beam.reporting.funky_heatmap` draws the glyph grid with methods as rows sorted top first, metrics as circles sized by the normalized score and coloured by group, and an overall composite bar. The normalization is resolved from the metric cards, not defaulted to min-max.
 - Robustness panels. The same function draws optional robustness panels, each fed by a beam primitive: a leave-one-dataset-out rank span, an aggregation-consensus rank span across the five aggregations, a SMAA rank-acceptability stacked bar, a model-worth panel with confidence intervals (Plackett-Luce, Bradley-Terry, or mixed-effects), and Friedman-Nemenyi clique brackets on the rows.
 - Assembly from a run. `beam.reporting.funky_heatmap_from_run` assembles these from a `beam.rank` RunResult. It derives the leave-one-dataset-out span, the SMAA panel, and the aggregation consensus from the run, and takes the worth with intervals and the cliques as arguments because the model worths need the R heterogeneity toolchain.
 

@@ -10,7 +10,7 @@ The leave-one-dataset-out rank span answers whether the order hangs on any singl
 
 The aggregation-consensus rank span answers whether the order is an artefact of the chosen aggregation. Holding the weighting fixed, it draws the span of ranks a method takes across the five aggregations: SAW, TOPSIS, VIKOR, PROMETHEE II and COMET. The values are `consensus_low` and `consensus_high`. A wide span means the order reflects the aggregation rule rather than the methods.
 
-The SMAA rank-acceptability stacked bar answers what the ranks look like under weight uncertainty. For each method it shows the share of random weightings that place it at rank 1, rank 2, rank 3 and so on. The values are `smaa_acceptability` from `beam.mcda.smaa`, the rank_acceptability_index. This is the full distribution of ranks across sampled weights, more honest than a single confidence number.
+The SMAA rank-acceptability stacked bar answers what the ranks look like under weight uncertainty. For each method it shows the share of random weightings that place it at rank 1, rank 2, rank 3 and so on. The values are `smaa_acceptability` from `beam.mcda.smaa`, the rank_acceptability_index. This is the full distribution of ranks across sampled weights, more informative than a single confidence number.
 
 The worth panel answers whether two adjacent methods are separable. It draws the latent strength per method from a model as points with horizontal confidence intervals, the `worth` and `worth_ci`. The model is Plackett-Luce with reference-free quasi-standard-errors, Bradley-Terry, or the mixed-effects marginal means. When two adjacent intervals overlap the methods are not separable, which the overall bar hides. This is where the heterogeneity models reach the heatmap.
 
