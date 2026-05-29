@@ -9,7 +9,7 @@ vignette: >
 
 ```{r setup, include = FALSE}
 have_beam <- requireNamespace("reticulate", quietly = TRUE) &&
-  reticulate::py_module_available("beam")
+  reticulate::py_module_available("beam.datasets")
 knitr::opts_chunk$set(
   eval = have_beam,
   collapse = TRUE,

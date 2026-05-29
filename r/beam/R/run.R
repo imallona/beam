@@ -12,8 +12,15 @@
 #'
 #' @seealso [beam_rank].
 #'
-#' @examplesIf reticulate::py_module_available("beam")
-#' beam_run("beam.yaml")
+#' @examplesIf reticulate::py_module_available("beam.config")
+#' dir <- tempfile()
+#' dir.create(dir)
+#' write.csv(
+#'   data.frame(tool = c("a", "b"), ari = c(0.8, 0.6), runtime = c(10, 5)),
+#'   file.path(dir, "scores.csv"), row.names = FALSE
+#' )
+#' writeLines(c("inputs:", "  scores: scores.csv"), file.path(dir, "beam.yaml"))
+#' beam_run(file.path(dir, "beam.yaml"))
 #'
 #' @export
 beam_run <- function(path) {

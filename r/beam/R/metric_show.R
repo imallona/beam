@@ -13,7 +13,7 @@
 #'
 #' @seealso [beam_validate].
 #'
-#' @examplesIf reticulate::py_module_available("beam")
+#' @examplesIf reticulate::py_module_available("beam.cards")
 #' beam_metric_show("ari")
 #'
 #' @export

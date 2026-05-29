@@ -31,8 +31,15 @@
 #'
 #' @seealso [beam_report] to render the result to a self-contained HTML file.
 #'
-#' @examplesIf reticulate::py_module_available("beam")
-#' result <- beam_rank("scores.csv", weights = "entropy", method = "topsis")
+#' @examplesIf reticulate::py_module_available("beam.mcda")
+#' scores <- tempfile(fileext = ".csv")
+#' write.csv(
+#'   data.frame(tool = c("a", "b", "c"),
+#'              ari = c(0.81, 0.74, 0.69),
+#'              runtime = c(42, 310, 88)),
+#'   scores, row.names = FALSE
+#' )
+#' result <- beam_rank(scores, method = "topsis", sensitivity = FALSE)
 #' print(result$top_tool)
 #'
 #' @export

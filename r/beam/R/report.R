@@ -17,9 +17,16 @@
 #'
 #' @seealso [beam_rank].
 #'
-#' @examplesIf reticulate::py_module_available("beam")
-#' result <- beam_rank("scores.csv")
-#' beam_report(result, "report.html")
+#' @examplesIf reticulate::py_module_available("beam.mcda")
+#' scores <- tempfile(fileext = ".csv")
+#' write.csv(
+#'   data.frame(tool = c("a", "b", "c"),
+#'              ari = c(0.81, 0.74, 0.69),
+#'              runtime = c(42, 310, 88)),
+#'   scores, row.names = FALSE
+#' )
+#' result <- beam_rank(scores, sensitivity = FALSE)
+#' beam_report(result, tempfile(fileext = ".html"))
 #'
 #' @export
 beam_report <- function(result, path, ground_truth_tool = NULL, ...) {

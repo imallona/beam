@@ -18,8 +18,13 @@
 #'
 #' @seealso [beam_rank], [beam_metric_show].
 #'
-#' @examplesIf reticulate::py_module_available("beam")
-#' beam_validate("scores.csv")
+#' @examplesIf reticulate::py_module_available("beam.mcda")
+#' scores <- tempfile(fileext = ".csv")
+#' write.csv(
+#'   data.frame(tool = c("a", "b"), ari = c(0.8, 0.6), runtime = c(10, 5)),
+#'   scores, row.names = FALSE
+#' )
+#' beam_validate(scores)
 #'
 #' @export
 beam_validate <- function(path, metrics = NULL, method = "saw") {
