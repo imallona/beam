@@ -25,3 +25,94 @@ blockquote {
   padding-left: 1rem;
   color: #495057;
 }
+
+.metric-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 2rem;
+}
+
+.metric-card {
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 0.9rem 1rem;
+  background: #fff;
+}
+
+.metric-card .mc-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.mc-id {
+  font-family: var(--bs-font-monospace, monospace);
+  font-size: 0.8rem;
+  background: #f1f3f5;
+  border-radius: 4px;
+  padding: 0.05rem 0.4rem;
+  color: #343a40;
+}
+
+.mc-polarity {
+  font-size: 0.72rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 10px;
+}
+
+.mc-higher {
+  background: #e6f4ea;
+  color: #1e7e34;
+}
+
+.mc-lower {
+  background: #fdecea;
+  color: #b02a37;
+}
+
+.mc-neutral {
+  background: #eef1f4;
+  color: #495057;
+}
+
+.mc-name {
+  font-size: 0.98rem;
+  font-weight: 600;
+  margin: 0.1rem 0 0.4rem;
+}
+
+.mc-desc {
+  font-size: 0.82rem;
+  color: #495057;
+  margin: 0 0 0.5rem;
+}
+
+.mc-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.12rem 0.6rem;
+  font-size: 0.8rem;
+  margin: 0 0 0.4rem;
+}
+
+.mc-facts dt {
+  color: #868e96;
+  font-weight: 500;
+}
+
+.mc-facts dd {
+  margin: 0;
+}
+
+.mc-ref {
+  font-size: 0.74rem;
+  color: #6c757d;
+  margin: 0.3rem 0 0;
+}
+
+.mc-onto {
+  font-size: 0.74rem;
+  margin: 0.2rem 0 0;
+}

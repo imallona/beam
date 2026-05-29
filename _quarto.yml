@@ -5,7 +5,9 @@ project:
     - "docs/tutorials/*.md"
     - "docs/how-to/*.md"
     - "docs/explanations/*.md"
+    - "docs/explanations/*.qmd"
     - "examples/*/*.qmd"
+    - "docs/metric-cards.qmd"
     - "index.qmd"
 
 website:
@@ -19,6 +21,8 @@ website:
         text: Home
       - href: docs/tutorials/quickstart.md
         text: Quick start
+      - href: docs/metric-cards.qmd
+        text: Metric cards
       - text: How-to
         menu:
           - href: docs/how-to/run-from-beam-yaml.md
@@ -31,7 +35,7 @@ website:
             text: Rerun from a manifest
       - text: Explanations
         menu:
-          - href: docs/explanations/cards-and-pipeline.md
+          - href: docs/explanations/cards-and-pipeline.qmd
             text: Cards and pipeline
           - href: docs/explanations/measurement-theory.md
             text: Measurement theory

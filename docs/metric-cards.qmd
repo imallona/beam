@@ -1,0 +1,137 @@
+---
+title: "Metric cards"
+toc: true
+toc-location: left
+---
+
+Every metric beam knows is described by a metric card: a small YAML file that
+declares what the metric measures, its measurement scale, its polarity, the
+range it lives in, how to normalize it, and how to pool it across datasets. The
+pipeline reads these fields so that ranking decisions follow from the metric
+definition rather than from a hidden default. The cards below are generated from
+the registry, so this page always matches the shipped cards.
+
+For how the pipeline consumes these fields, see [Cards and pipeline](explanations/cards-and-pipeline.qmd).
+
+```{python}
+#| echo: false
+#| output: asis
+#| warning: false
+import html
+
+from beam.cards import Registry
+
+reg = Registry()
+
+groups = [
+    ("Clustering", ["ari", "nmi", "silhouette", "shannon_entropy_diff", "nclust_deviation"]),
+    ("Classification", ["accuracy", "f1_score", "calibration_slope"]),
+    ("Forecasting", ["smape", "mase"]),
+    ("Efficiency", ["runtime", "peak_memory"]),
+    ("Single-cell integration", [
+        "asw_batch", "asw_label", "isolated_label_asw", "isolated_label_f1",
+        "kbet", "ilisi", "clisi", "graph_connectivity", "hvg_overlap",
+        "cell_cycle_conservation", "pcr",
+    ]),
+    ("Spatial", ["correlation"]),
+    ("Transportation (toy set)", ["speed", "cost", "co2"]),
+]
+
+assigned = {mid for _, ids in groups for mid in ids}
+leftover = [mid for mid in reg.list_ids() if mid not in assigned]
+if leftover:
+    groups.append(("Other", leftover))
+
+
+def fmt_num(x):
+    if isinstance(x, bool):
+        return str(x)
+    try:
+        f = float(x)
+    except (TypeError, ValueError):
+        return str(x)
+    return str(int(f)) if f.is_integer() else str(x)
+
+
+def fmt_range(card):
+    rng = card.semantics.get("range")
+    if not rng or (rng.get("lower") is None and rng.get("upper") is None):
+        return "unbounded"
+    lo = rng.get("lower")
+    hi = rng.get("upper")
+    left = "[" if rng.get("lower_inclusive", True) else "("
+    right = "]" if rng.get("upper_inclusive", True) else ")"
+    lo_s = "-inf" if lo is None else fmt_num(lo)
+    hi_s = "inf" if hi is None else fmt_num(hi)
+    return f"{left}{lo_s}, {hi_s}{right}"
+
+
+def polarity_pill(card):
+    p = card.polarity
+    if p == "higher_is_better":
+        return "mc-higher", "higher is better"
+    if p == "lower_is_better":
+        return "mc-lower", "lower is better"
+    return "mc-neutral", p.replace("_", " ")
+
+
+def reference_html(card):
+    if not card.citations:
+        return None
+    c = card.citations[0]
+    text = html.escape(c.get("text", "").strip())
+    doi = c.get("doi")
+    if doi:
+        url = f"https://doi.org/{html.escape(doi)}"
+        text += f' <a href="{url}">{html.escape(doi)}</a>'
+    return text
+
+
+def ontology_html(card):
+    parts = []
+    for key, iri in card.mappings.items():
+        label = iri.rstrip("/").split("/")[-1]
+        parts.append(f'{html.escape(key.upper())}: <a href="{html.escape(iri)}">{html.escape(label)}</a>')
+    return " &middot; ".join(parts) if parts else None
+
+
+def card_html(card):
+    cls, label = polarity_pill(card)
+    desc = " ".join(card.description.split())
+    facts = [
+        ("Task", ", ".join(card.task) if card.task else "general"),
+        ("Scale", card.scale_type),
+        ("Range", fmt_range(card)),
+        ("Normalization", card.recommended_normalization or "min_max (default)"),
+        ("Across datasets", card.recommended_aggregation_across_datasets or "not set"),
+        ("Ground truth", "required" if card.requires_ground_truth else "not required"),
+    ]
+    dl = '<dl class="mc-facts">' + "".join(
+        f"<dt>{html.escape(k)}</dt><dd>{html.escape(str(v))}</dd>" for k, v in facts
+    ) + "</dl>"
+    out = [
+        '<div class="metric-card">',
+        f'<div class="mc-head"><span class="mc-id">{html.escape(card.id)}</span>'
+        f'<span class="mc-polarity {cls}">{html.escape(label)}</span></div>',
+        f'<div class="mc-name">{html.escape(card.name)}</div>',
+        f'<p class="mc-desc">{html.escape(desc)}</p>',
+        dl,
+    ]
+    ref = reference_html(card)
+    if ref:
+        out.append(f'<p class="mc-ref">{ref}</p>')
+    onto = ontology_html(card)
+    if onto:
+        out.append(f'<p class="mc-onto">{onto}</p>')
+    out.append("</div>")
+    return "".join(out)
+
+
+for title, ids in groups:
+    cards = [reg.get(mid) for mid in ids]
+    if not cards:
+        continue
+    print(f"## {title}\n")
+    print('<div class="metric-card-grid">' + "".join(card_html(c) for c in cards) + "</div>")
+    print()
+```

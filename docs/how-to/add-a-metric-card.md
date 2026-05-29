@@ -76,7 +76,7 @@ The schema check runs against every card in the registry. A missing required fie
 
 If your metric has a term in the Statistics Ontology, the Units of Measurement Ontology, the Ontology for Biomedical Investigations, or the HuggingFace evaluate catalogue, add the full IRI under `mappings`. The helper script `scripts/ols_query.py` searches OLS for candidate IRIs; use `scripts/ols_verify.py` to confirm a candidate is the right term and is not obsolete. Do not invent IRIs.
 
-The cards-and-pipeline page lists which fields the pipeline reads and which are reserved for documentation. See [../explanations/cards-and-pipeline.md](../explanations/cards-and-pipeline.md).
+The cards-and-pipeline page lists which fields the pipeline reads and which are reserved for documentation. See [../explanations/cards-and-pipeline.qmd](../explanations/cards-and-pipeline.qmd).
 
 ## 5. Regenerate the OWL release artefact
 
