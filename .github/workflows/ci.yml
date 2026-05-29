@@ -3,7 +3,19 @@ name: CI
 on:
   push:
     branches: [main]
+    paths:
+      - 'src/beam/**'
+      - 'tests/**'
+      - 'examples/**'
+      - 'pyproject.toml'
+      - '.github/workflows/ci.yml'
   pull_request:
+    paths:
+      - 'src/beam/**'
+      - 'tests/**'
+      - 'examples/**'
+      - 'pyproject.toml'
+      - '.github/workflows/ci.yml'
   workflow_dispatch:
 
 jobs:

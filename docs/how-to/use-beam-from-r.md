@@ -98,5 +98,5 @@ checks that every metric id resolves to a card and that the scale types are comp
 ## Where to go next
 
 - The R package's own quick start lives in `vignette("duo2018", package = "rbeam")`.
-- The Python and R sides share metric cards and explanations. The conceptual essays under [explanations](../explanations/) apply to both languages.
+- The Python and R sides share metric cards and the conceptual essays, which apply to both languages: see [measurement theory](../explanations/measurement-theory.md) and [cards and pipeline](../explanations/cards-and-pipeline.qmd).
 - The R wrapper's source is under `r/beam/` in the main repo. Each R function file is short: read `r/beam/R/rank.R` for the simplest example of how the wrappers forward arguments.
