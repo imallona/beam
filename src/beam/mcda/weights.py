@@ -403,11 +403,10 @@ def ahp_weights(
         If ``raise_on_inconsistency`` is True and the consistency ratio exceeds
         0.1.
 
-    Warns
+    Notes
     -----
-    UserWarning
-        If ``raise_on_inconsistency`` is False and the consistency ratio
-        exceeds 0.1.
+    Emits a ``UserWarning`` if ``raise_on_inconsistency`` is False and the
+    consistency ratio exceeds 0.1.
 
     References
     ----------
