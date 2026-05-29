@@ -1,8 +1,8 @@
-# beam: R interface
+# rbeam: R interface to beam
 
 Thin R interface to the [beam](https://github.com/imallona/beam) Python package via `reticulate`. Mirrors the Python entry points (`beam.rank`, `beam.report`, `beam.validate`, `beam.run`, `beam.metric.show`) plus the heterogeneity diagnostics (mixed-effects, Bradley-Terry trees, Plackett-Luce, cross-benchmark variance decomposition).
 
-The R package does not reimplement the science. The canonical implementation is the Python package; the R side is a typed shim plus roxygen docs.
+For the MCDA pipeline, the metric cards and reporting, the canonical implementation is the Python package and the R side is a typed reticulate shim. The heterogeneity diagnostics are implemented natively in R.
 
 ## Install
 
@@ -18,10 +18,10 @@ cd beam
 devtools::install_local("r/beam", dependencies = TRUE)
 
 # After CRAN release:
-install.packages("beam")
+install.packages("rbeam")
 
 # Then install the Python side once:
-library(beam)
+library(rbeam)
 install_beam_python()
 ```
 
@@ -30,7 +30,7 @@ install_beam_python()
 ## Quick use
 
 ```r
-library(beam)
+library(rbeam)
 result <- beam_rank("scores.csv", weights = "entropy", method = "topsis")
 beam_report(result, "report.html")
 print(result$top_tool)
@@ -43,12 +43,12 @@ Every wrapper forwards arguments to a Python function and returns the Python obj
 ```r
 result <- beam_rank("scores.csv")
 result$top_tool        # character
-result$ranking         # integer vector
-result$smaa$confidence # named numeric
+result$tool_names      # the tools, input order
+result$result$ranks    # integer ranks, aligned with tool_names
 result$manifest        # named list (write to JSON if you want)
 ```
 
-The heterogeneity entry points (`beam_mixed_effects`, `beam_bradley_terry_tree`, `beam_plackett_luce`, `beam_source_variance_decomposition`) drive R packages (lme4, glmmTMB, psychotree, PlackettLuce) through one-shot subprocesses on the Python side. So an R caller goes R -> reticulate -> Python -> Rscript subprocess -> the upstream R package. It is indirect, but it keeps a single source of truth for the heterogeneity code and lets R users call the same entry points the Python users do.
+The heterogeneity entry points (`beam_mixed_effects`, `beam_bradley_terry_tree`, `beam_plackett_luce`, `beam_source_variance_decomposition`) run natively in R using lme4, glmmTMB, psychotree and PlackettLuce, with no Python involved. Those packages are Suggests, so each entry point needs only its own package installed and stops with a clear message otherwise.
 
 ## License
 

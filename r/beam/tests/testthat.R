@@ -1,4 +1,4 @@
 library(testthat)
-library(beam)
+library(rbeam)
 
-test_check("beam")
+test_check("rbeam")

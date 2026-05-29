@@ -1,9 +1,9 @@
-Package: beam
+Package: rbeam
 Type: Package
 Title: Benchmark Evaluation and Metrics (R Interface)
 Version: 0.1.3
 Authors@R: c(
-    person("Izaskun", "Mallona", email = "izaskun.mallona@gmail.com",
+    person("Izaskun", "Mallona", email = "izaskun.mallona.work@gmail.com",
            role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-2853-7526"))
     )
@@ -30,8 +30,15 @@ Imports:
 Suggests:
     testthat (>= 3.2),
     knitr,
-    rmarkdown
+    rmarkdown,
+    lme4,
+    glmmTMB,
+    psychotree,
+    psychotools,
+    partykit,
+    PlackettLuce,
+    qvcalc
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3

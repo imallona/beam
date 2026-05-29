@@ -1,4 +1,4 @@
-#' beam: Benchmark Evaluation and Metrics
+#' rbeam: Benchmark Evaluation and Metrics (R Interface)
 #'
 #' Thin R interface to the beam Python package. beam ships metric cards
 #' (YAML, JSON Schema), a multi-criteria decision analysis pipeline with

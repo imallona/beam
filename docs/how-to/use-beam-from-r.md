@@ -20,7 +20,7 @@ devtools::install_local("r/beam", dependencies = TRUE)
 After the CRAN release:
 
 ```r
-install.packages("beam")
+install.packages("rbeam")
 ```
 
 The R package declares `SystemRequirements: Python (>= 3.12)`. R will not install Python for you.
@@ -30,7 +30,7 @@ The R package declares `SystemRequirements: Python (>= 3.12)`. R will not instal
 Once, after installing the R package:
 
 ```r
-library(beam)
+library(rbeam)
 install_beam_python()
 ```
 
@@ -44,7 +44,7 @@ reticulate::use_python("/path/to/python", required = TRUE)
 ## 3. Rank a benchmark and write a report
 
 ```r
-library(beam)
+library(rbeam)
 result <- beam_rank("scores.csv", weights = "entropy", method = "topsis")
 beam_report(result, "report.html")
 print(result$top_tool)
@@ -58,9 +58,9 @@ The CSV is the same wide format the Python side reads: first column the tool, on
 
 ```r
 result$top_tool          # character: the tool ranked first
-result$ranking           # integer vector aligned with result$tool_names
-result$smaa$confidence   # SMAA confidence factor per tool
-result$leave_one_metric_out$rank_stability
+result$tool_names        # the tools, in input order
+result$result$ranks      # integer ranks aligned with result$tool_names
+result$smaa              # SMAA sensitivity report (NULL when sensitivity = FALSE)
 result$manifest          # named list, write to JSON for reproducibility
 ```
 
@@ -73,11 +73,11 @@ The four heterogeneity entry points live under their own R wrappers:
 ```r
 beam_mixed_effects(scores, method_names = m, dataset_names = d, metric = "ari")
 beam_bradley_terry_tree(scores, method_names = m, dataset_names = d, features = f)
-beam_plackett_luce(scores, method_names = m, dataset_names = d)
+beam_plackett_luce(scores, method_names = m)
 beam_source_variance_decomposition(methods, datasets, benchmarks, scores)
 ```
 
-Each forwards to a Python function that drives an R subprocess (lme4, psychotree, PlackettLuce). So an R caller goes R, then reticulate, then Python, then a one-shot Rscript, then the upstream R package. The user does not see the indirection; it keeps a single source of truth for the heterogeneity code.
+These run natively in R using lme4, psychotree, glmmTMB and PlackettLuce, with no Python involved. Each needs only its own package (a Suggests) installed.
 
 ## 6. Inspect a metric card
 
@@ -97,6 +97,6 @@ checks that every metric id resolves to a card and that the scale types are comp
 
 ## Where to go next
 
-- The R package's own quick start lives in `vignette("duo2018", package = "beam")`.
+- The R package's own quick start lives in `vignette("duo2018", package = "rbeam")`.
 - The Python and R sides share metric cards and explanations. The conceptual essays under [explanations](../explanations/) apply to both languages.
 - The R wrapper's source is under `r/beam/` in the main repo. Each R function file is short: read `r/beam/R/rank.R` for the simplest example of how the wrappers forward arguments.

@@ -26,9 +26,8 @@ beam_metric_show <- function(metric_id) {
   cat("version:  ", card$version, "\n", sep = "")
   cat("polarity: ", card$polarity, "\n", sep = "")
   cat("scale:    ", card$scale_type, "\n", sep = "")
-  if (!is.null(card$range)) {
-    rng <- card$range
-    cat("range:    ", rng[[1]], "to", rng[[2]], "\n")
+  if (!is.null(card$range_lower) && !is.null(card$range_upper)) {
+    cat("range:    ", card$range_lower, "to", card$range_upper, "\n")
   }
   invisible(card)
 }

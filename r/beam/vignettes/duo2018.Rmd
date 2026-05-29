@@ -22,14 +22,14 @@ This vignette runs the canonical beam pipeline on the Duo et al. 2018 single-cel
 The R wrappers forward to the Python implementation via reticulate. Install the Python side once with `install_beam_python()` if you have not already.
 
 ```{r install, eval = FALSE}
-library(beam)
+library(rbeam)
 install_beam_python()
 ```
 
 ## Load the benchmark
 
 ```{r load}
-library(beam)
+library(rbeam)
 py <- reticulate::import("beam.datasets")
 duo <- py$load_duo2018()
 length(duo$method_names)
@@ -43,14 +43,18 @@ duo$metric_ids
 
 ```{r rank}
 scen <- reticulate::import("beam.scenarios")
-# The full Duo tensor needs a dataset-axis loader; this vignette demonstrates
-# the API on the bundled tensor; see the Python examples/duo2018.qmd for the
-# end-to-end equivalent in Python with the live tensor.
+# Ranking the full Duo tensor needs the dataset-axis construction shown in the
+# Python examples/duo2018.qmd. This short vignette demonstrates the wrapper on a
+# small bundled scenario; the scores are a bare matrix, so pass the metric ids
+# and tool names alongside it.
+sc <- scen$dominant_method_scenario()
 result <- beam_rank(
-  scen$dominant()$scores,
+  sc$scores,
   weights = "equal",
   method = "saw",
-  sensitivity = FALSE
+  sensitivity = FALSE,
+  metric_ids = sc$metric_ids,
+  tool_names = sc$method_names
 )
 result$top_tool
 ```
@@ -65,6 +69,6 @@ The output is a single HTML file with the ranking, the normalization diagnostics
 
 ## Where to go next
 
-- `vignette("duo2018", package = "beam")` is intentionally short and CRAN-safe. The full Python vignettes (M4 forecasting, OpenProblems batch integration, the cross-benchmark meta-analysis, the transportation example with partial coverage) live in the beam Python repo under `examples/` and are rendered on the documentation site.
+- `vignette("duo2018", package = "rbeam")` is intentionally short and CRAN-safe. The full Python vignettes (M4 forecasting, OpenProblems batch integration, the cross-benchmark meta-analysis, the transportation example with partial coverage) live in the beam Python repo under `examples/` and are rendered on the documentation site.
 - `?beam_rank` and `?beam_report` for the wrapper docs.
 - `?beam_metric_show` to inspect any metric card from the registry.

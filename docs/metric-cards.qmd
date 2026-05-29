@@ -4,9 +4,9 @@ toc: true
 toc-location: left
 ---
 
-Every metric beam knows is described by a metric card: a small YAML file that
-declares what the metric measures, its measurement scale, its polarity, the
-range it lives in, how to normalize it, and how to pool it across datasets. The
+Every metric in beam's registry is described by a metric card: a small YAML file
+that declares what the metric measures, its measurement scale, its polarity, its
+declared range, how to normalize it, and how to pool it across datasets. The
 pipeline reads these fields so that ranking decisions follow from the metric
 definition rather than from a hidden default. The cards below are generated from
 the registry, so this page always matches the shipped cards.

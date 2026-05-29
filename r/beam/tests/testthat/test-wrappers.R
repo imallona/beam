@@ -1,19 +1,11 @@
-# The wrappers forward to the Python beam package via reticulate. Every test
-# that touches Python skips cleanly when the package (with its submodules) is
-# not importable, so the suite is a no-op on CRAN and full coverage in CI where
-# beam is installed.
+# MCDA wrappers skip without the Python beam package; native-R heterogeneity
+# tests skip without their Suggests package.
 
 skip_if_no_beam <- function() {
   testthat::skip_if_not(
     reticulate::py_module_available("beam.cards"),
     "Python beam package not available; run install_beam_python() first"
   )
-}
-
-skip_if_no_r_backend <- function() {
-  skip_if_no_beam()
-  het <- reticulate::import("beam.heterogeneity")
-  testthat::skip_if_not(isTRUE(het$r_available()), "R heterogeneity backend not available")
 }
 
 write_scores <- function() {
@@ -71,7 +63,7 @@ test_that("beam_rank ranks all tools under the default pipeline", {
   skip_if_no_beam()
   result <- beam_rank(write_scores(), sensitivity = FALSE)
   expect_false(is.null(result$top_tool))
-  expect_equal(length(result$ranking), 3)
+  expect_equal(length(result$tool_names), 3)
   expect_false(is.null(result$manifest))
 })
 
@@ -80,14 +72,14 @@ test_that("beam_rank runs across aggregation methods", {
   scores <- write_scores()
   for (m in c("saw", "topsis", "vikor", "promethee_ii")) {
     result <- beam_rank(scores, method = m, sensitivity = FALSE)
-    expect_equal(length(result$ranking), 3, info = m)
+    expect_equal(length(result$tool_names), 3, info = m)
   }
 })
 
 test_that("beam_rank runs across objective weight schemes", {
   skip_if_no_beam()
   scores <- write_scores()
-  for (w in c("entropy", "standard_deviation", "critic")) {
+  for (w in c("entropy", "std", "critic")) {
     result <- beam_rank(scores, weights = w, sensitivity = FALSE)
     expect_false(is.null(result$top_tool), info = w)
   }
@@ -130,11 +122,8 @@ test_that("beam.datasets exposes the bundled Duo 2018 benchmark", {
   expect_equal(length(duo$metric_ids), 4)
 })
 
-# Heterogeneity wrappers drive R (lme4, psychotree, PlackettLuce) through a
-# Python subprocess. They skip unless that backend is installed.
-
 het_matrix <- function() {
-  m <- matrix(
+  matrix(
     c(0.80, 0.70, 0.60, 0.55,
       0.78, 0.68, 0.58, 0.50,
       0.83, 0.74, 0.61, 0.57,
@@ -142,45 +131,52 @@ het_matrix <- function() {
       0.81, 0.72, 0.62, 0.56),
     nrow = 4
   )
-  list(
-    scores = m,
-    methods = c("a", "b", "c", "d"),
-    datasets = c("d1", "d2", "d3", "d4", "d5")
-  )
 }
 
-test_that("beam_mixed_effects fits when the R backend is present", {
-  skip_if_no_r_backend()
-  h <- het_matrix()
-  report <- beam_mixed_effects(h$scores, h$methods, h$datasets)
-  expect_false(is.null(report))
+test_that("beam_mixed_effects decomposes the variance with lme4", {
+  skip_if_not_installed("lme4")
+  fit <- beam_mixed_effects(het_matrix(), c("a", "b", "c", "d"), paste0("d", 1:5))
+  expect_s3_class(fit, "beam_mixed_effects")
+  expect_length(fit$method_effects, 4)
+  expect_true("dataset" %in% names(fit$variance_components))
+  expect_true(is.numeric(fit$icc_dataset))
 })
 
-test_that("beam_plackett_luce fits when the R backend is present", {
-  skip_if_no_beam()
-  het <- reticulate::import("beam.heterogeneity")
-  skip_if_not(isTRUE(het$plackett_luce_available()), "PlackettLuce not available")
-  h <- het_matrix()
-  report <- beam_plackett_luce(h$scores, h$methods, h$datasets)
-  expect_false(is.null(report))
+test_that("beam_mixed_effects runs the glmmTMB beta engine", {
+  skip_if_not_installed("glmmTMB")
+  fit <- beam_mixed_effects(het_matrix(), c("a", "b", "c", "d"), paste0("d", 1:5),
+                            engine = "glmmtmb", family = "beta")
+  expect_s3_class(fit, "beam_mixed_effects")
+  expect_equal(fit$scale, "link")
 })
 
-test_that("beam_bradley_terry_tree fits when the R backend is present", {
-  skip_if_no_beam()
-  het <- reticulate::import("beam.heterogeneity")
-  skip_if_not(isTRUE(het$bttree_available()), "psychotree not available")
-  h <- het_matrix()
-  features <- list(size = c(100, 200, 300, 400, 500))
-  report <- beam_bradley_terry_tree(h$scores, h$methods, h$datasets, features)
-  expect_false(is.null(report))
+test_that("beam_plackett_luce returns a worth per method", {
+  skip_if_not_installed("PlackettLuce")
+  scores <- matrix(c(0.80, 0.70, 0.60, 0.78, 0.68, 0.58,
+                     0.83, 0.74, 0.61, 0.79, 0.69, 0.59), nrow = 3)
+  fit <- beam_plackett_luce(scores, c("a", "b", "c"))
+  expect_s3_class(fit, "beam_plackett_luce")
+  expect_length(fit$worth, 3)
 })
 
-test_that("beam_source_variance_decomposition fits when the R backend is present", {
-  skip_if_no_r_backend()
+test_that("beam_bradley_terry_tree fits a tree", {
+  skip_if_not_installed("psychotree")
+  set.seed(1)
+  scores <- matrix(stats::runif(4 * 8), nrow = 4)
+  fit <- beam_bradley_terry_tree(scores, c("a", "b", "c", "d"), paste0("d", 1:8),
+                                 features = list(size = seq_len(8)), minsize = 3)
+  expect_s3_class(fit, "beam_bradley_terry_tree")
+  expect_length(fit$global_worth, 4)
+  expect_type(fit$did_split, "logical")
+})
+
+test_that("beam_source_variance_decomposition fits the nested model", {
+  skip_if_not_installed("lme4")
   methods <- rep(c("a", "b", "c"), times = 4)
   benchmarks <- rep(c("bench1", "bench2"), each = 6)
   datasets <- rep(c("d1", "d2"), each = 3, times = 2)
   scores <- c(0.8, 0.7, 0.6, 0.82, 0.72, 0.62, 0.78, 0.68, 0.58, 0.81, 0.71, 0.61)
-  report <- beam_source_variance_decomposition(methods, datasets, benchmarks, scores)
-  expect_false(is.null(report))
+  fit <- beam_source_variance_decomposition(methods, datasets, benchmarks, scores)
+  expect_s3_class(fit, "beam_source_variance")
+  expect_length(fit$method_effects, 3)
 })

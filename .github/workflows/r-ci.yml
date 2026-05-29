@@ -55,6 +55,8 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           working-directory: r/beam
+          # Build and check tools, then the R packages the native heterogeneity
+          # diagnostics fit with. Without these the heterogeneity tests skip.
           extra-packages: |
             any::rcmdcheck
             any::roxygen2
@@ -62,6 +64,13 @@ jobs:
             any::knitr
             any::rmarkdown
             any::reticulate
+            any::lme4
+            any::glmmTMB
+            any::psychotree
+            any::psychotools
+            any::partykit
+            any::PlackettLuce
+            any::qvcalc
 
       - name: Generate man pages with roxygen2
         shell: Rscript {0}

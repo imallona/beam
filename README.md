@@ -23,7 +23,7 @@ R package:
 ```
 library("remotes")
 remotes::install_github("imallona/beam", subdir = "r/beam")
-beam::install_beam_python()
+rbeam::install_beam_python()
 ```
 
 ## Usage
@@ -57,7 +57,7 @@ run_config("beam.yaml")
 In R
 
 ```r
-library(beam)
+library(rbeam)
 
 result <- beam_rank("scores.csv", weights = "entropy", method = "topsis")
 beam_validate("scores.csv")
