@@ -51,7 +51,7 @@ beam_rank <- function(scores,
                       seed = NULL,
                       ...) {
   py <- .require_beam()
-  py$rank(
+  result <- py$rank(
     scores,
     weights = weights,
     method = method,
@@ -60,4 +60,6 @@ beam_rank <- function(scores,
     seed = seed,
     ...
   )
+  class(result) <- c("beam_run", class(result))
+  result
 }

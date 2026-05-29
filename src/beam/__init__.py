@@ -9,6 +9,7 @@ from importlib import metadata
 from .api import RunResult, rank
 from .io import Scores, load_scores
 from .mcda import IncompleteMatrixError
+from .reporting import funky_heatmap, funky_heatmap_from_run
 from .reporting import write_report as report
 
 try:
@@ -21,6 +22,8 @@ __all__ = [
     "RunResult",
     "Scores",
     "__version__",
+    "funky_heatmap",
+    "funky_heatmap_from_run",
     "load_scores",
     "rank",
     "report",

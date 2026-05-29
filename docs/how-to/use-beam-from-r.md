@@ -54,6 +54,14 @@ print(result$top_tool)
 
 The CSV is the same wide format the Python side reads: first column the tool, one column per metric id. Every metric id resolves to a card in the bundled registry.
 
+For the funky-heatmap figure (the glyph table plus beam's rank-robustness panels) drawn straight from the result:
+
+```r
+beam_funky_heatmap(result, "funky.png")
+```
+
+With no `path` it returns the matplotlib figure object instead of saving. This forwards to the Python `beam.funky_heatmap_from_run`.
+
 ## 4. Reach into the result
 
 `result` is the Python `RunResult` object. Use `$` to access fields:

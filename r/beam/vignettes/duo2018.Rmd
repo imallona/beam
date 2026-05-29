@@ -59,6 +59,17 @@ result <- beam_rank(
 result$top_tool
 ```
 
+## Plot the result
+
+`plot` on a `beam_rank` result draws the funky heatmap: methods as rows, metrics as circles sized by the card-resolved normalized score, and a composite bar. When the run carries sensitivity output it also draws the rank-robustness panels (leave-one-dataset-out span, SMAA acceptability, aggregation consensus). This short run has `sensitivity = FALSE` on a single-dataset matrix, so only the glyph grid and the composite show.
+
+```{r heatmap}
+plot(result, "duo2018_funky.png")
+knitr::include_graphics("duo2018_funky.png")
+```
+
+`plot` is a thin alias for `beam_funky_heatmap`. With no output path either one returns the matplotlib figure object instead of writing a file.
+
 ## Render a self-contained HTML report
 
 ```{r report, eval = FALSE}
@@ -70,5 +81,5 @@ The output is a single HTML file with the ranking, the normalization diagnostics
 ## Where to go next
 
 - `vignette("duo2018", package = "rbeam")` is intentionally short and CRAN-safe. The full Python vignettes (M4 forecasting, OpenProblems batch integration, the cross-benchmark meta-analysis, the transportation example with partial coverage) live in the beam Python repo under `examples/` and are rendered on the documentation site.
-- `?beam_rank` and `?beam_report` for the wrapper docs.
+- `?beam_rank`, `?beam_report` and `?beam_funky_heatmap` for the wrapper docs.
 - `?beam_metric_show` to inspect any metric card from the registry.
