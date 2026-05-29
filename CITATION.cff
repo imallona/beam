@@ -5,12 +5,12 @@ abstract: "Benchmark Evaluation And Metrics: a metric formalization layer for bi
 authors:
   - family-names: Mallona
     given-names: Izaskun
-    email: izaskun.mallona@gmail.com
+    email: izaskun.mallona.work@gmail.com
     orcid: "https://orcid.org/0000-0002-2853-7526"
 repository-code: "https://github.com/imallona/beam"
 license: GPL-3.0-or-later
-version: "0.1.3"
-date-released: "2026-05-20"
+version: "0.1.4"
+date-released: "2026-05-29"
 keywords:
   - benchmarking
   - bioinformatics
