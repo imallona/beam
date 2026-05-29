@@ -20,7 +20,7 @@ Call `mixed_effects(engine="glmmtmb", family="beta")`. It fits the same `score ~
 
 ## How to use them
 
-Both need the R toolchain. Check `plackett_luce_available()` and `glmmtmb_available()` before calling. The conda environment `envs/heterogeneity.yml` provides PlackettLuce, qvcalc and glmmTMB.
+Both need the R toolchain. Check `plackett_luce_available()` and `glmmtmb_available()` before calling. The conda environment [envs/heterogeneity.yml](https://github.com/imallona/beam/blob/main/envs/heterogeneity.yml) provides PlackettLuce, qvcalc and glmmTMB.
 
 ## Relation to the rest
 

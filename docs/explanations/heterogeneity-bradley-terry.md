@@ -26,7 +26,7 @@ Recursive partitioning needs enough datasets to support a split. With a dozen da
 
 Call `bradley_terry_tree(matrix, method_names, dataset_names, numeric_features=, categorical_features=, polarity=)`. The features are per-dataset descriptors, numeric ones as continuous splitters and categorical ones as factors; pass at least one. `minsize` sets the smallest leaf and `alpha` the split test level. The report carries the tree nodes (split variables, breakpoints, parameter-stability p-values), the per-leaf worths with standard errors, the leaf assignment per dataset, the global flat ranking, and a plain-language summary. `node_ranking`, `datasets_in_node` and `reversed_leaves` read the leaves.
 
-The fit runs in R's psychotree through a subprocess, so it needs the R toolchain. Check `bttree_available()` first; the conda environment `envs/heterogeneity.yml` provides psychotree and partykit.
+The fit runs in R's psychotree through a subprocess, so it needs the R toolchain. Check `bttree_available()` first; the conda environment [envs/heterogeneity.yml](https://github.com/imallona/beam/blob/main/envs/heterogeneity.yml) provides psychotree and partykit.
 
 ## Relation to the other diagnostics
 

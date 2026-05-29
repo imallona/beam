@@ -34,6 +34,38 @@ install_beam_python <- function(method = c("auto", "virtualenv", "conda"),
   invisible(TRUE)
 }
 
+#' Install the R packages the heterogeneity diagnostics need
+#'
+#' The heterogeneity diagnostics (`beam_bradley_terry_tree`,
+#' `beam_mixed_effects`, `beam_plackett_luce`,
+#' `beam_source_variance_decomposition`) are fit by CRAN packages declared as
+#' Suggests, so `install.packages("rbeam")` does not pull them in. Run this once
+#' to install the ones you are missing.
+#'
+#' @param pkgs Character vector of package names to install. Default covers all
+#'   four diagnostics.
+#' @param ... Additional arguments forwarded to [utils::install.packages].
+#'
+#' @return Invisibly the names of the packages that were installed.
+#'
+#' @examplesIf interactive()
+#' install_beam_heterogeneity_deps()
+#'
+#' @export
+install_beam_heterogeneity_deps <- function(pkgs = c(
+                                              "lme4", "glmmTMB", "psychotree",
+                                              "partykit", "PlackettLuce", "qvcalc"
+                                            ),
+                                            ...) {
+  missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]
+  if (length(missing) == 0L) {
+    message("all heterogeneity dependencies already installed")
+    return(invisible(character(0)))
+  }
+  utils::install.packages(missing, ...)
+  invisible(missing)
+}
+
 #' beam Python package version
 #'
 #' Returns the version string of the Python beam package the R wrappers

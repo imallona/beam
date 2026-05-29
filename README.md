@@ -26,6 +26,26 @@ remotes::install_github("imallona/beam", subdir = "r/beam")
 rbeam::install_beam_python()
 ```
 
+R dependencies for the heterogeneity diagnostics:
+
+The MCDA ranking is pure Python and needs no R. The heterogeneity diagnostics (`beam.heterogeneity.bradley_terry_tree`, `mixed_effects`, `plackett_luce`, `source_variance_decomposition`, and the matching `beam heterogeneity` CLI) call `Rscript` and need `lme4`, `glmmTMB`, `psychotree`, `partykit`, `PlackettLuce`, `qvcalc` and `jsonlite` on the R library path.
+
+From Python or the CLI, the supported route is the conda recipe [envs/heterogeneity.yml](https://github.com/imallona/beam/blob/main/envs/heterogeneity.yml), which puts Python and R in one environment so the wrapper finds `Rscript`. It pulls the R packages as conda-forge binaries, so it avoids compiling `PlackettLuce` and its solver dependencies (`CVXR`, `clarabel`) from source:
+
+```bash
+mamba env create -f envs/heterogeneity.yml
+conda activate beam-heterogeneity
+pip install -e ".[dev]"
+```
+
+`beam.heterogeneity.r_available()`, `.bttree_available()`, `.glmmtmb_available()` and `.plackett_luce_available()` report whether each toolchain is in place.
+
+From R, install the packages once with the bundled helper (they are Suggests, so they are not installed with `rbeam` itself):
+
+```r
+rbeam::install_beam_heterogeneity_deps()
+```
+
 ## Usage
 
 We have a detailed [documentation](https://imallona.github.io/beam/). TL/DR from a CSV to an HTML report:

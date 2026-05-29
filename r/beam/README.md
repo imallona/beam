@@ -15,7 +15,7 @@ cd beam
 
 ```r
 # Development install from the monorepo checkout:
-devtools::install_local("r/beam", dependencies = TRUE)
+devtools::install_local("r/beam")
 
 # After CRAN release:
 install.packages("rbeam")
@@ -26,6 +26,14 @@ install_beam_python()
 ```
 
 `install_beam_python()` installs the beam Python package into the active reticulate environment. If you already have a Python environment with beam installed, point `reticulate` at it with `reticulate::use_python()` or set `RETICULATE_PYTHON` instead.
+
+The install above does not pull the heterogeneity Suggests. Install them once with:
+
+```r
+install_beam_heterogeneity_deps()
+```
+
+Avoid `dependencies = TRUE` on the development install: it tries to source-compile every Suggests, and `PlackettLuce` pulls in `CVXR` and `clarabel` (the latter needs a Rust toolchain), which fails without those build tools. Install a prebuilt binary instead (Posit Package Manager or r-universe), or use the conda recipe [envs/heterogeneity.yml](https://github.com/imallona/beam/blob/main/envs/heterogeneity.yml).
 
 ## Quick use
 

@@ -32,7 +32,7 @@ The per-cell residuals are the local signal. A large residual is a cell where a 
 
 Call `mixed_effects(methods, datasets, scores)` with three parallel sequences for one metric, or `mixed_effects_from_matrix(matrix, method_names, dataset_names)` with a method by dataset matrix. NaN scores are dropped. The report carries the method marginal means and their standard errors, the variance components, the dataset ICC, the interaction or residual share, the residuals, and the outlier cells.
 
-The fit runs in R's lme4 through a subprocess, so it needs the R toolchain. Check `r_available()` first; the conda environment `envs/heterogeneity.yml` provides it. lme4 uses a Gaussian likelihood, which is an approximation for a metric bounded in [0, 1] such as ARI; a glmmTMB beta family is the documented extension.
+The fit runs in R's lme4 through a subprocess, so it needs the R toolchain. Check `r_available()` first; the conda environment [envs/heterogeneity.yml](https://github.com/imallona/beam/blob/main/envs/heterogeneity.yml) provides it. lme4 uses a Gaussian likelihood, which is an approximation for a metric bounded in [0, 1] such as ARI; a glmmTMB beta family is the documented extension.
 
 ## Relation to leave-one-dataset-out
 

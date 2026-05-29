@@ -14,8 +14,10 @@ cd beam
 ```
 
 ```r
-devtools::install_local("r/beam", dependencies = TRUE)
+devtools::install_local("r/beam")
 ```
+
+This installs the wrapper and its required dependencies. It does not install the heterogeneity Suggests; see section 5 for those. Avoid `dependencies = TRUE` here: it tries to source-compile every Suggests, and `PlackettLuce` pulls in `CVXR` and `clarabel` (the latter needs a Rust toolchain), which fails on machines without those build tools.
 
 After the CRAN release:
 
@@ -77,7 +79,13 @@ beam_plackett_luce(scores, method_names = m)
 beam_source_variance_decomposition(methods, datasets, benchmarks, scores)
 ```
 
-These run natively in R using lme4, psychotree, glmmTMB and PlackettLuce, with no Python involved. Each needs only its own package (a Suggests) installed.
+These run natively in R using lme4, psychotree, glmmTMB and PlackettLuce, with no Python involved. Each needs only its own package (a Suggests) installed. Install them once with the bundled helper:
+
+```r
+rbeam::install_beam_heterogeneity_deps()
+```
+
+`PlackettLuce` depends on `CVXR` and `clarabel`, which are slow or impossible to compile from source without a Rust toolchain. If a source build fails, install a prebuilt binary instead (Posit Package Manager and r-universe ship binaries for the common platforms), or use the conda recipe [envs/heterogeneity.yml](https://github.com/imallona/beam/blob/main/envs/heterogeneity.yml), which pulls every R package as a conda-forge binary.
 
 ## 6. Inspect a metric card
 
