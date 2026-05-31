@@ -1,0 +1,147 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<https://github.com/imallona/beam/owl/allowed_transformations/arcsin> a skos:Concept ;
+    skos:definition "The arcsine transform, used to stabilize the variance of a proportion."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/allowed_transformations> ;
+    skos:prefLabel "arcsine transformation"@en .
+
+<https://github.com/imallona/beam/owl/allowed_transformations/log> a skos:Concept ;
+    skos:definition "The logarithm; preserves the multiplicative structure of a strictly positive ratio metric."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/allowed_transformations> ;
+    skos:prefLabel "logarithm"@en .
+
+<https://github.com/imallona/beam/owl/allowed_transformations/min_max> a skos:Concept ;
+    skos:broader <https://github.com/imallona/beam/owl/allowed_transformations/affine> ;
+    skos:definition "An affine rescale to the unit interval using the observed extremes."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/allowed_transformations> ;
+    skos:prefLabel "min-max rescaling"@en .
+
+<https://github.com/imallona/beam/owl/allowed_transformations/negate> a skos:Concept ;
+    skos:definition "A sign flip -x, used to reorient polarity."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/allowed_transformations> ;
+    skos:prefLabel "negation"@en .
+
+<https://github.com/imallona/beam/owl/allowed_transformations/rank> a skos:Concept ;
+    skos:definition "Replace each value by its within-column position; scale-free and outlier-resistant, valid on any orderable scale."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/allowed_transformations> ;
+    skos:prefLabel "rank transformation"@en .
+
+<https://github.com/imallona/beam/owl/allowed_transformations/sqrt> a skos:Concept ;
+    skos:definition "The square-root transform, a variance-stabilizing transform for count-like data."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/allowed_transformations> ;
+    skos:prefLabel "square-root transformation"@en .
+
+<https://github.com/imallona/beam/owl/allowed_transformations/z_score> a skos:Concept ;
+    skos:broader <https://github.com/imallona/beam/owl/allowed_transformations/affine> ;
+    skos:definition "Standardization (x - mean) / sd."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/allowed_transformations> ;
+    skos:prefLabel "z-score standardization"@en .
+
+<https://github.com/imallona/beam/owl/polarity/higher_is_better> a skos:Concept ;
+    skos:definition "A larger value indicates better performance; normalization and ranking orient so the maximum is best."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/polarity> ;
+    skos:prefLabel "higher is better"@en .
+
+<https://github.com/imallona/beam/owl/polarity/lower_is_better> a skos:Concept ;
+    skos:definition "A smaller value indicates better performance, so the orientation is flipped (for example runtime or an error rate)."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/polarity> ;
+    skos:prefLabel "lower is better"@en .
+
+<https://github.com/imallona/beam/owl/polarity/target_value> a skos:Concept ;
+    skos:definition "An ideal fixed value exists and a deviation in either direction is worse; requires a declared target and pairs only with the target_relative normalization."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/polarity> ;
+    skos:prefLabel "target value"@en .
+
+<https://github.com/imallona/beam/owl/recommended_normalization/baseline_relative> a skos:Concept ;
+    skos:definition "Rescale against a declared chance score so a chance-level method maps to zero rather than to the column midpoint."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/recommended_normalization> ;
+    skos:prefLabel "baseline-relative normalization"@en .
+
+<https://github.com/imallona/beam/owl/recommended_normalization/log_min_max> a skos:Concept ;
+    skos:broader <https://github.com/imallona/beam/owl/recommended_normalization/min_max> ;
+    skos:definition "Take the logarithm then min-max rescale, so one outlier on a ratio metric does not compress the rest; needs strictly positive values."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/recommended_normalization> ;
+    skos:prefLabel "log then min-max normalization"@en .
+
+<https://github.com/imallona/beam/owl/recommended_normalization/rank> a skos:Concept ;
+    skos:definition "Map each within-column position to the unit interval; outlier-immune and free of a scale assumption."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/recommended_normalization> ;
+    skos:prefLabel "rank normalization"@en .
+
+<https://github.com/imallona/beam/owl/recommended_normalization/target_relative> a skos:Concept ;
+    skos:definition "For a target-value metric, min-max rescale the absolute deviation from the target with flipped polarity, so the method nearest the target maps to one."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/recommended_normalization> ;
+    skos:prefLabel "target-relative normalization"@en .
+
+<https://github.com/imallona/beam/owl/recommended_normalization/zscore> a skos:Concept ;
+    skos:definition "Standardize then squash through the logistic so the result stays in the open unit interval and the mean method maps to 0.5."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/recommended_normalization> ;
+    skos:prefLabel "z-score normalization"@en .
+
+<https://github.com/imallona/beam/owl/scale_type/ratio> a skos:Concept ;
+    skos:broader <https://github.com/imallona/beam/owl/scale_type/interval> ;
+    skos:definition "Numeric with a meaningful unit and a true zero; all four arithmetic operations are meaningful."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/scale_type> ;
+    skos:prefLabel "ratio scale"@en .
+
+<https://github.com/imallona/beam/owl/recommended_normalization/min_max> a skos:Concept ;
+    skos:definition "Rescale to the unit interval against the declared bounded range; the default strategy."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/recommended_normalization> ;
+    skos:narrower <https://github.com/imallona/beam/owl/recommended_normalization/log_min_max> ;
+    skos:prefLabel "min-max normalization"@en .
+
+<https://github.com/imallona/beam/owl/scale_type/interval> a skos:Concept ;
+    skos:broader <https://github.com/imallona/beam/owl/scale_type/ordinal> ;
+    skos:definition "Numeric with a meaningful unit but no meaningful zero; differences are meaningful, ratios are not."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/scale_type> ;
+    skos:narrower <https://github.com/imallona/beam/owl/scale_type/ratio> ;
+    skos:prefLabel "interval scale"@en .
+
+<https://github.com/imallona/beam/owl/scale_type/nominal> a skos:Concept ;
+    skos:definition "Labels without order; only equality is meaningful."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/scale_type> ;
+    skos:narrower <https://github.com/imallona/beam/owl/scale_type/ordinal> ;
+    skos:prefLabel "nominal scale"@en .
+
+<https://github.com/imallona/beam/owl/scale_type/ordinal> a skos:Concept ;
+    skos:broader <https://github.com/imallona/beam/owl/scale_type/nominal> ;
+    skos:definition "Ordered labels; comparison is meaningful but the differences between values are not."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/scale_type> ;
+    skos:narrower <https://github.com/imallona/beam/owl/scale_type/interval> ;
+    skos:prefLabel "ordinal scale"@en .
+
+<https://github.com/imallona/beam/owl/allowed_transformations/affine> a skos:Concept ;
+    skos:definition "A transform a*x + b; meaning-preserving on an interval scale."@en ;
+    skos:inScheme <https://github.com/imallona/beam/owl/scheme/allowed_transformations> ;
+    skos:narrower <https://github.com/imallona/beam/owl/allowed_transformations/min_max>,
+        <https://github.com/imallona/beam/owl/allowed_transformations/z_score> ;
+    skos:prefLabel "affine transformation"@en .
+
+<https://github.com/imallona/beam/owl/scheme/polarity> a skos:ConceptScheme ;
+    rdfs:label "metric polarity"@en ;
+    skos:hasTopConcept <https://github.com/imallona/beam/owl/polarity/higher_is_better>,
+        <https://github.com/imallona/beam/owl/polarity/lower_is_better>,
+        <https://github.com/imallona/beam/owl/polarity/target_value> .
+
+<https://github.com/imallona/beam/owl/scheme/scale_type> a skos:ConceptScheme ;
+    rdfs:label "measurement scale type"@en ;
+    skos:hasTopConcept <https://github.com/imallona/beam/owl/scale_type/nominal> .
+
+<https://github.com/imallona/beam/owl/scheme/recommended_normalization> a skos:ConceptScheme ;
+    rdfs:label "recommended normalization strategy"@en ;
+    skos:hasTopConcept <https://github.com/imallona/beam/owl/recommended_normalization/baseline_relative>,
+        <https://github.com/imallona/beam/owl/recommended_normalization/min_max>,
+        <https://github.com/imallona/beam/owl/recommended_normalization/rank>,
+        <https://github.com/imallona/beam/owl/recommended_normalization/target_relative>,
+        <https://github.com/imallona/beam/owl/recommended_normalization/zscore> .
+
+<https://github.com/imallona/beam/owl/scheme/allowed_transformations> a skos:ConceptScheme ;
+    rdfs:label "allowed transformation"@en ;
+    skos:hasTopConcept <https://github.com/imallona/beam/owl/allowed_transformations/affine>,
+        <https://github.com/imallona/beam/owl/allowed_transformations/arcsin>,
+        <https://github.com/imallona/beam/owl/allowed_transformations/log>,
+        <https://github.com/imallona/beam/owl/allowed_transformations/negate>,
+        <https://github.com/imallona/beam/owl/allowed_transformations/rank>,
+        <https://github.com/imallona/beam/owl/allowed_transformations/sqrt> .
+

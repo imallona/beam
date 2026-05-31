@@ -80,3 +80,9 @@ To regenerate after editing a card:
 ```
 
 The artefact is deposited on Zenodo per release for a permanent identifier. The OWL is reproducible from the cards plus the schema, so the Zenodo deposit is a versioned snapshot rather than a separately maintained file.
+
+## The SKOS controlled vocabulary
+
+The cards draw four fields from closed enumerations: polarity, scale_type, allowed_transformations and comparability.recommended_normalization. `src/beam/owl/skos.py` publishes those enumerations as SKOS concept schemes in `docs/beam.skos.ttl`. Each allowed value becomes one `skos:Concept` with a prefLabel and a definition. A `skos:broader` edge records where one value specializes another: the Stevens scale ladder from nominal to ratio, and the normalizations that are special cases of an affine transform. The enum values are read from the JSON Schema, so a value no card uses yet still gets a concept. The definitions are kept in the generator, taken from the measurement-theory and normalization-and-scales essays. Regenerate with `python -m beam.owl.skos`.
+
+The upstream STATO proposals for the gapped metrics are drafted in [stato-term-proposals.md](stato-term-proposals.md).
