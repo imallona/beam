@@ -100,7 +100,7 @@ class Scores:
     @property
     def n_datasets(self) -> int:
         """Number of datasets, or 1 for the single-dataset wide layout."""
-        return 0 if self.dataset_names is None else len(self.dataset_names)
+        return 1 if self.dataset_names is None else len(self.dataset_names)
 
 
 def load_scores(

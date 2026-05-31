@@ -14,6 +14,10 @@ All notable changes to beam will be documented in this file. The format follows 
 
 - A beam.yaml metric version pin (`- id: ari` with `version: v1`) is now honored: the pinned card is used for the ranking and fingerprinted in the manifest, threaded through `beam.rank(versions=...)`, `registry_context` and `run_from_registry`. An unknown pinned version stops the run with a clear error instead of being silently ignored.
 
+### Fixed
+
+- `Scores.n_datasets` returned 0 for the wide single-dataset layout, contradicting its docstring; it now returns 1.
+
 ## [0.1.4] - 2026-05-29
 
 ### Added

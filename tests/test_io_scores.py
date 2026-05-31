@@ -35,6 +35,8 @@ def test_wide_layout_shape_and_labels(tmp_path):
     assert scores.metric_ids == ("ari", "runtime")
     assert scores.dataset_names is None
     assert scores.values.shape == (3, 2)
+    # A wide file is one dataset, not zero.
+    assert scores.n_datasets == 1
     np.testing.assert_allclose(scores.values[0], [0.81, 42.0])
 
 
@@ -63,6 +65,7 @@ def test_long_layout_builds_tensor(tmp_path):
     assert scores.tool_names == ("seurat", "sc3")
     assert scores.dataset_names == ("koh", "zhengmix")
     assert scores.metric_ids == ("ari", "runtime")
+    assert scores.n_datasets == 2
     assert scores.values.shape == (2, 2, 2)
     # seurat on koh: ari 0.81, runtime 42.0
     np.testing.assert_allclose(scores.values[0, 0], [0.81, 42.0])
