@@ -49,8 +49,10 @@ def _input_fingerprint(scores: Scores) -> dict[str, Any]:
     return {"path": None, "sha256": _sha256_bytes(contiguous.tobytes())}
 
 
-def _card_fingerprint(metric_id: str, registry: Registry) -> dict[str, Any]:
-    card = registry.get(metric_id)
+def _card_fingerprint(
+    metric_id: str, registry: Registry, version: str | None = None
+) -> dict[str, Any]:
+    card = registry.get(metric_id, version)
     canonical = json.dumps(card.raw, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return {"id": card.id, "version": card.version, "sha256": _sha256_bytes(canonical)}
 
@@ -75,6 +77,7 @@ def build_manifest(
     smaa_samples: int | None,
     smaa_seed: int | None,
     registry: Registry,
+    versions: Sequence[str | None] | None = None,
 ) -> dict[str, Any]:
     """Assemble the manifest dictionary for one beam run.
 
@@ -97,6 +100,10 @@ def build_manifest(
         SMAA sample count and seed, recorded when sensitivity ran.
     registry
         Registry used to resolve card versions and content hashes.
+    versions
+        Optional per-metric card version pin, aligned with ``metric_ids``.
+        ``None`` in a slot (or ``versions=None``) fingerprints the latest
+        version, preserving the prior behavior.
 
     Returns
     -------
@@ -105,6 +112,10 @@ def build_manifest(
         only keys that vary between identical runs; see ``volatile_keys``.
     """
     metric_ids = list(metric_ids)
+    if versions is not None and len(versions) != len(metric_ids):
+        raise ValueError(
+            f"versions has {len(versions)} entries but metric_ids has {len(metric_ids)}"
+        )
     manifest: dict[str, Any] = {
         "beam_version": _software_fingerprint()["beam"],
         "created_utc": datetime.now(UTC).isoformat(),
@@ -112,7 +123,10 @@ def build_manifest(
         "input": _input_fingerprint(scores),
         "layout": scores.layout,
         "tools": list(scores.tool_names),
-        "metrics": [_card_fingerprint(mid, registry) for mid in metric_ids],
+        "metrics": [
+            _card_fingerprint(mid, registry, versions[i] if versions is not None else None)
+            for i, mid in enumerate(metric_ids)
+        ],
         "weighting": {"method": weighting},
         "aggregation": {"method": method},
         "normalization": [

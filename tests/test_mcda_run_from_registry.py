@@ -81,7 +81,7 @@ def test_validation_blocks_incompatible_scale(monkeypatch):
     from beam.cards import MetricProperties
     from beam.mcda import facade
 
-    def fake_properties(metric_ids, registry=None):
+    def fake_properties(metric_ids, registry=None, versions=None):
         return [
             MetricProperties(
                 id=metric_ids[0],

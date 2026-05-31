@@ -347,6 +347,7 @@ def run_from_registry(
     method: str = "saw",
     registry: Registry | None = None,
     missing: str = "error",
+    versions: Sequence[str | None] | None = None,
 ) -> Result:
     """Run the MCDA pipeline with polarity, bounds, and scale checks pulled from the registry.
 
@@ -380,6 +381,9 @@ def run_from_registry(
     missing
         Missing-data policy forwarded to ``run``: ``"error"`` (default),
         ``"available"``, ``"worst"`` or ``"impute"``.
+    versions
+        Optional per-metric card version pin, aligned with ``metric_ids``.
+        Forwarded to ``registry_context``; ``None`` takes the latest version.
 
     Returns
     -------
@@ -393,7 +397,7 @@ def run_from_registry(
     IncompleteMatrixError
         If the matrix has missing cells and ``missing`` does not resolve them.
     """
-    context = registry_context(metric_ids, method, registry=registry)
+    context = registry_context(metric_ids, method, registry=registry, versions=versions)
 
     return run(
         scores,
@@ -425,12 +429,14 @@ class RegistryContext:
     bounds: tuple[Bound, ...]
     baselines: tuple[float | None, ...]
     targets: tuple[float | None, ...]
+    versions: tuple[str | None, ...] = ()
 
 
 def registry_context(
     metric_ids: Sequence[str],
     method: str,
     registry: Registry | None = None,
+    versions: Sequence[str | None] | None = None,
 ) -> RegistryContext:
     """Resolve polarity, normalization, bounds and baselines from the metric cards.
 
@@ -448,6 +454,12 @@ def registry_context(
     registry
         Optional ``Registry``. Defaults to a fresh registry over the bundled
         metrics.
+    versions
+        Optional per-metric card version pin, aligned with ``metric_ids``.
+        ``None`` in a slot (or ``versions=None``) takes the latest version. The
+        pins are recorded on the returned context (``None`` for latest) so the
+        manifest can fingerprint the exact cards used. A pinned version the
+        registry does not carry raises KeyError.
 
     Returns
     -------
@@ -460,7 +472,8 @@ def registry_context(
         the requested aggregation.
     """
     metric_ids = list(metric_ids)
-    properties = properties_for(metric_ids, registry=registry)
+    properties = properties_for(metric_ids, registry=registry, versions=versions)
+    version_tuple = tuple(versions) if versions is not None else (None,) * len(metric_ids)
     strategies = [p.recommended_normalization or "min_max" for p in properties]
     validate_for_aggregation(properties, method, strategies)
     return RegistryContext(
@@ -470,4 +483,5 @@ def registry_context(
         bounds=tuple((p.range_lower, p.range_upper) for p in properties),
         baselines=tuple(p.score_of_random_baseline for p in properties),
         targets=tuple(p.target for p in properties),
+        versions=version_tuple,
     )

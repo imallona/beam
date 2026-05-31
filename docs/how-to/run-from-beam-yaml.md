@@ -57,6 +57,19 @@ outputs is optional and each entry is optional. report writes the self-contained
 
 Keep beam.yaml and the written manifest.json together with the scores file. manifest.json records the input and its hash, the metrics, the parameters and the normalization that beam read from the cards. A reviewer with the same scores file reruns the ranking with one command. The manifest lets them confirm they got the same inputs and parameters you did.
 
+## Pinning a card version
+
+Each metric entry may pin a card version, which is the artifact a reviewer needs to reproduce a ranking exactly:
+
+```yaml
+metrics:
+  - id: ari
+    version: v1
+  - id: runtime
+```
+
+The pinned card is the one used to rank and the one fingerprinted in the manifest. A metric without a version takes the latest. A pinned version the registry does not carry stops the run with a clear error naming the metric and the versions that are available.
+
 ## Note on the dataset_features and heterogeneity blocks
 
-The dataset_features and heterogeneity blocks are parsed but ignored for now. You can leave them out. Per-metric version pins are recorded but not yet enforced; the registry resolves the latest version of each card.
+The dataset_features and heterogeneity blocks are parsed but ignored for now. You can leave them out.

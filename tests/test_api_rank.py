@@ -155,3 +155,14 @@ def test_rank_on_duo_matches_run_from_registry():
     result = rank(scores, weights="entropy", method="topsis", sensitivity=False)
     assert result.matrix.shape == (int(complete.sum()), 3)
     assert set(result.result.ranks.tolist()) == set(range(1, int(complete.sum()) + 1))
+
+
+def test_rank_records_a_valid_version_pin(tmp_path):
+    result = rank(_wide_csv(tmp_path), versions=["v1", "v1"], sensitivity=False)
+    versions = {m["id"]: m["version"] for m in result.manifest["metrics"]}
+    assert versions == {"ari": "v1", "runtime": "v1"}
+
+
+def test_rank_rejects_an_unknown_version_pin(tmp_path):
+    with pytest.raises(KeyError, match="v9"):
+        rank(_wide_csv(tmp_path), versions=["v1", "v9"], sensitivity=False)

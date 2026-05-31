@@ -25,8 +25,10 @@ A minimal file::
 The optional top-level ``missing`` key sets the missing-cell policy passed to
 ``beam.rank`` (``error`` by default, or ``available``, ``worst``, ``impute``).
 The dataset_features and heterogeneity blocks are parsed but ignored here.
-Per-metric version pins are recorded but not yet enforced; the registry
-resolves the latest version.
+A metric entry may pin a card version (``- id: ari`` with ``version: v1``); the
+pinned card is used and fingerprinted in the manifest, and a version the
+registry does not carry stops the run with a clear error. A metric without a
+``version`` takes the latest.
 """
 
 from __future__ import annotations
@@ -83,9 +85,15 @@ def run_config(path: str | Path, registry: Registry | None = None) -> RunResult:
     scores_path = base / config["inputs"]["scores"]
     scores = load_scores(scores_path, registry=reg)
 
-    requested = _requested_metric_ids(config)
+    requested = _requested_metrics(config)
+    versions: list[str | None] | None = None
     if requested is not None:
-        scores = _select_metrics(scores, requested)
+        ids = [mid for mid, _ in requested]
+        versions = [version for _, version in requested]
+        _check_pinned_versions(requested, reg)
+        scores = _select_metrics(scores, ids)
+        if all(v is None for v in versions):
+            versions = None
 
     weighting = config.get("weighting", {}).get("method", "equal")
     method = config.get("aggregation", {}).get("method", "saw")
@@ -106,17 +114,38 @@ def run_config(path: str | Path, registry: Registry | None = None) -> RunResult:
         smaa_samples=smaa_samples,
         seed=seed,
         registry=reg,
+        versions=versions,
     )
 
     _write_outputs(result, config.get("outputs", {}), base, reg)
     return result
 
 
-def _requested_metric_ids(config: dict[str, Any]) -> list[str] | None:
+def _requested_metrics(config: dict[str, Any]) -> list[tuple[str, str | None]] | None:
+    """Parse the metrics block into (id, pinned version or None) pairs, in order."""
     metrics = config.get("metrics")
     if not metrics:
         return None
-    return [m["id"] if isinstance(m, dict) else str(m) for m in metrics]
+    pairs: list[tuple[str, str | None]] = []
+    for m in metrics:
+        if isinstance(m, dict):
+            pairs.append((m["id"], m.get("version")))
+        else:
+            pairs.append((str(m), None))
+    return pairs
+
+
+def _check_pinned_versions(
+    requested: list[tuple[str, str | None]],
+    registry: Registry,
+) -> None:
+    """Fail early if a beam.yaml metric pins a version the registry does not carry."""
+    for mid, version in requested:
+        if version is not None and version not in registry.list_versions(mid):
+            raise ValueError(
+                f"beam.yaml pins metric {mid!r} at version {version!r}, which the "
+                f"registry does not have; available: {registry.list_versions(mid)}"
+            )
 
 
 def _select_metrics(scores: Scores, ids: list[str]) -> Scores:

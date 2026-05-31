@@ -112,6 +112,7 @@ def rank(
     smaa_samples: int = _DEFAULT_SMAA_SAMPLES,
     seed: int = _DEFAULT_SEED,
     registry: Registry | None = None,
+    versions: Sequence[str | None] | None = None,
 ) -> RunResult:
     """Rank tools from a benchmark score table, with sensitivity and a manifest.
 
@@ -151,6 +152,11 @@ def rank(
     registry
         Optional ``Registry``. Defaults to a fresh registry over the bundled
         metrics.
+    versions
+        Optional per-metric card version pin, aligned with the score table's
+        metric columns. ``None`` in a slot (or ``versions=None``) takes the
+        latest version. A pinned version the registry does not carry raises
+        KeyError. The resolved versions are recorded in the manifest.
 
     Returns
     -------
@@ -170,9 +176,15 @@ def rank(
     matrix = _matrix_for_ranking(score_obj, reg, on_zero_coverage)
     ids = score_obj.metric_ids
 
-    context = registry_context(ids, method, registry=reg)
+    context = registry_context(ids, method, registry=reg, versions=versions)
     result = run_from_registry(
-        matrix, ids, weights=weights, method=method, registry=reg, missing=missing
+        matrix,
+        ids,
+        weights=weights,
+        method=method,
+        registry=reg,
+        missing=missing,
+        versions=versions,
     )
 
     smaa_report: SMAAReport | None = None
@@ -242,6 +254,7 @@ def rank(
         smaa_samples=smaa_samples if sensitivity else None,
         smaa_seed=seed if sensitivity else None,
         registry=reg,
+        versions=context.versions,
     )
 
     return RunResult(

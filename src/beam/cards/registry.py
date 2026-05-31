@@ -55,6 +55,7 @@ def polarities_for(
 def properties_for(
     metric_ids: Sequence[str],
     registry: Registry | None = None,
+    versions: Sequence[str | None] | None = None,
 ) -> list[MetricProperties]:
     """Look up a MetricProperties record for each metric id, in order.
 
@@ -63,11 +64,19 @@ def properties_for(
     cross-dataset aggregation from each card. Downstream code uses this
     view to drive bounded normalization, scale-compatibility validation,
     and across-dataset reduction without re-walking the YAML.
+
+    ``versions`` optionally pins the card version per metric, aligned with
+    ``metric_ids``; ``None`` in a slot (or ``versions=None`` entirely) takes the
+    latest version. A pinned version the registry does not carry raises KeyError.
     """
     reg = registry if registry is not None else Registry()
+    if versions is not None and len(versions) != len(metric_ids):
+        raise ValueError(
+            f"versions has {len(versions)} entries but metric_ids has {len(metric_ids)}"
+        )
     out: list[MetricProperties] = []
-    for mid in metric_ids:
-        card = reg.get(mid)
+    for i, mid in enumerate(metric_ids):
+        card = reg.get(mid, versions[i] if versions is not None else None)
         out.append(
             MetricProperties(
                 id=card.id,

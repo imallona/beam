@@ -82,6 +82,28 @@ def test_run_config_rejects_unknown_metric_selection(tmp_path):
         run_config(cfg)
 
 
+def test_run_config_honors_a_valid_version_pin(tmp_path):
+    _scores_csv(tmp_path)
+    cfg = _write_config(
+        tmp_path,
+        "inputs:\n  scores: scores.csv\nmetrics:\n  - id: ari\n    version: v1\n  - id: runtime\n",
+    )
+    result = run_config(cfg)
+    versions = {m["id"]: m["version"] for m in result.manifest["metrics"]}
+    assert versions["ari"] == "v1"
+    assert versions["runtime"] == "v1"
+
+
+def test_run_config_rejects_an_unknown_version_pin(tmp_path):
+    _scores_csv(tmp_path)
+    cfg = _write_config(
+        tmp_path,
+        "inputs:\n  scores: scores.csv\nmetrics:\n  - id: ari\n    version: v2\n",
+    )
+    with pytest.raises(ValueError, match=r"pins metric 'ari' at version 'v2'"):
+        run_config(cfg)
+
+
 def test_normalized_csv_has_tool_and_metric_headers(tmp_path):
     _scores_csv(tmp_path)
     cfg = _write_config(

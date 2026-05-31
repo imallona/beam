@@ -10,6 +10,10 @@ All notable changes to beam will be documented in this file. The format follows 
 - The `beam.report` HTML report now embeds the funky-heatmap glyph table (a "Robustness at a glance" section) and an aggregation-agreement summary by default. Pass `funky_heatmap=False` to leave the figure out.
 - `beam heterogeneity scores.csv --model {mixed-effects,bradley-terry-tree,plackett-luce}` fits a heterogeneity model on a long-format score file and writes the report as JSON, completing the CLI of Section 5.2. It needs the R toolchain and exits with a named error when the package is absent; docs/how-to/run-heterogeneity-from-the-cli.md.
 
+### Changed
+
+- A beam.yaml metric version pin (`- id: ari` with `version: v1`) is now honored: the pinned card is used for the ranking and fingerprinted in the manifest, threaded through `beam.rank(versions=...)`, `registry_context` and `run_from_registry`. An unknown pinned version stops the run with a clear error instead of being silently ignored.
+
 ## [0.1.4] - 2026-05-29
 
 ### Added
