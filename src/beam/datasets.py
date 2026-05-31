@@ -752,6 +752,42 @@ class IntegrationBenchmarks:
                     matrix[i, j] = float(np.mean(cell[(m, mk)]))
         return _INTEGRATION_METHODS, metrics, matrix
 
+    def network_arms(
+        self, min_metrics: int = 2
+    ) -> tuple[list[str], list[str], list[float], list[float], list[int]]:
+        """Arm-level data for a network meta-analysis over the benchmarks.
+
+        Each arm is one method in one (benchmark, dataset) block. The mean and
+        the standard deviation are taken over that method's per-metric ranks in
+        the block, and the count is how many metrics it rests on. The study
+        label is the dataset namespaced by benchmark, so a (benchmark, dataset)
+        block is one study with the methods as its arms.
+
+        Arms resting on fewer than ``min_metrics`` metrics are dropped, since a
+        standard deviation needs at least two values; netmeta then keeps only
+        the studies that still have two or more arms.
+
+        Returns five parallel lists ``(treatments, studies, means, sds, ns)``
+        ready for ``beam.heterogeneity.network_meta_analysis``.
+        """
+        from collections import defaultdict
+
+        groups: dict[tuple[str, str, str], list[float]] = defaultdict(list)
+        for b, d, m, _metric, r in zip(
+            self.benchmark, self.dataset, self.method, self.metric, self.rank, strict=True
+        ):
+            groups[(b, d, m)].append(float(r))
+        treatments, studies, means, sds, ns = [], [], [], [], []
+        for (b, d, m), rs in groups.items():
+            if len(rs) < min_metrics:
+                continue
+            treatments.append(m)
+            studies.append(f"{b}:{d}")
+            means.append(float(np.mean(rs)))
+            sds.append(float(np.std(rs, ddof=1)))
+            ns.append(len(rs))
+        return treatments, studies, means, sds, ns
+
 
 def _load_scib_cells() -> dict[tuple[str, str], dict[str, float]]:
     """Read scIB raw scores, averaging duplicate feature-space rows per cell.

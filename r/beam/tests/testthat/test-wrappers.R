@@ -180,3 +180,18 @@ test_that("beam_source_variance_decomposition fits the nested model", {
   expect_s3_class(fit, "beam_source_variance")
   expect_length(fit$method_effects, 3)
 })
+
+test_that("beam_network_meta_analysis pools studies into a ranking", {
+  skip_if_not_installed("meta")
+  skip_if_not_installed("netmeta")
+  treatment <- rep(c("a", "b", "c"), times = 4)
+  study <- rep(paste0("study", 1:4), each = 3)
+  mean <- rep(c(1, 2, 3), times = 4) + rep(0.1 * (0:3), each = 3)
+  sd <- rep(0.3, 12)
+  n <- rep(4, 12)
+  fit <- beam_network_meta_analysis(treatment, study, mean, sd, n)
+  expect_s3_class(fit, "beam_network_meta")
+  expect_length(fit$pscore, 3)
+  # a has the lowest mean rank, so it leads on the P-score.
+  expect_equal(fit$treatments[which.max(fit$pscore)], "a")
+})

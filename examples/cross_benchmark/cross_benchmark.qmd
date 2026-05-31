@@ -15,18 +15,22 @@ format:
 
 ## Goal
 
-Single-cell data-integration benchmarks reach different conclusions about which method to use. This vignette asks where the disagreement comes from: the methods, the datasets, or the benchmarker's own analysis choices (which metrics, how they are scaled, how they are weighted). It runs the meta-analysis on three benchmarks that publish reusable per-method scores on a shared metric set, and shows that re-ranking them all with one consistent rule removes much of the disagreement.
+Single-cell data-integration benchmarks reach different conclusions about which method to use. This vignette asks where the disagreement comes from: the methods, the datasets, or the benchmarker's own analysis choices (which metrics, how they are scaled, how they are weighted). It runs the meta-analysis on benchmarks that publish reusable per-method scores on a shared metric set, and shows that re-ranking them all with one consistent rule removes part of the disagreement. It does not remove all of it: the network meta-analysis later in the vignette finds a significant residual disagreement between the benchmarks even under the shared rule.
 
 ## The benchmarks, and why these four
 
 Four single-cell integration benchmarks publish reusable per-method scores on the shared scIB metric family (ARI, ASW, kBET, LISI) for an overlapping set of classical methods:
 
-- scIB (Luecken et al., Nature Methods 2022, DOI [10.1038/s41592-021-01336-8](https://doi.org/10.1038/s41592-021-01336-8)), scores from the scib-reproducibility repository.
-- OpenProblems batch integration (Nature Biotechnology 2025, DOI [10.1038/s41587-025-02694-w](https://doi.org/10.1038/s41587-025-02694-w)), the bundled CC-BY scores.
-- Tran et al. (Genome Biology 2020, DOI [10.1186/s13059-019-1850-9](https://doi.org/10.1186/s13059-019-1850-9)), scores from the paper's supplementary Tables S4 and S7.
-- Tyler, Guccione and Schadt (bioRxiv 2021.11.15.468733 v2, 2023-10-26, preprint only as of 2026-05-28), scores from Extended Data Table 2 of the preprint. Tyler covers three of the five methods (harmony, scanorama, liger) and three of the four metrics (ARI, ASW, kBET; the cLISI Tyler reports is a different quantity from the iLISI the others report), so it enters the four-source set as a partial-coverage block.
+| Benchmark | Paper | Methods covered | Metrics covered | Scores from |
+|---|---|---|---|---|
+| scIB | Luecken et al., Nature Methods 2022, [10.1038/s41592-021-01336-8](https://doi.org/10.1038/s41592-021-01336-8) | all five | ARI, ASW, kBET, LISI | scib-reproducibility repository |
+| OpenProblems batch integration | OpenProblems consortium, Nature Biotechnology 2025, [10.1038/s41587-025-02694-w](https://doi.org/10.1038/s41587-025-02694-w) | all five | ARI, ASW, kBET, LISI | bundled CC-BY scores |
+| Tran et al. | Tran et al., Genome Biology 2020, [10.1186/s13059-019-1850-9](https://doi.org/10.1186/s13059-019-1850-9) | all five | ARI, ASW, kBET, LISI | supplementary Tables S4 and S7 |
+| Tyler et al. | Tyler, Guccione and Schadt, bioRxiv 2023, [10.1101/2021.11.15.468733](https://doi.org/10.1101/2021.11.15.468733) | harmony, scanorama, liger | ARI, ASW, kBET | Extended Data Table 2 |
 
-The five methods common to the first three benchmarks are combat, harmony, fastMNN, scanorama and LIGER. Tyler's per-source polarity differs on kBET (Tyler reports raw rejection rate, lower is better; the others report 1-rejection or its scaled form, higher is better); the loader handles this per source so the within-cell ranking is consistent. Benchmarks excluded: Tran's repository appeared empty until the scores were found in its supplement (a repository check is not sufficient); scIB-E (Genome Biology 2025) shares the scIB metrics but its methods are deep-learning ones (scVI, scANVI and loss-function variants) with no overlap with the classical five; the Communications Biology 2025 reference-informed evaluation covers one dataset with a bespoke RBET metric and overlaps only on combat and scanorama; BatchBench and sc_mixology use off-family metrics; spatial and cross-species benchmarks use different methods. The full provenance, licences and the dataset crosswalk are in `src/beam/data/README.md`.
+Tyler is a preprint as of 2026-05-28 and covers three of the five methods and three of the four metrics (the cLISI it reports is a different quantity from the iLISI the others report), so it enters the four-source set as a partial-coverage block. Its kBET is the raw rejection rate (lower is better), the opposite polarity to the others; the loader handles this per source so the within-cell ranking is consistent.
+
+The five methods common to the first three benchmarks are combat, harmony, fastMNN, scanorama and LIGER. Benchmarks excluded: Tran's repository appeared empty until the scores were found in its supplement (a repository check is not sufficient); scIB-E (Genome Biology 2025) shares the scIB metrics but its methods are deep-learning ones (scVI, scANVI and loss-function variants) with no overlap with the classical five; the Communications Biology 2025 reference-informed evaluation covers one dataset with a bespoke RBET metric and overlaps only on combat and scanorama; BatchBench and sc_mixology use off-family metrics; spatial and cross-species benchmarks use different methods. The full provenance, licences and the dataset crosswalk are in `src/beam/data/README.md`.
 
 ```{python}
 %matplotlib inline
@@ -146,6 +150,30 @@ else:
 
 Tyler 2023 raises the method-by-benchmark share above the three-source value. Their in silico runs carry a controlled biological signal with known ground truth, which is exactly the regime in which their preprint argues unsupervised methods erase real biology. Adding it to the pool gives a sharper estimate of the share of variance that depends on which benchmarker did the analysis rather than which method was run.
 
+## One coherent ranking: network meta-analysis
+
+The variance decomposition says how much of the spread is the benchmark. A network meta-analysis instead pools all four sources into one ranking, the way clinical research ranks treatments that were never all tried in one trial. Each method is a treatment, each (benchmark, dataset) block is a study, and the within-study effect of a method is its mean rank over the metrics with a standard deviation across them. netmeta combines the direct and the indirect evidence, and reports a P-score per method (higher is better) plus heterogeneity and inconsistency statistics. The fit needs R's netmeta, so the chunk runs only when it is available.
+
+```{python}
+from beam.heterogeneity import netmeta_available, network_meta_analysis
+
+treatment, study, mean, sd, n = ib.network_arms()
+if netmeta_available():
+    nma = network_meta_analysis(treatment, study, mean, sd, n)
+    print(f"studies: {nma.n_studies}, treatments: {nma.n_treatments}, comparisons: {nma.n_comparisons}")
+    print(f"ranking (best first): {', '.join(nma.ranking())}")
+    print("P-score per method (higher is better):")
+    for m, p in sorted(zip(nma.treatments, nma.pscore), key=lambda x: -x[1]):
+        print(f"  {m:10s} {p:.2f}")
+    print(f"I-squared: {nma.i2:.2f}")
+    print(f"inconsistency Q: {nma.q_inconsistency:.1f} on {nma.df_inconsistency:.0f} df, p = {nma.pval_inconsistency:.1e}")
+else:
+    print("R with netmeta not available; skipping the network meta-analysis.")
+    print("Provision it with envs/heterogeneity.yml.")
+```
+
+Harmony leads the pooled ranking and combat trails it, the same order the consensus and the variance decomposition give. The I-squared is high and the inconsistency Q is significant: the direct and the indirect evidence for the same method pairs do not line up, which is the network-model reading of the same finding the variance decomposition reports as a large method-by-benchmark share. The pooled ranking is an average over benchmarks that disagree, and the inconsistency statistic is the honest label on it.
+
 ## Same data, two pipelines: the human pancreas
 
 The pooled decomposition above mixes pipeline differences with dataset differences, because the first three benchmarks barely share datasets and Tyler's in silico runs share none of them. The one confirmed overlap removes the data confound: Tran's Dataset 4 is built from Muraro, Segerstolpe, Baron, Wang and Xin, the same five studies scIB's pancreas task uses. Running both pipelines on this shared block reads off the pipeline effect with no data variability in the way.
@@ -213,4 +241,4 @@ OpenProblems is the most fragile of the three: a 0.11 absolute change to the ASW
 
 ## Limits
 
-The published-rank chart and the within-five-methods Spearman comparison are computed on the first three benchmarks because Tyler does not publish an overall ranking (its paper is a methodological critique, not a recommendation). The variance decomposition pools all four sources. Numbers stay indicative, not precise: a Spearman over five methods is coarse, four benchmarks is still few for a sharp method-by-benchmark variance estimate, and the reported rankings are reconstructed (Tran's final rank directly, scIB's 0.6/0.4 overall and OpenProblems' mean score recomputed). For the pooled comparison the benchmarks also use mostly different datasets, so part of that disagreement is genuine data variability, not the benchmarker; the human pancreas section removes that confound on the one block where it can be removed. With those caveats, we showcase how standardizing the decision making with beam removes much of the apparent disagreement between these benchmarks results.
+The published-rank chart and the within-five-methods Spearman comparison are computed on the first three benchmarks because Tyler does not publish an overall ranking (its paper is a methodological critique, not a recommendation). The variance decomposition pools all four sources. Numbers stay indicative, not precise: a Spearman over five methods is coarse, four benchmarks is still few for a sharp method-by-benchmark variance estimate, and the reported rankings are reconstructed (Tran's final rank directly, scIB's 0.6/0.4 overall and OpenProblems' mean score recomputed). For the pooled comparison the benchmarks also use mostly different datasets, so part of that disagreement is genuine data variability, not the benchmarker; the human pancreas section removes that confound on the one block where it can be removed. With those caveats, standardizing the decision making with beam removes part of the apparent disagreement between these benchmarks, but it does not close it: the network meta-analysis finds a significant residual inconsistency even under the shared rule. Harmonizing the analysis narrows the gap rather than erasing it.

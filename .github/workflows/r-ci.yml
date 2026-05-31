@@ -78,6 +78,8 @@ jobs:
             any::partykit
             any::PlackettLuce
             any::qvcalc
+            any::meta
+            any::netmeta
 
       - name: Generate man pages with roxygen2
         shell: Rscript {0}

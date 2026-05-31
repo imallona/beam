@@ -20,3 +20,5 @@ dependencies:
   - r-glmmtmb>=1.1
   - r-plackettluce>=0.4
   - r-qvcalc>=1.0
+  - r-meta>=7.0
+  - r-netmeta>=2.9

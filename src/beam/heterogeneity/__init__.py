@@ -24,6 +24,10 @@ The tools all wrap R in a one-shot subprocess (ADR 0009):
 - ``source_variance_decomposition``: a cross-benchmark decomposition that
   separates the method-by-benchmark disagreement from method-by-dataset
   variation. Gated by ``r_available`` (lme4).
+- ``network_meta_analysis``: a network meta-analysis that pools the direct and
+  indirect evidence across benchmarks scoring overlapping methods into one
+  coherent ranking, with heterogeneity and inconsistency statistics. Gated by
+  ``netmeta_available`` (netmeta).
 """
 
 from .bradley_terry import (
@@ -42,6 +46,11 @@ from .mixed_effects import (
     mixed_effects_from_matrix,
     r_available,
 )
+from .network_meta import (
+    NetworkMetaReport,
+    netmeta_available,
+    network_meta_analysis,
+)
 from .plackett_luce import (
     PlackettLuceReport,
     plackett_luce,
@@ -57,6 +66,7 @@ __all__ = [
     "BTNode",
     "BradleyTerryTreeReport",
     "MixedEffectsReport",
+    "NetworkMetaReport",
     "PlackettLuceReport",
     "RExecutionError",
     "RNotAvailableError",
@@ -66,6 +76,8 @@ __all__ = [
     "glmmtmb_available",
     "mixed_effects",
     "mixed_effects_from_matrix",
+    "netmeta_available",
+    "network_meta_analysis",
     "paired_comparisons",
     "plackett_luce",
     "plackett_luce_available",

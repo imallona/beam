@@ -588,3 +588,109 @@ beam_source_variance_decomposition <- function(methods, datasets, benchmarks, sc
     class = "beam_source_variance"
   )
 }
+
+#' Cross-benchmark network meta-analysis
+#'
+#' Pools benchmarks that score overlapping methods into one coherent ranking
+#' with R's netmeta. The treatments are the methods, the studies are the
+#' (benchmark, dataset) blocks, and the within-study effect of a method is its
+#' mean rank over the metrics with a standard deviation across them.
+#' `meta::pairwise` turns the arm means into study-level contrasts and `netmeta`
+#' pools them. Lower ranks are better, so the P-score treats small values as
+#' desirable. Fit natively in R.
+#'
+#' @param treatment,study,mean,sd,n Parallel vectors of equal length, one entry
+#'   per study arm: the method, the study label, the mean rank over the metrics,
+#'   its standard deviation, and the metric count. Arms with a missing value are
+#'   dropped; each study must keep at least two arms.
+#' @param reference Optional reference treatment to express effects against;
+#'   defaults to the first treatment.
+#' @param sm Summary measure passed to netmeta; `"MD"` (mean difference) suits
+#'   the mean-rank arms.
+#'
+#' @return A list of class `beam_network_meta` with the per-treatment effects
+#'   against the reference, the P-scores, the ranking, and the heterogeneity and
+#'   inconsistency statistics.
+#'
+#' @export
+beam_network_meta_analysis <- function(treatment, study, mean, sd, n,
+                                        reference = NULL, sm = "MD") {
+  .require_pkg("meta")
+  .require_pkg("netmeta")
+  mean <- as.numeric(mean)
+  sd <- as.numeric(sd)
+  n <- as.numeric(n)
+  if (length(treatment) != length(study) || length(treatment) != length(mean) ||
+      length(treatment) != length(sd) || length(treatment) != length(n)) {
+    stop("treatment, study, mean, sd and n must have the same length", call. = FALSE)
+  }
+  keep <- !(is.na(mean) | is.na(sd) | is.na(n))
+  df <- data.frame(
+    treatment = as.character(treatment)[keep],
+    study = as.character(study)[keep],
+    mean = mean[keep],
+    sd = sd[keep],
+    n = n[keep],
+    stringsAsFactors = FALSE
+  )
+  if (length(unique(df$treatment)) < 2L) {
+    stop("network meta-analysis needs at least two treatments", call. = FALSE)
+  }
+
+  warns <- character()
+  withW <- function(expr) {
+    withCallingHandlers(
+      expr,
+      warning = function(w) {
+        warns <<- c(warns, conditionMessage(w))
+        invokeRestart("muffleWarning")
+      }
+    )
+  }
+
+  contrasts <- utils::capture.output(
+    ct <- withW(meta::pairwise(
+      treat = df$treatment, n = df$n, mean = df$mean, sd = df$sd,
+      studlab = df$study, sm = sm
+    ))
+  )
+  ref_arg <- if (is.null(reference)) "" else as.character(reference)
+  net_out <- utils::capture.output(
+    net <- withW(netmeta::netmeta(
+      TE = ct$TE, seTE = ct$seTE, treat1 = ct$treat1, treat2 = ct$treat2,
+      studlab = ct$studlab, sm = sm, common = FALSE, random = TRUE,
+      reference.group = ref_arg
+    ))
+  )
+
+  treatments <- net$trts
+  ref <- net$reference.group
+  if (is.null(ref) || length(ref) == 0L || ref == "") {
+    ref <- treatments[1]
+  }
+  rank <- netmeta::netrank(net, small.values = "desirable")
+
+  structure(
+    list(
+      sm = sm,
+      reference = ref,
+      treatments = treatments,
+      effect = as.numeric(net$TE.random[, ref]),
+      effect_se = as.numeric(net$seTE.random[, ref]),
+      effect_lower = as.numeric(net$lower.random[, ref]),
+      effect_upper = as.numeric(net$upper.random[, ref]),
+      pscore = as.numeric(rank$ranking.random[treatments]),
+      tau = as.numeric(net$tau),
+      tau2 = as.numeric(net$tau2),
+      i2 = as.numeric(net$I2),
+      q_total = as.numeric(net$Q),
+      df_total = as.numeric(net$df.Q),
+      pval_total = as.numeric(net$pval.Q),
+      n_studies = as.integer(net$k),
+      n_treatments = as.integer(net$n),
+      n_comparisons = as.integer(net$m),
+      warnings = warns
+    ),
+    class = "beam_network_meta"
+  )
+}
