@@ -2,6 +2,10 @@
 
 from ._missing import IncompleteMatrixError
 from .aggregate import rank, weighted_sum
+from .aggregation_agreement import (
+    AggregationAgreementReport,
+    aggregation_agreement,
+)
 from .cd import (
     CriticalDifferenceReport,
     critical_difference,
@@ -49,6 +53,7 @@ from .weights import (
 
 __all__ = [
     "STRATEGIES",
+    "AggregationAgreementReport",
     "CriticalDifferenceReport",
     "DatasetSensitivityReport",
     "IncompatibleScaleError",
@@ -62,6 +67,7 @@ __all__ = [
     "SkillingsMackReport",
     "WeightPerturbationReport",
     "aggregate_across_datasets",
+    "aggregation_agreement",
     "ahp_weights",
     "comet",
     "coverage_aware_critical_difference",

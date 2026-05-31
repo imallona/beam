@@ -1,14 +1,16 @@
 """Render a RunResult to a single self-contained HTML report.
 
-The report has six sections: input summary, normalization diagnostics with the
-guard warnings, the ranking table, the sensitivity outputs, a critical
-difference diagram when the input carries more than one dataset, and a plain
-English recommendation paragraph. Figures are embedded as base64 PNGs so the
-output is one file with no external assets.
+The report has these sections: input summary, normalization diagnostics with the
+guard warnings, the ranking table, a funky-heatmap glyph table that carries the
+rank-robustness panels, the sensitivity outputs, a critical difference diagram
+when the input carries more than one dataset, and a plain English recommendation
+paragraph. Figures are embedded as base64 PNGs so the output is one file with no
+external assets.
 """
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from importlib import resources
 from pathlib import Path
 from typing import Any
@@ -33,6 +35,8 @@ def write_report(
     title: str | None = None,
     ground_truth_tool: str | None = None,
     registry: Registry | None = None,
+    funky_heatmap: bool = True,
+    metric_groups: Sequence[str] | None = None,
 ) -> None:
     """Write an HTML report for ``result`` to ``path``.
 
@@ -51,8 +55,19 @@ def write_report(
     registry
         Optional ``Registry`` for the per-dataset critical-difference
         computation. Defaults to a fresh registry.
+    funky_heatmap
+        Include the funky-heatmap glyph table with its rank-robustness panels
+        (leave-one-dataset-out span, SMAA acceptability, aggregation consensus).
+        Default True. Set False for a leaner report or when the matplotlib glyph
+        table is not wanted.
+    metric_groups
+        Optional group label per metric, in the order of ``result.metric_ids``,
+        used to colour the funky-heatmap columns. Ignored when ``funky_heatmap``
+        is False.
     """
-    context = _build_context(result, title, ground_truth_tool, registry)
+    context = _build_context(
+        result, title, ground_truth_tool, registry, funky_heatmap, metric_groups
+    )
     env = Environment(
         loader=FileSystemLoader(str(_TEMPLATE_DIR)),
         autoescape=select_autoescape(["html"]),
@@ -66,6 +81,8 @@ def _build_context(
     title: str | None,
     ground_truth_tool: str | None,
     registry: Registry | None,
+    funky_heatmap: bool = True,
+    metric_groups: Sequence[str] | None = None,
 ) -> dict[str, Any]:
     res = result.result
     order = np.argsort(res.ranks)
@@ -130,7 +147,56 @@ def _build_context(
     if cd is not None:
         context["critical_difference"] = cd
 
+    agg = _aggregation_agreement_summary(result)
+    if agg is not None:
+        context["aggregation_agreement"] = agg
+
+    if funky_heatmap:
+        funky = _funky_heatmap_figure(result, metric_groups)
+        if funky is not None:
+            context["funky_figure"] = funky
+
     return context
+
+
+def _aggregation_agreement_summary(result: RunResult) -> dict[str, Any] | None:
+    """One-line summary of how much the ranking depends on the aggregation choice.
+
+    Returns the mean pairwise Kendall tau-b across the five aggregations, whether
+    they all rank the same tool first, and how many ran. ``None`` when fewer than
+    two aggregations produce a ranking on this input.
+    """
+    from . import _aggregation_agreement_report
+
+    report = _aggregation_agreement_report(result)
+    if report is None:
+        return None
+    tau = report.mean_pairwise_tau
+    return {
+        "mean_tau": "n/a" if np.isnan(tau) else f"{tau:.2f}",
+        "top_is_unanimous": bool(report.top_is_unanimous),
+        "top_tool": result.tool_names[report.top_tool],
+        "n_methods": len(report.methods),
+    }
+
+
+def _funky_heatmap_figure(
+    result: RunResult,
+    metric_groups: Sequence[str] | None,
+) -> str | None:
+    """Render the funky-heatmap glyph table as a base64 PNG, or ``None`` if it fails.
+
+    Uses the public ``funky_heatmap_from_run`` path so the report draws the same
+    figure the vignettes do. A degenerate input that the figure cannot draw is
+    skipped rather than failing the whole report.
+    """
+    from . import funky_heatmap_from_run
+
+    try:
+        fig = funky_heatmap_from_run(result, metric_groups=metric_groups)
+    except Exception:
+        return None
+    return figures._fig_to_base64(fig)
 
 
 def _smaa_rows(result: RunResult) -> list[dict[str, Any]]:

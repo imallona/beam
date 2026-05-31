@@ -17,38 +17,42 @@ from .render import write_report
 __all__ = ["funky_heatmap", "funky_heatmap_from_run", "rank_bump", "write_report"]
 
 
-_AGGREGATIONS = ("saw", "topsis", "vikor", "promethee_ii", "comet")
+def _aggregation_agreement_report(run):
+    """Re-rank the run's reduced matrix under the five aggregations.
+
+    Holds the run's card-derived normalization context and weighting fixed and
+    varies the aggregation rule, returning an ``AggregationAgreementReport`` or
+    ``None`` when fewer than two aggregations produce a ranking on this input.
+    """
+    from beam.mcda import aggregation_agreement
+
+    ctx = run.context
+    try:
+        return aggregation_agreement(
+            run.matrix,
+            ctx.polarity,
+            weights=run.result.weighting,
+            normalization=list(ctx.normalization),
+            bounds=list(ctx.bounds),
+            baselines=list(ctx.baselines),
+            targets=list(ctx.targets),
+            tool_names=run.tool_names,
+        )
+    except ValueError:
+        return None
 
 
 def _aggregation_consensus(run):
     """Rank span per tool across the five aggregations, holding the weighting fixed.
 
-    Re-ranks the run's reduced matrix under each aggregation on the same
-    card-derived normalization context, and returns the smallest and largest
-    rank each tool takes. An aggregation that fails on the input is skipped.
+    Returns the smallest and largest rank each tool takes, the span behind the
+    funky-heatmap consensus panel. ``(None, None)`` when fewer than two
+    aggregations run on the input.
     """
-    from beam.mcda import run as mcda_run
-
-    ctx = run.context
-    rank_rows = []
-    for method in _AGGREGATIONS:
-        try:
-            res = mcda_run(
-                run.matrix,
-                ctx.polarity,
-                weights=run.result.weighting,
-                method=method,
-                normalization=list(ctx.normalization),
-                bounds=list(ctx.bounds),
-                baselines=list(ctx.baselines),
-            )
-        except Exception:
-            continue
-        rank_rows.append(res.ranks)
-    if len(rank_rows) < 2:
+    report = _aggregation_agreement_report(run)
+    if report is None:
         return None, None
-    stacked = np.vstack(rank_rows)
-    return stacked.min(axis=0), stacked.max(axis=0)
+    return report.rank_low, report.rank_high
 
 
 def funky_heatmap_from_run(

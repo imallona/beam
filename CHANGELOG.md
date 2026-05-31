@@ -4,6 +4,11 @@ All notable changes to beam will be documented in this file. The format follows 
 
 ## [Unreleased]
 
+### Added
+
+- `beam.mcda.aggregation_agreement` and `AggregationAgreementReport`: re-rank a tool by metric matrix under the five aggregations at fixed weighting and report how closely the orderings agree (per-method ranks, pairwise Kendall tau-b, a mean-rank consensus, and the per-tool rank span). The funky-heatmap consensus panel now reads its span from this one path; docs/explanations/aggregation-agreement.md.
+- The `beam.report` HTML report now embeds the funky-heatmap glyph table (a "Robustness at a glance" section) and an aggregation-agreement summary by default. Pass `funky_heatmap=False` to leave the figure out.
+
 ## [0.1.4] - 2026-05-29
 
 ### Added

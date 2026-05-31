@@ -149,3 +149,32 @@ def test_ground_truth_tool_is_labelled(tmp_path):
     # Should not raise when a documented-first tool is named.
     write_report(result, out, ground_truth_tool=result.top_tool)
     assert out.exists()
+
+
+def test_report_includes_funky_heatmap_by_default(tmp_path):
+    result = _toy_result(sensitivity=True)
+    out = tmp_path / "report.html"
+    write_report(result, out)
+    html = out.read_text(encoding="utf-8")
+    assert "Robustness at a glance" in html
+    assert "funky heatmap with rank-robustness" in html
+
+
+def test_funky_heatmap_can_be_disabled(tmp_path):
+    result = _toy_result(sensitivity=True)
+    out = tmp_path / "report.html"
+    write_report(result, out, funky_heatmap=False)
+    html = out.read_text(encoding="utf-8")
+    assert "Robustness at a glance" not in html
+    # The aggregation-agreement sentence is a sensitivity result, not part of
+    # the glyph table, so it still appears when the figure is turned off.
+    assert "Aggregation agreement" in html
+
+
+def test_report_reports_aggregation_agreement(tmp_path):
+    result = _toy_result(sensitivity=True)
+    out = tmp_path / "report.html"
+    write_report(result, out)
+    html = out.read_text(encoding="utf-8")
+    assert "Aggregation agreement" in html
+    assert "Kendall tau-b" in html

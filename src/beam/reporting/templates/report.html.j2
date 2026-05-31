@@ -63,6 +63,16 @@
 </table>
 <img src="data:image/png;base64,{{ heatmap_figure }}" alt="normalized scores heatmap">
 
+{% if funky_figure %}
+<h2>Robustness at a glance</h2>
+<p>The glyph table shows the per-metric normalized scores as circle size and the overall
+composite as a bar, alongside panels for how far each tool's rank moves under the robustness
+checks: the span across leave-one-dataset-out runs, the SMAA rank acceptability, and the span
+across the five aggregations. A tool with a tight rank span is a stable recommendation; a wide
+span means the order at that position depends on a choice the analyst made.</p>
+<img src="data:image/png;base64,{{ funky_figure }}" alt="funky heatmap with rank-robustness panels">
+{% endif %}
+
 <h2>Sensitivity</h2>
 {% if smaa_figure %}
 <h3>SMAA weight sampling</h3>
@@ -87,6 +97,15 @@ caused the largest rank change, a shift of {{ loo.max_rank_shift }}.</p>
 {{ lodo.n_datasets }} leave-one-dataset-out runs. Omitting dataset
 <code>{{ lodo.most_influential_dataset }}</code> caused the largest rank change, a shift of
 {{ lodo.max_rank_shift }}.</p>
+{% endif %}
+{% if aggregation_agreement %}
+<h3>Aggregation agreement</h3>
+<p>Re-ranking under the {{ aggregation_agreement.n_methods }} aggregations gives orderings that
+agree at a mean Kendall tau-b of {{ aggregation_agreement.mean_tau }}.
+{% if aggregation_agreement.top_is_unanimous %}Every aggregation ranks
+<code>{{ aggregation_agreement.top_tool }}</code> first, so the top recommendation does not
+depend on the aggregation choice.{% else %}They do not all rank the same tool first, so the top
+recommendation depends on which aggregation is used.{% endif %}</p>
 {% endif %}
 {% if perturbation %}
 <h3>Smallest weight perturbation</h3>

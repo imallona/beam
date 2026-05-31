@@ -98,8 +98,9 @@ src/beam/
                                 topsis, weighted_sum, vikor, promethee_ii, comet, rank, run,
                                 run_from_registry, registry_context, validate_for_aggregation,
                                 leave_one_metric_out, leave_one_dataset_out, smaa,
-                                smallest_weight_perturbation, critical_difference,
-                                skillings_mack, coverage_aware_critical_difference,
+                                smallest_weight_perturbation, aggregation_agreement,
+                                critical_difference, skillings_mack,
+                                coverage_aware_critical_difference,
                                 aggregate_across_datasets, reduce_tensor, Result
   api.py                        load-rank-report procedural API: rank, RunResult
   reporting/                    Self-contained HTML report (write_report, exposed as beam.report)
