@@ -57,6 +57,7 @@ beam validate scores.csv
 beam rank scores.csv --weights entropy --method topsis --out result.json --report report.html
 beam report result.json --out report.html
 beam metric show ari
+beam heterogeneity scores.csv --model bradley-terry-tree --features features.csv --out tree.json
 beam run beam.yaml
 ```
 

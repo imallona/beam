@@ -33,6 +33,8 @@ website:
             text: Add a new metric card
           - href: docs/how-to/rerun-from-manifest.md
             text: Rerun from a manifest
+          - href: docs/how-to/run-heterogeneity-from-the-cli.md
+            text: Run heterogeneity from the CLI
       - text: Explanations
         menu:
           - href: docs/explanations/cards-and-pipeline.qmd
