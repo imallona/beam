@@ -347,7 +347,7 @@ With only five datasets the critical difference is wide. Every method falls insi
 
 ## Heterogeneity diagnostics on a synthetic interaction
 
-The canonical scenarios above are single-dataset (a method by metric matrix), so they exercise the MCDA layer but not the heterogeneity layer, which needs a dataset axis. To show the heterogeneity diagnostics with a known ground truth, here is a small synthetic method by dataset by metric case built to contain a feature-driven ranking reversal: method A leads on the "easy" datasets and method C leads on the "hard" ones, with method B in the middle. The datasets carry a `regime` feature that marks which group they belong to.
+The canonical scenarios above are single-dataset (a method by metric matrix), so they cover the MCDA layer but not the heterogeneity layer, which needs a dataset axis. To show the heterogeneity diagnostics with a known ground truth, here is a small synthetic method by dataset by metric case built to contain a feature-driven ranking reversal: method A leads on the "easy" datasets and method C leads on the "hard" ones, with method B in the middle. The datasets carry a `regime` feature that marks which group they belong to.
 
 ```{python}
 rng = np.random.default_rng(0)

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/imallona/beam/schema/metric_card.schema.json",
   "title": "Metric card",
-  "description": "Formalization of a benchmark performance metric. Language-neutral; readable from Python (jsonschema) and R (jsonvalidate). Schema version 1.1: the optional mappings block now enumerates known external ontology keys (stato, uo, obi, qudt, om2, huggingface_evaluate) as typed URI strings; additionalProperties stays true so a card can carry private or future keys without a schema bump.",
+  "description": "Formalization of a benchmark performance metric. Language-neutral; readable from Python (jsonschema) and R (jsonvalidate). Schema version 1.2: comparability gains the optional noise_floor scalar (smallest interpretable difference in native units), consumed by beam.mcda.noise_floor_separation. Schema version 1.1 added the typed mappings block (stato, uo, obi, qudt, om2, huggingface_evaluate); additionalProperties stays true so a card can carry private or future keys without a schema bump.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -192,6 +192,10 @@
           "type": "string",
           "enum": ["min_max", "log_min_max", "rank", "zscore", "baseline_relative", "target_relative"],
           "description": "Machine-readable hint for how the MCDA pipeline should rescale this metric to [0, 1] before weighting. min_max for bounded metrics; log_min_max for ratio metrics spanning orders of magnitude (runtime, peak memory) so a single outlier does not compress the rest (Smith 1988); rank for a scale-free outlier-proof rescale; zscore for a logistic-squashed standardization; baseline_relative for chance-corrected metrics so a chance-level method maps to 0 rather than the column midpoint; target_relative for target_value metrics, scaling each method by its closeness to the declared semantics.target so the method nearest the target maps to 1."
+        },
+        "noise_floor": {
+          "type": "number",
+          "description": "Smallest difference in native units that is interpretable on this metric; differences below it are measurement noise. Consumed by beam.mcda.noise_floor_separation to flag tool pairs the metric set cannot tell apart, so the report does not present an order that rests on a sub-noise-floor difference. Source per metric: a reproducibility study or a Gauge R&R measurement."
         }
       }
     },

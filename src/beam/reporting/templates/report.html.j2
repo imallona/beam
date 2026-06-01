@@ -120,6 +120,45 @@ about {{ perturbation.delta }} on <code>{{ perturbation.metric }}</code>.</p>
 {% endif %}
 {% endif %}
 
+{% if reference_levels %}
+<h2>Reference levels</h2>
+{% if reference_levels.baseline_rows %}
+<h3>Chance baseline</h3>
+<p>How many tools score better than a random method on each metric that declares a chance
+baseline.</p>
+<table>
+  <tr><th>metric</th><th>chance score</th><th>tools beating chance</th></tr>
+  {% for row in reference_levels.baseline_rows %}
+  <tr><td><code>{{ row.metric }}</code></td><td>{{ row.baseline }}</td>
+  <td>{{ row.n_beating }} of {{ row.n_observed }} ({{ row.pct }} percent)</td></tr>
+  {% endfor %}
+</table>
+{% if reference_levels.tools_never_beating %}
+<p class="warning">Beat chance on no metric that declares a baseline:
+{{ reference_levels.tools_never_beating | join(", ") }}. On this evidence these tools are not
+distinguishable from a random method.</p>
+{% else %}
+<p>Every tool beats chance on at least one metric.</p>
+{% endif %}
+{% endif %}
+{% if reference_levels.top_pair_indistinguishable is defined %}
+<h3>Noise floor</h3>
+{% if reference_levels.top_pair_indistinguishable %}
+<p class="warning">The top two tools ({{ reference_levels.top_pair }}) differ by less than the noise
+floor on every metric that declares one, so the order between them is within measurement noise.</p>
+{% else %}
+<p>The top two tools ({{ reference_levels.top_pair }}) are separated above the noise floor on at
+least one metric.</p>
+{% endif %}
+{% if reference_levels.indistinguishable_pairs %}
+<p>Tool pairs the metric set cannot tell apart above the noise floor:</p>
+<ul>
+  {% for pair in reference_levels.indistinguishable_pairs %}<li>{{ pair }}</li>{% endfor %}
+</ul>
+{% endif %}
+{% endif %}
+{% endif %}
+
 {% if critical_difference %}
 <h2>Critical difference across datasets</h2>
 <p>Friedman test p-value {{ critical_difference.friedman_pvalue }} over

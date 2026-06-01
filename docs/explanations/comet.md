@@ -6,7 +6,7 @@ beam wraps pymcdm for COMET rather than implementing the method itself. beam sup
 
 ## The rank reversal problem
 
-Most aggregation methods score a tool by comparing it to the other tools in the table. TOPSIS measures distance to the best and worst observed values, so the scale it uses depends on which tools are present. Weighted sum is closer to safe, but once a normalization step rescales each column to the observed minimum and maximum, the same dependence returns. The practical consequence is rank reversal: drop a poor method from the comparison, recompute, and two of the survivors can swap places even though nothing about them changed. For a leaderboard that grows over time, or a sensitivity analysis that drops one method at a time, this is a real problem. The order is supposed to describe the methods, not the company they keep.
+Most aggregation methods score a tool by comparing it to the other tools in the table. TOPSIS measures distance to the best and worst observed values, so the scale it uses depends on which tools are present. Weighted sum is closer to safe, but once a normalization step rescales each column to the observed minimum and maximum, the same dependence returns. The practical consequence is rank reversal: drop a poor method from the comparison, recompute, and two of the survivors can swap places even though nothing about them changed. For a leaderboard that grows over time, or a sensitivity analysis that drops one method at a time, this is a real problem. The order is supposed to describe the methods, not which other methods are present.
 
 ## Characteristic objects
 

@@ -419,8 +419,8 @@ class RegistryContext:
 
     Resolved once from the registry and reused by ``run_from_registry`` and by
     the sensitivity primitives so the headline ranking and its sensitivity
-    analysis share the same per-metric normalization, bounds, baselines, and
-    targets.
+    analysis share the same per-metric normalization, bounds, baselines,
+    targets, and noise floors.
     """
 
     metric_ids: tuple[str, ...]
@@ -430,6 +430,7 @@ class RegistryContext:
     baselines: tuple[float | None, ...]
     targets: tuple[float | None, ...]
     versions: tuple[str | None, ...] = ()
+    noise_floors: tuple[float | None, ...] = ()
 
 
 def registry_context(
@@ -484,4 +485,5 @@ def registry_context(
         baselines=tuple(p.score_of_random_baseline for p in properties),
         targets=tuple(p.target for p in properties),
         versions=version_tuple,
+        noise_floors=tuple(p.noise_floor for p in properties),
     )

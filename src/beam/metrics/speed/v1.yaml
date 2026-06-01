@@ -3,11 +3,7 @@ version: v1
 name: Travel speed
 aliases:
   - velocity
-description: |
-  Average travel speed in kilometres per hour. A measured quantity: the value
-  is distance covered divided by time taken, not a comparison of outputs. The
-  transportation example uses it, along with cost and co2, to run the registry
-  and the MCDA pipeline on a problem that has nothing to do with bioinformatics.
+description: "Average travel speed in kilometres per hour. A measured quantity, where the value is distance divided by time, not a comparison of outputs. The transportation example uses it, with cost and co2, to run the registry and the MCDA pipeline outside bioinformatics."
 metric_kind: measured
 measurand: distance covered per unit time, in kilometres per hour
 task:

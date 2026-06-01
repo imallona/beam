@@ -1,10 +1,7 @@
 id: clisi
 version: v1
 name: Cell-type LISI (cLISI)
-description: Single-cell data-integration metric from the scIB benchmark, a biological-conservation
-  score. Measures cell-type label purity, from the inverse Simpson index of cell-type
-  labels in local neighbourhoods, rescaled so pure neighbourhoods score high. scIB
-  rescales it to the unit interval where higher is better.
+description: Biological-conservation score from the scIB single-cell integration benchmark. It measures cell-type label purity from the inverse Simpson index in local neighbourhoods, so pure neighbourhoods score high, rescaled to [0, 1] where higher is better.
 citations:
 - text: Korsunsky I, et al. Fast, sensitive and accurate integration of single-cell
     data with Harmony. Nature Methods, 2019.
@@ -30,9 +27,7 @@ output:
   description: scIB-scaled score in [0, 1], higher is better
 semantics:
   scale_type: interval
-  scale_rationale: scIB rescales the metric to a bounded [0, 1] range for cross-method
-    aggregation; the unit length is not invariant across benchmarks, so the scale
-    is interval rather than ratio.
+  scale_rationale: scIB rescales the metric to [0, 1] for cross-method comparison. The unit length varies across benchmarks, so the scale is interval, not ratio.
   range:
     lower: 0
     upper: 1

@@ -1,10 +1,7 @@
 id: asw_label
 version: v1
 name: Cell-type ASW (silhouette over labels)
-description: Single-cell data-integration metric from the scIB benchmark, a biological-conservation
-  score. Measures how compactly and separately the cell-type labels form clusters
-  in the integrated embedding, from the silhouette width rescaled to the unit interval.
-  scIB rescales it to the unit interval where higher is better.
+description: Biological-conservation score from the scIB single-cell integration benchmark. It measures the cell-type silhouette width, so labels that form compact, separated clusters score high, rescaled to [0, 1] where higher is better.
 citations:
 - text: 'Rousseeuw PJ. Silhouettes: a graphical aid to the interpretation and validation
     of cluster analysis. Journal of Computational and Applied Mathematics, 1987.'
@@ -30,9 +27,7 @@ output:
   description: scIB-scaled score in [0, 1], higher is better
 semantics:
   scale_type: interval
-  scale_rationale: scIB rescales the metric to a bounded [0, 1] range for cross-method
-    aggregation; the unit length is not invariant across benchmarks, so the scale
-    is interval rather than ratio.
+  scale_rationale: scIB rescales the metric to [0, 1] for cross-method comparison. The unit length varies across benchmarks, so the scale is interval, not ratio.
   range:
     lower: 0
     upper: 1

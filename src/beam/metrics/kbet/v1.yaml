@@ -1,10 +1,7 @@
 id: kbet
 version: v1
 name: kBET (k-nearest-neighbour batch effect test)
-description: Single-cell data-integration metric from the scIB benchmark, a batch-removal
-  score. Measures local batch mixing, from the acceptance rate of the knn batch-effect
-  test relative to the global batch composition. scIB rescales it to the unit interval
-  where higher is better.
+description: Batch-removal score from the scIB single-cell integration benchmark. It measures local batch mixing from the kBET acceptance rate against the global batch composition, rescaled to [0, 1] where higher is better.
 citations:
 - text: Buttner M, Miao Z, Wolf FA, Teichmann SA, Theis FJ. A test metric for assessing
     single-cell RNA-seq batch correction. Nature Methods, 2019.
@@ -30,9 +27,7 @@ output:
   description: scIB-scaled score in [0, 1], higher is better
 semantics:
   scale_type: interval
-  scale_rationale: scIB rescales the metric to a bounded [0, 1] range for cross-method
-    aggregation; the unit length is not invariant across benchmarks, so the scale
-    is interval rather than ratio.
+  scale_rationale: scIB rescales the metric to [0, 1] for cross-method comparison. The unit length varies across benchmarks, so the scale is interval, not ratio.
   range:
     lower: 0
     upper: 1

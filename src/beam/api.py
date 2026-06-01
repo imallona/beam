@@ -32,13 +32,17 @@ from .io import Scores, load_scores
 from .manifest import build_manifest
 from .mcda import (
     DatasetSensitivityReport,
+    NoiseFloorReport,
+    RandomBaselineReport,
     RegistryContext,
     Result,
     SensitivityReport,
     SMAAReport,
     WeightPerturbationReport,
+    beats_random_baseline,
     leave_one_dataset_out,
     leave_one_metric_out,
+    noise_floor_separation,
     reduce_tensor,
     registry_context,
     run_from_registry,
@@ -72,6 +76,12 @@ class RunResult:
     leave_one_dataset_out
         The leave-one-dataset-out sensitivity report, present only when the
         input was a tensor with at least two datasets and sensitivity was on.
+    random_baseline
+        Per-metric chance comparison from the cards' declared baselines, and the
+        tools that beat chance on no metric. Always computed.
+    noise_floor
+        Pairwise separation against the cards' declared noise floors, flagging
+        the tool pairs the metric set cannot tell apart. Always computed.
     manifest
         The run manifest dictionary (see ``beam.manifest``).
     """
@@ -85,6 +95,8 @@ class RunResult:
     leave_one_out: SensitivityReport | None = None
     perturbation: WeightPerturbationReport | None = None
     leave_one_dataset_out: DatasetSensitivityReport | None = None
+    random_baseline: RandomBaselineReport | None = None
+    noise_floor: NoiseFloorReport | None = None
 
     @property
     def tool_names(self) -> tuple[str, ...]:
@@ -244,6 +256,11 @@ def rank(
                 on_zero_coverage=on_zero_coverage,
             )
 
+    random_baseline = beats_random_baseline(
+        matrix, context.polarity, context.baselines, metric_ids=ids
+    )
+    noise_floor = noise_floor_separation(matrix, context.noise_floors, ranks=result.ranks)
+
     manifest = build_manifest(
         scores=score_obj,
         metric_ids=ids,
@@ -267,6 +284,8 @@ def rank(
         leave_one_out=loo_report,
         perturbation=pert_report,
         leave_one_dataset_out=lodo_report,
+        random_baseline=random_baseline,
+        noise_floor=noise_floor,
     )
 
 

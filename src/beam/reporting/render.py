@@ -143,6 +143,10 @@ def _build_context(
             len(result.leave_one_dataset_out.evaluated_datasets),
         )
 
+    ref = _reference_levels_section(result)
+    if ref is not None:
+        context["reference_levels"] = ref
+
     cd = _critical_difference_section(result, registry)
     if cd is not None:
         context["critical_difference"] = cd
@@ -253,6 +257,48 @@ def _perturbation_summary(result: RunResult) -> dict[str, Any]:
         summary["delta"] = f"{abs(top.delta):.3f}"
         summary["metric"] = metric
     return summary
+
+
+def _reference_levels_section(result: RunResult) -> dict[str, Any] | None:
+    """Build the chance-baseline and noise-floor section, or ``None`` when inactive.
+
+    Returns a dict only when at least one metric declares a chance baseline or a
+    noise floor. The chance part lists per-metric beat counts and names the tools
+    that beat chance on no metric; the noise-floor part names the indistinguishable
+    tool pairs and flags the top two tools when they fall within the floor.
+    """
+    rb = result.random_baseline
+    nf = result.noise_floor
+    if (rb is None or not rb.active) and (nf is None or not nf.active):
+        return None
+
+    section: dict[str, Any] = {}
+    if rb is not None and rb.active:
+        section["baseline_rows"] = [
+            {
+                "metric": mb.metric or "",
+                "baseline": f"{mb.baseline:g}",
+                "n_beating": mb.n_beating,
+                "n_observed": mb.n_observed,
+                "pct": "n/a"
+                if np.isnan(mb.fraction_beating)
+                else f"{mb.fraction_beating * 100:.0f}",
+            }
+            for mb in rb.per_metric
+        ]
+        section["tools_never_beating"] = [result.tool_names[i] for i in rb.tools_never_beating]
+        section["n_floored_metrics"] = len(rb.per_metric)
+
+    if nf is not None and nf.active:
+        section["indistinguishable_pairs"] = [
+            f"{result.tool_names[a]} and {result.tool_names[b]}"
+            for a, b in nf.indistinguishable_pairs
+        ]
+        section["top_pair_indistinguishable"] = bool(nf.top_pair_indistinguishable)
+        if nf.top_pair is not None:
+            a, b = nf.top_pair
+            section["top_pair"] = f"{result.tool_names[a]} and {result.tool_names[b]}"
+    return section
 
 
 def _critical_difference_section(

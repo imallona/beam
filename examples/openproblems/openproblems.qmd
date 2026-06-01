@@ -15,7 +15,7 @@ format:
 
 ## Goal
 
-This vignette runs beam on two tasks from OpenProblems in Single-Cell Analysis (openproblems.bio, Nature Biotechnology 2025), the continuous community benchmarking platform. OpenProblems scores every method on every dataset by every metric within a task and publishes the result as a method by dataset by metric tensor, so beam can ingest it directly. The two tasks are chosen for different reasons. The batch integration task is metric-rich (13 scIB metrics), so it exercises the multi-criteria decision layer. The spatially variable genes task is dataset-rich (50 spatial datasets), so it is where the Bradley-Terry tree can find a feature split that the 12-dataset Duo benchmark could not show. See [the OpenProblems explanation](../../docs/explanations/openproblems-as-a-data-source.md).
+This vignette runs beam on two tasks from OpenProblems in Single-Cell Analysis (openproblems.bio, Nature Biotechnology 2025), the continuous community benchmarking platform. OpenProblems scores every method on every dataset by every metric within a task and publishes the result as a method by dataset by metric tensor, so beam can ingest it directly. The two tasks are chosen for different reasons. The batch integration task is metric-rich (13 scIB metrics), so it runs the multi-criteria decision layer. The spatially variable genes task is dataset-rich (50 spatial datasets), so it is where the Bradley-Terry tree can find a feature split that the 12-dataset Duo benchmark could not show. See [the OpenProblems explanation](../../docs/explanations/openproblems-as-a-data-source.md).
 
 ## Provenance of the bundled tables
 

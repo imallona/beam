@@ -1,6 +1,6 @@
 # Run a heterogeneity model from the command line
 
-Use this recipe when the MCDA ranking pools several datasets and you want to know whether one method is genuinely ahead or whether the order depends on which datasets are in the pool. The `beam heterogeneity` command fits one of the method-dataset heterogeneity models on a score file and writes the report as JSON.
+Use this recipe when the MCDA ranking pools several datasets and you want to know whether one method is really ahead or whether the order depends on which datasets are in the pool. The `beam heterogeneity` command fits one of the method-dataset heterogeneity models on a score file and writes the report as JSON.
 
 These models wrap R, so the command needs the R toolchain. The conda recipe `envs/heterogeneity.yml` installs Python and R together with the packages each model uses. When a package is missing the command stops with a clear error naming it, so a script can branch on the exit code (0 on success, 2 on any error).
 
@@ -14,7 +14,7 @@ beam heterogeneity scores.csv --model mixed-effects --metric ari --out report.js
 
 ## The three models
 
-`mixed-effects` fits `score ~ method + (1 | dataset)` in lme4 and splits the score variation into a method effect, a between-dataset shift, and the residual. The report carries the variance components, the dataset ICC (the share of variation that is the dataset rather than the method), and the per-method marginal means. A high ICC means most of the spread is between datasets, so a single pooled ranking hides a lot.
+`mixed-effects` fits `score ~ method + (1 | dataset)` in lme4 and splits the score variation into a method effect, a between-dataset shift, and the residual. The report carries the variance components, the dataset ICC (the share of variation that is the dataset rather than the method), and the per-method marginal means. A high ICC means most of the spread is between datasets, so a single pooled ranking hides much of the structure.
 
 `bradley-terry-tree` fits a Bradley-Terry tree in psychotree. It splits the datasets by their features so each leaf has its own method ranking, and flags the leaves where the pooled top method does not hold. It needs a dataset features file, passed with `--features`:
 

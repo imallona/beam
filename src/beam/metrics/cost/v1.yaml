@@ -6,7 +6,7 @@ aliases:
 description: |
   Monetary cost of travel per kilometre, in a generic currency unit. A measured
   quantity, lower is better. One of the three metrics in the transportation
-  example, which exercises the registry and the MCDA pipeline outside
+  example, which runs the registry and the MCDA pipeline outside
   bioinformatics.
 metric_kind: measured
 measurand: monetary cost incurred per kilometre travelled

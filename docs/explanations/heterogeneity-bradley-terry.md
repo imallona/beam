@@ -1,6 +1,6 @@
 # Heterogeneity: Bradley-Terry trees
 
-The mixed-effects model asks how much of the score variation is a method-by-dataset interaction. The Bradley-Terry tree in `beam.heterogeneity.bradley_terry_tree` asks the next question: which dataset properties drive that interaction, and what is the ranking inside each subgroup. It follows Strobl, Wickelmaier and Zeileis, who combine a Bradley-Terry model with model-based recursive partitioning.
+The mixed-effects model asks how much of the score variation is a method-by-dataset interaction. The Bradley-Terry tree in `beam.heterogeneity.bradley_terry_tree` asks the next question: which dataset properties produce that interaction, and what is the ranking inside each subgroup. It follows Strobl, Wickelmaier and Zeileis, who combine a Bradley-Terry model with model-based recursive partitioning.
 
 ## From scores to comparisons
 
@@ -14,13 +14,13 @@ A Bradley-Terry model turns pairwise wins into a latent strength per method, the
 
 ## The tree
 
-Model-based recursive partitioning fits the Bradley-Terry model at the root, then tests whether the worth parameters are stable across the candidate dataset features. When the stability test flags a feature, the datasets split on it and the model is refit in each child. The recursion continues until no further split is warranted or a node would fall below the minimum size. The result is a tree whose leaves each carry their own Bradley-Terry ranking, and inner nodes that read as "datasets with feature X above threshold Z go this way".
+Model-based recursive partitioning fits the Bradley-Terry model at the root, then tests whether the worth parameters are stable across the candidate dataset features. When the stability test flags a feature, the datasets split on it and the model is refit in each child. The recursion continues until no further split is warranted or a node would fall below the minimum size. The result is a tree whose leaves each carry their own Bradley-Terry ranking, with inner nodes that read as "datasets with feature X above threshold Z go this way".
 
 This is the readable answer to the Strobl critique. Instead of one ranking averaged over datasets that may disagree, the tree gives "prefer method A on datasets like this, method B on datasets like that", with a statistical test deciding where the split is real. `reversed_leaves` reports the leaves whose strongest method differs from the global one, the subgroups where the pooled recommendation does not hold.
 
 ## The small-sample limit
 
-Recursive partitioning needs enough datasets to support a split. With a dozen datasets the parameter-stability test rarely separates a feature-dependent regime from sampling noise, and the tree degrades to the single flat ranking. The report says so through `did_split` and the summary, rather than inventing a split. This is the same limit the critical-difference diagram and the mixed-effects fit hit on a small benchmark. The tree earns its keep where there are many datasets carrying real feature variation.
+Recursive partitioning needs enough datasets to support a split. With a dozen datasets the parameter-stability test rarely separates a feature-dependent regime from sampling noise, and the tree degrades to the single flat ranking. The report says so through `did_split` and the summary, rather than inventing a split. This is the same limit the critical-difference diagram and the mixed-effects fit hit on a small benchmark. The tree is useful where there are many datasets carrying real feature variation.
 
 ## How to use it
 
@@ -30,6 +30,6 @@ The fit runs in R's psychotree through a subprocess, so it needs the R toolchain
 
 ## Relation to the other diagnostics
 
-The mixed-effects model measures how much interaction there is; the Bradley-Terry tree localizes it to dataset features and reports the subgroup rankings. Leave-one-dataset-out asks whether the composite ranking hangs on any one dataset; the Friedman-Nemenyi diagram asks whether the methods are statistically separable on a metric. Read together they move from "is there heterogeneity" to "where is it and what do I do about it".
+The mixed-effects model measures how much interaction there is; the Bradley-Terry tree locates it in dataset features and reports the subgroup rankings. Leave-one-dataset-out asks whether the composite ranking hangs on any one dataset; the Friedman-Nemenyi diagram asks whether the methods are statistically separable on a metric. Read together they move from "is there heterogeneity" to "where is it and what do I do about it".
 
 The Duo 2018 vignette works this through on the ARI scores, where the tree degrades to a flat ranking on 12 datasets.

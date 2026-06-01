@@ -26,6 +26,14 @@ from .perturbation import (
     smallest_weight_perturbation,
 )
 from .promethee import promethee_ii
+from .reference_levels import (
+    MetricBaseline,
+    NoiseFloorReport,
+    PairSeparation,
+    RandomBaselineReport,
+    beats_random_baseline,
+    noise_floor_separation,
+)
 from .sensitivity import (
     DatasetSensitivityReport,
     SensitivityReport,
@@ -59,7 +67,11 @@ __all__ = [
     "IncompatibleScaleError",
     "IncompleteMatrixError",
     "InconsistentPairwiseMatrixError",
+    "MetricBaseline",
+    "NoiseFloorReport",
     "PairPerturbation",
+    "PairSeparation",
+    "RandomBaselineReport",
     "RegistryContext",
     "Result",
     "SMAAReport",
@@ -69,6 +81,7 @@ __all__ = [
     "aggregate_across_datasets",
     "aggregation_agreement",
     "ahp_weights",
+    "beats_random_baseline",
     "comet",
     "coverage_aware_critical_difference",
     "critic_weights",
@@ -80,6 +93,7 @@ __all__ = [
     "merec_weights",
     "min_max_normalize",
     "nemenyi_critical_difference",
+    "noise_floor_separation",
     "normalization_warnings",
     "normalize",
     "promethee_ii",

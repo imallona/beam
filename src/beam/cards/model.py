@@ -95,6 +95,17 @@ class MetricCard:
         return self.semantics.get("score_of_random_baseline")
 
     @property
+    def noise_floor(self) -> float | None:
+        """Smallest interpretable score difference, if the card declares one.
+
+        Set under comparability.noise_floor, in the metric's native units.
+        Differences below it are not interpretable. Consumed by
+        beam.mcda.noise_floor_separation to flag tool pairs that the metric set
+        cannot tell apart.
+        """
+        return self.comparability.get("noise_floor")
+
+    @property
     def target(self) -> float | None:
         """Ideal value of a target_value metric, if the card declares one.
 
@@ -123,3 +134,4 @@ class MetricProperties:
     recommended_normalization: str | None = None
     score_of_random_baseline: float | None = None
     target: float | None = None
+    noise_floor: float | None = None

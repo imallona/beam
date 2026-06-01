@@ -4,7 +4,7 @@ Every metric card under `src/beam/metrics/<id>/v1.yaml` carries an optional `map
 
 ## Ontologies in use
 
-STATO, the Statistics Ontology (https://stato-ontology.org), is the primary target. It is the only OBO Foundry ontology dedicated to statistical concepts: estimators, test statistics, distributions, study designs. When beam can write `mappings.stato: http://purl.obolibrary.org/obo/STATO_NNNNNNN` for a card, the metric is anchored to a stable external identifier that downstream tools can resolve without parsing beam's free-form prose.
+STATO, the Statistics Ontology (https://stato-ontology.org), is the main target. It is the only OBO Foundry ontology dedicated to statistical concepts: estimators, test statistics, distributions, study designs. When beam can write `mappings.stato: http://purl.obolibrary.org/obo/STATO_NNNNNNN` for a card, the metric is anchored to a stable external identifier that downstream tools can resolve without parsing beam's free-form prose.
 
 UO, the Units of Measurement Ontology (http://purl.obolibrary.org/obo/uo.owl), covers SI base and derived units, prefixes, and common compound units. The unit-bearing cards use UO: runtime in seconds, peak memory in bytes, speed in kilometer per hour, co2 in grams. UO does not carry monetary units, so the toy `cost` card is left gapped on purpose.
 

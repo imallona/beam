@@ -10,7 +10,7 @@ When each dataset gives a full ranking of the methods, not just pairwise wins, P
 
 There is an honest limit. On rankings that mix ties with partial coverage, the quasi-standard-errors can be unavailable, because the variance refit fails on that shape. When that happens the worths are still reported and the standard-error fields are NA with a warning.
 
-Plackett-Luce and the Bradley-Terry tree answer different questions. Plackett-Luce gives one global ranking with uncertainty across all datasets. The tree localizes where that ranking reverses, splitting the datasets by their features. Use Plackett-Luce when the input is a per-dataset ordering and the question is the overall order; use the tree when the question is which dataset features change the order.
+Plackett-Luce and the Bradley-Terry tree answer different questions. Plackett-Luce gives one global ranking with uncertainty across all datasets. The tree locates where that ranking reverses, splitting the datasets by their features. Use Plackett-Luce when the input is a per-dataset ordering and the question is the overall order; use the tree when the question is which dataset features change the order.
 
 ## The glmmTMB beta engine
 

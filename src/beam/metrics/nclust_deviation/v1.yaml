@@ -4,8 +4,7 @@ name: Cluster-count deviation from the truth
 aliases:
   - nclust.vs.true
   - cluster_count_deviation
-description: |
-  Deviation of the estimated number of clusters from the true number of clusters, as used in the Duo 2018 clustering benchmark (the nclust.vs.true column). It is the absolute difference between the number of clusters a method reports and the number of clusters in the reference partition. A value of 0 means the method recovered the correct cluster count; larger values mean it over- or under-clustered. This metric is sparsely populated in Duo 2018: 101 of the 168 method by data set cells are missing, because several methods do not report a fixed cluster count for every data set, so callers should expect many NaN entries and account for partial coverage when aggregating.
+description: "Absolute difference between the number of clusters a method reports and the number in the reference partition, as used in the Duo 2018 benchmark (the nclust.vs.true column). A value of 0 means the method recovered the correct cluster count; larger values mean it over- or under-clustered. The metric is sparse in Duo 2018, where 101 of 168 method by dataset cells are missing because several methods do not report a fixed cluster count for every dataset, so expect many NaN entries when aggregating."
 citations:
   - text: "Duo A, Robinson MD, Soneson C. A systematic performance evaluation of clustering methods for single-cell RNA-seq data. F1000Research 2018, 7:1141."
     doi: "10.12688/f1000research.15666.3"
@@ -33,8 +32,7 @@ output:
   description: absolute difference in cluster counts, a non-negative number
 semantics:
   scale_type: ratio
-  scale_rationale: |
-    The quantity is the absolute difference between two cluster counts, so it has a genuine zero (the estimated count equals the true count) and ratios are meaningful (a deviation of four is twice as far off as a deviation of two). It is unbounded above because a method can report arbitrarily many clusters. In Duo 2018 the observed values run from 0 to 7.
+  scale_rationale: "The quantity is the absolute difference of two cluster counts, so it has a genuine zero (the counts match) and meaningful ratios (a deviation of four is twice as far off as two). It is unbounded above, since a method can report arbitrarily many clusters. In Duo 2018 the observed values run from 0 to 7."
   range:
     lower: 0
     upper: null

@@ -100,6 +100,7 @@ src/beam/
                                 run_from_registry, registry_context, validate_for_aggregation,
                                 leave_one_metric_out, leave_one_dataset_out, smaa,
                                 smallest_weight_perturbation, aggregation_agreement,
+                                beats_random_baseline, noise_floor_separation,
                                 critical_difference, skillings_mack,
                                 coverage_aware_critical_difference,
                                 aggregate_across_datasets, reduce_tensor, Result

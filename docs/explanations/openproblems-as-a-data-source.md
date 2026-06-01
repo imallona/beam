@@ -10,15 +10,15 @@ beam vendors small derived tables in long format, with columns `method_id`, `dat
 
 ## Two tasks, chosen for complementary reasons
 
-No single OpenProblems task gives both many metrics and many datasets, so beam bundles two and each exercises a different part of the stack.
+No single OpenProblems task gives both many metrics and many datasets, so beam bundles two and each runs a different part of the stack.
 
-`batch_integration` has 19 methods, 6 datasets and 13 scIB metrics (Luecken et al. 2022). It is metric-rich, so it exercises the MCDA layer over many criteria. beam re-derives the per-metric normalization from the metric cards and runs explicit MCDA with sensitivity. This can place a different method first than the platform's own mean-of-scaled-scores leaderboard rule. In the bundled data, beam with equal weights and TOPSIS leads with combat while the mean-of-scores rule leads with scanvi. The aggregation rule, not the data alone, decides the top method. Coverage is uneven: the `hvg_overlap` column and some method-by-dataset cells are sparse, which beam surfaces as NaN rather than hiding.
+`batch_integration` has 19 methods, 6 datasets and 13 scIB metrics (Luecken et al. 2022). It is metric-rich, so it runs the MCDA layer over many criteria. beam re-derives the per-metric normalization from the metric cards and runs explicit MCDA with sensitivity. This can place a different method first than the platform's own mean-of-scaled-scores leaderboard rule. In the bundled data, beam with equal weights and TOPSIS leads with combat while the mean-of-scores rule leads with scanvi. The aggregation rule, not the data alone, decides the top method. Coverage is uneven: the `hvg_overlap` column and some method-by-dataset cells are sparse, which beam surfaces as NaN rather than hiding.
 
 `spatially_variable_genes` has 14 methods, 50 datasets and one correlation metric. It is dataset-rich, which is what the Bradley-Terry tree needs to find feature-based splits. The dataset features (spatial assay technology, organism, cancer condition) parse out of the dataset id. The tree splits on technology: spark_x leads the pooled ranking, but spanve leads on the visium and xenium datasets and nnsvg leads on the seqfish, slideseqv2 and slidetags datasets. The top spatially-variable-gene method depends on the assay.
 
 ## The informative tradeoff
 
-Because no one task carries both breadth in metrics and breadth in datasets, `batch_integration` exercises the MCDA breadth and `spatially_variable_genes` exercises the heterogeneity depth. The published results JSON does not include dataset-level numeric features such as cell counts or batch design, so beam uses only the categorical descriptors parseable from the dataset id, and for the spatial data the technology and organism are partly confounded. This bounds what the tree can attribute a split to.
+Because no one task carries both breadth in metrics and breadth in datasets, `batch_integration` covers the MCDA breadth and `spatially_variable_genes` covers the heterogeneity depth. The published results JSON does not include dataset-level numeric features such as cell counts or batch design, so beam uses only the categorical descriptors parseable from the dataset id, and for the spatial data the technology and organism are partly confounded. This bounds what the tree can attribute a split to.
 
 ## Two further uses
 

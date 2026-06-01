@@ -8,7 +8,7 @@ The treatments are the methods. The studies are the (benchmark, dataset) blocks.
 
 The P-score is the ranking. It is the share of competing methods a method beats, averaged over the ranking uncertainty, in 0 to 1. Because a benchmark rank of 1 is best, beam treats small values as desirable, so a higher P-score is a better-ranked method.
 
-## The standard error is the modeling choice to read honestly
+## The standard error
 
 Benchmarks publish one score per method per dataset per metric, with no replicate runs, so there is no sampling standard error in the usual sense. This wrapper takes the variability across the metrics within a (benchmark, dataset) block as the within-arm spread. That treats the metrics as repeated readings of the same quantity, which they are not exactly: ARI, ASW, kBET and LISI measure related but distinct aspects of integration quality. The pooled ranking is therefore a descriptive summary of the evidence as published, not an inference back to a population of runs. An arm resting on fewer than two metrics has no estimable standard deviation and is dropped, and netmeta then keeps only the studies that still have two or more arms.
 
@@ -18,7 +18,7 @@ Two statistics qualify the pooled ranking. The heterogeneity Q (the within-desig
 
 ## Relation to the other cross-benchmark tools
 
-The network meta-analysis and the source-variance decomposition (see [the mixed-effects explanation](heterogeneity-mixed-effects.md)) answer complementary questions. The mixed-effects `source_variance_decomposition` puts a number on how much of the spread is the benchmark rather than the method (the method-by-benchmark variance share). The network meta-analysis pools the same evidence into a single ranking with a hierarchy of methods, and its inconsistency statistic is the disagreement read as a model lack-of-fit rather than as a variance component. Read together: a high method-by-benchmark variance share and a significant inconsistency Q are the same finding from two directions, that the benchmarks disagree and the pooled ranking is an average over that disagreement.
+The network meta-analysis and the source-variance decomposition (see [the mixed-effects explanation](heterogeneity-mixed-effects.md)) answer complementary questions. The mixed-effects `source_variance_decomposition` puts a number on how much of the spread is the benchmark rather than the method (the method-by-benchmark variance share). The network meta-analysis pools the same evidence into a single ranking with a hierarchy of methods, and its inconsistency statistic is the disagreement read as a model lack-of-fit rather than as a variance component. Read together, a high method-by-benchmark variance share and a significant inconsistency Q are the same finding from two directions. The benchmarks disagree, and the pooled ranking is an average over that disagreement.
 
 ## How to use it
 

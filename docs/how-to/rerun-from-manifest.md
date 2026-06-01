@@ -40,7 +40,7 @@ The CLI's `beam report` reloads a run record and re-runs the analysis with the r
 beam report result.json --out report_rerun.html
 ```
 
-(Note: `result.json` is the small run record written by `--out` on the original `beam rank`; the manifest is the heavy reproducibility envelope, the run record is the smaller pointer.)
+(Note: `result.json` is the small run record written by `--out` on the original `beam rank`; the manifest is the full reproducibility record, the run record is the smaller pointer.)
 
 From Python you can also reuse the parameters in the manifest directly:
 

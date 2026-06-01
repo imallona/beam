@@ -112,6 +112,20 @@ def recommendation(result: RunResult) -> str:
                 f"overturn it is about {abs(pert.delta):.2f}."
             )
 
+    if result.random_baseline is not None and result.random_baseline.active:
+        n_never = len(result.random_baseline.tools_never_beating)
+        if n_never:
+            sentences.append(
+                f"{n_never} of {n_tools} tools do not beat chance on any metric that "
+                "declares a baseline."
+            )
+
+    if result.noise_floor is not None and result.noise_floor.top_pair_indistinguishable:
+        sentences.append(
+            "The top two tools differ by less than the noise floor on every metric that "
+            "declares one, so the order between them is within measurement noise."
+        )
+
     return " ".join(sentences)
 
 

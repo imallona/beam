@@ -26,32 +26,32 @@ random partitions; can be negative for worse-than-random agreement.""" ;
 beam:asw_batch a owl:NamedIndividual,
         beam:Metric ;
     rdfs:label "Batch ASW (silhouette over batches)" ;
-    rdfs:comment "Single-cell data-integration metric from the scIB benchmark, a batch-removal score. Measures degree to which batches mix within a cell type, from the batch silhouette width inverted so well-mixed batches score high. scIB rescales it to the unit interval where higher is better." ;
+    rdfs:comment "Batch-removal score from the scIB single-cell integration benchmark. It measures inverts the batch silhouette width so well-mixed batches within a cell type score high, rescaled to [0, 1] where higher is better." ;
     rdfs:seeAlso obo:OBI_0002631 .
 
 beam:asw_label a owl:NamedIndividual,
         beam:Metric ;
     rdfs:label "Cell-type ASW (silhouette over labels)" ;
-    rdfs:comment "Single-cell data-integration metric from the scIB benchmark, a biological-conservation score. Measures how compactly and separately the cell-type labels form clusters in the integrated embedding, from the silhouette width rescaled to the unit interval. scIB rescales it to the unit interval where higher is better." ;
+    rdfs:comment "Biological-conservation score from the scIB single-cell integration benchmark. It measures the cell-type silhouette width, so labels that form compact, separated clusters score high, rescaled to [0, 1] where higher is better." ;
     rdfs:seeAlso obo:OBI_0002631 .
 
 beam:calibration_slope a obo:STATO_0000687,
         owl:NamedIndividual,
         beam:Metric ;
     rdfs:label "Calibration slope" ;
-    rdfs:comment "Slope of a logistic recalibration model that regresses the observed binary outcome on the linear predictor (the log-odds) of a risk model. A value of 1 means the predicted risks are correctly scaled. A slope below 1 means the predictions are too extreme, the usual signature of an overfit model; a slope above 1 means they are too moderate. The slope is therefore a target_value metric: neither the highest nor the lowest value is best, the ideal is exactly 1. It is one of the standard calibration summaries for clinical risk-prediction models alongside the calibration intercept and the calibration plot." ;
+    rdfs:comment "Slope of a logistic recalibration model that regresses the observed binary outcome on a risk model's linear predictor (the log-odds). A slope of 1 means the predicted risks are correctly scaled. Below 1 the predictions are too extreme, the usual sign of overfitting; above 1 they are too moderate. The ideal is exactly 1, so this is a target_value metric, where neither the highest nor the lowest value is best." ;
     owl:sameAs obo:STATO_0000687 .
 
 beam:cell_cycle_conservation a owl:NamedIndividual,
         beam:Metric ;
     rdfs:label "Cell-cycle conservation" ;
-    rdfs:comment "Single-cell data-integration metric from the scIB benchmark, a biological-conservation score. Measures conservation of the cell-cycle signal, from the variance explained by S and G2M cell-cycle scores before versus after integration. scIB rescales it to the unit interval where higher is better." ;
+    rdfs:comment "Biological-conservation score from the scIB single-cell integration benchmark. It measures how much of the cell-cycle signal, the variance explained by S and G2M scores, survives integration, rescaled to [0, 1] where higher is better." ;
     rdfs:seeAlso obo:OBI_0002631 .
 
 beam:clisi a owl:NamedIndividual,
         beam:Metric ;
     rdfs:label "Cell-type LISI (cLISI)" ;
-    rdfs:comment "Single-cell data-integration metric from the scIB benchmark, a biological-conservation score. Measures cell-type label purity, from the inverse Simpson index of cell-type labels in local neighbourhoods, rescaled so pure neighbourhoods score high. scIB rescales it to the unit interval where higher is better." ;
+    rdfs:comment "Biological-conservation score from the scIB single-cell integration benchmark. It measures cell-type label purity from the inverse Simpson index in local neighbourhoods, so pure neighbourhoods score high, rescaled to [0, 1] where higher is better." ;
     rdfs:seeAlso obo:OBI_0002631 .
 
 beam:co2 a owl:NamedIndividual,
@@ -78,7 +78,7 @@ beam:cost a owl:NamedIndividual,
     rdfs:label "Monetary cost per distance" ;
     rdfs:comment """Monetary cost of travel per kilometre, in a generic currency unit. A measured
 quantity, lower is better. One of the three metrics in the transportation
-example, which exercises the registry and the MCDA pipeline outside
+example, which runs the registry and the MCDA pipeline outside
 bioinformatics.""" .
 
 beam:f1_score a obo:STATO_0000628,
@@ -94,39 +94,39 @@ precision and recall are 1.""" ;
 beam:graph_connectivity a owl:NamedIndividual,
         beam:Metric ;
     rdfs:label "Graph connectivity" ;
-    rdfs:comment "Single-cell data-integration metric from the scIB benchmark, a batch-removal score. Measures fraction of cells of a given label that remain in a single connected component of the integrated knn graph, averaged over labels. scIB rescales it to the unit interval where higher is better." ;
+    rdfs:comment "Batch-removal score from the scIB single-cell integration benchmark. It measures the fraction of each label's cells that stay in one connected component of the integrated knn graph, rescaled to [0, 1] where higher is better." ;
     rdfs:seeAlso obo:OBI_0002631 .
 
 beam:hvg_overlap a owl:NamedIndividual,
         beam:Metric ;
     rdfs:label "Highly variable gene overlap" ;
-    rdfs:comment "Single-cell data-integration metric from the scIB benchmark, a biological-conservation score. Measures mean per-batch overlap of the highly variable genes computed before versus after integration. scIB rescales it to the unit interval where higher is better." ;
+    rdfs:comment "Biological-conservation score from the scIB single-cell integration benchmark. It measures the per-batch overlap of the highly variable genes before and after integration, rescaled to [0, 1] where higher is better." ;
     rdfs:seeAlso obo:OBI_0002631 .
 
 beam:ilisi a owl:NamedIndividual,
         beam:Metric ;
     rdfs:label "Integration LISI (iLISI)" ;
-    rdfs:comment "Single-cell data-integration metric from the scIB benchmark, a batch-removal score. Measures batch mixing, from the inverse Simpson index of batch labels in local neighbourhoods, rescaled to the unit interval. scIB rescales it to the unit interval where higher is better." ;
+    rdfs:comment "Batch-removal score from the scIB single-cell integration benchmark. It measures batch mixing from the inverse Simpson index of batch labels in local neighbourhoods, rescaled to [0, 1] where higher is better." ;
     rdfs:seeAlso obo:OBI_0002631 .
 
 beam:isolated_label_asw a owl:NamedIndividual,
         beam:Metric ;
     rdfs:label "Isolated-label ASW" ;
-    rdfs:comment "Single-cell data-integration metric from the scIB benchmark, a biological-conservation score. Measures silhouette width restricted to the most batch-isolated cell labels, measuring how well rare or isolated types separate. scIB rescales it to the unit interval where higher is better." ;
+    rdfs:comment "Biological-conservation score from the scIB single-cell integration benchmark. It measures the silhouette width of the most batch-isolated labels, how well rare types separate, rescaled to [0, 1] where higher is better." ;
     rdfs:seeAlso obo:OBI_0002631 .
 
 beam:isolated_label_f1 a obo:STATO_0000628,
         owl:NamedIndividual,
         beam:Metric ;
     rdfs:label "Isolated-label F1" ;
-    rdfs:comment "Single-cell data-integration metric from the scIB benchmark, a biological-conservation score. Measures best F1 of clustering the isolated labels against the rest over a clustering resolution sweep. scIB rescales it to the unit interval where higher is better." ;
+    rdfs:comment "Biological-conservation score from the scIB single-cell integration benchmark. It measures the best F1 of clustering the isolated labels against the rest over a resolution sweep, rescaled to [0, 1] where higher is better." ;
     rdfs:seeAlso obo:OBI_0002631 ;
     owl:sameAs obo:STATO_0000628 .
 
 beam:kbet a owl:NamedIndividual,
         beam:Metric ;
     rdfs:label "kBET (k-nearest-neighbour batch effect test)" ;
-    rdfs:comment "Single-cell data-integration metric from the scIB benchmark, a batch-removal score. Measures local batch mixing, from the acceptance rate of the knn batch-effect test relative to the global batch composition. scIB rescales it to the unit interval where higher is better." ;
+    rdfs:comment "Batch-removal score from the scIB single-cell integration benchmark. It measures local batch mixing from the kBET acceptance rate against the global batch composition, rescaled to [0, 1] where higher is better." ;
     rdfs:seeAlso obo:OBI_0002631 .
 
 beam:mase a owl:NamedIndividual,
@@ -143,7 +143,7 @@ defined even when actual values are zero.""" ;
 beam:nclust_deviation a owl:NamedIndividual,
         beam:Metric ;
     rdfs:label "Cluster-count deviation from the truth" ;
-    rdfs:comment "Deviation of the estimated number of clusters from the true number of clusters, as used in the Duo 2018 clustering benchmark (the nclust.vs.true column). It is the absolute difference between the number of clusters a method reports and the number of clusters in the reference partition. A value of 0 means the method recovered the correct cluster count; larger values mean it over- or under-clustered. This metric is sparsely populated in Duo 2018: 101 of the 168 method by data set cells are missing, because several methods do not report a fixed cluster count for every data set, so callers should expect many NaN entries and account for partial coverage when aggregating." .
+    rdfs:comment "Absolute difference between the number of clusters a method reports and the number in the reference partition, as used in the Duo 2018 benchmark (the nclust.vs.true column). A value of 0 means the method recovered the correct cluster count; larger values mean it over- or under-clustered. The metric is sparse in Duo 2018, where 101 of 168 method by dataset cells are missing because several methods do not report a fixed cluster count for every dataset, so expect many NaN entries when aggregating." .
 
 beam:nmi a owl:NamedIndividual,
         beam:Metric ;
@@ -156,7 +156,7 @@ Unlike ARI, NMI is not chance-corrected.""" .
 beam:pcr a owl:NamedIndividual,
         beam:Metric ;
     rdfs:label "Principal component regression comparison" ;
-    rdfs:comment "Single-cell data-integration metric from the scIB benchmark, a batch-removal score. Measures change in the variance attributable to batch, regressed on principal components, before versus after integration. scIB rescales it to the unit interval where higher is better." ;
+    rdfs:comment "Batch-removal score from the scIB single-cell integration benchmark. It measures the change in batch-associated variance (principal component regression) before and after integration, rescaled to [0, 1] where higher is better." ;
     rdfs:seeAlso obo:OBI_0200104 .
 
 beam:peak_memory a owl:NamedIndividual,
@@ -178,7 +178,7 @@ method invocation, not from a comparison of outputs.""" ;
 beam:shannon_entropy_diff a owl:NamedIndividual,
         beam:Metric ;
     rdfs:label "Shannon entropy difference of cluster sizes" ;
-    rdfs:comment "Difference in the normalized Shannon entropy of the cluster size distribution between an estimated partition and the true partition. The normalized Shannon entropy of a partition measures how evenly elements are spread across clusters, scaled to [0, 1] by the log of the number of clusters so that a perfectly balanced partition reaches 1 and a fully concentrated one reaches 0. This metric is the absolute difference between the estimated partition's normalized entropy and the true partition's normalized entropy, as used in the Duo 2018 clustering benchmark (the s.norm.vs.true column). A value of 0 means the estimated clustering matches the truth in how evenly it distributes elements across clusters; larger values mean the estimated cluster size profile departs further from the truth." .
+    rdfs:comment "Absolute difference in the normalized Shannon entropy of the cluster-size distribution between an estimated and the true partition, as used in the Duo 2018 benchmark (the s.norm.vs.true column). The normalized entropy measures how evenly elements are spread across clusters, scaled to [0, 1] by the log of the cluster count, so a perfectly balanced partition reaches 1 and a fully concentrated one reaches 0. A value of 0 means the estimated clustering matches the truth in how evenly it spreads elements; larger values mean it departs further." .
 
 beam:silhouette a owl:NamedIndividual,
         beam:Metric ;
@@ -202,10 +202,7 @@ when an actual value is zero.""" ;
 beam:speed a owl:NamedIndividual,
         beam:Metric ;
     rdfs:label "Travel speed" ;
-    rdfs:comment """Average travel speed in kilometres per hour. A measured quantity: the value
-is distance covered divided by time taken, not a comparison of outputs. The
-transportation example uses it, along with cost and co2, to run the registry
-and the MCDA pipeline on a problem that has nothing to do with bioinformatics.""" ;
+    rdfs:comment "Average travel speed in kilometres per hour. A measured quantity, where the value is distance divided by time, not a comparison of outputs. The transportation example uses it, with cost and co2, to run the registry and the MCDA pipeline outside bioinformatics." ;
     rdfs:seeAlso obo:UO_0010008 .
 
 beam:Metric a owl:Class ;

@@ -398,7 +398,7 @@ def all_scenarios(seed: int = 0) -> list[Scenario]:
     """Return one instance of every canonical scenario, all with the same seed.
 
     Useful for the test suite and for the scenarios vignette so each
-    generator is exercised with documented inputs in one call.
+    generator is run with documented inputs in one call.
     """
     return [gen(seed=seed) for gen in _ALL_GENERATORS]
 

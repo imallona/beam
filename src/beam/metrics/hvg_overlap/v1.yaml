@@ -1,10 +1,7 @@
 id: hvg_overlap
 version: v1
 name: Highly variable gene overlap
-description: Single-cell data-integration metric from the scIB benchmark, a biological-conservation
-  score. Measures mean per-batch overlap of the highly variable genes computed before
-  versus after integration. scIB rescales it to the unit interval where higher is
-  better.
+description: Biological-conservation score from the scIB single-cell integration benchmark. It measures the per-batch overlap of the highly variable genes before and after integration, rescaled to [0, 1] where higher is better.
 citations:
 - text: Luecken MD, et al. Benchmarking atlas-level data integration in single-cell
     genomics. Nature Methods, 2022.
@@ -27,9 +24,7 @@ output:
   description: scIB-scaled score in [0, 1], higher is better
 semantics:
   scale_type: interval
-  scale_rationale: scIB rescales the metric to a bounded [0, 1] range for cross-method
-    aggregation; the unit length is not invariant across benchmarks, so the scale
-    is interval rather than ratio.
+  scale_rationale: scIB rescales the metric to [0, 1] for cross-method comparison. The unit length varies across benchmarks, so the scale is interval, not ratio.
   range:
     lower: 0
     upper: 1

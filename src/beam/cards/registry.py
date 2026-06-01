@@ -89,6 +89,7 @@ def properties_for(
                 recommended_normalization=card.recommended_normalization,
                 score_of_random_baseline=card.score_of_random_baseline,
                 target=card.target,
+                noise_floor=card.noise_floor,
             )
         )
     return out

@@ -4,8 +4,7 @@ name: Calibration slope
 aliases:
   - cal_slope
   - recalibration_slope
-description: |
-  Slope of a logistic recalibration model that regresses the observed binary outcome on the linear predictor (the log-odds) of a risk model. A value of 1 means the predicted risks are correctly scaled. A slope below 1 means the predictions are too extreme, the usual signature of an overfit model; a slope above 1 means they are too moderate. The slope is therefore a target_value metric: neither the highest nor the lowest value is best, the ideal is exactly 1. It is one of the standard calibration summaries for clinical risk-prediction models alongside the calibration intercept and the calibration plot.
+description: "Slope of a logistic recalibration model that regresses the observed binary outcome on a risk model's linear predictor (the log-odds). A slope of 1 means the predicted risks are correctly scaled. Below 1 the predictions are too extreme, the usual sign of overfitting; above 1 they are too moderate. The ideal is exactly 1, so this is a target_value metric, where neither the highest nor the lowest value is best."
 citations:
   - text: "Van Calster B, McLernon DJ, van Smeden M, Wynants L, Steyerberg EW. Calibration: the Achilles heel of predictive analytics. BMC Medicine 2019, 17:230."
     doi: "10.1186/s12916-019-1466-7"
@@ -33,13 +32,7 @@ output:
   description: the recalibration slope, a real number whose ideal value is 1
 semantics:
   scale_type: interval
-  scale_rationale: |
-    The slope is a coefficient of a logistic regression, so differences are
-    meaningful but there is no ratio origin: a negative slope (predictions
-    anti-correlated with the outcome) is possible, and a slope of zero means
-    no association rather than an absence of the quantity. That makes it an
-    interval scale, which admits affine transformations, the family the
-    target_relative normalization uses.
+  scale_rationale: "The slope is a logistic-regression coefficient, so differences are meaningful but there is no ratio origin. A slope of zero means no association, not an absent quantity, and negative slopes are possible. That makes it interval, which admits the affine transformations the target_relative normalization uses."
   range:
     lower: null
     upper: null

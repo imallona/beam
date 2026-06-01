@@ -4,8 +4,7 @@ name: Shannon entropy difference of cluster sizes
 aliases:
   - s.norm.vs.true
   - normalized_entropy_difference
-description: |
-  Difference in the normalized Shannon entropy of the cluster size distribution between an estimated partition and the true partition. The normalized Shannon entropy of a partition measures how evenly elements are spread across clusters, scaled to [0, 1] by the log of the number of clusters so that a perfectly balanced partition reaches 1 and a fully concentrated one reaches 0. This metric is the absolute difference between the estimated partition's normalized entropy and the true partition's normalized entropy, as used in the Duo 2018 clustering benchmark (the s.norm.vs.true column). A value of 0 means the estimated clustering matches the truth in how evenly it distributes elements across clusters; larger values mean the estimated cluster size profile departs further from the truth.
+description: "Absolute difference in the normalized Shannon entropy of the cluster-size distribution between an estimated and the true partition, as used in the Duo 2018 benchmark (the s.norm.vs.true column). The normalized entropy measures how evenly elements are spread across clusters, scaled to [0, 1] by the log of the cluster count, so a perfectly balanced partition reaches 1 and a fully concentrated one reaches 0. A value of 0 means the estimated clustering matches the truth in how evenly it spreads elements; larger values mean it departs further."
 citations:
   - text: "Duo A, Robinson MD, Soneson C. A systematic performance evaluation of clustering methods for single-cell RNA-seq data. F1000Research 2018, 7:1141."
     doi: "10.12688/f1000research.15666.3"
@@ -33,8 +32,7 @@ output:
   description: absolute difference of normalized Shannon entropies, in [0, 1]
 semantics:
   scale_type: ratio
-  scale_rationale: |
-    The quantity is the absolute difference of two normalized entropies, each in [0, 1]. The value 0 means no discrepancy and is a genuine zero, and a difference twice as large is meaningfully twice as far from matching the truth, so the scale is ratio. The values seen in Duo 2018 fall well inside the unit interval (about 0 to 0.74), but the upper bound of 1 is the theoretical maximum difference between two normalized entropies.
+  scale_rationale: "The quantity is the absolute difference of two normalized entropies, each in [0, 1]. A value of 0 means no discrepancy, a genuine zero, and twice the difference is twice as far from matching the truth, so the scale is ratio. The Duo 2018 values fall well inside the unit interval (about 0 to 0.74); the upper bound of 1 is the theoretical maximum."
   range:
     lower: 0
     upper: 1

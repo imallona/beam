@@ -1,10 +1,7 @@
 id: asw_batch
 version: v1
 name: Batch ASW (silhouette over batches)
-description: Single-cell data-integration metric from the scIB benchmark, a batch-removal
-  score. Measures degree to which batches mix within a cell type, from the batch silhouette
-  width inverted so well-mixed batches score high. scIB rescales it to the unit interval
-  where higher is better.
+description: Batch-removal score from the scIB single-cell integration benchmark. It measures inverts the batch silhouette width so well-mixed batches within a cell type score high, rescaled to [0, 1] where higher is better.
 citations:
 - text: 'Rousseeuw PJ. Silhouettes: a graphical aid to the interpretation and validation
     of cluster analysis. Journal of Computational and Applied Mathematics, 1987.'
@@ -30,9 +27,7 @@ output:
   description: scIB-scaled score in [0, 1], higher is better
 semantics:
   scale_type: interval
-  scale_rationale: scIB rescales the metric to a bounded [0, 1] range for cross-method
-    aggregation; the unit length is not invariant across benchmarks, so the scale
-    is interval rather than ratio.
+  scale_rationale: scIB rescales the metric to [0, 1] for cross-method comparison. The unit length varies across benchmarks, so the scale is interval, not ratio.
   range:
     lower: 0
     upper: 1
