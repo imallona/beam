@@ -14,6 +14,7 @@ from .cd import (
 from .comet import comet
 from .cross_dataset import aggregate_across_datasets, reduce_tensor
 from .facade import RegistryContext, Result, registry_context, run, run_from_registry
+from .metric_validity import MetricValidityReport, metric_validity
 from .normalize import (
     STRATEGIES,
     min_max_normalize,
@@ -68,6 +69,7 @@ __all__ = [
     "IncompleteMatrixError",
     "InconsistentPairwiseMatrixError",
     "MetricBaseline",
+    "MetricValidityReport",
     "NoiseFloorReport",
     "PairPerturbation",
     "PairSeparation",
@@ -91,6 +93,7 @@ __all__ = [
     "leave_one_dataset_out",
     "leave_one_metric_out",
     "merec_weights",
+    "metric_validity",
     "min_max_normalize",
     "nemenyi_critical_difference",
     "noise_floor_separation",

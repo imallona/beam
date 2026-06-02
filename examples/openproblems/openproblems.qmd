@@ -208,6 +208,33 @@ else:
     print("Provision it with envs/heterogeneity.yml.")
 ```
 
+### Do the metric groups measure different things?
+
+The scIB score weights two metric groups, biological conservation at 0.6 and batch correction at 0.4, on the premise that they measure different things. `beam.mcda.metric_validity` checks that premise against the scores (Campbell and Fiske 1959). It treats each method-by-dataset cell as one observation, orients every metric to higher-is-better from the cards, and correlates the metrics with Spearman rank correlation. Metrics in the same group should agree (convergent); metrics in different groups should agree less (discriminant). See [the validity explanation](../../docs/explanations/convergent-discriminant-validity.md).
+
+```{python}
+from beam.cards import polarities_for
+from beam.mcda import metric_validity
+
+validity = metric_validity(
+    tensor,
+    polarities_for(metrics),
+    groups,
+    metric_ids=list(metrics),
+)
+print("within-group agreement (convergent):")
+for g, r in validity.convergent_by_group.items():
+    print(f"  {g:6s} {r:.2f}")
+print(f"between-group agreement (discriminant): {validity.mean_discriminant:.2f}")
+print(f"convergent {validity.mean_convergent:.2f} > discriminant {validity.mean_discriminant:.2f}: {validity.discriminant_ok}")
+print()
+print("metrics that lean toward the other group:")
+for name, group, within, between, nearest in validity.crossloading_metrics:
+    print(f"  {name:20s} {group:6s} within {within:.2f} vs between {between:.2f}, leans {nearest}")
+```
+
+The grouping holds, but barely. Metrics in the same group agree a little more (0.38 on average) than metrics in different groups (0.30). The biological metrics agree more with each other (0.45) than the batch metrics do (0.24). Three batch metrics, `graph_connectivity` most of all, agree more with the biological group than with their own. So the two groups overlap on this data, and the 0.6 / 0.4 weighting treats them as more separate than the scores show.
+
 ## Spatially variable genes: many datasets, the Bradley-Terry tree
 
 The spatially variable genes task has 14 methods, 50 spatial datasets and one correlation metric (higher is better). The 50 datasets carry real feature variation: the spatial assay technology, the organism, and a cancer or non-cancer condition, all parsed from the dataset id. This is the input the Bradley-Terry tree needs.

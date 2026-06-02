@@ -57,6 +57,8 @@ website:
             text: Missing data
           - href: docs/explanations/reference-levels.md
             text: Reference levels
+          - href: docs/explanations/convergent-discriminant-validity.md
+            text: Metric validity
           - href: docs/explanations/heterogeneity-mixed-effects.md
             text: Mixed-effects heterogeneity
           - href: docs/explanations/heterogeneity-bradley-terry.md

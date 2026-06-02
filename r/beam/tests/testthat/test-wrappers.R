@@ -195,3 +195,26 @@ test_that("beam_network_meta_analysis pools studies into a ranking", {
   # a has the lowest mean rank, so it leads on the P-score.
   expect_equal(fit$treatments[which.max(fit$pscore)], "a")
 })
+
+test_that("beam_metric_validity is an exported function", {
+  expect_true(is.function(beam_metric_validity))
+})
+
+test_that("beam_metric_validity separates two clean constructs", {
+  skip_if_no_beam()
+  set.seed(1)
+  bio <- rnorm(40)
+  batch <- rnorm(40)
+  scores <- cbind(
+    bio + rnorm(40, 0, 0.1), bio + rnorm(40, 0, 0.1),
+    batch + rnorm(40, 0, 0.1), batch + rnorm(40, 0, 0.1)
+  )
+  report <- beam_metric_validity(
+    scores,
+    polarity = rep("higher_is_better", 4),
+    groups = c("bio", "bio", "batch", "batch")
+  )
+  expect_true(report$discriminant_ok)
+  expect_gt(report$mean_convergent, report$mean_discriminant)
+  expect_equal(report$n_observations, 40L)
+})
