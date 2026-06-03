@@ -235,6 +235,35 @@ for name, group, within, between, nearest in validity.crossloading_metrics:
 
 The grouping holds, but barely. Metrics in the same group agree a little more (0.38 on average) than metrics in different groups (0.30). The biological metrics agree more with each other (0.45) than the batch metrics do (0.24). Three batch metrics, `graph_connectivity` most of all, agree more with the biological group than with their own. So the two groups overlap on this data, and the 0.6 / 0.4 weighting treats them as more separate than the scores show.
 
+### Does each group hold together as one scale?
+
+Validity asks whether the bio/batch split is the right axis. Reliability asks whether each side of that split reads as one scale. `beam.mcda.metric_reliability` reports standardized Cronbach's alpha per group from the same oriented Spearman correlations (Cronbach 1951). A group above the conventional 0.7 cutoff reads as one reliable scale; below it the group is a looser collection. See [the reliability explanation](../../docs/explanations/reliability.md).
+
+```{python}
+from beam.mcda import metric_reliability
+
+reliability = metric_reliability(
+    tensor,
+    polarities_for(metrics),
+    groups,
+    metric_ids=list(metrics),
+)
+for g, alpha in reliability.alpha_by_group.items():
+    k = reliability.k_by_group[g]
+    r_bar = reliability.mean_inter_item_by_group[g]
+    print(f"  {g:6s} alpha {alpha:.2f} over {k} metrics, mean inter-item r {r_bar:.2f}")
+print()
+print("groups below the 0.7 cutoff:", [g for g, _ in reliability.low_reliability_groups])
+print("alpha if a batch metric is dropped:")
+batch_alpha = reliability.alpha_by_group["batch"]
+for name, group, alpha_without in reliability.alpha_if_dropped:
+    if group == "batch":
+        gain = "raises" if alpha_without > batch_alpha else "lowers"
+        print(f"  drop {name:18s} alpha -> {alpha_without:.2f} ({gain})")
+```
+
+The biological group holds together (alpha 0.85 over seven metrics), the batch group does not at the cutoff (alpha 0.62 over five). Dropping `pcr` is the only batch removal that raises the batch alpha, so it is the batch metric least consistent with the rest of its group. The reading pairs with the validity result: the bio/batch axis is the right split, and its biological side is a coherent scale while its batch side is not.
+
 ## Spatially variable genes: many datasets, the Bradley-Terry tree
 
 The spatially variable genes task has 14 methods, 50 spatial datasets and one correlation metric (higher is better). The 50 datasets carry real feature variation: the spatial assay technology, the organism, and a cancer or non-cancer condition, all parsed from the dataset id. This is the input the Bradley-Terry tree needs.

@@ -35,6 +35,7 @@ from .reference_levels import (
     beats_random_baseline,
     noise_floor_separation,
 )
+from .reliability import MetricReliabilityReport, metric_reliability
 from .sensitivity import (
     DatasetSensitivityReport,
     SensitivityReport,
@@ -69,6 +70,7 @@ __all__ = [
     "IncompleteMatrixError",
     "InconsistentPairwiseMatrixError",
     "MetricBaseline",
+    "MetricReliabilityReport",
     "MetricValidityReport",
     "NoiseFloorReport",
     "PairPerturbation",
@@ -93,6 +95,7 @@ __all__ = [
     "leave_one_dataset_out",
     "leave_one_metric_out",
     "merec_weights",
+    "metric_reliability",
     "metric_validity",
     "min_max_normalize",
     "nemenyi_critical_difference",
