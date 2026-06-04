@@ -57,8 +57,6 @@ Thumbs.db
 # Generated docs
 _site/
 _book/
-docs/paper/figures/
-docs/paper/manuscript.pdf
 docs/reference/
 catalog/index.json
 examples/**/*_report.html

@@ -218,3 +218,129 @@ test_that("beam_metric_validity separates two clean constructs", {
   expect_gt(report$mean_convergent, report$mean_discriminant)
   expect_equal(report$n_observations, 40L)
 })
+
+test_that("metric-set diagnostic wrappers are exported functions", {
+  expect_true(is.function(beam_metric_reliability))
+  expect_true(is.function(beam_metric_dimensionality))
+  expect_true(is.function(beam_metric_diagnostics))
+})
+
+test_that("beam_metric_reliability scores one strong factor as reliable", {
+  skip_if_no_beam()
+  set.seed(1)
+  factor <- rnorm(60)
+  scores <- cbind(
+    factor + rnorm(60, 0, 0.2), factor + rnorm(60, 0, 0.2),
+    factor + rnorm(60, 0, 0.2)
+  )
+  report <- beam_metric_reliability(
+    scores,
+    polarity = rep("higher_is_better", 3),
+    groups = rep("bio", 3)
+  )
+  expect_gt(report$alpha_by_group$bio, 0.8)
+  expect_equal(report$n_observations, 60L)
+})
+
+test_that("beam_metric_dimensionality finds one factor in a one-factor group", {
+  skip_if_no_beam()
+  set.seed(1)
+  factor <- rnorm(60)
+  scores <- cbind(
+    factor + rnorm(60, 0, 0.2), factor + rnorm(60, 0, 0.2),
+    factor + rnorm(60, 0, 0.2), factor + rnorm(60, 0, 0.2)
+  )
+  report <- beam_metric_dimensionality(
+    scores,
+    polarity = rep("higher_is_better", 4),
+    groups = rep("bio", 4)
+  )
+  expect_true("bio" %in% report$unidimensional_groups)
+})
+
+test_that("beam_metric_diagnostics returns the three reports together", {
+  skip_if_no_beam()
+  set.seed(1)
+  bio <- rnorm(60)
+  batch <- rnorm(60)
+  scores <- cbind(
+    bio + rnorm(60, 0, 0.1), bio + rnorm(60, 0, 0.1),
+    batch + rnorm(60, 0, 0.1), batch + rnorm(60, 0, 0.1)
+  )
+  report <- beam_metric_diagnostics(
+    scores,
+    polarity = rep("higher_is_better", 4),
+    groups = c("bio", "bio", "batch", "batch")
+  )
+  expect_true(report$validity$discriminant_ok)
+  expect_false(is.null(report$reliability))
+  expect_false(is.null(report$dimensionality))
+})
+
+test_that("the remaining MCDA analysis wrappers are exported functions", {
+  for (fn in list(
+    beam_beats_random_baseline, beam_noise_floor_separation,
+    beam_critical_difference, beam_skillings_mack,
+    beam_coverage_aware_critical_difference, beam_aggregation_agreement,
+    beam_smaa, beam_leave_one_metric_out, beam_leave_one_dataset_out,
+    beam_smallest_weight_perturbation
+  )) {
+    expect_true(is.function(fn))
+  }
+})
+
+test_that("reference-level wrappers run on a tool by metric matrix", {
+  skip_if_no_beam()
+  scores <- rbind(c(0.9, 50), c(0.8, 80), c(0.7, 120))
+  polarity <- c("higher_is_better", "lower_is_better")
+  beaten <- beam_beats_random_baseline(scores, polarity, baselines = c(0, 200))
+  expect_s3_class(beaten, "python.builtin.object")
+  separation <- beam_noise_floor_separation(scores, noise_floors = c(0.01, 1))
+  expect_s3_class(separation, "python.builtin.object")
+})
+
+test_that("critical difference and Skillings-Mack run on a tool by dataset matrix", {
+  skip_if_no_beam()
+  set.seed(1)
+  scores <- matrix(rnorm(4 * 6), nrow = 4)
+  cd <- beam_critical_difference(scores)
+  expect_s3_class(cd, "python.builtin.object")
+  scores[1, 1] <- NA
+  sm <- beam_skillings_mack(scores)
+  expect_s3_class(sm, "python.builtin.object")
+})
+
+test_that("sensitivity and aggregation-agreement wrappers run", {
+  skip_if_no_beam()
+  set.seed(1)
+  scores <- matrix(runif(3 * 3), nrow = 3)
+  polarity <- rep("higher_is_better", 3)
+  expect_s3_class(
+    beam_smaa(scores, polarity, n_samples = 50, seed = 1),
+    "python.builtin.object"
+  )
+  expect_s3_class(
+    beam_leave_one_metric_out(scores, polarity),
+    "python.builtin.object"
+  )
+  expect_s3_class(
+    beam_smallest_weight_perturbation(scores, polarity),
+    "python.builtin.object"
+  )
+  expect_s3_class(
+    beam_aggregation_agreement(scores, polarity),
+    "python.builtin.object"
+  )
+})
+
+test_that("beam_leave_one_dataset_out runs on a tool by dataset by metric array", {
+  skip_if_no_beam()
+  set.seed(1)
+  tensor <- array(runif(3 * 4 * 2), dim = c(3, 4, 2))
+  report <- beam_leave_one_dataset_out(
+    tensor,
+    polarity = rep("higher_is_better", 2),
+    reduction_rules = rep("arithmetic_mean", 2)
+  )
+  expect_s3_class(report, "python.builtin.object")
+})

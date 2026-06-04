@@ -157,7 +157,7 @@ def test_openproblems_bio_batch_dimensionality_regression():
     # validity and reliability regressions use. Dimensionality dissociates from
     # reliability: the biological group has a high alpha but carries two factors
     # (the alpha is partly a size effect), while the low-alpha batch group is one
-    # factor that its metrics simply track weakly.
+    # factor that its metrics track only weakly.
     op = load_openproblems("batch_integration")
     metrics = [m for m in op.metric_ids if m != "hvg_overlap"]
     tensor = op.tensor(tuple(metrics))
