@@ -183,7 +183,7 @@ else:
     print("Provision it with envs/heterogeneity.yml.")
 ```
 
-Adding BatchBench raises the method-by-benchmark share, from about 0.23 to about 0.42. Its two entropy metrics weight biological conservation and batch mixing equally, and on that footing it disagrees with the scIB-family benchmarks about harmony, so more of the spread now sits in the benchmark rather than the method. Part of the rise is also that BatchBench ranks four methods rather than five, the same scale difference Tyler has, so read it as a clear direction rather than an exact number.
+Adding BatchBench raises the method-by-benchmark share, from about 0.23 to about 0.42. Its two entropy metrics weight biological conservation and batch mixing equally, and on that footing it disagrees with the scIB-family benchmarks about harmony, so more of the spread now sits in the benchmark rather than the method. Part of the rise is also that BatchBench ranks four methods rather than five, the same scale difference Tyler has, so read it as a clear direction rather than an exact number. The fits are singular (with so few benchmarks one or more variance components are estimated at zero); this does not stop the share from being computed, and it is one more reason to read the value as a direction.
 
 ## One coherent ranking: network meta-analysis
 

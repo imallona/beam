@@ -133,7 +133,7 @@ A method low and to the right mixes batches well while keeping the cell types se
 
 A network meta-analysis pools all five sources into one ranking, the way clinical research ranks treatments never all tried in one trial. Each method is a treatment, each (benchmark, dataset) block is a study. It needs R's netmeta.
 
-```{r netmeta, eval = have_netmeta, fig.width = 7, fig.height = 3.6}
+```{r netmeta, eval = have_netmeta, fig.width = 7, fig.height = 3.6, message = FALSE, warning = FALSE}
 arms <- ib$network_arms()
 nma <- beam_network_meta_analysis(arms[[1]], arms[[2]], arms[[3]], arms[[4]], arms[[5]])
 ord <- order(-nma$pscore)
@@ -150,7 +150,7 @@ With BatchBench in the pool, harmony no longer leads on its own: it ties with li
 
 A cross-source variance decomposition puts a number on the split: the method-by-benchmark component is the disagreement attributable to the benchmark rather than the method. The chunk fits it with the four scIB-family sources and again with BatchBench added, so the effect of the fifth source is visible. It needs R's lme4.
 
-```{r source-variance, eval = have_lme4}
+```{r source-variance, eval = have_lme4, message = FALSE, warning = FALSE}
 rec <- ib$mean_rank_records()
 m <- unlist(rec[[1]]); d <- unlist(rec[[2]]); b <- unlist(rec[[3]]); s <- unlist(rec[[4]])
 share <- function(sv) {
@@ -163,7 +163,7 @@ cat(sprintf("method-by-benchmark variance share: %.2f without BatchBench, %.2f w
             share(sv4), share(sv5)))
 ```
 
-Adding BatchBench raises the method-by-benchmark share. Its two entropy metrics weight biological conservation and batch mixing equally, and that stance disagrees with the scIB-family benchmarks about harmony, so more of the spread now sits in the benchmark rather than the method. Part of the rise also comes from BatchBench ranking four methods rather than five, the same scale difference Tyler has, so read it as a clear direction more than an exact number.
+Adding BatchBench raises the method-by-benchmark share. Its two entropy metrics weight biological conservation and batch mixing equally, and that stance disagrees with the scIB-family benchmarks about harmony, so more of the spread now sits in the benchmark rather than the method. Part of the rise also comes from BatchBench ranking four methods rather than five, the same scale difference Tyler has, so read it as a clear direction more than an exact number. The fits are singular (with so few benchmarks one or more variance components are estimated at zero), which lme4 reports but which does not stop the share from being computed; it is one more reason to read the value as a direction.
 
 ## Same data, two pipelines: the human pancreas
 

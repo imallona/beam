@@ -112,8 +112,13 @@ jobs:
           mkdir -p rendered-vignettes
           Rscript -e 'reticulate::use_python(Sys.which("python"), required = TRUE); invisible(lapply(list.files("r/beam/vignettes", pattern = "[.]Rmd$", full.names = TRUE), function(f) rmarkdown::render(f, output_dir = "rendered-vignettes", quiet = TRUE)))'
 
+      # The rendered vignettes are a supplementary artifact (the docs site is
+      # their canonical home), and upload-artifact occasionally hits a transient
+      # ECONNRESET while finalizing. continue-on-error keeps a flaky upload from
+      # failing the whole check.
       - name: Upload rendered vignettes
         if: always() && matrix.config.os == 'ubuntu-latest'
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: rbeam-vignettes
