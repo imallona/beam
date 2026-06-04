@@ -17,9 +17,9 @@ format:
 
 Single-cell data-integration benchmarks reach different conclusions about which method to use. This vignette asks where the disagreement comes from: the methods, the datasets, or the benchmarker's own analysis choices (which metrics, how they are scaled, how they are weighted). It runs the meta-analysis on benchmarks that publish reusable per-method scores on a shared metric set, and shows that re-ranking them all with one consistent rule removes part of the disagreement. It does not remove all of it: the network meta-analysis later in the vignette finds a significant residual disagreement between the benchmarks even under the shared rule.
 
-## The benchmarks, and why these four
+## The benchmarks, and why these five
 
-Four single-cell integration benchmarks publish reusable per-method scores on the shared scIB metric family (ARI, ASW, kBET, LISI) for an overlapping set of classical methods:
+Five single-cell integration benchmarks are pooled here. Four publish reusable per-method scores on the shared scIB metric family (ARI, ASW, kBET, LISI); the fifth, BatchBench, scores on its own batch and cell-type entropy and enters on the within-benchmark rank scale.
 
 | Benchmark | Paper | Methods covered | Metrics covered | Scores from |
 |---|---|---|---|---|
@@ -27,10 +27,11 @@ Four single-cell integration benchmarks publish reusable per-method scores on th
 | OpenProblems batch integration | OpenProblems consortium, Nature Biotechnology 2025, [10.1038/s41587-025-02694-w](https://doi.org/10.1038/s41587-025-02694-w) | all five | ARI, ASW, kBET, LISI | bundled CC-BY scores |
 | Tran et al. | Tran et al., Genome Biology 2020, [10.1186/s13059-019-1850-9](https://doi.org/10.1186/s13059-019-1850-9) | all five | ARI, ASW, kBET, LISI | supplementary Tables S4 and S7 |
 | Tyler et al. | Tyler, Guccione and Schadt, bioRxiv 2023, [10.1101/2021.11.15.468733](https://doi.org/10.1101/2021.11.15.468733) | harmony, scanorama, liger | ARI, ASW, kBET | Extended Data Table 2 |
+| BatchBench | Chazarra-Gil et al., Nucleic Acids Research 2021, [10.1093/nar/gkab004](https://doi.org/10.1093/nar/gkab004) | combat, harmony, fastMNN, scanorama | batch entropy, cell-type entropy | Supplementary Table 1, provided by the author |
 
-Tyler is a preprint as of 2026-05-28 and covers three of the five methods and three of the four metrics (the cLISI it reports is a different quantity from the iLISI the others report), so it enters the four-source set as a partial-coverage block. Its kBET is the raw rejection rate (lower is better), the opposite polarity to the others; the loader handles this per source so the within-cell ranking is consistent.
+Tyler is a preprint as of 2026-05-28 and covers three of the five methods and three of the four metrics (the cLISI it reports is a different quantity from the iLISI the others report), so it enters as a partial-coverage block. Its kBET is the raw rejection rate (lower is better), the opposite polarity to the others; the loader handles this per source so the within-cell ranking is consistent. BatchBench covers four of the five methods (it has no LIGER) on two entropy metrics: batch entropy, where higher is better (batches better mixed), and cell-type entropy, where lower is better (a higher value means cell types are more blurred). Ruben Chazarra-Gil provided the scores by personal communication. The metrics differ from the scIB family, so BatchBench enters on the within-benchmark rank scale, the same common currency as the others.
 
-The five methods common to the first three benchmarks are combat, harmony, fastMNN, scanorama and LIGER. Benchmarks excluded: Tran's repository appeared empty until the scores were found in its supplement (a repository check is not sufficient); scIB-E (Genome Biology 2025) shares the scIB metrics but its methods are deep-learning ones (scVI, scANVI and loss-function variants) with no overlap with the classical five; the Communications Biology 2025 reference-informed evaluation covers one dataset with a bespoke RBET metric and overlaps only on combat and scanorama; BatchBench and sc_mixology use off-family metrics; spatial and cross-species benchmarks use different methods. The full provenance, licences and the dataset crosswalk are in `src/beam/data/README.md`.
+The five methods common to the first three benchmarks are combat, harmony, fastMNN, scanorama and LIGER. Benchmarks excluded: Tran's repository appeared empty until the scores were found in its supplement (a repository check is not sufficient); scIB-E (Genome Biology 2025) shares the scIB metrics but its methods are deep-learning ones (scVI, scANVI and loss-function variants) with no overlap with the classical five; the Communications Biology 2025 reference-informed evaluation covers one dataset with a bespoke RBET metric and overlaps only on combat and scanorama; sc_mixology uses off-family metrics; spatial and cross-species benchmarks use different methods. The full provenance, licences and the dataset crosswalk are in `src/beam/data/README.md`.
 
 ```{python}
 %matplotlib inline
@@ -130,29 +131,63 @@ for b in BENCH:
     display(fig)
 ```
 
+## A fifth source with a different lens: BatchBench
+
+BatchBench scores the methods with two entropy metrics rather than the scIB family: batch entropy, where a higher value means the batches are better mixed, and cell-type entropy, where a higher value means the cell types are more blurred, so a lower value is better for biology. Ruben Chazarra-Gil provided the scores by personal communication. The two metrics show the batch-mixing against biology tradeoff directly.
+
+```{python}
+import matplotlib.pyplot as plt
+
+from beam.datasets import load_batchbench
+
+bb = load_batchbench()
+bi = bb.metric_ids.index("batch_entropy")
+ci = bb.metric_ids.index("cell_type_entropy")
+batch_mean = np.nanmean(bb.scores[:, :, bi], axis=1)
+cell_mean = np.nanmean(bb.scores[:, :, ci], axis=1)
+
+fig, ax = plt.subplots(figsize=(6.5, 4.5))
+ax.scatter(batch_mean, cell_mean, color="tab:blue")
+for x, y, name in zip(batch_mean, cell_mean, bb.method_names, strict=True):
+    ax.annotate(name, (x, y), xytext=(4, 0), textcoords="offset points", fontsize=8)
+ax.set_xlabel("batch entropy (higher = batches better mixed)")
+ax.set_ylabel("cell-type entropy (higher = cell types more blurred)")
+ax.set_title("BatchBench: batch mixing against biology")
+fig.tight_layout()
+plt.show()
+```
+
+A method low and to the right mixes batches well while keeping the cell types separate. harmony sits high and to the right: it mixes batches well but blurs the cell types more than the others. A benchmark that weights biology equally then ranks it below fastMNN, which is what BatchBench does, and which is why the fifth source raises the disagreement measured below.
+
 ## How much of the variance is the benchmark
 
-A cross-benchmark variance decomposition puts a number on the split. The model is `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)`, where the method-by-benchmark component is the disagreement attributable to the benchmark rather than the method. The fit pools all four sources (the three full-coverage benchmarks plus Tyler 2023 on the three methods and three metrics it covers). The fit needs R's lme4, so the chunk runs only when it is available.
+A cross-benchmark variance decomposition puts a number on the split. The model is `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)`, where the method-by-benchmark component is the disagreement attributable to the benchmark rather than the method. The chunk fits it twice, with the four scIB-family sources and again with BatchBench added, so the effect of the fifth source is visible. The fit needs R's lme4, so the chunk runs only when it is available.
 
 ```{python}
 from beam.heterogeneity import r_available, source_variance_decomposition
 
 methods, datasets, benchmarks, scores = ib.mean_rank_records()
 if r_available():
-    rep = source_variance_decomposition(methods, datasets, benchmarks, scores)
-    print(f"benchmarks in the fit: {rep.n_benchmarks}, datasets: {rep.n_datasets}, observations: {rep.n_obs}")
-    print(f"method-by-benchmark share: {rep.method_benchmark_share:.2f}")
-    print(f"residual (method-by-dataset plus noise): {rep.residual_share:.2f}")
+    def share(keep):
+        idx = [i for i in range(len(benchmarks)) if keep(benchmarks[i])]
+        rep = source_variance_decomposition(
+            [methods[i] for i in idx], [datasets[i] for i in idx],
+            [benchmarks[i] for i in idx], [scores[i] for i in idx],
+        )
+        return rep.method_benchmark_share
+    s4 = share(lambda b: b != "BatchBench")
+    s5 = share(lambda b: True)
+    print(f"method-by-benchmark share: {s4:.2f} without BatchBench, {s5:.2f} with it")
 else:
     print("R with lme4 not available; skipping the variance decomposition.")
     print("Provision it with envs/heterogeneity.yml.")
 ```
 
-Tyler 2023 raises the method-by-benchmark share above the three-source value. Their in silico runs carry a controlled biological signal with known ground truth, which is exactly the regime in which their preprint argues unsupervised methods erase real biology. Adding it to the pool gives a sharper estimate of the share of variance that depends on which benchmarker did the analysis rather than which method was run.
+Adding BatchBench raises the method-by-benchmark share, from about 0.23 to about 0.42. Its two entropy metrics weight biological conservation and batch mixing equally, and on that footing it disagrees with the scIB-family benchmarks about harmony, so more of the spread now sits in the benchmark rather than the method. Part of the rise is also that BatchBench ranks four methods rather than five, the same scale difference Tyler has, so read it as a clear direction rather than an exact number.
 
 ## One coherent ranking: network meta-analysis
 
-The variance decomposition says how much of the spread is the benchmark. A network meta-analysis instead pools all four sources into one ranking, the way clinical research ranks treatments that were never all tried in one trial. Each method is a treatment, each (benchmark, dataset) block is a study, and the within-study effect of a method is its mean rank over the metrics with a standard deviation across them. netmeta combines the direct and the indirect evidence, and reports a P-score per method (higher is better) plus heterogeneity and inconsistency statistics. The fit needs R's netmeta, so the chunk runs only when it is available.
+The variance decomposition says how much of the spread is the benchmark. A network meta-analysis instead pools all five sources into one ranking, the way clinical research ranks treatments that were never all tried in one trial. Each method is a treatment, each (benchmark, dataset) block is a study, and the within-study effect of a method is its mean rank over the metrics with a standard deviation across them. netmeta combines the direct and the indirect evidence, and reports a P-score per method (higher is better) plus heterogeneity and inconsistency statistics. The fit needs R's netmeta, so the chunk runs only when it is available.
 
 ```{python}
 from beam.heterogeneity import netmeta_available, network_meta_analysis
@@ -172,7 +207,7 @@ else:
     print("Provision it with envs/heterogeneity.yml.")
 ```
 
-Harmony leads the pooled ranking and combat trails it, the same order the consensus and the variance decomposition give. The I-squared is high and the inconsistency Q is significant: the direct and the indirect evidence for the same method pairs do not line up, which is the network-model reading of the same finding the variance decomposition reports as a large method-by-benchmark share. The pooled ranking is an average over benchmarks that disagree, and the inconsistency statistic is the honest label on it.
+With BatchBench in the pool, harmony no longer leads on its own: it ties with liger at the top, fastMNN follows, and combat trails. The I-squared is high and the inconsistency Q is significant: the direct and the indirect evidence for the same method pairs do not line up, which is the network-model reading of the same finding the variance decomposition reports as a large method-by-benchmark share. The pooled ranking is an average over benchmarks that disagree, and the inconsistency statistic is the honest label on it.
 
 ## Same data, two pipelines: the human pancreas
 

@@ -107,6 +107,7 @@ jobs:
         if: always() && matrix.config.os == 'ubuntu-latest'
         shell: bash
         run: |
+          Rscript -e 'roxygen2::roxygenise("r/beam")'
           R CMD INSTALL --no-multiarch r/beam
           mkdir -p rendered-vignettes
           Rscript -e 'reticulate::use_python(Sys.which("python"), required = TRUE); invisible(lapply(list.files("r/beam/vignettes", pattern = "[.]Rmd$", full.names = TRUE), function(f) rmarkdown::render(f, output_dir = "rendered-vignettes", quiet = TRUE)))'

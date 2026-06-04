@@ -16,7 +16,7 @@ have_netmeta <- have_beam && requireNamespace("netmeta", quietly = TRUE) &&
 knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>")
 ```
 
-Single-cell data-integration benchmarks reach different conclusions about which method to use. This vignette asks where the disagreement comes from: the methods, the datasets, or the benchmarker's own analysis choices. beam harmonizes four benchmarks onto the shared scIB metric family (ARI, ASW, kBET, LISI) for the five classical methods, all bundled with the package. The R functions forward to the Python `beam` core; install it once with `install_beam_python()`.
+Single-cell data-integration benchmarks reach different conclusions about which method to use. This vignette asks where the disagreement comes from: the methods, the datasets, or the benchmarker's own analysis choices. beam harmonizes five benchmarks, all bundled with the package. Four of them score on the shared scIB metric family (ARI, ASW, kBET, LISI) for the five classical methods. The fifth, BatchBench (Chazarra-Gil et al. 2021, with the scores provided by the author), uses its own batch and cell-type entropy and enters on the within-benchmark rank scale. The R functions forward to the Python `beam` core; install it once with `install_beam_python()`.
 
 ```{r libs}
 library(rbeam)
@@ -109,9 +109,29 @@ for (b in bench) {
 knitr::include_graphics(paths)
 ```
 
+## A fifth source with a different lens: BatchBench
+
+BatchBench scores the methods with two entropy metrics instead of the scIB family: batch entropy, where a higher value means the batches are better mixed, and cell-type entropy, where a higher value means the cell types are more blurred, so a lower value is better for biology. Ruben Chazarra-Gil provided the scores by personal communication. The two metrics show the batch-mixing against biology tradeoff directly.
+
+```{r tradeoff, fig.width = 6.5, fig.height = 4.5}
+bb <- datasets$load_batchbench()
+methods_bb <- unlist(bb$method_names)
+bi <- match("batch_entropy", unlist(bb$metric_ids))
+ci <- match("cell_type_entropy", unlist(bb$metric_ids))
+batch_mean <- apply(bb$scores[, , bi], 1, mean)
+cell_mean <- apply(bb$scores[, , ci], 1, mean)
+plot(batch_mean, cell_mean, pch = 19, col = "steelblue", xlim = range(batch_mean) + c(0, 0.08),
+     xlab = "batch entropy (higher = batches better mixed)",
+     ylab = "cell-type entropy (higher = cell types more blurred)",
+     main = "BatchBench: batch mixing against biology")
+text(batch_mean, cell_mean, methods_bb, pos = 4, cex = 0.7)
+```
+
+A method low and to the right mixes batches well while keeping the cell types separate. harmony sits high and to the right: it mixes batches well but blurs the cell types more than the others. A benchmark that weights biology equally then ranks it below fastMNN, which is what BatchBench does.
+
 ## One coherent ranking: network meta-analysis
 
-A network meta-analysis pools all four sources into one ranking, the way clinical research ranks treatments never all tried in one trial. Each method is a treatment, each (benchmark, dataset) block is a study. It needs R's netmeta.
+A network meta-analysis pools all five sources into one ranking, the way clinical research ranks treatments never all tried in one trial. Each method is a treatment, each (benchmark, dataset) block is a study. It needs R's netmeta.
 
 ```{r netmeta, eval = have_netmeta, fig.width = 7, fig.height = 3.6}
 arms <- ib$network_arms()
@@ -124,19 +144,26 @@ cat(sprintf("I-squared %.2f; inconsistency Q = %.1f on %.0f df, p = %.1e\n",
             nma$i2, nma$q_total, nma$df_total, nma$pval_total))
 ```
 
-Harmony leads and combat trails, the same order the consensus gives. The high I-squared and the significant inconsistency Q say the direct and indirect evidence do not fully line up, the network reading of the residual disagreement.
+With BatchBench in the pool, harmony no longer leads on its own: it ties with liger at the top, fastMNN follows, and combat trails. The high I-squared and the significant inconsistency Q say the direct and the indirect evidence do not line up, the network reading of the residual disagreement.
 
 ## How much of the variance is the benchmark
 
-A cross-source variance decomposition puts a number on the split: the method-by-benchmark component is the disagreement attributable to the benchmark rather than the method. It needs R's lme4.
+A cross-source variance decomposition puts a number on the split: the method-by-benchmark component is the disagreement attributable to the benchmark rather than the method. The chunk fits it with the four scIB-family sources and again with BatchBench added, so the effect of the fifth source is visible. It needs R's lme4.
 
 ```{r source-variance, eval = have_lme4}
 rec <- ib$mean_rank_records()
-sv <- beam_source_variance_decomposition(rec[[1]], rec[[2]], rec[[3]], rec[[4]])
-total <- sum(unlist(sv$variance_components))
-cat(sprintf("method-by-benchmark variance share: %.2f\n",
-            sv$variance_components[["method:benchmark"]] / total))
+m <- unlist(rec[[1]]); d <- unlist(rec[[2]]); b <- unlist(rec[[3]]); s <- unlist(rec[[4]])
+share <- function(sv) {
+  sv$variance_components[["method:benchmark"]] / sum(unlist(sv$variance_components))
+}
+keep <- b != "BatchBench"
+sv4 <- beam_source_variance_decomposition(m[keep], d[keep], b[keep], s[keep])
+sv5 <- beam_source_variance_decomposition(m, d, b, s)
+cat(sprintf("method-by-benchmark variance share: %.2f without BatchBench, %.2f with it\n",
+            share(sv4), share(sv5)))
 ```
+
+Adding BatchBench raises the method-by-benchmark share. Its two entropy metrics weight biological conservation and batch mixing equally, and that stance disagrees with the scIB-family benchmarks about harmony, so more of the spread now sits in the benchmark rather than the method. Part of the rise also comes from BatchBench ranking four methods rather than five, the same scale difference Tyler has, so read it as a clear direction more than an exact number.
 
 ## Same data, two pipelines: the human pancreas
 
@@ -160,4 +187,4 @@ Both pipelines agree on the leader on the shared data, but the rest of the order
 
 ## Reading
 
-Standardizing the decision making with beam removes part of the apparent disagreement between these benchmarks, but it does not close it: the network meta-analysis finds a significant residual inconsistency even under the shared rule. Harmonizing the analysis narrows the gap rather than erasing it. See `?beam_network_meta_analysis`, `?beam_source_variance_decomposition`.
+Standardizing the decision making with beam removes part of the apparent disagreement between these benchmarks, but it does not close it: the network meta-analysis finds a significant residual inconsistency even under the shared rule. BatchBench makes the point sharper. It scores biology and batch mixing with equal weight, disagrees with the scIB-family benchmarks about harmony, and so raises the share of the spread that sits in the benchmarker's choices rather than the methods. Harmonizing the analysis narrows the gap rather than erasing it. See `?beam_network_meta_analysis`, `?beam_source_variance_decomposition`.

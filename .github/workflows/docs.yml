@@ -73,6 +73,7 @@ jobs:
         with:
           working-directory: r/beam
           extra-packages: |
+            any::roxygen2
             any::knitr
             any::rmarkdown
             any::reticulate
@@ -89,6 +90,7 @@ jobs:
       - name: Render the R vignettes into the site
         continue-on-error: true
         run: |
+          Rscript -e 'roxygen2::roxygenise("r/beam")'
           R CMD INSTALL --no-multiarch r/beam
           mkdir -p _site/r-vignettes
           Rscript -e 'reticulate::use_python(Sys.which("python"), required = TRUE); invisible(lapply(list.files("r/beam/vignettes", pattern = "[.]Rmd$", full.names = TRUE), function(f) rmarkdown::render(f, output_dir = "_site/r-vignettes", quiet = TRUE)))'

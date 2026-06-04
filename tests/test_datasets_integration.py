@@ -16,6 +16,7 @@ from scipy.stats import spearmanr
 from beam.datasets import (
     IntegrationBenchmarks,
     PancreasContrast,
+    load_batchbench,
     load_integration_benchmarks,
     load_integration_published_ranks,
     load_pancreas_contrast,
@@ -24,7 +25,8 @@ from beam.heterogeneity import r_available, source_variance_decomposition
 
 _METHODS = {"combat", "harmony", "fastmnn", "scanorama", "liger"}
 _METRICS = {"ARI", "ASW", "kBET", "LISI"}
-_BENCHMARKS = {"Tran", "scIB", "OpenProblems", "Tyler"}
+_BB_METRICS = {"batch_entropy", "cell_type_entropy"}
+_BENCHMARKS = {"Tran", "scIB", "OpenProblems", "Tyler", "BatchBench"}
 _BENCHMARKS_WITH_PUBLISHED = {"Tran", "scIB", "OpenProblems"}
 needs_r = pytest.mark.skipif(not r_available(), reason="Rscript with lme4 not available")
 
@@ -34,26 +36,30 @@ def test_load_integration_benchmarks():
     assert isinstance(ib, IntegrationBenchmarks)
     assert set(ib.benchmark) == _BENCHMARKS
     assert set(ib.method) <= _METHODS
-    assert set(ib.metric) <= _METRICS
-    # ranks within the five common methods, so in [1, 5].
+    assert set(ib.metric) <= _METRICS | _BB_METRICS
+    # ranks within the common methods, so in [1, 5].
     assert ib.rank.min() >= 1.0 and ib.rank.max() <= 5.0
 
 
 def test_mean_rank_matrix_and_records():
     ib = load_integration_benchmarks()
     methods, benchmarks, matrix = ib.mean_rank_matrix()
-    # Four benchmarks now: Tran, scIB, OpenProblems, Tyler. Methods stay
-    # the same five; Tyler covers three of them, so the Tyler column carries
-    # NaN for combat and fastmnn.
-    assert matrix.shape == (5, 4)
+    # Five benchmarks now: Tran, scIB, OpenProblems, Tyler, BatchBench. Methods
+    # stay the same five; Tyler covers three of them and BatchBench covers four
+    # (no liger), so those columns carry NaN for the methods they do not score.
+    assert matrix.shape == (5, 5)
     assert set(benchmarks) == _BENCHMARKS
-    # harmony is a stable top method, so its mean rank is among the best.
+    # harmony is a top method on average, though BatchBench demotes it.
     harmony = matrix[methods.index("harmony")]
     assert np.nanmean(harmony) < 3.0
     # Tyler covers harmony, scanorama, liger only; combat and fastmnn are NaN.
     tyler_col = matrix[:, benchmarks.index("Tyler")]
     covered = {methods[i] for i in range(len(methods)) if not np.isnan(tyler_col[i])}
     assert covered == {"harmony", "scanorama", "liger"}
+    # BatchBench covers the four non-liger common methods.
+    bb_col = matrix[:, benchmarks.index("BatchBench")]
+    bb_covered = {methods[i] for i in range(len(methods)) if not np.isnan(bb_col[i])}
+    assert bb_covered == {"combat", "harmony", "fastmnn", "scanorama"}
     m, d, b, s = ib.mean_rank_records()
     assert len(m) == len(d) == len(b) == len(s)
     assert set(b) == _BENCHMARKS
@@ -100,9 +106,27 @@ def test_beam_ranking_agrees_more_than_published():
     assert beam - published > 0.3
 
 
+def test_load_batchbench():
+    bb = load_batchbench()
+    assert bb.metric_ids == ("batch_entropy", "cell_type_entropy")
+    assert bb.polarity == ("higher_is_better", "lower_is_better")
+    assert bb.scores.shape == (8, 30, 2)
+    assert {"combat", "harmony", "fastmnn", "scanorama"} <= set(bb.method_names)
+    assert np.isfinite(bb.scores).all()  # the entropy table has no missing cells
+    assert set(bb.features) == {"n_cells", "n_genes", "n_cell_types", "n_batches"}
+    # harmony blurs cell types more than combat (higher cell-type entropy is
+    # worse for biology), the tradeoff the bio/batch reading rests on.
+    cell = bb.metric_ids.index("cell_type_entropy")
+    harmony = bb.method_names.index("harmony")
+    combat = bb.method_names.index("combat")
+    assert np.nanmean(bb.scores[harmony, :, cell]) > np.nanmean(bb.scores[combat, :, cell])
+
+
 def test_method_metric_matrix_per_benchmark():
     ib = load_integration_benchmarks()
-    for bench in _BENCHMARKS:
+    # method_metric_matrix is defined on the shared scIB metric family; BatchBench
+    # scores on its own entropy metrics, so it is off-family here.
+    for bench in _BENCHMARKS - {"BatchBench"}:
         methods, metrics, matrix = ib.method_metric_matrix(bench)
         assert methods == ("combat", "harmony", "fastmnn", "scanorama", "liger")
         assert metrics == ("ARI", "ASW", "kBET", "LISI")
@@ -153,6 +177,6 @@ def test_source_variance_on_real_benchmarks():
     ib = load_integration_benchmarks()
     methods, datasets, benchmarks, scores = ib.mean_rank_records()
     rep = source_variance_decomposition(methods, datasets, benchmarks, scores)
-    assert rep.n_benchmarks == 4
+    assert rep.n_benchmarks == 5
     assert 0.0 <= rep.method_benchmark_share <= 1.0
     assert np.isfinite(rep.total_variance)

@@ -613,6 +613,85 @@ def load_openproblems_svg_features() -> Duo2018Features:
     return Duo2018Features(dataset_names=dataset_names, numeric={}, categorical=categorical)
 
 
+_BATCHBENCH_METRICS: Final[tuple[str, ...]] = ("batch_entropy", "cell_type_entropy")
+_BATCHBENCH_POLARITY: Final[tuple[str, ...]] = ("higher_is_better", "lower_is_better")
+_BATCHBENCH_FEATURES: Final[tuple[str, ...]] = ("n_cells", "n_genes", "n_cell_types", "n_batches")
+
+
+@dataclass(frozen=True)
+class BatchBench:
+    """The BatchBench (Chazarra-Gil et al. 2021) entropy scores as a tensor.
+
+    Batch entropy and cell-type entropy per method per dataset, with the dataset
+    descriptors as numeric features. The scores were provided by Ruben
+    Chazarra-Gil (personal communication); provenance is in
+    ``src/beam/data/README.md``. Batch entropy is higher-is-better (more batch
+    mixing) and cell-type entropy is lower-is-better (a higher value means cell
+    types are more blurred), as recorded in ``polarity``.
+
+    Attributes
+    ----------
+    method_names, dataset_names, metric_ids
+        Label tuples for the three axes.
+    polarity
+        Per-metric direction, aligned with ``metric_ids``.
+    scores
+        Float array of shape ``(n_methods, n_datasets, n_metrics)``.
+    features
+        Numeric per-dataset descriptors keyed by name, each aligned with
+        ``dataset_names``; absent for a dataset that has no descriptor row.
+    """
+
+    method_names: tuple[str, ...]
+    dataset_names: tuple[str, ...]
+    metric_ids: tuple[str, ...]
+    polarity: tuple[str, ...]
+    scores: np.ndarray
+    features: dict[str, np.ndarray]
+
+
+def load_batchbench() -> BatchBench:
+    """Load the bundled BatchBench entropy scores and dataset descriptors.
+
+    Reads ``batchbench2021_metrics.csv`` (eight methods, 30 datasets, two entropy
+    metrics) and ``batchbench2021_datasets.csv`` (per-dataset cell, gene, cell
+    type and batch counts). The scores were provided by Ruben Chazarra-Gil by
+    personal communication; see ``src/beam/data/README.md``.
+
+    Returns
+    -------
+    BatchBench
+    """
+    text = resources.files(_CSV_PACKAGE).joinpath("batchbench2021_metrics.csv").read_text("utf-8")
+    rows = list(csv.DictReader(text.splitlines()))
+    method_names = tuple(sorted({r["method"] for r in rows}))
+    dataset_names = tuple(sorted({r["dataset"] for r in rows}))
+    mi = {m: i for i, m in enumerate(method_names)}
+    di = {d: i for i, d in enumerate(dataset_names)}
+    ki = {k: i for i, k in enumerate(_BATCHBENCH_METRICS)}
+    scores = np.full((len(method_names), len(dataset_names), len(_BATCHBENCH_METRICS)), np.nan)
+    for r in rows:
+        scores[mi[r["method"]], di[r["dataset"]], ki[r["metric"]]] = float(r["score"])
+
+    desc_text = (
+        resources.files(_CSV_PACKAGE).joinpath("batchbench2021_datasets.csv").read_text("utf-8")
+    )
+    by_dataset = {r["dataset"]: r for r in csv.DictReader(desc_text.splitlines())}
+    features = {}
+    for feat in _BATCHBENCH_FEATURES:
+        column = [float(by_dataset[d][feat]) if d in by_dataset else np.nan for d in dataset_names]
+        features[feat] = np.array(column, dtype=float)
+
+    return BatchBench(
+        method_names=method_names,
+        dataset_names=dataset_names,
+        metric_ids=_BATCHBENCH_METRICS,
+        polarity=_BATCHBENCH_POLARITY,
+        scores=scores,
+        features=features,
+    )
+
+
 # Cross-benchmark single-cell integration set for the cross-benchmark meta-analysis.
 # Three benchmarks publish reusable per-method scores on the shared scIB metric
 # family (ARI, ASW, kBET, LISI) for an overlapping set of classical integration
@@ -895,6 +974,28 @@ def load_integration_benchmarks() -> IntegrationBenchmarks:
         ranked = _rank_within_common(vals, higher_is_better=tyler_higher_is_better[metric])
         for method, r in ranked.items():
             records.append(("Tyler", dataset, method, metric, r))
+
+    # BatchBench (Chazarra-Gil et al. 2021, NAR, DOI 10.1093/nar/gkab004), the
+    # scores kindly provided by Ruben Chazarra-Gil (personal communication,
+    # 2026-06-04). Per-(dataset, method) batch entropy and cell-type entropy over
+    # 30 datasets. It covers four of the five common methods (combat, harmony,
+    # fastmnn, scanorama; no liger) on two entropy metrics that map to the batch
+    # and biological constructs: batch entropy is higher-is-better (more batch
+    # mixing) and cell-type entropy is lower-is-better (higher entropy means cell
+    # types are blurred, so worse biological conservation). The metrics differ
+    # from the scIB family, so BatchBench enters on the rank scale only, a fifth
+    # source whose 50/50 bio/batch balance is its own analytical stance.
+    bb_name = "batchbench2021_metrics.csv"
+    bb_text = resources.files(_CSV_PACKAGE).joinpath(bb_name).read_text("utf-8")
+    bb_higher = {"batch_entropy": True, "cell_type_entropy": False}
+    bb_cells: dict[tuple[str, str], dict[str, float]] = {}
+    for row in csv.DictReader(bb_text.splitlines()):
+        cell = bb_cells.setdefault((row["dataset"], row["metric"]), {})
+        cell[row["method"]] = float(row["score"])
+    for (dataset, metric), vals in bb_cells.items():
+        ranked = _rank_within_common(vals, higher_is_better=bb_higher[metric])
+        for method, r in ranked.items():
+            records.append(("BatchBench", dataset, method, metric, r))
 
     records.sort()
     return IntegrationBenchmarks(

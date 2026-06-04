@@ -79,16 +79,18 @@ def test_recovers_a_clear_ranking():
 
 
 @needs_netmeta
-def test_integration_benchmarks_rank_harmony_first():
+def test_integration_benchmarks_network_ranking():
     ib = load_integration_benchmarks()
     treatments, studies, means, sds, ns = ib.network_arms()
     rep = network_meta_analysis(treatments, studies, means, sds, ns)
     assert rep.n_treatments == 5
     assert rep.n_studies >= 2
-    # Harmony leads the pooled ranking and combat trails it, as the within-rule
-    # consensus and the source-variance decomposition also report.
-    assert rep.top_treatment() == "harmony"
-    assert rep.ranking()[-1] == "combat"
+    # With BatchBench added as the fifth source, harmony no longer leads on its
+    # own: harmony and liger are the top two by P-score, and combat trails. The
+    # fifth source weights biology equally and so demotes harmony.
+    ranking = rep.ranking()
+    assert set(ranking[:2]) == {"harmony", "liger"}
+    assert ranking[-1] == "combat"
     # The reference arm sits at effect 0 by construction.
     ref_index = rep.treatments.index(rep.reference)
     assert rep.effect[ref_index] == 0.0
