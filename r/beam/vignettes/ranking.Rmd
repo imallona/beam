@@ -47,8 +47,9 @@ cat("top-ranked under equal weights / SAW:", run$top_tool, "\n")
 The funky heatmap shows the run as a glyph table: methods as rows, metrics as circles sized by the card-resolved normalized score, a composite bar, and the rank-robustness panels.
 
 ```{r funky, fig.width = 7, fig.height = 5}
-plot(run, "ranking_funky.png")
-knitr::include_graphics("ranking_funky.png")
+fig_path <- tempfile(fileext = ".png")
+plot(run, fig_path)
+knitr::include_graphics(fig_path)
 ```
 
 ## SMAA: is the top method robust to the weighting?

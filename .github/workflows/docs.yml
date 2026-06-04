@@ -54,6 +54,45 @@ jobs:
         run: |
           quarto render
 
+      # Render the R package vignettes into the published site so the how-to can
+      # link to them. beam is already pip-installed above, so reticulate finds
+      # it; the heterogeneity Suggests let the heterogeneity and meta-analysis
+      # chunks evaluate in full.
+      # Best-effort: a vignette or package-install hiccup must not block the
+      # main docs deploy, so these R steps carry continue-on-error.
+      - uses: r-lib/actions/setup-r@v2
+        continue-on-error: true
+        with:
+          use-public-rspm: true
+
+      - name: Point reticulate at the workflow Python
+        run: echo "RETICULATE_PYTHON=$(python -c 'import sys; print(sys.executable)')" >> "$GITHUB_ENV"
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        continue-on-error: true
+        with:
+          working-directory: r/beam
+          extra-packages: |
+            any::knitr
+            any::rmarkdown
+            any::reticulate
+            any::lme4
+            any::glmmTMB
+            any::psychotree
+            any::psychotools
+            any::partykit
+            any::PlackettLuce
+            any::qvcalc
+            any::meta
+            any::netmeta
+
+      - name: Render the R vignettes into the site
+        continue-on-error: true
+        run: |
+          R CMD INSTALL --no-multiarch r/beam
+          mkdir -p _site/r-vignettes
+          Rscript -e 'reticulate::use_python(Sys.which("python"), required = TRUE); invisible(lapply(list.files("r/beam/vignettes", pattern = "[.]Rmd$", full.names = TRUE), function(f) rmarkdown::render(f, output_dir = "_site/r-vignettes", quiet = TRUE)))'
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3

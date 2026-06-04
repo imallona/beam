@@ -65,8 +65,9 @@ fig <- reporting$rank_bump(
   divider_after = 2L,
   title = "Reported method ranks across three benchmarks, and the beam consensus"
 )
-fig$savefig("cross_bump.png", bbox_inches = "tight", dpi = 110)
-knitr::include_graphics("cross_bump.png")
+bump_path <- tempfile(fileext = ".png")
+fig$savefig(bump_path, bbox_inches = "tight", dpi = 110)
+knitr::include_graphics(bump_path)
 ```
 
 ```{r consistent-spearman}
@@ -101,7 +102,7 @@ for (b in bench) {
     metric_groups = reticulate::tuple(as.list(metric_groups)),
     title = sprintf("%s: standing of the common methods per metric", b)
   )
-  path <- sprintf("cross_funky_%s.png", b)
+  path <- tempfile(fileext = ".png")
   fig$savefig(path, bbox_inches = "tight", dpi = 110)
   paths <- c(paths, path)
 }

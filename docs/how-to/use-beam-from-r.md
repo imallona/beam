@@ -113,19 +113,21 @@ checks that every metric id resolves to a card and that the scale types are comp
 
 ## 8. Worked examples (vignettes)
 
-The package ships four self-contained vignettes that run once the Python side is installed. List them with `browseVignettes("rbeam")`, or open one with `vignette()`:
+The package ships four self-contained vignettes, each with its own figures. The rendered versions are published on the documentation site:
+
+- [Ranking methods and checking the ranking](https://imallona.github.io/beam/r-vignettes/ranking.html): rank the Duo 2018 benchmark, then check the ranking with SMAA, leave-one-dataset-out, the smallest weight perturbation, aggregation agreement, the card reference levels, and the Friedman-Nemenyi critical-difference test.
+- [Metric-set diagnostics](https://imallona.github.io/beam/r-vignettes/metric-diagnostics.html): convergent and discriminant validity, internal-consistency reliability, and dimensionality of a metric group, on the OpenProblems scIB metrics.
+- [Method-by-dataset heterogeneity](https://imallona.github.io/beam/r-vignettes/heterogeneity.html): the mixed-effects variance decomposition, the Bradley-Terry tree, and the Plackett-Luce model on the Duo ARI matrix.
+- [Cross-benchmark meta-analysis](https://imallona.github.io/beam/r-vignettes/cross-benchmark.html): the consensus bump plot, per-benchmark funky heatmaps, the network meta-analysis, the variance decomposition, and the same-data pancreas contrast.
+
+Once the package is installed, the same vignettes open locally with `browseVignettes("rbeam")`, or one at a time:
 
 ```r
-vignette("01-ranking", package = "rbeam")
-vignette("02-metric-diagnostics", package = "rbeam")
-vignette("03-heterogeneity", package = "rbeam")
-vignette("04-cross-benchmark", package = "rbeam")
+vignette("ranking", package = "rbeam")
+vignette("metric-diagnostics", package = "rbeam")
+vignette("heterogeneity", package = "rbeam")
+vignette("cross-benchmark", package = "rbeam")
 ```
-
-- `01-ranking`: rank the Duo 2018 benchmark, then check the ranking with SMAA, leave-one-dataset-out, the smallest weight perturbation, aggregation agreement, the card reference levels, and the Friedman-Nemenyi critical-difference test, each with a figure.
-- `02-metric-diagnostics`: convergent and discriminant validity, internal-consistency reliability, and dimensionality of a metric group, on the OpenProblems scIB metrics.
-- `03-heterogeneity`: the mixed-effects variance decomposition, the Bradley-Terry tree, and the Plackett-Luce model on the Duo ARI matrix.
-- `04-cross-benchmark`: the cross-benchmark meta-analysis (the consensus bump plot, per-benchmark funky heatmaps, the network meta-analysis, the variance decomposition, and the same-data pancreas contrast).
 
 ## Where to go next
 
