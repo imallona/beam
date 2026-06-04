@@ -1,0 +1,91 @@
+---
+title: "3. Method-by-dataset heterogeneity"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{3. Method-by-dataset heterogeneity}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+have_beam <- requireNamespace("reticulate", quietly = TRUE) &&
+  reticulate::py_module_available("beam.datasets")
+have_lme4 <- have_beam && requireNamespace("lme4", quietly = TRUE)
+have_psychotree <- have_beam && requireNamespace("psychotree", quietly = TRUE)
+have_pl <- have_beam && requireNamespace("PlackettLuce", quietly = TRUE)
+knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>")
+```
+
+A single global ranking hides the more useful question: how much of the score variation is a stable method effect, and how much is the method-by-dataset interaction. beam answers it with three models that fit natively in R, so each section needs its own modelling package (`lme4`, `psychotree`, `PlackettLuce`) and runs only when that package is installed. The benchmark scores come from the Python `beam` core through reticulate; install it once with `install_beam_python()`. The data is the Duo 2018 ARI matrix: 14 clustering methods by 12 datasets.
+
+```{r libs}
+library(rbeam)
+datasets <- reticulate::import("beam.datasets")
+
+duo <- datasets$load_duo2018()
+method_names <- unlist(duo$method_names)
+dataset_names <- unlist(duo$dataset_names)
+ari <- duo$tensor(list("ari"))[, , 1]
+```
+
+## Mixed-effects variance decomposition
+
+`beam_mixed_effects` fits `score ~ method + (1 | dataset)` in lme4. The dataset random intercept absorbs how easy or hard each dataset is for every method alike, and the dataset intraclass correlation is the share of variance that is the dataset rather than the method.
+
+```{r mixed-effects, eval = have_lme4, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4.5}
+me <- beam_mixed_effects(ari, method_names, dataset_names)
+cat(sprintf("dataset shift (ICC): %.2f of the ARI variance\n", me$icc_dataset))
+
+ord <- order(me$method_effects)
+m <- me$method_effects[ord]
+se <- me$method_effect_se[ord]
+nm <- me$method_names[ord]
+plot(m, seq_along(m), pch = 19, col = "steelblue", yaxt = "n",
+     xlim = range(c(m - se, m + se)), ylab = "", xlab = "ARI marginal mean (higher ranks first)",
+     main = "Mixed-effects method effects on ARI")
+arrows(m - se, seq_along(m), m + se, seq_along(m), angle = 90, code = 3, length = 0.03,
+       col = "steelblue")
+axis(2, at = seq_along(m), labels = nm, las = 1, cex.axis = 0.7)
+```
+
+The dataset intercept takes about 0.71 of the ARI variance, so most of the spread is datasets being uniformly easy or hard rather than methods reordering. SC3 and Seurat lead the marginal means and are not separable from each other given the standard errors.
+
+## Bradley-Terry tree on dataset features
+
+The variance decomposition says how much interaction there is; the Bradley-Terry tree asks which dataset feature drives it. For each dataset the methods are compared pairwise (higher ARI wins), and `psychotree::bttree` splits the datasets by their features so each leaf gets its own Bradley-Terry ranking.
+
+```{r bt-fit, eval = have_psychotree, include = FALSE}
+# Fit in a hidden chunk: the per-leaf standard-error step uses a sandwich vcov
+# that can write a harmless message on a degenerate leaf. The worths and the
+# split decision are unaffected.
+feats <- datasets$load_duo2018_features()
+aligned <- feats$aligned_to(reticulate::tuple(as.list(dataset_names)))
+features <- c(lapply(aligned[[1]], as.numeric), lapply(aligned[[2]], as.character))
+bt <- beam_bradley_terry_tree(ari, method_names, dataset_names,
+                              features = features, minsize = 4L)
+```
+
+```{r bt-show, eval = have_psychotree, fig.width = 7, fig.height = 4}
+cat("a dataset feature splits the ranking:", bt$did_split, "\n")
+w <- bt$global_worth
+ord <- order(w)
+barplot(w[ord], names.arg = method_names[ord], horiz = TRUE, las = 1, col = "slateblue",
+        cex.names = 0.7, xlab = "Bradley-Terry worth (global)",
+        main = "Bradley-Terry global ranking on ARI")
+```
+
+On these twelve datasets the parameter-stability test finds no split, so the tree reduces to one global Bradley-Terry ranking led by SC3. A dozen datasets is too few to separate a feature-dependent regime from sampling noise.
+
+## Plackett-Luce on per-dataset rankings
+
+`beam_plackett_luce` reads each dataset as a full ranking of the methods and fits a Plackett-Luce model, the generalisation of Bradley-Terry from pairwise wins to full orderings. The worths sum to one.
+
+```{r pl, eval = have_pl, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4}
+pl <- beam_plackett_luce(ari, method_names)
+w <- pl$worth
+ord <- order(w)
+barplot(w[ord], names.arg = method_names[ord], horiz = TRUE, las = 1, col = "darkcyan",
+        cex.names = 0.7, xlab = "Plackett-Luce worth", main = "Plackett-Luce worths on ARI")
+```
+
+The three models agree on the leaders, which is the expected reading when one global ranking holds. See `?beam_mixed_effects`, `?beam_bradley_terry_tree`, `?beam_plackett_luce`.

@@ -1,0 +1,92 @@
+---
+title: "2. Metric-set diagnostics: validity, reliability, dimensionality"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{2. Metric-set diagnostics: validity, reliability, dimensionality}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+have_beam <- requireNamespace("reticulate", quietly = TRUE) &&
+  reticulate::py_module_available("beam.datasets")
+knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>")
+```
+
+A benchmark that reads a group of metrics as one criterion assumes the group behaves as one scale. beam has three measurement-side checks for that assumption, all built on the same oriented Spearman correlations between the metrics. This vignette runs them on the bundled OpenProblems batch integration scores, where the scIB metrics split into biological conservation and batch correction. The R functions forward to the Python `beam` core; install it once with `install_beam_python()`.
+
+```{r libs}
+library(rbeam)
+datasets <- reticulate::import("beam.datasets")
+cards <- reticulate::import("beam.cards")
+
+op <- datasets$load_openproblems("batch_integration")
+metrics <- setdiff(unlist(op$metric_ids), "hvg_overlap")
+tensor <- op$tensor(metrics)
+polarity <- unlist(cards$polarities_for(metrics))
+bio <- c("ari", "nmi", "asw_label", "isolated_label_f1",
+         "isolated_label_asw", "cell_cycle_conservation", "clisi")
+groups <- ifelse(metrics %in% bio, "bio", "batch")
+```
+
+## All three at once
+
+`beam_metric_diagnostics` runs validity, reliability and dimensionality on one grouping and returns the three reports together.
+
+```{r diagnostics}
+diag <- beam_metric_diagnostics(tensor, polarity, groups, metric_ids = metrics)
+data.frame(
+  group = names(diag$reliability$alpha_by_group),
+  alpha = round(unlist(diag$reliability$alpha_by_group), 2),
+  mean_inter_item = round(unlist(diag$reliability$mean_inter_item_by_group), 2),
+  factors = unlist(diag$dimensionality$parallel_components_by_group),
+  row.names = NULL
+)
+```
+
+## Validity: is the grouping the right split?
+
+Convergent validity asks whether same-group metrics agree; discriminant validity asks whether different-group metrics agree less (Campbell and Fiske 1959).
+
+```{r validity}
+v <- diag$validity
+cat(sprintf("mean within-group correlation:  %.2f\n", v$mean_convergent))
+cat(sprintf("mean between-group correlation: %.2f\n", v$mean_discriminant))
+cat("the split separates (within > between):", v$discriminant_ok, "\n")
+```
+
+## Reliability: does each group hold together as one scale?
+
+Standardized Cronbach's alpha per group (Cronbach 1951). A group above the conventional 0.7 cutoff reads as one reliable scale.
+
+```{r reliability, fig.width = 6, fig.height = 3.2}
+rel <- diag$reliability
+alpha <- unlist(rel$alpha_by_group)
+bp <- barplot(alpha, col = ifelse(alpha >= 0.7, "seagreen", "indianred"),
+              ylim = c(0, 1), ylab = "standardized Cronbach's alpha",
+              main = "Reliability per metric group")
+abline(h = 0.7, lty = 2)
+text(bp, alpha, sprintf("%.2f", alpha), pos = 1, col = "white")
+```
+
+## Dimensionality: how many factors does each group carry?
+
+Cronbach's alpha reads a group as one scale when it is high, but it cannot test whether the group is a single factor, and it rises with the number of metrics. `metric_dimensionality` counts the factors by parallel analysis (Horn 1965, Glorfeld 1995) on the metric correlation matrix. The scree plot shows the eigenvalues per group: a single large eigenvalue means one factor.
+
+```{r scree, fig.width = 7, fig.height = 4}
+dim_rep <- diag$dimensionality
+ev_bio <- unlist(dim_rep$eigenvalues_by_group$bio)
+ev_batch <- unlist(dim_rep$eigenvalues_by_group$batch)
+plot(seq_along(ev_bio), ev_bio, type = "b", pch = 19, col = "steelblue",
+     ylim = c(0, max(ev_bio)), xlab = "component", ylab = "eigenvalue",
+     main = "Scree plot of the metric correlation matrix")
+lines(seq_along(ev_batch), ev_batch, type = "b", pch = 17, col = "firebrick")
+abline(h = 1, lty = 3)
+legend("topright", legend = c("biological group", "batch group", "Kaiser cutoff (1)"),
+       col = c("steelblue", "firebrick", "black"), pch = c(19, 17, NA), lty = c(1, 1, 3),
+       bty = "n")
+```
+
+## Reading
+
+Reliability and dimensionality dissociate on this data. The biological group has the higher alpha (0.85) but carries two factors by parallel analysis, so its alpha is partly the size of the group rather than one underlying quantity. The batch group has the lower alpha (0.61) but is a single factor its metrics track only weakly. A group can be reliable without being one thing, and one thing without being reliable, which is why the checks read together. See `?beam_metric_validity`, `?beam_metric_reliability`, `?beam_metric_dimensionality`.

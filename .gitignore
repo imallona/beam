@@ -69,3 +69,7 @@ examples/**/*_report.html
 
 # Binary files, kept out of the tree to avoid accidental commits
 *.pdf
+
+# R vignette render artefacts
+r/beam/vignettes/*.png
+r/beam/vignettes/*.html

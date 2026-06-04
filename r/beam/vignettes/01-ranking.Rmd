@@ -1,0 +1,148 @@
+---
+title: "1. Ranking methods and checking the ranking"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{1. Ranking methods and checking the ranking}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+have_beam <- requireNamespace("reticulate", quietly = TRUE) &&
+  reticulate::py_module_available("beam.datasets")
+knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>")
+```
+
+beam ranks methods from a tool by metric score matrix with multi-criteria decision analysis, then qualifies the ranking with sensitivity and statistical checks. This vignette runs the pipeline on the Duo, Robinson and Soneson (2018) single-cell clustering benchmark bundled with the package: 14 methods, 12 datasets, and the three well-populated metrics ARI (higher is better), runtime and Shannon entropy difference (lower is better). The R functions forward to the Python `beam` core through reticulate; install it once with `install_beam_python()`.
+
+```{r libs}
+library(rbeam)
+datasets <- reticulate::import("beam.datasets")
+cards <- reticulate::import("beam.cards")
+beam <- reticulate::import("beam")
+
+duo <- datasets$load_duo2018()
+method_names <- unlist(duo$method_names)
+dataset_names <- unlist(duo$dataset_names)
+metrics <- c("ari", "runtime", "shannon_entropy_diff")
+polarity <- unlist(cards$polarities_for(metrics))
+```
+
+## One ranking, end to end
+
+`beam_rank` reads the method by dataset by metric tensor as a `Scores` object, pools it across datasets by each card's rule, runs the MCDA pipeline, and runs the default sensitivity analysis on the same normalization context.
+
+```{r rank}
+scores <- beam$Scores(
+  values = duo$tensor(metrics),
+  tool_names = reticulate::tuple(as.list(method_names)),
+  metric_ids = reticulate::tuple(as.list(metrics)),
+  dataset_names = reticulate::tuple(as.list(dataset_names)),
+  layout = "long"
+)
+run <- beam_rank(scores, weights = "equal", method = "saw", seed = 0L)
+cat("top-ranked under equal weights / SAW:", run$top_tool, "\n")
+```
+
+The funky heatmap shows the run as a glyph table: methods as rows, metrics as circles sized by the card-resolved normalized score, a composite bar, and the rank-robustness panels.
+
+```{r funky, fig.width = 7, fig.height = 5}
+plot(run, "ranking_funky.png")
+knitr::include_graphics("ranking_funky.png")
+```
+
+## SMAA: is the top method robust to the weighting?
+
+SMAA samples weight vectors and reports, per method, the share of weightings that rank it first.
+
+```{r smaa, fig.width = 7, fig.height = 4}
+conf <- run$smaa$confidence_factor
+ord <- order(conf)
+barplot(conf[ord] * 100, names.arg = method_names[ord], horiz = TRUE, las = 1,
+        col = "seagreen", xlab = "share of random weightings ranked first (%)",
+        main = "SMAA acceptability", xlim = c(0, 100), cex.names = 0.7)
+```
+
+## Leave-one-dataset-out: does the order hang on one dataset?
+
+For each dataset dropped, the rest are pooled and re-ranked. The per-method stability is the share of those runs in which the method keeps its base rank.
+
+```{r lodo, fig.width = 7, fig.height = 4}
+lodo <- run$leave_one_dataset_out
+base_rank <- run$result$ranks
+ord <- order(base_rank)
+barplot(lodo$rank_stability[ord] * 100, names.arg = method_names[ord], horiz = TRUE,
+        las = 1, col = "darkorange", xlim = c(0, 100), cex.names = 0.7,
+        xlab = "rank held across leave-one-dataset-out runs (%)",
+        main = "Leave-one-dataset-out stability")
+cat("most influential dataset:",
+    lodo$dataset_names[[lodo$most_influential_dataset + 1]],
+    "(largest rank shift", lodo$max_rank_shift, ")\n")
+```
+
+## The checks are callable on their own
+
+Everything above runs through `beam_rank`, but each check is a standalone function on a tool by metric matrix. Here the benchmark is pooled to one value per metric, then read by the individual wrappers.
+
+```{r standalone}
+pooled <- sapply(seq_along(metrics), function(j) {
+  m <- duo$tensor(list(metrics[j]))[, , 1]
+  if (metrics[j] == "runtime") exp(rowMeans(log(m), na.rm = TRUE)) else rowMeans(m, na.rm = TRUE)
+})
+agree <- beam_aggregation_agreement(pooled, polarity)
+pert <- beam_smallest_weight_perturbation(pooled, polarity)
+loo <- beam_leave_one_metric_out(pooled, polarity, metric_ids = metrics)
+cat("five aggregations agree on the top tool:", agree$top_is_unanimous, "\n")
+cat("mean pairwise Kendall agreement across aggregations:",
+    round(agree$mean_pairwise_tau, 2), "\n")
+cat("the top rank is fragile to a small weight change:", pert$top_rank_is_fragile, "\n")
+```
+
+`beam_rank` also reads the raw scores against the reference levels on the cards: how many tools beat the chance baseline, and which tool pairs no metric separates above its noise floor.
+
+```{r reference-levels}
+cat("tools that beat chance on no metric:",
+    length(run$random_baseline$tools_never_beating), "\n")
+cat("the top two tools are within the noise floor:",
+    run$noise_floor$top_pair_indistinguishable, "\n")
+```
+
+## Are the methods separable? Critical difference
+
+The composite gives one ranking but does not say whether the methods differ beyond chance. `beam_critical_difference` runs the Friedman test and the Nemenyi post-hoc on the ARI block of methods observed on every dataset. Two methods whose average ranks lie within the critical difference are not separable.
+
+```{r cd, fig.width = 7, fig.height = 3.6}
+ari <- duo$tensor(list("ari"))[, , 1]
+complete <- !apply(is.na(ari), 1, any)
+block <- ari[complete, ]
+block_names <- method_names[complete]
+cd <- beam_critical_difference(block, higher_is_better = TRUE, tool_names = block_names)
+
+ord <- order(cd$average_ranks)
+ranks_sorted <- cd$average_ranks[ord]
+names_sorted <- block_names[ord]
+plot(ranks_sorted, rep(0, length(ranks_sorted)), pch = 19, xlim = rev(range(cd$average_ranks)),
+     ylim = c(-1, 0.6), axes = FALSE, xlab = "average rank on ARI (1 = best)", ylab = "",
+     main = sprintf("Friedman p = %.1e, Nemenyi CD = %.2f",
+                    cd$friedman_pvalue, cd$critical_difference))
+axis(1)
+text(ranks_sorted, 0.05, names_sorted, srt = 90, adj = 0, cex = 0.7)
+cliques <- cd$cliques
+for (k in seq_along(cliques)) {
+  idx <- unlist(cliques[[k]]) + 1
+  segments(min(cd$average_ranks[idx]), -0.1 * k, max(cd$average_ranks[idx]), -0.1 * k,
+           col = "steelblue", lwd = 3)
+}
+```
+
+When the matrix has gaps, `beam_skillings_mack` is the coverage-aware version of the same test, run on the full ARI matrix.
+
+```{r skillings-mack}
+sm <- beam_skillings_mack(ari, higher_is_better = TRUE, method_names = method_names)
+cat(sprintf("Skillings-Mack chi-squared = %.2f on %d df, p = %.1e\n",
+            sm$statistic, as.integer(sm$df), sm$p_value))
+```
+
+## Reading
+
+Seurat ranks first under the default pipeline and holds the top in almost every random weighting and every leave-one-dataset-out run, so the recommendation does not hang on the weighting or on any single dataset. The critical-difference diagram qualifies this: on ARI alone most methods sit in overlapping cliques, so the upper-middle methods are not separable at twelve datasets. See `?beam_rank`, `?beam_smaa`, `?beam_critical_difference` for the function documentation.

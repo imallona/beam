@@ -111,8 +111,23 @@ beam_validate("scores.csv", method = "topsis")
 
 checks that every metric id resolves to a card and that the scale types are compatible with the aggregation method you intend to use. Cleaner than running `beam_rank` and discovering a missing card halfway through.
 
+## 8. Worked examples (vignettes)
+
+The package ships four self-contained vignettes that run once the Python side is installed. List them with `browseVignettes("rbeam")`, or open one with `vignette()`:
+
+```r
+vignette("01-ranking", package = "rbeam")
+vignette("02-metric-diagnostics", package = "rbeam")
+vignette("03-heterogeneity", package = "rbeam")
+vignette("04-cross-benchmark", package = "rbeam")
+```
+
+- `01-ranking`: rank the Duo 2018 benchmark, then check the ranking with SMAA, leave-one-dataset-out, the smallest weight perturbation, aggregation agreement, the card reference levels, and the Friedman-Nemenyi critical-difference test, each with a figure.
+- `02-metric-diagnostics`: convergent and discriminant validity, internal-consistency reliability, and dimensionality of a metric group, on the OpenProblems scIB metrics.
+- `03-heterogeneity`: the mixed-effects variance decomposition, the Bradley-Terry tree, and the Plackett-Luce model on the Duo ARI matrix.
+- `04-cross-benchmark`: the cross-benchmark meta-analysis (the consensus bump plot, per-benchmark funky heatmaps, the network meta-analysis, the variance decomposition, and the same-data pancreas contrast).
+
 ## Where to go next
 
-- The R package's own quick start lives in `vignette("duo2018", package = "rbeam")`.
 - The Python and R sides share metric cards and the conceptual essays, which apply to both languages: see [measurement theory](../explanations/measurement-theory.md) and [cards and pipeline](../explanations/cards-and-pipeline.qmd).
 - The R wrapper's source is under `r/beam/` in the main repo. Each R function file is short: read `r/beam/R/rank.R` for the simplest example of how the wrappers forward arguments.

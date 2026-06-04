@@ -1,0 +1,162 @@
+---
+title: "4. Cross-benchmark meta-analysis"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{4. Cross-benchmark meta-analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+have_beam <- requireNamespace("reticulate", quietly = TRUE) &&
+  reticulate::py_module_available("beam.datasets")
+have_lme4 <- have_beam && requireNamespace("lme4", quietly = TRUE)
+have_netmeta <- have_beam && requireNamespace("netmeta", quietly = TRUE) &&
+  requireNamespace("meta", quietly = TRUE)
+knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>")
+```
+
+Single-cell data-integration benchmarks reach different conclusions about which method to use. This vignette asks where the disagreement comes from: the methods, the datasets, or the benchmarker's own analysis choices. beam harmonizes four benchmarks onto the shared scIB metric family (ARI, ASW, kBET, LISI) for the five classical methods, all bundled with the package. The R functions forward to the Python `beam` core; install it once with `install_beam_python()`.
+
+```{r libs}
+library(rbeam)
+datasets <- reticulate::import("beam.datasets")
+reporting <- reticulate::import("beam.reporting")
+
+canon <- c("combat", "harmony", "fastmnn", "scanorama", "liger")
+bench <- c("Tran", "scIB", "OpenProblems")
+metric_labels <- c("ARI", "ASW", "kBET", "LISI")
+metric_groups <- c("bio", "bio", "batch", "batch")
+
+ib <- datasets$load_integration_benchmarks()
+published <- datasets$load_integration_published_ranks()
+benchmark <- as.character(unlist(ib$benchmark))
+method <- as.character(unlist(ib$method))
+metric <- as.character(unlist(ib$metric))
+rank_value <- as.numeric(unlist(ib$rank))
+```
+
+## The reported rankings disagree
+
+Each benchmark reported its own ranking of the five methods, using its own metrics, scaling and weighting.
+
+```{r reported}
+reported <- sapply(bench, function(b) sapply(canon, function(m) published[[b]][[m]]))
+reported
+rhos <- combn(bench, 2, function(p) cor(reported[, p[1]], reported[, p[2]], method = "spearman"))
+cat(sprintf("mean cross-benchmark Spearman of the reported ranks: %.2f\n", mean(rhos)))
+```
+
+## beam's consistent re-ranking
+
+beam re-ranks all three from their raw scores with one rule: four shared metrics, equal weight, ranked within the common methods. The bump (subway) plot shows each method's reported rank in the three benchmarks, then the pooled beam consensus on the right of the divider.
+
+```{r bump, fig.width = 7, fig.height = 4}
+mean_rank <- tapply(rank_value, list(benchmark, method), mean)[bench, canon]
+consensus <- rank(colMeans(mean_rank), ties.method = "first")
+ranks_array <- cbind(reported, beam = consensus[canon])
+storage.mode(ranks_array) <- "integer"
+
+columns <- c("Tran\n(reported)", "scIB\n(reported)", "OpenProblems\n(reported)", "beam\nconsensus")
+fig <- reporting$rank_bump(
+  reticulate::tuple(as.list(canon)),
+  reticulate::tuple(as.list(columns)),
+  ranks_array,
+  divider_after = 2L,
+  title = "Reported method ranks across three benchmarks, and the beam consensus"
+)
+fig$savefig("cross_bump.png", bbox_inches = "tight", dpi = 110)
+knitr::include_graphics("cross_bump.png")
+```
+
+```{r consistent-spearman}
+beam_rhos <- combn(bench, 2, function(p) {
+  cor(mean_rank[p[1], ], mean_rank[p[2], ], method = "spearman")
+})
+cat(sprintf("reported: %+.2f   beam consistent: %+.2f\n", mean(rhos), mean(beam_rhos)))
+```
+
+Agreement rises from near zero to moderate. Much of the disagreement was in the analysis choices, not the methods.
+
+## Funky heatmaps per benchmark
+
+The glyph tables show why the reported orders differ: the per-metric pattern over the five methods is not the same across benchmarks. Each circle is the method's standing on that metric within the benchmark (larger is better), coloured by the scIB biological and batch groups.
+
+```{r funky, fig.width = 6, fig.height = 3.2}
+mean_rank_3d <- tapply(rank_value, list(benchmark, method, metric), mean)
+paths <- character(0)
+for (b in bench) {
+  norm <- sapply(metric_labels, function(mk) {
+    rr <- mean_rank_3d[b, canon, mk]
+    1 - (rr - 1) / (length(canon) - 1)
+  })
+  composite <- rowMeans(norm, na.rm = TRUE)
+  order_ <- rank(-composite, ties.method = "first")
+  fig <- reporting$funky_heatmap(
+    norm,
+    reticulate::tuple(as.list(canon)),
+    reticulate::tuple(as.list(metric_labels)),
+    composite,
+    order_,
+    metric_groups = reticulate::tuple(as.list(metric_groups)),
+    title = sprintf("%s: standing of the common methods per metric", b)
+  )
+  path <- sprintf("cross_funky_%s.png", b)
+  fig$savefig(path, bbox_inches = "tight", dpi = 110)
+  paths <- c(paths, path)
+}
+knitr::include_graphics(paths)
+```
+
+## One coherent ranking: network meta-analysis
+
+A network meta-analysis pools all four sources into one ranking, the way clinical research ranks treatments never all tried in one trial. Each method is a treatment, each (benchmark, dataset) block is a study. It needs R's netmeta.
+
+```{r netmeta, eval = have_netmeta, fig.width = 7, fig.height = 3.6}
+arms <- ib$network_arms()
+nma <- beam_network_meta_analysis(arms[[1]], arms[[2]], arms[[3]], arms[[4]], arms[[5]])
+ord <- order(-nma$pscore)
+barplot(nma$pscore[ord], names.arg = nma$treatments[ord], col = "steelblue",
+        ylim = c(0, 1), ylab = "P-score (higher is better)",
+        main = "Network meta-analysis ranking of the methods")
+cat(sprintf("I-squared %.2f; inconsistency Q = %.1f on %.0f df, p = %.1e\n",
+            nma$i2, nma$q_total, nma$df_total, nma$pval_total))
+```
+
+Harmony leads and combat trails, the same order the consensus gives. The high I-squared and the significant inconsistency Q say the direct and indirect evidence do not fully line up, the network reading of the residual disagreement.
+
+## How much of the variance is the benchmark
+
+A cross-source variance decomposition puts a number on the split: the method-by-benchmark component is the disagreement attributable to the benchmark rather than the method. It needs R's lme4.
+
+```{r source-variance, eval = have_lme4}
+rec <- ib$mean_rank_records()
+sv <- beam_source_variance_decomposition(rec[[1]], rec[[2]], rec[[3]], rec[[4]])
+total <- sum(unlist(sv$variance_components))
+cat(sprintf("method-by-benchmark variance share: %.2f\n",
+            sv$variance_components[["method:benchmark"]] / total))
+```
+
+## Same data, two pipelines: the human pancreas
+
+The pooled decomposition mixes pipeline and dataset differences. The one confirmed dataset overlap removes the data confound: Tran's Dataset 4 and scIB's pancreas task are built from the same five studies, so running both pipelines on this shared block reads off the pipeline effect with no data variability in the way.
+
+```{r pancreas, fig.width = 7, fig.height = 4}
+pc <- datasets$load_pancreas_contrast()
+pc_methods <- unlist(pc$methods)
+tops <- pc$top_method()
+cat(sprintf("top method: Tran D4 = %s, scIB pancreas = %s; Spearman of the orders = %+.2f\n",
+            tops[[1]], tops[[2]], pc$spearman()))
+
+mat <- rbind(`Tran D4` = unlist(pc$tran_mean_rank), `scIB pancreas` = unlist(pc$scib_mean_rank))
+barplot(mat, beside = TRUE, names.arg = pc_methods, col = c("steelblue", "darkorange"),
+        ylab = "mean rank across 4 metrics (lower ranks first)", legend.text = TRUE,
+        args.legend = list(x = "topleft", bty = "n"),
+        main = "Same pancreas data, two pipelines")
+```
+
+Both pipelines agree on the leader on the shared data, but the rest of the order disagrees more than the pooled Spearman would predict. The disagreement is not the data; it is in the pipeline.
+
+## Reading
+
+Standardizing the decision making with beam removes part of the apparent disagreement between these benchmarks, but it does not close it: the network meta-analysis finds a significant residual inconsistency even under the shared rule. Harmonizing the analysis narrows the gap rather than erasing it. See `?beam_network_meta_analysis`, `?beam_source_variance_decomposition`.

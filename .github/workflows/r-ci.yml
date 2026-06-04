@@ -98,3 +98,23 @@ jobs:
           args: 'c("--no-manual", "--as-cran")'
           error-on: '"warning"'
           check-dir: '"check"'
+
+      # R CMD check above already builds the vignettes (Python beam and the
+      # heterogeneity Suggests are installed, so every chunk evaluates). This
+      # step re-renders them to standalone HTML and uploads them so the rendered
+      # vignettes are downloadable from the Actions tab, on linux only.
+      - name: Render vignettes for browsing
+        if: always() && matrix.config.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          R CMD INSTALL --no-multiarch r/beam
+          mkdir -p rendered-vignettes
+          Rscript -e 'reticulate::use_python(Sys.which("python"), required = TRUE); invisible(lapply(list.files("r/beam/vignettes", pattern = "[.]Rmd$", full.names = TRUE), function(f) rmarkdown::render(f, output_dir = "rendered-vignettes", quiet = TRUE)))'
+
+      - name: Upload rendered vignettes
+        if: always() && matrix.config.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rbeam-vignettes
+          path: rendered-vignettes/*.html
+          if-no-files-found: error
