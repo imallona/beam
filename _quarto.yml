@@ -59,6 +59,10 @@ website:
             text: Reference levels
           - href: docs/explanations/convergent-discriminant-validity.md
             text: Metric validity
+          - href: docs/explanations/reliability.md
+            text: Metric reliability
+          - href: docs/explanations/dimensionality.md
+            text: Metric dimensionality
           - href: docs/explanations/heterogeneity-mixed-effects.md
             text: Mixed-effects heterogeneity
           - href: docs/explanations/heterogeneity-bradley-terry.md

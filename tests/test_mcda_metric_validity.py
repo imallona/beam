@@ -193,8 +193,8 @@ _BIO = {
 
 
 def test_openproblems_bio_batch_validity_regression():
-    # Pins findings 0008: the scIB bio/batch grouping is separable but weak on
-    # the OpenProblems batch_integration scores.
+    # Regression on the OpenProblems batch_integration scores: the scIB
+    # bio/batch grouping is separable but weak.
     op = load_openproblems("batch_integration")
     metrics = [m for m in op.metric_ids if m != "hvg_overlap"]
     tensor = op.tensor(tuple(metrics))

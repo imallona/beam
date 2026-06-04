@@ -13,6 +13,7 @@ from .cd import (
 )
 from .comet import comet
 from .cross_dataset import aggregate_across_datasets, reduce_tensor
+from .dimensionality import MetricDimensionalityReport, metric_dimensionality
 from .facade import RegistryContext, Result, registry_context, run, run_from_registry
 from .metric_validity import MetricValidityReport, metric_validity
 from .normalize import (
@@ -70,6 +71,7 @@ __all__ = [
     "IncompleteMatrixError",
     "InconsistentPairwiseMatrixError",
     "MetricBaseline",
+    "MetricDimensionalityReport",
     "MetricReliabilityReport",
     "MetricValidityReport",
     "NoiseFloorReport",
@@ -95,6 +97,7 @@ __all__ = [
     "leave_one_dataset_out",
     "leave_one_metric_out",
     "merec_weights",
+    "metric_dimensionality",
     "metric_reliability",
     "metric_validity",
     "min_max_normalize",

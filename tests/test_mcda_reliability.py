@@ -163,9 +163,9 @@ _BIO = {
 
 
 def test_openproblems_bio_batch_reliability_regression():
-    # Pins findings 0009: the bio group reads as one reliable scale, the batch
-    # group does not at the conventional 0.7 cutoff, on the OpenProblems
-    # batch_integration scores. Same setup as the metric_validity regression.
+    # Regression on the OpenProblems batch_integration scores: the bio group
+    # reads as one reliable scale, the batch group does not at the conventional
+    # 0.7 cutoff. Same setup as the metric_validity regression.
     op = load_openproblems("batch_integration")
     metrics = [m for m in op.metric_ids if m != "hvg_overlap"]
     tensor = op.tensor(tuple(metrics))
