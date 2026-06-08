@@ -129,9 +129,7 @@ def test_target_outside_range_flagged():
 
 def test_nonpositive_noise_floor_is_a_violation():
     scores = np.array([[0.2], [0.8]])
-    report = card_data_consistency(
-        scores, ["higher_is_better"], [(0.0, 1.0)], noise_floors=[0.0]
-    )
+    report = card_data_consistency(scores, ["higher_is_better"], [(0.0, 1.0)], noise_floors=[0.0])
     assert [f.code for f in report.violations] == ["nonpositive_noise_floor"]
 
 
