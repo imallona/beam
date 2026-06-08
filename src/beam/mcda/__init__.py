@@ -35,6 +35,11 @@ from .perturbation import (
     smallest_weight_perturbation,
 )
 from .promethee import promethee_ii
+from .rank_sensitivity import (
+    RankSensitivityReport,
+    ToolRankSensitivity,
+    rank_sensitivity,
+)
 from .reference_levels import (
     MetricBaseline,
     NoiseFloorReport,
@@ -89,11 +94,13 @@ __all__ = [
     "PairPerturbation",
     "PairSeparation",
     "RandomBaselineReport",
+    "RankSensitivityReport",
     "RegistryContext",
     "Result",
     "SMAAReport",
     "SensitivityReport",
     "SkillingsMackReport",
+    "ToolRankSensitivity",
     "WeightPerturbationReport",
     "aggregate_across_datasets",
     "aggregation_agreement",
@@ -120,6 +127,7 @@ __all__ = [
     "normalize",
     "promethee_ii",
     "rank",
+    "rank_sensitivity",
     "reduce_tensor",
     "registry_context",
     "run",

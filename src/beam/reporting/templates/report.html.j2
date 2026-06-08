@@ -107,6 +107,24 @@ agree at a mean Kendall tau-b of {{ aggregation_agreement.mean_tau }}.
 depend on the aggregation choice.{% else %}They do not all rank the same tool first, so the top
 recommendation depends on which aggregation is used.{% endif %}</p>
 {% endif %}
+{% if rank_sensitivity %}
+<h3>What moves the ranking</h3>
+<p>Across the {{ rank_sensitivity.n_combinations }} combinations of weighting, aggregation and
+dataset, the rank variance splits into the dataset ({{ rank_sensitivity.dataset_pct }} percent),
+the weighting choice ({{ rank_sensitivity.weighting_pct }} percent), the aggregation choice
+({{ rank_sensitivity.aggregation_pct }} percent), and their interactions
+({{ rank_sensitivity.interaction_pct }} percent). The largest is the
+<strong>{{ rank_sensitivity.most_influential }}</strong>.</p>
+<p>The top tool overall (<code>{{ rank_sensitivity.headline_tool }}</code>) ranks first in
+{{ rank_sensitivity.headline_top_pct }} percent of combinations, with a rank span of
+{{ rank_sensitivity.headline_rank_span }}. Its mean rank per dataset:</p>
+<table>
+  <tr><th>dataset</th><th>mean rank of {{ rank_sensitivity.headline_tool }}</th></tr>
+  {% for row in rank_sensitivity.headline_by_dataset %}
+  <tr><td>{{ row.dataset }}</td><td>{{ row.rank }}</td></tr>
+  {% endfor %}
+</table>
+{% endif %}
 {% if perturbation %}
 <h3>Smallest weight perturbation</h3>
 {% if perturbation.top_rank_is_fragile %}

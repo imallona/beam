@@ -108,6 +108,39 @@ cat("the top two tools are within the noise floor:",
     run$noise_floor$top_pair_indistinguishable, "\n")
 ```
 
+## Do the scores honour the cards?
+
+`beam_card_data_consistency` reads the raw scores against what each card declares (range, chance baseline, noise floor), before normalization. A value outside its declared range, or a metric on the wrong scale, is named here rather than distorting the ranking silently. The normalization context comes from the registry.
+
+```{r card-consistency}
+mcda <- reticulate::import("beam.mcda")
+ctx <- mcda$registry_context(as.list(metrics), "saw")
+audit <- beam_card_data_consistency(
+  pooled, ctx$polarity, ctx$bounds,
+  baselines = ctx$baselines, targets = ctx$targets, noise_floors = ctx$noise_floors,
+  metric_ids = metrics
+)
+cat("pooled scores consistent with the cards:", audit$ok, "\n")
+```
+
+## What moves the ranking: the dataset or the choice?
+
+`beam_rank_sensitivity` splits the ranking's variance between the data and the analyst's choices. It ranks the methods on each dataset, under every weighting and aggregation, and attributes each method's rank variance to the dataset, the weighting, the aggregation and their interactions. The shares sum to one.
+
+```{r rank-sensitivity}
+rs <- beam_rank_sensitivity(
+  duo$tensor(metrics), ctx$polarity,
+  normalization = ctx$normalization, bounds = ctx$bounds,
+  baselines = ctx$baselines, targets = ctx$targets,
+  missing = "worst", tool_names = method_names, dataset_names = dataset_names
+)
+cat(sprintf("dataset %.2f, weighting %.2f, aggregation %.2f, interaction %.2f\n",
+            rs$dataset_share, rs$weighting_share, rs$aggregation_share, rs$interaction_share))
+cat("most influential factor:", rs$most_influential_factor, "\n")
+```
+
+The dataset carries the most, close to the dataset variance share the mixed-effects model reads in the heterogeneity vignette, by a different method. This is not in tension with the stable leave-one-dataset-out result above: that asks whether the pooled order survives dropping one dataset, and it does, because pooling averages over the per-dataset disagreement. The dataset share measures that disagreement directly.
+
 ## Are the methods separable? Critical difference
 
 The composite gives one ranking but does not say whether the methods differ beyond chance. `beam_critical_difference` runs the Friedman test and the Nemenyi post-hoc on the ARI block of methods observed on every dataset. Two methods whose average ranks lie within the critical difference are not separable.

@@ -47,6 +47,8 @@ website:
             text: Aggregation methods
           - href: docs/explanations/aggregation-agreement.md
             text: Aggregation agreement
+          - href: docs/explanations/rank-sensitivity.md
+            text: What moves the ranking
           - href: docs/explanations/weighting-schemes.md
             text: Weighting schemes
           - href: docs/explanations/comparing-methods-across-datasets.md

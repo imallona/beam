@@ -96,6 +96,23 @@ tensor = tensor[keep]
 print(f"{len(methods)} methods, {len(metrics)} metrics, {len(op.dataset_names)} datasets")
 ```
 
+`card_data_consistency` checks the scores against what the 12 cards declare, before any normalization. The scIB metrics are scaled to [0, 1] on the platform, so the audit gives a clean bill here; it would name any metric whose values fell outside its declared range.
+
+```{python}
+from beam.mcda import card_data_consistency, registry_context
+
+ctx = registry_context(metrics, "saw")
+pooled_native = np.nanmean(tensor, axis=1)
+audit = card_data_consistency(
+    pooled_native, ctx.polarity, ctx.bounds,
+    baselines=ctx.baselines, targets=ctx.targets, noise_floors=ctx.noise_floors,
+    metric_ids=metrics,
+)
+print("scores consistent with the cards:", audit.ok)
+for finding in audit.findings:
+    print(" ", finding.severity, finding.message)
+```
+
 beam reads each metric card for its polarity and normalization, pools the six datasets per metric, and runs the chosen aggregation. We use equal weights and TOPSIS.
 
 ```{python}
@@ -287,6 +304,35 @@ print("read as one factor:", list(dimensionality.unidimensional_groups))
 ```
 
 Dimensionality and reliability point in opposite directions here. The biological group has the higher alpha but carries two factors, so its 0.85 is partly the size of the group rather than one quantity. The batch group has the lower alpha but is one factor, weakly tracked. A group can be reliable without being one thing, and one thing without being reliable, which is why the two checks read together.
+
+## What moves the batch-integration ranking
+
+The OpenProblems leaderboard pools by the mean of the scaled scores; beam can pool any of several ways. `rank_sensitivity` asks how much that choice matters against the data. It runs every combination of weighting, aggregation and dataset, and splits the rank variance. COMET is left out of the aggregations here: it builds characteristic objects whose count grows fast with the number of criteria, so it is slow on a 12-metric task. The other four aggregations are quick.
+
+```{python}
+from beam.mcda import rank_sensitivity
+
+rs = rank_sensitivity(
+    tensor,
+    ctx.polarity,
+    methods=["saw", "topsis", "vikor", "promethee_ii"],
+    normalization=list(ctx.normalization),
+    bounds=list(ctx.bounds),
+    baselines=list(ctx.baselines),
+    targets=list(ctx.targets),
+    missing="worst",
+    tool_names=methods,
+    dataset_names=op.dataset_names,
+)
+print(f"{rs.n_combinations} combinations")
+print(f"  dataset:      {rs.dataset_share:.3f} of the rank variance")
+print(f"  weighting:    {rs.weighting_share:.3f}")
+print(f"  aggregation:  {rs.aggregation_share:.3f}")
+print(f"  interactions: {rs.interaction_share:.3f}")
+print(f"  most influential factor: {rs.most_influential_factor}")
+```
+
+The dataset is still the largest single factor, but here it is not the whole story the way it is on M4. The aggregation choice and the dataset-by-choice interaction carry a real share too. With 12 metrics that can disagree, how the metrics are combined moves the order more than it does on the two-metric M4 task. So on batch integration the honest report is both: the ranking depends on which dataset and on how the metrics are pooled, which is the contrast with the OpenProblems mean-of-scores leaderboard the section above draws.
 
 ## Spatially variable genes: many datasets, the Bradley-Terry tree
 

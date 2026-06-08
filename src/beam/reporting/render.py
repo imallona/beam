@@ -159,6 +159,10 @@ def _build_context(
     if agg is not None:
         context["aggregation_agreement"] = agg
 
+    rs = _rank_sensitivity_section(result)
+    if rs is not None:
+        context["rank_sensitivity"] = rs
+
     if funky_heatmap:
         funky = _funky_heatmap_figure(result, metric_groups)
         if funky is not None:
@@ -185,6 +189,60 @@ def _aggregation_agreement_summary(result: RunResult) -> dict[str, Any] | None:
         "top_is_unanimous": bool(report.top_is_unanimous),
         "top_tool": result.tool_names[report.top_tool],
         "n_methods": len(report.methods),
+    }
+
+
+def _rank_sensitivity_section(result: RunResult) -> dict[str, Any] | None:
+    """Split the rank variance between the weighting, aggregation and dataset.
+
+    Runs only for a tensor input with at least two datasets, where the dataset is
+    a third factor next to the two modeling choices. Non-run cells are treated as
+    the worst score so every dataset is included. Returns the factor shares, the
+    most influential factor, and the headline tool's mean rank per dataset, or
+    ``None`` when the input is single-dataset or the decomposition cannot run.
+    """
+    from beam.mcda import rank_sensitivity
+
+    scores = result.scores
+    if not scores.is_tensor or scores.dataset_names is None or scores.values.shape[1] < 2:
+        return None
+
+    ctx = result.context
+    try:
+        report = rank_sensitivity(
+            scores.values,
+            ctx.polarity,
+            normalization=list(ctx.normalization),
+            bounds=list(ctx.bounds),
+            baselines=list(ctx.baselines),
+            targets=list(ctx.targets),
+            missing="worst",
+            tool_names=result.tool_names,
+            dataset_names=scores.dataset_names,
+        )
+    except ValueError:
+        return None
+
+    def _pct(value: float) -> str:
+        return "n/a" if np.isnan(value) else f"{value * 100:.0f}"
+
+    headline = result.tool_names[report.headline_tool]
+    by_dataset = [
+        {"dataset": name, "rank": f"{rank:.1f}"}
+        for name, rank in zip(report.dataset_names, report.headline_rank_by_dataset, strict=True)
+    ]
+    return {
+        "weighting_pct": _pct(report.weighting_share),
+        "aggregation_pct": _pct(report.aggregation_share),
+        "dataset_pct": _pct(report.dataset_share),
+        "interaction_pct": _pct(report.interaction_share),
+        "most_influential": report.most_influential_factor,
+        "n_combinations": report.n_combinations,
+        "headline_tool": headline,
+        "headline_top_pct": _pct(report.headline_top_fraction),
+        "headline_rank_span": report.headline_rank_span,
+        "headline_by_dataset": by_dataset,
+        "dropped_weightings": list(report.dropped_weightings),
     }
 
 

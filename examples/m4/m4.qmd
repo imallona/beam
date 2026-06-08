@@ -61,6 +61,23 @@ for p in properties_for(list(m4.metric_ids)):
     )
 ```
 
+Before ranking, `card_data_consistency` checks that the scores honour what those cards declare: every value inside the declared range, the baselines and targets in range, the noise floors positive. It reads the raw scores against the cards, so a unit mismatch (a metric on a percent scale against a fraction card, say) is caught here rather than distorting the normalization silently.
+
+```{python}
+from beam.mcda import card_data_consistency, registry_context
+
+ctx = registry_context(list(m4.metric_ids), "saw")
+pooled_native = np.nanmean(m4.tensor(), axis=1)
+audit = card_data_consistency(
+    pooled_native, ctx.polarity, ctx.bounds,
+    baselines=ctx.baselines, targets=ctx.targets, noise_floors=ctx.noise_floors,
+    metric_ids=list(m4.metric_ids),
+)
+print("scores consistent with the cards:", audit.ok)
+for finding in audit.findings:
+    print(" ", finding.severity, finding.message)
+```
+
 ## One MCDA run through the registry
 
 The tensor is dense (every top-25 method has a score on every band), so it goes straight into `beam.rank`. The headline run uses equal weights and SAW. The input is a method by band by metric tensor, so `beam.rank` pools the six bands per metric with each card's rule, then ranks. It also runs the default sensitivity analysis, including leave-one-dataset-out across the bands.
@@ -196,6 +213,53 @@ if bttree_available():
     print(bt.summary())
 else:
     print("R with psychotree not available; skipping the Bradley-Terry tree.")
+```
+
+## What moves the ranking: the band or the choice
+
+The leave-one-band-out check and the mixed-effects ICC both say the band matters. `rank_sensitivity` puts that on the same scale as the two modeling choices and says how much each one moves the ranking. It runs every combination of weighting scheme, aggregation rule and band, then splits each method's rank variance into a share for each factor by analysis of variance. The design is a balanced full factorial, so the shares are exact, not sampled.
+
+```{python}
+from beam.mcda import rank_sensitivity
+
+rs = rank_sensitivity(
+    m4.tensor(),
+    ctx.polarity,
+    normalization=list(ctx.normalization),
+    bounds=list(ctx.bounds),
+    baselines=list(ctx.baselines),
+    targets=list(ctx.targets),
+    tool_names=m4.method_names,
+    dataset_names=m4.frequency_names,
+)
+print(f"{rs.n_combinations} combinations of {len(rs.weightings)} weightings, "
+      f"{len(rs.methods)} aggregations and {len(rs.dataset_names)} bands")
+print(f"  band (dataset): {rs.dataset_share:.3f} of the rank variance")
+print(f"  weighting:      {rs.weighting_share:.3f}")
+print(f"  aggregation:    {rs.aggregation_share:.3f}")
+print(f"  interactions:   {rs.interaction_share:.3f}")
+print(f"  most influential factor: {rs.most_influential_factor}")
+```
+
+```{python}
+labels = ["band\n(dataset)", "weighting", "aggregation", "interactions"]
+shares = [rs.dataset_share, rs.weighting_share, rs.aggregation_share, rs.interaction_share]
+fig, ax = plt.subplots(figsize=(6.0, 3.0))
+ax.bar(labels, [s * 100 for s in shares], color=["tab:blue", "tab:green", "tab:olive", "tab:gray"])
+ax.set_ylabel("share of rank variance (percent)")
+ax.set_title("What moves the M4 ranking")
+fig.tight_layout()
+plt.show()
+```
+
+The band carries almost all the rank variance and the two choices almost none. The M4 order is a question of which frequency you score on, not how you weight or aggregate. This is the same reading as the mixed-effects ICC above, reached a different way: an exact factorial decomposition of the ranks rather than a random-effects model of the scores. The headline method slips across bands, which is the variance the band share counts.
+
+```{python}
+headline = m4.method_names[rs.headline_tool]
+print(f"top method overall: {headline}, rank 1 in {rs.headline_top_fraction * 100:.0f}% of combinations")
+print(f"{'band':12s}  mean rank of {headline}")
+for band, mean_rank in zip(rs.dataset_names, rs.headline_rank_by_dataset):
+    print(f"{band:12s}  {mean_rank:.1f}")
 ```
 
 ## Report

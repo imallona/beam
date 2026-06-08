@@ -398,6 +398,51 @@ else:
 
 This is the positive control for the diagnostics. The Duo, M4 and transportation vignettes show the small-sample case where no split is found; the OpenProblems spatial vignette shows a split on real data. Here the split is recovered from a known construction.
 
+## Card consistency as a control
+
+`card_data_consistency` reads the raw scores against what each card declares. The canonical scenarios are built within range, so they pass. To check the audit catches a real fault, inject an impossible ARI of 1.5 (the card declares the range as [-1, 1]): the audit flags it by name, before any normalization.
+
+```{python}
+from beam.mcda import card_data_consistency
+
+scenarios_by_name = {s.name: s for s in all_scenarios()}
+dom = scenarios_by_name["dominant"]
+props = properties_for(list(dom.metric_ids))
+polarity = [p.polarity for p in props]
+bounds = [(p.range_lower, p.range_upper) for p in props]
+
+clean = card_data_consistency(dom.scores, polarity, bounds, metric_ids=list(dom.metric_ids))
+print("scenario as built, consistent with the cards:", clean.ok)
+
+corrupted = dom.scores.copy()
+corrupted[0, 0] = 1.5
+flagged = card_data_consistency(corrupted, polarity, bounds, metric_ids=list(dom.metric_ids))
+print("after injecting ARI = 1.5, consistent:", flagged.ok)
+for finding in flagged.violations:
+    print(" ", finding.severity, finding.message)
+```
+
+## What moves the ranking with no dataset axis
+
+The canonical scenarios are single-dataset, so `rank_sensitivity` runs in its two-factor mode: it varies the weighting and the aggregation, and the dataset factor is absent. The constructed scenarios give it a known answer to recover. In the dominant scenario one method wins on every metric, so it is rank 1 in every combination and its rank variance is zero, whatever the weighting or aggregation. In the random scenario the two metrics trade off, so the order depends on the choice.
+
+```{python}
+from beam.mcda import rank_sensitivity
+
+for name in ["dominant", "random"]:
+    s = scenarios_by_name[name]
+    pol = [p.polarity for p in properties_for(list(s.metric_ids))]
+    rs = rank_sensitivity(s.scores, pol, tool_names=s.method_names)
+    top = s.method_names[rs.headline_tool]
+    print(f"{name:9s}: dataset_share={rs.dataset_share}  "
+          f"weighting={rs.weighting_share:.2f}  aggregation={rs.aggregation_share:.2f}  "
+          f"interaction={rs.interaction_share:.2f}")
+    print(f"           top method {top} ranks first in {rs.headline_top_fraction * 100:.0f}% "
+          f"of combinations, rank span {rs.headline_rank_span}")
+```
+
+The dominant scenario's top method has a rank span of zero and leads every combination, as built: with no dataset axis and a method that wins everywhere, no modeling choice can move it. In the random scenario the top method's rank moves with the choice, and the variance falls on the weighting and aggregation rather than on any data, because there is no data axis to carry it.
+
 ## A cross-domain example: transportation
 
 The MCDA core is not specific to bioinformatics. A worked cross-domain example scores transport modes (the methods) across terrains (the datasets) on speed, cost, and CO2, with infeasible mode-terrain pairs left as NaN. It shows the method-by-dataset interaction (no mode is fastest on every terrain) and the partial-coverage problem (no mode runs on every terrain) more sharply than the bio scenarios do. It lives in its own vignette so the content is not duplicated here: see `examples/transportation/transportation.qmd`.

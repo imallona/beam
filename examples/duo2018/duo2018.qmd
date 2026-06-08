@@ -97,6 +97,22 @@ print("pooled matrix shape:", pooled.shape)
 print("pooled matrix all finite:", bool(np.isfinite(pooled).all()))
 ```
 
+`card_data_consistency` checks the pooled scores against what the cards declare: every value inside the declared range, the chance baseline and noise floor sane. It reads the raw scores, before normalization, so a card or data error (a value outside the declared range, a metric reported on the wrong scale) is named here rather than silently distorting the ranking.
+
+```{python}
+from beam.mcda import card_data_consistency, registry_context
+
+ctx = registry_context(analysis_metrics, "saw")
+audit = card_data_consistency(
+    pooled, ctx.polarity, ctx.bounds,
+    baselines=ctx.baselines, targets=ctx.targets, noise_floors=ctx.noise_floors,
+    metric_ids=analysis_metrics,
+)
+print("pooled scores consistent with the cards:", audit.ok)
+for finding in audit.findings:
+    print(" ", finding.severity, finding.message)
+```
+
 ## One MCDA run, ontology-aware
 
 `run_from_registry` pulls polarity, declared bounds and the per-metric normalization strategy from the cards, validates the requested aggregation against the declared scale types, and runs the full pipeline. The default here is equal weights with simple additive weighting (SAW).
@@ -402,6 +418,45 @@ else:
 ```
 
 On these 12 datasets the parameter-stability test finds no split, so the tree reduces to a single Bradley-Terry ranking led by SC3, the same order the net pairwise wins and the marginal means give. A dozen datasets is too few for the test to separate a feature-dependent regime from sampling noise, which is also why the critical-difference diagram and the variance decomposition both report a stable global ranking here. The tree is more informative on a benchmark with many datasets carrying real feature variation; the OpenProblems spatially_variable_genes vignette is where a split appears. See [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md).
+
+## What moves the ranking: the data or the choice
+
+The sections above measure three things separately: leave-one-dataset-out (does the pooled order hang on one dataset), the weighting-by-aggregation grid (does the order depend on the modeling choice), and the mixed-effects ICC (how much score variance is the dataset). `rank_sensitivity` puts all three on one scale. It ranks the methods on each dataset, under every weighting and aggregation, and splits each method's rank variance into the dataset, the weighting, the aggregation and their interactions.
+
+```{python}
+from beam.mcda import rank_sensitivity
+
+rs = rank_sensitivity(
+    duo.tensor(tuple(analysis_metrics)),
+    ctx.polarity,
+    normalization=list(ctx.normalization),
+    bounds=list(ctx.bounds),
+    baselines=list(ctx.baselines),
+    targets=list(ctx.targets),
+    missing="worst",
+    tool_names=duo.method_names,
+    dataset_names=duo.dataset_names,
+)
+print(f"{rs.n_combinations} combinations")
+print(f"  dataset:      {rs.dataset_share:.3f} of the rank variance")
+print(f"  weighting:    {rs.weighting_share:.3f}")
+print(f"  aggregation:  {rs.aggregation_share:.3f}")
+print(f"  interactions: {rs.interaction_share:.3f}")
+print(f"  most influential factor: {rs.most_influential_factor}")
+```
+
+```{python}
+labels = ["dataset", "weighting", "aggregation", "interactions"]
+shares = [rs.dataset_share, rs.weighting_share, rs.aggregation_share, rs.interaction_share]
+fig, ax = plt.subplots(figsize=(6.0, 3.0))
+ax.bar(labels, [s * 100 for s in shares], color=["tab:blue", "tab:green", "tab:olive", "tab:gray"])
+ax.set_ylabel("share of rank variance (percent)")
+ax.set_title("What moves the Duo ranking")
+fig.tight_layout()
+plt.show()
+```
+
+The dataset carries the most, close to the 0.71 the mixed-effects ICC put on the ARI variance, reached here by an exact factorial decomposition of the ranks rather than a random-effects model of the scores. Two methods, the same reading. This is not in tension with the stable leave-one-dataset-out result above: that asks whether the pooled order survives dropping one dataset, and it does, because pooling averages over the per-dataset disagreement. The dataset share measures that disagreement directly, by ranking on each dataset on its own. The pooled order is stable; the per-dataset orders are not, and a single ranking hides it. The weighting completed the partial cells as worst (`missing="worst"`), a stated choice the share is read against.
 
 ## Recommendation
 

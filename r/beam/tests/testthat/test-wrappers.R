@@ -280,7 +280,7 @@ test_that("beam_metric_diagnostics returns the three reports together", {
 test_that("the remaining MCDA analysis wrappers are exported functions", {
   for (fn in list(
     beam_beats_random_baseline, beam_noise_floor_separation,
-    beam_card_data_consistency,
+    beam_card_data_consistency, beam_rank_sensitivity,
     beam_critical_difference, beam_skillings_mack,
     beam_coverage_aware_critical_difference, beam_aggregation_agreement,
     beam_smaa, beam_leave_one_metric_out, beam_leave_one_dataset_out,
@@ -316,6 +316,23 @@ test_that("beam_card_data_consistency audits cards against the scores", {
                                         metric_ids = c("ari", "nmi"))
   expect_false(flagged$ok)
   expect_length(flagged$violations, 1)
+})
+
+test_that("beam_rank_sensitivity attributes a ranking's variance", {
+  skip_if_no_beam()
+  # a tensor whose two datasets order the tools oppositely: the dataset dominates.
+  d0 <- rbind(c(0.9, 0.9), c(0.5, 0.5), c(0.1, 0.1))
+  d1 <- rbind(c(0.1, 0.1), c(0.5, 0.5), c(0.9, 0.9))
+  tensor <- array(0, dim = c(3, 2, 2))
+  tensor[, 1, ] <- d0
+  tensor[, 2, ] <- d1
+  report <- beam_rank_sensitivity(
+    tensor, c("higher_is_better", "higher_is_better"),
+    dataset_names = c("d0", "d1")
+  )
+  expect_s3_class(report, "python.builtin.object")
+  expect_equal(report$most_influential_factor, "dataset")
+  expect_gt(report$dataset_share, 0.9)
 })
 
 test_that("critical difference and Skillings-Mack run on a tool by dataset matrix", {
