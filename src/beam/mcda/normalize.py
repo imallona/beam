@@ -246,10 +246,13 @@ def _constant_fill(col: np.ndarray, value: float) -> np.ndarray:
 
 
 def _check_declared_range(col: np.ndarray, j: int, lo: float | None, hi: float | None) -> None:
-    if lo is not None and float(np.nanmin(col)) < lo:
-        raise ValueError(f"column {j} has value {np.nanmin(col)} below declared lower bound {lo}")
-    if hi is not None and float(np.nanmax(col)) > hi:
-        raise ValueError(f"column {j} has value {np.nanmax(col)} above declared upper bound {hi}")
+    observed = col[~np.isnan(col)]
+    if observed.size == 0:
+        return
+    if lo is not None and float(observed.min()) < lo:
+        raise ValueError(f"column {j} has value {observed.min()} below declared lower bound {lo}")
+    if hi is not None and float(observed.max()) > hi:
+        raise ValueError(f"column {j} has value {observed.max()} above declared upper bound {hi}")
 
 
 def _min_max_col(col: np.ndarray, pol: str, lo: float | None, hi: float | None) -> np.ndarray:

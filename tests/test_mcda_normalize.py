@@ -1,5 +1,7 @@
 """Tests for the MCDA normalization step."""
 
+import warnings
+
 import numpy as np
 import pytest
 
@@ -157,6 +159,21 @@ def test_out_of_range_check_applies_to_every_strategy():
     """The declared-range guard fires regardless of the strategy chosen."""
     with pytest.raises(ValueError, match="above declared upper bound"):
         normalize(np.array([[2.0], [0.5]]), ["higher_is_better"], ["rank"], bounds=[(-1, 1)])
+
+
+def test_all_nan_column_skips_range_check_without_warning():
+    # an all-NaN column (a metric unobserved on a dataset slice) has nothing to
+    # range-check; it must not raise the All-NaN slice RuntimeWarning.
+    scores = np.array([[0.5, np.nan], [0.8, np.nan]])
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        out = normalize(
+            scores,
+            ["higher_is_better", "higher_is_better"],
+            ["min_max", "min_max"],
+            bounds=[(0, 1), (0, 1)],
+        )
+    assert np.isnan(out[:, 1]).all()
 
 
 def test_unknown_strategy_raises():
