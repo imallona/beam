@@ -334,6 +334,22 @@ print(f"  most influential factor: {rs.most_influential_factor}")
 
 The dataset is still the largest single factor, but here it is not the whole story the way it is on M4. The aggregation choice and the dataset-by-choice interaction carry a real share too. With 12 metrics that can disagree, how the metrics are combined moves the order more than it does on the two-metric M4 task. So on batch integration the honest report is both: the ranking depends on which dataset and on how the metrics are pooled, which is the contrast with the OpenProblems mean-of-scores leaderboard the section above draws.
 
+## Pairwise superiority on ARI
+
+`pairwise_superiority` compares the methods two at a time on ARI across the six datasets, with the ARI noise floor as the equivalence band. It reports how often one method outperforms another, the effect size next to the significance the mixed-effects intervals give.
+
+```{python}
+from beam.mcda import pairwise_superiority
+
+ari_kept = op.tensor(("ari",))[keep, :, 0]
+ari_floor = registry_context(["ari"], "saw").noise_floors[0] or 0.0
+sup = pairwise_superiority(ari_kept, "higher_is_better", rope=ari_floor, method_names=methods)
+print(f"highest standing: {methods[sup.order[0]]} ({sup.standing[sup.order[0]]:.2f})")
+print(f"pairs the sign test cannot separate: {len(sup.equivalent_pairs)} of {len(sup.per_pair)}")
+```
+
+With six datasets the comparison is coarse: most pairs do not reach significance, matching the wide mixed-effects intervals and the leave-one-dataset-out spans above. The pairwise view says the same as the worth panel, as a pairwise record rather than an interval.
+
 ## Spatially variable genes: many datasets, the Bradley-Terry tree
 
 The spatially variable genes task has 14 methods, 50 spatial datasets and one correlation metric (higher is better). The 50 datasets carry real feature variation: the spatial assay technology, the organism, and a cancer or non-cancer condition, all parsed from the dataset id. This is the input the Bradley-Terry tree needs.

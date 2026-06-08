@@ -225,6 +225,22 @@ fig.tight_layout()
 plt.show()
 ```
 
+## Pairwise superiority on ARI
+
+The critical-difference diagram says which methods are separable, but not by how much or how often one method outperforms another. `pairwise_superiority` compares the methods two at a time across the datasets, with the ARI noise floor (0.01) as the equivalence band: a method counts as outperforming another on a dataset only when the difference clears that floor. The probability of superiority is the fraction of datasets on which one method outperforms the other, an effect size that does not depend on the pool.
+
+```{python}
+from beam.mcda import pairwise_superiority
+
+ari_floor = properties_for(["ari"])[0].noise_floor or 0.0
+sup = pairwise_superiority(ari, "higher_is_better", rope=ari_floor, method_names=duo.method_names)
+top_method = duo.method_names[sup.order[0]]
+print(f"highest standing: {top_method} ({sup.standing[sup.order[0]]:.2f})")
+print(f"method pairs the sign test cannot separate: {len(sup.equivalent_pairs)} of {len(sup.per_pair)}")
+```
+
+Most pairs are not distinguishable: across the twelve datasets the ARI differences are often inside the 0.01 floor, so neither method outperforms the other decisively. This is the critical-difference reading stated as an effect size, and it agrees with it. Beyond the method with the highest standing, the rest are largely interchangeable on ARI at this dataset count.
+
 ## SMAA confidence
 
 `smaa` samples weight vectors from a Dirichlet over the three-metric simplex, runs the pipeline once per sample, and reports the confidence factor per method: the share of samples in which that method is top-ranked. A method with a confidence factor near 1 is top-ranked under almost any weighting.
@@ -390,7 +406,7 @@ The dataset intercept takes about 0.71 of the ARI variance, so most of the sprea
 
 ## Heterogeneity: does a dataset feature reverse the ranking
 
-The variance decomposition says how much interaction there is. The Bradley-Terry tree asks which dataset feature drives it. For one metric, each dataset becomes a set of pairwise method comparisons (the higher ARI wins), and `psychotree::bttree` splits the datasets by their features, so each leaf gets its own Bradley-Terry ranking and a parameter-stability test decides where a split is real. The dataset features (number of cells, number of true clusters, real vs simulated, family) ship next to the benchmark. The fit needs the R toolchain, so the section runs only when psychotree is available.
+The variance decomposition says how much interaction there is. The Bradley-Terry tree asks which dataset feature drives it. For one metric, each dataset becomes a set of pairwise method comparisons (the higher ARI is the preferred method), and `psychotree::bttree` splits the datasets by their features, so each leaf gets its own Bradley-Terry ranking and a parameter-stability test decides where a split is real. The dataset features (number of cells, number of true clusters, real vs simulated, family) ship next to the benchmark. The fit needs the R toolchain, so the section runs only when psychotree is available.
 
 ```{python}
 from beam.datasets import load_duo2018_features
@@ -417,7 +433,7 @@ else:
     print("Provision it with envs/heterogeneity.yml (conda or mamba).")
 ```
 
-On these 12 datasets the parameter-stability test finds no split, so the tree reduces to a single Bradley-Terry ranking led by SC3, the same order the net pairwise wins and the marginal means give. A dozen datasets is too few for the test to separate a feature-dependent regime from sampling noise, which is also why the critical-difference diagram and the variance decomposition both report a stable global ranking here. The tree is more informative on a benchmark with many datasets carrying real feature variation; the OpenProblems spatially_variable_genes vignette is where a split appears. See [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md).
+On these 12 datasets the parameter-stability test finds no split, so the tree reduces to a single Bradley-Terry ranking led by SC3, the same order the net pairwise preferences and the marginal means give. A dozen datasets is too few for the test to separate a feature-dependent regime from sampling noise, which is also why the critical-difference diagram and the variance decomposition both report a stable global ranking here. The tree is more informative on a benchmark with many datasets carrying real feature variation; the OpenProblems spatially_variable_genes vignette is where a split appears. See [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md).
 
 ## What moves the ranking: the data or the choice
 

@@ -20,7 +20,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from ..api import RunResult
 from ..cards import Registry
-from ..mcda import critical_difference, run_from_registry
+from ..mcda import critical_difference, pairwise_superiority, run_from_registry
 from . import figures
 from .narrative import recommendation
 
@@ -414,7 +414,7 @@ def _critical_difference_section(
 
     report = critical_difference(composite, higher_is_better=True, tool_names=result.tool_names)
     cliques = [[result.tool_names[i] for i in clique] for clique in report.cliques]
-    return {
+    section = {
         "figure": figures.critical_difference_figure(
             result.tool_names, report.average_ranks, report.critical_difference
         ),
@@ -423,3 +423,18 @@ def _critical_difference_section(
         "n_datasets": n_datasets,
         "cliques": cliques,
     }
+
+    # Effect-size companion: how often the top method outranks the runner-up
+    # across the datasets, not just whether the rank gap is significant.
+    sup = pairwise_superiority(composite, "higher_is_better", method_names=result.tool_names)
+    top, runner = int(sup.order[0]), int(sup.order[1])
+    pair = next(p for p in sup.per_pair if {p.a, p.b} == {top, runner})
+    p_top = pair.p_superior_a if pair.a == top else pair.p_superior_b
+    section["superiority"] = {
+        "top": result.tool_names[top],
+        "runner": result.tool_names[runner],
+        "n_datasets": pair.n_compared,
+        "n_outperformed": pair.a_outperforms if pair.a == top else pair.b_outperforms,
+        "pct": "n/a" if np.isnan(p_top) else f"{p_top * 100:.0f}",
+    }
+    return section

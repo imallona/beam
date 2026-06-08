@@ -177,6 +177,23 @@ cat(sprintf("Skillings-Mack chi-squared = %.2f on %d df, p = %.1e\n",
             sm$statistic, as.integer(sm$df), sm$p_value))
 ```
 
+## How often does one method outperform another?
+
+The critical-difference test says which methods are separable, not by how much or how often. `beam_pairwise_superiority` compares the methods two at a time across the datasets, with the ARI noise floor as the equivalence band: a method counts as outperforming another on a dataset only when the difference clears that floor. The probability of superiority is the fraction of datasets on which one method outperforms the other.
+
+```{r pairwise}
+ari_floor <- cards$properties_for(list("ari"))[[1]]$noise_floor
+sup <- beam_pairwise_superiority(ari, "higher_is_better",
+                                 rope = if (is.null(ari_floor)) 0 else ari_floor,
+                                 method_names = method_names)
+cat("highest standing:", method_names[sup$order[1] + 1],
+    sprintf("(%.2f)\n", sup$standing[sup$order[1] + 1]))
+cat("pairs the sign test cannot separate:",
+    length(sup$equivalent_pairs), "of", length(sup$per_pair), "\n")
+```
+
+Most pairs are not distinguishable: across the twelve datasets the ARI differences are often inside the floor, so neither method outperforms the other decisively. This is the critical-difference reading as an effect size, and it agrees with it.
+
 ## Reading
 
 Seurat ranks first under the default pipeline and holds the top in almost every random weighting and every leave-one-dataset-out run, so the recommendation does not hang on the weighting or on any single dataset. The critical-difference diagram qualifies this: on ARI alone most methods sit in overlapping cliques, so the upper-middle methods are not separable at twelve datasets. See `?beam_rank`, `?beam_smaa`, `?beam_critical_difference` for the function documentation.

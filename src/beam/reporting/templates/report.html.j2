@@ -211,6 +211,12 @@ are not separable at the chosen level.</p>
   {% for clique in critical_difference.cliques %}<li>{{ clique | join(", ") }}</li>{% endfor %}
 </ul>
 {% endif %}
+{% if critical_difference.superiority %}
+<p>Effect size: the top-ranked method (<code>{{ critical_difference.superiority.top }}</code>) scores
+higher than the next (<code>{{ critical_difference.superiority.runner }}</code>) on
+{{ critical_difference.superiority.n_outperformed }} of {{ critical_difference.superiority.n_datasets }} datasets
+(probability of superiority {{ critical_difference.superiority.pct }} percent).</p>
+{% endif %}
 {% endif %}
 
 <h2>Reproducibility</h2>

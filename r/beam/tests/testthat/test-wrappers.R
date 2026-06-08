@@ -280,7 +280,7 @@ test_that("beam_metric_diagnostics returns the three reports together", {
 test_that("the remaining MCDA analysis wrappers are exported functions", {
   for (fn in list(
     beam_beats_random_baseline, beam_noise_floor_separation,
-    beam_card_data_consistency, beam_rank_sensitivity,
+    beam_card_data_consistency, beam_rank_sensitivity, beam_pairwise_superiority,
     beam_critical_difference, beam_skillings_mack,
     beam_coverage_aware_critical_difference, beam_aggregation_agreement,
     beam_smaa, beam_leave_one_metric_out, beam_leave_one_dataset_out,
@@ -288,6 +288,17 @@ test_that("the remaining MCDA analysis wrappers are exported functions", {
   )) {
     expect_true(is.function(fn))
   }
+})
+
+test_that("beam_pairwise_superiority compares methods across datasets", {
+  skip_if_no_beam()
+  # method 0 beats 1 beats 2 on every dataset.
+  scores <- rbind(c(0.9, 0.8, 0.7), c(0.5, 0.6, 0.4), c(0.2, 0.1, 0.3))
+  report <- beam_pairwise_superiority(scores, "higher_is_better",
+                                      method_names = c("a", "b", "c"))
+  expect_s3_class(report, "python.builtin.object")
+  expect_equal(report$probability_superior[1, 2], 1.0)
+  expect_equal(as.integer(report$order[1]), 0L)
 })
 
 test_that("reference-level wrappers run on a tool by metric matrix", {

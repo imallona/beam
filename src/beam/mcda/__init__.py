@@ -29,6 +29,11 @@ from .normalize import (
     normalization_warnings,
     normalize,
 )
+from .pairwise import (
+    PairSuperiority,
+    PairwiseSuperiorityReport,
+    pairwise_superiority,
+)
 from .perturbation import (
     PairPerturbation,
     WeightPerturbationReport,
@@ -93,6 +98,8 @@ __all__ = [
     "NoiseFloorReport",
     "PairPerturbation",
     "PairSeparation",
+    "PairSuperiority",
+    "PairwiseSuperiorityReport",
     "RandomBaselineReport",
     "RankSensitivityReport",
     "RegistryContext",
@@ -125,6 +132,7 @@ __all__ = [
     "noise_floor_separation",
     "normalization_warnings",
     "normalize",
+    "pairwise_superiority",
     "promethee_ii",
     "rank",
     "rank_sensitivity",

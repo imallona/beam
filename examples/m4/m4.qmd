@@ -30,7 +30,7 @@ cd M4comp2018 && git lfs pull          # the data is stored via git-lfs
 Rscript reduce_m4.R                    # writes M4_2018_by_frequency.csv
 ```
 
-`reduce_m4.R` computes, for each of the top 25 methods and each frequency band, the mean sMAPE and mean MASE over the series in that band, using the M4 metric definitions (sMAPE with the symmetric denominator; MASE scaled by the in-sample seasonal naive error, with seasonal period 1 for yearly, weekly and daily, 4 for quarterly, 12 for monthly, 24 for hourly). The reduction reproduces the published competition figures: the winner (Smyl, the ES-RNN) computes to an overall sMAPE of 11.374 and MASE of 1.536, matching the M4 paper. The table is GPL-3, derived from GPL-3 data; cite Makridakis, Spiliotis and Assimakopoulos (2020) when using it.
+`reduce_m4.R` computes, for each of the top 25 methods and each frequency band, the mean sMAPE and mean MASE over the series in that band, using the M4 metric definitions (sMAPE with the symmetric denominator; MASE scaled by the in-sample seasonal naive error, with seasonal period 1 for yearly, weekly and daily, 4 for quarterly, 12 for monthly, 24 for hourly). The reduction reproduces the published competition figures: the method that ranked first (Smyl, the ES-RNN) computes to an overall sMAPE of 11.374 and MASE of 1.536, matching the M4 paper. The table is GPL-3, derived from GPL-3 data; cite Makridakis, Spiliotis and Assimakopoulos (2020) when using it.
 
 ## Load the table
 
@@ -43,7 +43,7 @@ from beam.datasets import load_m4
 from beam.cards import properties_for
 
 m4 = load_m4()
-print("methods:", len(m4.method_names), "(rank order, winner first:", m4.method_names[0] + ")")
+print("methods:", len(m4.method_names), "(rank order, top first:", m4.method_names[0] + ")")
 print("frequency bands:", m4.frequency_names)
 print("series per band:", dict(zip(m4.frequency_names, m4.n_series.tolist())))
 print("metrics:", m4.metric_ids)
@@ -97,7 +97,7 @@ for i in order[:5]:
     print(f"  {run.result.ranks[i]:>2d}  {m4.method_names[i]}")
 ```
 
-The method that ranks first here need not be the official competition winner. The official M4 ranking pools by OWA over all 100,000 series, so the monthly and yearly bands (48,000 and 23,000 series) dominate. beam treats each band as one dataset and weights the six equally, which lifts methods that do well on the small high-frequency bands. The top method depends on the pooling choice. The next sections make that dependence visible rather than settling on one number.
+The method that ranks first here need not be the one that ranked first in the official competition. The official M4 ranking pools by OWA over all 100,000 series, so the monthly and yearly bands (48,000 and 23,000 series) dominate. beam treats each band as one dataset and weights the six equally, which lifts methods that do well on the small high-frequency bands. The top method depends on the pooling choice. The next sections make that dependence visible rather than settling on one number.
 
 ## Ranking by frequency band
 
@@ -261,6 +261,25 @@ print(f"{'band':12s}  mean rank of {headline}")
 for band, mean_rank in zip(rs.dataset_names, rs.headline_rank_by_dataset):
     print(f"{band:12s}  {mean_rank:.1f}")
 ```
+
+## Pairwise superiority across the bands
+
+`rank_sensitivity` showed the band carries the ranking. `pairwise_superiority` reads the same fact pair by pair: how often one method outperforms another across the six bands on sMAPE. sMAPE declares no noise floor, so the equivalence band is zero here; any difference counts.
+
+```{python}
+from beam.mcda import pairwise_superiority
+
+sup = pairwise_superiority(smape, "lower_is_better", method_names=m4.method_names)
+top_method = m4.method_names[sup.order[0]]
+print(f"highest standing: {top_method} ({sup.standing[sup.order[0]]:.2f})")
+print(f"method pairs the sign test cannot separate: {len(sup.equivalent_pairs)} of {len(sup.per_pair)}")
+top, runner = sup.order[0], sup.order[1]
+pair = next(p for p in sup.per_pair if {p.a, p.b} == {int(top), int(runner)})
+n_top = pair.a_outperforms if pair.a == top else pair.b_outperforms
+print(f"{top_method} outperforms {m4.method_names[runner]} on {n_top} of {pair.n_compared} bands")
+```
+
+With only six bands the sign test has little power, so few pairs reach significance, and the method with the highest standing outperforms the others on some bands and not on others. This is the band dependence the variance decomposition measured, now as a pairwise record: no method outperforms the field across every frequency.
 
 ## Report
 

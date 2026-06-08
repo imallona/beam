@@ -345,6 +345,16 @@ plt.show()
 
 With only five datasets the critical difference is wide. Every method falls inside the shaded band, and the Friedman test does not reject at alpha 0.05, so the data cannot separate the methods even though the MCDA composite puts m0 first. The recommendation holds under the stated weighting, but a claim that one method is better across datasets would need more datasets to support it.
 
+`pairwise_superiority` reads the same data as an effect size: how often each method outperforms another across the five datasets. With so few datasets the sign test has almost no power, so the pairwise records are close and none reaches significance, the same conclusion the critical-difference band gives.
+
+```{python}
+from beam.mcda import pairwise_superiority
+
+sup = pairwise_superiority(ari_by_dataset, "higher_is_better", method_names=odd.method_names)
+print(f"highest standing: {odd.method_names[sup.order[0]]} ({sup.standing[sup.order[0]]:.2f})")
+print(f"pairs the sign test cannot separate: {len(sup.equivalent_pairs)} of {len(sup.per_pair)}")
+```
+
 ## Heterogeneity diagnostics on a synthetic interaction
 
 The canonical scenarios above are single-dataset (a method by metric matrix), so they cover the MCDA layer but not the heterogeneity layer, which needs a dataset axis. To show the heterogeneity diagnostics with a known ground truth, here is a small synthetic method by dataset by metric case built to contain a feature-driven ranking reversal: method A leads on the "easy" datasets and method C leads on the "hard" ones, with method B in the middle. The datasets carry a `regime` feature that marks which group they belong to.
@@ -424,7 +434,7 @@ for finding in flagged.violations:
 
 ## What moves the ranking with no dataset axis
 
-The canonical scenarios are single-dataset, so `rank_sensitivity` runs in its two-factor mode: it varies the weighting and the aggregation, and the dataset factor is absent. The constructed scenarios give it a known answer to recover. In the dominant scenario one method wins on every metric, so it is rank 1 in every combination and its rank variance is zero, whatever the weighting or aggregation. In the random scenario the two metrics trade off, so the order depends on the choice.
+The canonical scenarios are single-dataset, so `rank_sensitivity` runs in its two-factor mode: it varies the weighting and the aggregation, and the dataset factor is absent. The constructed scenarios give it a known answer to recover. In the dominant scenario one method scores highest on every metric, so it is rank 1 in every combination and its rank variance is zero, whatever the weighting or aggregation. In the random scenario the two metrics trade off, so the order depends on the choice.
 
 ```{python}
 from beam.mcda import rank_sensitivity
@@ -441,7 +451,7 @@ for name in ["dominant", "random"]:
           f"of combinations, rank span {rs.headline_rank_span}")
 ```
 
-The dominant scenario's top method has a rank span of zero and leads every combination, as built: with no dataset axis and a method that wins everywhere, no modeling choice can move it. In the random scenario the top method's rank moves with the choice, and the variance falls on the weighting and aggregation rather than on any data, because there is no data axis to carry it.
+The dominant scenario's top method has a rank span of zero and is rank 1 in every combination, as built: with no dataset axis and a method that scores highest everywhere, no modeling choice can move it. In the random scenario the top method's rank moves with the choice, and the variance falls on the weighting and aggregation rather than on any data, because there is no data axis to carry it.
 
 ## A cross-domain example: transportation
 
