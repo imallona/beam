@@ -159,6 +159,27 @@ least one metric.</p>
 {% endif %}
 {% endif %}
 
+{% if card_consistency %}
+<h2>Card and data consistency</h2>
+<p>Whether the raw scores agree with the values each metric card declares (range, chance
+baseline, target, noise floor), checked before normalization.</p>
+{% if card_consistency.violations %}
+<p class="warning">The scores contradict the cards in {{ card_consistency.violations | length }}
+place(s). A normalization or ranking that rests on these metrics inherits the error.</p>
+<ul>
+  {% for message in card_consistency.violations %}<li>{{ message }}</li>{% endfor %}
+</ul>
+{% else %}
+<p>The scores stay within every declared card value.</p>
+{% endif %}
+{% if card_consistency.notes %}
+<p>Observations about this particular score matrix, not card errors:</p>
+<ul>
+  {% for message in card_consistency.notes %}<li>{{ message }}</li>{% endfor %}
+</ul>
+{% endif %}
+{% endif %}
+
 {% if critical_difference %}
 <h2>Critical difference across datasets</h2>
 <p>Friedman test p-value {{ critical_difference.friedman_pvalue }} over

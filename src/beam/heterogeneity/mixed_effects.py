@@ -25,7 +25,7 @@ dataset-dependent". This is the diagnostic counterpart to
 the pooled ranking hangs on any single dataset; this asks how much of the
 score variance lives in the interaction at all.
 
-The model is fit by R's lme4 in a one-shot subprocess (ADR 0009). The
+The model is fit by R's lme4 in a one-shot subprocess. The
 ``score`` values are taken as supplied for a single metric. Polarity does
 not enter a variance decomposition, but scale does, so do not mix metrics:
 pass one metric's scores per call. lme4 uses a Gaussian likelihood; for a

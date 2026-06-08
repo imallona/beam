@@ -31,6 +31,7 @@ from .cards import Registry
 from .io import Scores, load_scores
 from .manifest import build_manifest
 from .mcda import (
+    CardDataConsistencyReport,
     DatasetSensitivityReport,
     NoiseFloorReport,
     RandomBaselineReport,
@@ -40,6 +41,7 @@ from .mcda import (
     SMAAReport,
     WeightPerturbationReport,
     beats_random_baseline,
+    card_data_consistency,
     leave_one_dataset_out,
     leave_one_metric_out,
     noise_floor_separation,
@@ -82,6 +84,9 @@ class RunResult:
     noise_floor
         Pairwise separation against the cards' declared noise floors, flagging
         the tool pairs the metric set cannot tell apart. Always computed.
+    card_consistency
+        The card-versus-data audit: where the raw scores contradict the cards'
+        declared range, baseline, target or noise floor. Always computed.
     manifest
         The run manifest dictionary (see ``beam.manifest``).
     """
@@ -97,6 +102,7 @@ class RunResult:
     leave_one_dataset_out: DatasetSensitivityReport | None = None
     random_baseline: RandomBaselineReport | None = None
     noise_floor: NoiseFloorReport | None = None
+    card_consistency: CardDataConsistencyReport | None = None
 
     @property
     def tool_names(self) -> tuple[str, ...]:
@@ -260,6 +266,15 @@ def rank(
         matrix, context.polarity, context.baselines, metric_ids=ids
     )
     noise_floor = noise_floor_separation(matrix, context.noise_floors, ranks=result.ranks)
+    card_consistency = card_data_consistency(
+        matrix,
+        context.polarity,
+        context.bounds,
+        baselines=context.baselines,
+        targets=context.targets,
+        noise_floors=context.noise_floors,
+        metric_ids=ids,
+    )
 
     manifest = build_manifest(
         scores=score_obj,
@@ -286,6 +301,7 @@ def rank(
         leave_one_dataset_out=lodo_report,
         random_baseline=random_baseline,
         noise_floor=noise_floor,
+        card_consistency=card_consistency,
     )
 
 

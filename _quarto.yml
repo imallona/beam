@@ -57,6 +57,8 @@ website:
             text: Missing data
           - href: docs/explanations/reference-levels.md
             text: Reference levels
+          - href: docs/explanations/card-data-consistency.md
+            text: Card and data consistency
           - href: docs/explanations/convergent-discriminant-validity.md
             text: Metric validity
           - href: docs/explanations/reliability.md

@@ -12,7 +12,7 @@
 # taken over the metrics. meta::pairwise turns the arm-level means into
 # study-level contrasts, and netmeta pools the direct and indirect evidence into
 # one coherent ranking. Lower scores are better (a rank of 1 is best), so the
-# P-score treats small values as desirable. See docs/adr/0009 for the R boundary.
+# P-score treats small values as desirable.
 
 suppressPackageStartupMessages({
     library(jsonlite)

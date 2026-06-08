@@ -1,7 +1,6 @@
 """beam: Benchmark Evaluation And Metrics.
 
-This package is the Python canonical implementation of beam. See the ADRs
-(docs/adr/) for the decisions behind its design.
+This package is the Python canonical implementation of beam.
 """
 
 from importlib import metadata

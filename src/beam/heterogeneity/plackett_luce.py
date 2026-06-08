@@ -11,10 +11,10 @@ question of which method is stronger overall.
 For one metric, each dataset column of a method by dataset matrix is read as a
 ranking of the methods (the higher score ranks first, after orienting by
 polarity), with ties allowed and missing cells left out of that dataset's
-ranking. The model is fit by R's PlackettLuce in a one-shot subprocess (the
-same boundary as the other heterogeneity wrappers, ADR 0009; the design is
-recorded in ADR 0011). Use ``plackett_luce_available`` to check the R
-toolchain before calling ``plackett_luce``.
+ranking. The model is fit by R's PlackettLuce in a one-shot subprocess, the
+same boundary as the other heterogeneity wrappers. Use
+``plackett_luce_available`` to check the R toolchain before calling
+``plackett_luce``.
 
 This is a global ranking tool, not a heterogeneity split: it complements the
 Bradley-Terry tree (which localises where the ranking reverses) by giving a

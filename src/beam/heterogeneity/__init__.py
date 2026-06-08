@@ -7,7 +7,7 @@ rather than a stable method effect, and which dataset properties reverse the
 ranking. It is the technical answer to the "against one method fits all"
 critique (Strobl and colleagues).
 
-The tools all wrap R in a one-shot subprocess (ADR 0009):
+The tools all wrap R in a one-shot subprocess:
 
 - ``mixed_effects``: a variance decomposition (Eugster, Hothorn and Leisch
   2008) that splits the score variation into a method effect, a between-dataset

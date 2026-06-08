@@ -21,7 +21,7 @@ heterogeneity. Datasets do not need to be shared across benchmarks: dataset is
 nested in benchmark, so the model handles the usual case where each benchmark
 brings its own datasets.
 
-The model is fit by R's lme4 in a one-shot subprocess (ADR 0009), the same
+The model is fit by R's lme4 in a one-shot subprocess, the same
 boundary as the rest of beam.heterogeneity. Use ``r_available`` to check the R
 toolchain before calling ``source_variance_decomposition``.
 """

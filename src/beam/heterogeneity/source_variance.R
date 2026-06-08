@@ -10,7 +10,7 @@
 # (1 | method:benchmark): the method-by-benchmark variance is the disagreement
 # attributable to the benchmark, dataset is nested in benchmark, and the
 # residual absorbs the method-by-dataset interaction and noise (not separable
-# with one observation per cell). See docs/adr/0009.
+# with one observation per cell).
 
 suppressPackageStartupMessages({
     library(jsonlite)

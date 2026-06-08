@@ -280,6 +280,7 @@ test_that("beam_metric_diagnostics returns the three reports together", {
 test_that("the remaining MCDA analysis wrappers are exported functions", {
   for (fn in list(
     beam_beats_random_baseline, beam_noise_floor_separation,
+    beam_card_data_consistency,
     beam_critical_difference, beam_skillings_mack,
     beam_coverage_aware_critical_difference, beam_aggregation_agreement,
     beam_smaa, beam_leave_one_metric_out, beam_leave_one_dataset_out,
@@ -297,6 +298,24 @@ test_that("reference-level wrappers run on a tool by metric matrix", {
   expect_s3_class(beaten, "python.builtin.object")
   separation <- beam_noise_floor_separation(scores, noise_floors = c(0.01, 1))
   expect_s3_class(separation, "python.builtin.object")
+})
+
+test_that("beam_card_data_consistency audits cards against the scores", {
+  skip_if_no_beam()
+  scores <- rbind(c(0.4, 0.6), c(0.9, 0.2), c(0.7, 0.8))
+  polarity <- c("higher_is_better", "higher_is_better")
+  bounds <- list(list(0, 1), list(0, 1))
+  clean <- beam_card_data_consistency(scores, polarity, bounds,
+                                      metric_ids = c("ari", "nmi"))
+  expect_s3_class(clean, "python.builtin.object")
+  expect_true(clean$ok)
+
+  # the second metric reported on a percent scale falls outside its [0, 1] card.
+  scores[, 2] <- scores[, 2] * 100
+  flagged <- beam_card_data_consistency(scores, polarity, bounds,
+                                        metric_ids = c("ari", "nmi"))
+  expect_false(flagged$ok)
+  expect_length(flagged$violations, 1)
 })
 
 test_that("critical difference and Skillings-Mack run on a tool by dataset matrix", {

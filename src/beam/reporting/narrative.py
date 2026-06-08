@@ -126,6 +126,13 @@ def recommendation(result: RunResult) -> str:
             "declares one, so the order between them is within measurement noise."
         )
 
+    if result.card_consistency is not None and result.card_consistency.violations:
+        n_viol = len(result.card_consistency.violations)
+        sentences.append(
+            f"The raw scores contradict the metric cards in {n_viol} place(s); the ranking "
+            "rests on at least one metric whose data falls outside its declared card values."
+        )
+
     return " ".join(sentences)
 
 

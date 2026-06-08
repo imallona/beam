@@ -6,8 +6,8 @@ the input to JSON, run a one-shot Rscript that fits the model and prints its
 JSON result to stdout, then parse that output. The mechanics are identical
 across diagnostics and live here: locating the Rscript executable, probing for
 the required R packages, running the subprocess under a timeout, and parsing
-the printed JSON. See docs/adr/0009-heterogeneity-mixed-effects-via-r.md for why a
-one-shot subprocess rather than reticulate.
+the printed JSON. A one-shot subprocess is used rather than reticulate so each
+diagnostic runs in a clean R process with no shared interpreter state.
 """
 
 from __future__ import annotations

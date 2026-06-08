@@ -6,6 +6,12 @@ from .aggregation_agreement import (
     AggregationAgreementReport,
     aggregation_agreement,
 )
+from .card_consistency import (
+    CardDataConsistencyReport,
+    ConsistencyFinding,
+    MetricConsistency,
+    card_data_consistency,
+)
 from .cd import (
     CriticalDifferenceReport,
     critical_difference,
@@ -66,12 +72,15 @@ from .weights import (
 __all__ = [
     "STRATEGIES",
     "AggregationAgreementReport",
+    "CardDataConsistencyReport",
+    "ConsistencyFinding",
     "CriticalDifferenceReport",
     "DatasetSensitivityReport",
     "IncompatibleScaleError",
     "IncompleteMatrixError",
     "InconsistentPairwiseMatrixError",
     "MetricBaseline",
+    "MetricConsistency",
     "MetricDiagnosticsReport",
     "MetricDimensionalityReport",
     "MetricReliabilityReport",
@@ -90,6 +99,7 @@ __all__ = [
     "aggregation_agreement",
     "ahp_weights",
     "beats_random_baseline",
+    "card_data_consistency",
     "comet",
     "coverage_aware_critical_difference",
     "critic_weights",

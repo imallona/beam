@@ -147,6 +147,10 @@ def _build_context(
     if ref is not None:
         context["reference_levels"] = ref
 
+    cards = _card_consistency_section(result)
+    if cards is not None:
+        context["card_consistency"] = cards
+
     cd = _critical_difference_section(result, registry)
     if cd is not None:
         context["critical_difference"] = cd
@@ -299,6 +303,23 @@ def _reference_levels_section(result: RunResult) -> dict[str, Any] | None:
             a, b = nf.top_pair
             section["top_pair"] = f"{result.tool_names[a]} and {result.tool_names[b]}"
     return section
+
+
+def _card_consistency_section(result: RunResult) -> dict[str, Any] | None:
+    """Build the card-versus-data audit section, or ``None`` when nothing to say.
+
+    Returns a dict only when the audit raised at least one finding. ``violations``
+    are hard card-or-data contradictions and ``notes`` are data-dependent
+    observations, each a plain-language message.
+    """
+    audit = result.card_consistency
+    if audit is None or not audit.findings:
+        return None
+    return {
+        "ok": bool(audit.ok),
+        "violations": [f.message for f in audit.violations],
+        "notes": [f.message for f in audit.notes],
+    }
 
 
 def _critical_difference_section(

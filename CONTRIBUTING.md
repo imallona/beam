@@ -27,7 +27,6 @@ Every non-trivial PR ships:
 - code change with type hints (Python) or roxygen2 docstrings (R)
 - a unit test
 - updated docstring on every public function the PR touches
-- an ADR in `docs/adr/` if the change reflects a design decision
 - a CHANGELOG entry (Keep a Changelog format)
 
 Commits do not bundle unrelated edits. One commit = one coherent change.
@@ -44,10 +43,6 @@ See `src/beam/metrics/ari/v1.yaml` and `src/beam/metrics/runtime/v1.yaml` for tw
 
 - Code (everything outside `src/beam/metrics/`): GPL-3.0-or-later. See `LICENSE`.
 - Metric cards (`src/beam/metrics/`): CC-BY-4.0. See `src/beam/metrics/LICENSE.md`. By contributing a card you agree to this licensing.
-
-## ADR template
-
-See `docs/adr/0000-template.md`. Number sequentially. Start in status "Proposed"; move to "Accepted" after review. Never edit an accepted ADR silently; if it changes, supersede it with a new one.
 
 ## Conventions
 

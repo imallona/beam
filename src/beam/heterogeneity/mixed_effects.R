@@ -7,8 +7,8 @@
 # entry per observation, already free of NaN), a scalar formula_kind (one of
 # "auto", "main", "interaction"), a scalar engine ("lmer" or "glmmtmb") and a
 # scalar family ("beta", "gaussian" or null). The output is a JSON object on
-# stdout. See docs/adr/0009 (lme4) and docs/adr/0011 (glmmTMB) for the model
-# choices.
+# stdout. lme4 fits the Gaussian engine and glmmTMB the beta engine for bounded
+# metrics.
 
 payload <- jsonlite::fromJSON(file("stdin"))
 

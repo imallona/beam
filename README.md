@@ -135,7 +135,6 @@ examples/
   openproblems/openproblems.qmd  MCDA and Bradley-Terry tree on two OpenProblems tasks
   cross_benchmark/cross_benchmark.qmd  Meta-analysis of four integration benchmarks
 docs/
-  adr/                          Architectural decision records
   explanations/                 Conceptual essays (measurement theory, cards-and-pipeline)
   tutorials/                    Learning-oriented walkthroughs
   how-to/                       Task-oriented recipes

@@ -8,7 +8,7 @@
 #   rankings   n_rankings by n_objects matrix of rank integers, 1 = best on
 #              that dataset, ties shared, 0 = item absent from that ranking
 #   npseudo    number of pseudo-rankings (the package device for connectivity)
-# The output is a JSON object on stdout. See docs/adr/0011 for the design.
+# The output is a JSON object on stdout.
 
 suppressPackageStartupMessages({
     library(jsonlite)

@@ -14,8 +14,8 @@ otherwise prefer method B", which a single pooled number cannot give.
 
 The subjects of the tree are the datasets (their features are the splitting
 variables); the objects being compared are the methods. The model is fit by
-R's psychotree in a one-shot subprocess (the same boundary as the
-mixed-effects wrapper, ADR 0009; the design is recorded in ADR 0010). Use
+R's psychotree in a one-shot subprocess, the same boundary as the
+mixed-effects wrapper. Use
 ``bttree_available`` to check the R toolchain before calling
 ``bradley_terry_tree``.
 

@@ -15,7 +15,7 @@
 #   minsize               minimal number of datasets in a node
 #   alpha                 significance level for the parameter-stability split test
 # The output is a JSON object on stdout. See the docstring of bradley_terry.py
-# and docs/adr/0010-bradley-terry-trees.md for the model and the design.
+# for the model and the design.
 
 suppressPackageStartupMessages({
     library(jsonlite)
