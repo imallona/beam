@@ -1,0 +1,55 @@
+dataset,source,tissue,species,sample_type,n_cell_types
+Azimuth_PBMC,Azimuth,PBMC,human,normal,30
+Azimuth_Motor_Cortex,Azimuth,Motor Cortex,human,normal,20
+Azimuth_Pancreas,Azimuth,Pancreas,human,normal,12
+Azimuth_Fetal_Development,Azimuth,Fetal Development,human,normal,62
+Azimuth_Lung,Azimuth,Lung,human,normal,60
+Azimuth_Kidney,Azimuth,Kidney,human,normal,16
+Azimuth_Bone_Marrow,Azimuth,Bone Marrow,human,normal,40
+Azimuth_Tonsil,Azimuth,Tonsil,human,normal,24
+Azimuth_Adipose,Azimuth,Adipose,human,normal,15
+Azimuth_Heart,Azimuth,Heart,human,normal,21
+Azimuth_Liver,Azimuth,Liver,human,normal,23
+HCL,HCL,,human,normal,61
+MCA,MCA,,mouse,normal,64
+HCA_Breast,HCA,Breast,human,normal,8
+HCA_Esophagus,HCA,Esophagus,human,normal,17
+HCA_Heart,HCA,Heart,human,normal,13
+HCA_Lung,HCA,Lung,human,normal,15
+HCA_Prostate,HCA,Prostate,human,normal,16
+HCA_Skeletal_muscle,HCA,Skeletal muscle,human,normal,14
+HCA_Skin,HCA,Skin,human,normal,16
+literature_Breast,literature,Breast,human,normal,12
+literature_Esophagus,literature,Esophagus,human,normal,12
+literature_Heart,literature,Heart,human,normal,11
+literature_Lung,literature,Lung,human,normal,14
+literature_Prostate,literature,Prostate,human,normal,11
+literature_Skeletal_muscle,literature,Skeletal muscle,human,normal,13
+literature_Skin,literature,Skin,human,normal,17
+BCL_B_cell_lymphoma,BCL,B cell lymphoma,human,cancer,9
+coloncancer_colon_cancer,coloncancer,colon cancer,human,cancer,7
+lungcancer_lung_cancer_and_brain_metastasis,lungcancer,lung cancer and brain metastasis,human,cancer,10
+tabulasapiens_Bladder,tabulasapiens,Bladder,human,normal,15
+tabulasapiens_Blood,tabulasapiens,Blood,human,normal,26
+tabulasapiens_Bone_Marrow,tabulasapiens,Bone Marrow,human,normal,17
+tabulasapiens_Eye,tabulasapiens,Eye,human,normal,29
+tabulasapiens_Fat,tabulasapiens,Fat,human,normal,13
+tabulasapiens_Heart,tabulasapiens,Heart,human,normal,6
+tabulasapiens_Kidney,tabulasapiens,Kidney,human,normal,7
+tabulasapiens_Large_Intestine,tabulasapiens,Large Intestine,human,normal,20
+tabulasapiens_Liver,tabulasapiens,Liver,human,normal,13
+tabulasapiens_Lung,tabulasapiens,Lung,human,normal,37
+tabulasapiens_Lymph_Node,tabulasapiens,Lymph Node,human,normal,29
+tabulasapiens_Mammary,tabulasapiens,Mammary,human,normal,14
+tabulasapiens_Muscle,tabulasapiens,Muscle,human,normal,19
+tabulasapiens_Pancreas,tabulasapiens,Pancreas,human,normal,15
+tabulasapiens_Prostate,tabulasapiens,Prostate,human,normal,21
+tabulasapiens_Salivary_Gland,tabulasapiens,Salivary Gland,human,normal,23
+tabulasapiens_Skin,tabulasapiens,Skin,human,normal,25
+tabulasapiens_Small_Intestine,tabulasapiens,Small Intestine,human,normal,21
+tabulasapiens_Spleen,tabulasapiens,Spleen,human,normal,24
+tabulasapiens_Thymus,tabulasapiens,Thymus,human,normal,32
+tabulasapiens_Tongue,tabulasapiens,Tongue,human,normal,12
+tabulasapiens_Trachea,tabulasapiens,Trachea,human,normal,21
+tabulasapiens_Uterus,tabulasapiens,Uterus,human,normal,14
+tabulasapiens_Vasculature,tabulasapiens,Vasculature,human,normal,14

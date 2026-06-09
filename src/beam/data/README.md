@@ -68,7 +68,7 @@ Rscript reduce_m4.R                    # writes M4_2018_by_frequency.csv
 
 ### Reproducibility check
 
-The reduction reproduces the published competition figures: the winner (Smyl, the ES-RNN) computes to an overall sMAPE of 11.374 and MASE of 1.536, which matches the M4 paper. The numeric reproduction is shown in the M4 vignette; the loader is covered by `tests/test_datasets_m4.py`.
+The reduction reproduces the published competition figures: the top-ranked method (Smyl, the ES-RNN) computes to an overall sMAPE of 11.374 and MASE of 1.536, which matches the M4 paper. The numeric reproduction is shown in the M4 vignette; the loader is covered by `tests/test_datasets_m4.py`.
 
 ### Note on pooling
 
@@ -94,7 +94,7 @@ files:  results/<task>/data/{results,metric_info,dataset_info,method_info}.json
 
 Two tasks are bundled:
 
-- `openproblems_batch_integration.csv`: the batch_integration task, 19 methods (the 7 control and baseline methods such as `no_integration` and `shuffle_integration` were dropped) by 6 cellxgene-census datasets by 13 scIB metrics (Luecken et al. 2022). Long format `method_id, dataset_id, metric_id, score`, the raw `metric_values` with the source string `NA` left empty. The 13 metrics map to the bundled cards `ari`, `nmi`, `asw_batch`, `asw_label`, `cell_cycle_conservation`, `graph_connectivity`, `hvg_overlap`, `isolated_label_asw`, `isolated_label_f1`, `kbet`, `ilisi`, `clisi`, `pcr`. Coverage is uneven (some method-by-dataset cells and the `hvg_overlap` column are sparse); beam exposes the gaps as NaN.
+- `openproblems_batch_integration.csv`: the batch_integration task, 19 methods (the 7 control and baseline methods such as `no_integration` and `shuffle_integration` were dropped) by 6 cellxgene-census datasets by 13 scIB metrics (Luecken et al. 2022). Long format `method_id, dataset_id, metric_id, score`, the raw `metric_values` with the source string `NA` left empty. The 13 metrics map to the bundled cards `ari`, `nmi`, `asw_batch`, `asw_label`, `cell_cycle_conservation`, `graph_connectivity`, `hvg_overlap`, `isolated_label_asw`, `isolated_label_f1`, `kbet`, `ilisi`, `clisi`, `pcr`. Coverage is uneven (some method-by-dataset cells and the `hvg_overlap` column are sparse); beam reads the gaps as NaN.
 - `openproblems_svg.csv`: the spatially_variable_genes task, 14 methods (the 2 baselines `random_ranking` and `true_ranking` dropped) by 50 spatial datasets by one `correlation` metric. Same long format.
 - `openproblems_svg_features.csv`: dataset-level descriptors for the 50 spatial datasets, used as the Bradley-Terry tree splitting variables. `technology` (the spatial assay: visium, merfish, slideseqv2, stereoseq, dbitseq, seqfish, starmap, slidetags, post_xenium), `organism` (human, mouse, drosophila), and `condition` (cancer or noncancer) are parsed from the `<source>/<technology>/<name>` dataset id. The platform's `dataset_info.json` carries no structured numeric features (cell counts live only in free text), so no numeric features are provided.
 
@@ -123,3 +123,41 @@ The benchmarks mostly use different datasets, with one confirmed overlap. Tran's
 ### Why these five, and what was discarded
 
 The first four (scIB, OpenProblems batch_integration, Tran et al. 2020, Tyler et al. 2023) publish reusable per-method scores on the shared scIB metric family. The first three cover the full five-method block; Tyler covers three of the five methods (harmony, scanorama, liger) and three of the four metric families (ARI, ASW, kBET). BatchBench (Chazarra-Gil et al., NAR 2021) was first set aside here as off-family, since it scores on batch and cell-type entropy rather than the scIB metrics. It is now included as a fifth source after its author shared the scores: the harmonization works on the within-benchmark rank scale, so a benchmark can enter on its own metrics as long as it ranks the common methods, and BatchBench's two metrics map to the batch and biological constructs. Its different metric choice is part of what the cross-benchmark analysis measures rather than a reason to leave it out. Candidates still discarded: scIB-E (Genome Biology 2025, supplement MOESM2 Tables S4 and S12) shares the scIB metrics but its methods are deep-learning ones (scVI, scANVI and loss-function variants), with no overlap with the classical five; the Communications Biology 2025 reference-informed evaluation (DOI 10.1038/s42003-025-07947-7, Zenodo 14898612) covers one dataset with a bespoke RBET metric and overlaps only on combat and scanorama; sc_mixology (Nature Methods 2019) uses off-family metrics; spatial and cross-species benchmarks use different methods; Antonsson and Melsted (PMC12315870, 2025) reports a nearest-neighbour-rank calibration metric that is disjoint from the ARI/ASW/kBET/LISI family and so cannot enter this harmonization on shared metrics (it would be a separate metric-family contrast, future work). This scarcity is consistent with the reviewer survey of scRNA-seq benchmark reproducibility (Genome Biology 2023, DOI 10.1186/s13059-023-02962-5): most benchmarks release code but not per-method results.
+
+## gptcelltype2024_agreement.csv, gptcelltype2024_features.csv
+
+Cell type annotation agreement scores from the benchmark of Hou and Ji (2024), which scores GPT-4 and GPT-3.5 against three reference-based annotators (CellMarker2.0, SingleR, ScType). Loaded by `beam.datasets.load_gptcelltype`.
+
+### Provenance
+
+Hou W, Ji Z. Assessing GPT-4 for cell type annotation in single-cell RNA-seq analysis. Nature Methods 2024, DOI 10.1038/s41592-024-02235-4. The two tables are derived once from the compiled evaluation table in the paper's reproduction repository at a pinned commit:
+
+```
+repo:   github.com/Winnie09/GPTCelltype_Paper
+commit: 5944a41511aacd368b45448e256d9625849704df
+file:   anno/compiled/all.csv
+```
+
+The reduction script is `reduce_gptcelltype.py` in this folder. Run it with no arguments to fetch the file from the pinned commit, or pass a local copy of `all.csv`:
+
+```
+python reduce_gptcelltype.py            # fetches the pinned commit
+python reduce_gptcelltype.py all.csv    # or reduces a local copy
+```
+
+### Shape
+
+`all.csv` has one row per annotated cell type, with a `<method>_agreement` column per method holding the ontology-aware score (1 full match, 0.5 partial match, 0 mismatch). The reduction melts the six method columns to long form.
+
+- `gptcelltype2024_agreement.csv`: 5461 rows, columns `source, tissue, dataset, cell_type, manual_broadtype, method, agreement, broadtype`. One row per cell type per method that was run. The six methods are named GPT-4 (`gpt4aug3`), GPT-4-mar2023 (`gpt4mar23`, a version-robustness subset), GPT-3.5 (`gpt3.5aug3`), CellMarker2.0, SingleR, ScType. `manual_broadtype` is the broad lineage of the manual annotation and `broadtype` is the method's predicted broad lineage (empty when none), kept so a consensus check can compare them.
+- `gptcelltype2024_features.csv`: one row per (source, tissue) dataset (54 datasets), columns `dataset, source, tissue, species, sample_type, n_cell_types`. `species` is mouse for the Mouse Cell Atlas (MCA) source and human otherwise; `sample_type` is cancer for the BCL, coloncancer and lungcancer sources and normal otherwise. These are the candidate Bradley-Terry splitting variables.
+
+beam treats each (source, tissue) pair as one dataset and each cell type as one observation within it. The reference-based annotators SingleR and ScType were not run on the Azimuth and literature datasets, and the March 2023 GPT-4 endpoint covers a subset, so `load_gptcelltype` reads those as `numpy.nan` and does not impute them.
+
+### Metric cards
+
+Two cards are minted from this benchmark: `cell_type_annotation_agreement` (the mean per-cell-type agreement) and `cell_type_annotation_full_match_rate` (the fraction of cell types that fully match). Both are higher is better, bounded in [0, 1].
+
+### License
+
+The Hou and Ji (2024) article and its supplementary tables are CC-BY-4.0; the analysis code repository carries Zenodo DOIs (10.5281/zenodo.8317406 for the package, 10.5281/zenodo.8317410 for the analysis). These derived tables are redistributed under CC-BY-4.0 with attribution; cite Hou and Ji (2024).

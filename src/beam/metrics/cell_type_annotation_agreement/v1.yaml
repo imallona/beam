@@ -1,0 +1,78 @@
+id: cell_type_annotation_agreement
+version: v1
+name: Cell type annotation agreement
+description: |
+  Ontology-aware agreement between a method's cell type annotation and the manual
+  expert annotation, averaged over the annotated cell types of a dataset. Each
+  cell type scores 1 for a full match, 0.5 for a partial match (correct broad
+  lineage, wrong fine type), and 0 for a mismatch, following the scoring of Hou
+  and Ji (2024). The reported value is the mean of these per-cell-type scores, in
+  the unit interval, higher meaning closer agreement with the manual annotation.
+citations:
+  - text: "Hou W, Ji Z. Assessing GPT-4 for cell type annotation in single-cell RNA-seq analysis. Nature Methods, 2024."
+    doi: "10.1038/s41592-024-02235-4"
+metric_kind: derived
+measurand: agreement between predicted and manual cell type annotations
+task:
+  - classification
+requires_ground_truth: true
+ground_truth:
+  description: manual expert cell type annotation per cluster, normalized to the Cell Ontology
+  shape: vector
+  dtype: nominal_label
+inputs:
+  - role: predicted_annotation
+    shape: vector
+    dtype: nominal_label
+    description: the method's cell type label per cluster for the dataset
+output:
+  shape: scalar
+  dtype: float
+  description: mean agreement score in [0, 1], higher is better
+semantics:
+  scale_type: interval
+  scale_rationale: |
+    The per-cell-type score is an ordinal three-level judgement (mismatch,
+    partial, full). Its mean over the cell types of a dataset is bounded in
+    [0, 1] with a meaningful zero (no cell type matched), but the unit is not a
+    ratio of physical magnitudes, so the scale is interval rather than ratio.
+  range:
+    lower: 0
+    upper: 1
+    lower_inclusive: true
+    upper_inclusive: true
+  polarity: higher_is_better
+  monotonic: true
+  meaningful_zero: true
+  allowed_transformations:
+    - affine
+    - rank
+  uncertainty_model:
+    type: none
+comparability:
+  comparable_within:
+    - same_dataset
+  aggregation_rules:
+    - arithmetic_mean_across_datasets
+  recommended_aggregation_across_datasets: arithmetic_mean
+  recommended_normalization: min_max
+implementations:
+  - name: gptcelltype_paper
+    language: r
+    package: GPTCelltype
+    function: manual ontology-aware agreement scoring (Hou and Ji 2024)
+    license: MIT
+    repo_url: https://github.com/Winnie09/GPTCelltype
+examples:
+  - description: every cell type fully matches the manual annotation
+    expected_output: 1.0
+  - description: no cell type matches the manual annotation
+    expected_output: 0.0
+  - description: every cell type is a partial match (correct lineage, wrong fine type)
+    expected_output: 0.5
+provenance:
+  author: Izaskun Mallona
+  contact: izaskun.mallona@gmail.com
+  created: "2026-06-09"
+  modified: "2026-06-09"
+  license: CC-BY-4.0

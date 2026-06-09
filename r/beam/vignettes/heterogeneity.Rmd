@@ -48,7 +48,7 @@ arrows(m - se, seq_along(m), m + se, seq_along(m), angle = 90, code = 3, length 
 axis(2, at = seq_along(m), labels = nm, las = 1, cex.axis = 0.7)
 ```
 
-The dataset intercept takes about 0.71 of the ARI variance, so most of the spread is datasets being uniformly easy or hard rather than methods reordering. SC3 and Seurat lead the marginal means and are not separable from each other given the standard errors.
+The dataset intercept takes about 0.71 of the ARI variance, so most of the spread is datasets being uniformly easy or hard rather than methods reordering. SC3 and Seurat have the highest marginal means and are not separable from each other given the standard errors.
 
 ## Bradley-Terry tree on dataset features
 
@@ -88,4 +88,41 @@ barplot(w[ord], names.arg = method_names[ord], horiz = TRUE, las = 1, col = "dar
         cex.names = 0.7, xlab = "Plackett-Luce worth", main = "Plackett-Luce worths on ARI")
 ```
 
-The three models agree on the leaders, which is the expected reading when one global ranking holds. See `?beam_mixed_effects`, `?beam_bradley_terry_tree`, `?beam_plackett_luce`.
+On Duo the three models agree on the leaders, the expected reading when one global ranking holds.
+
+## More datasets: cell type annotation
+
+The Bradley-Terry tree needs many datasets with real feature variation to find a split. Duo has twelve. The cell type annotation benchmark of Hou and Ji (2024) has more: 36 datasets where GPT-4, GPT-3.5 and three reference-based annotators (CellMarker2.0, SingleR, ScType) were all run. Each is a (source, tissue) pair with a tissue, a source, a species, a normal-or-cancer label and a cell-type count. The metric is the mean agreement with a manual annotation, higher is better.
+
+```{r gpt-block}
+g <- datasets$load_gptcelltype()
+gpt_methods <- c("GPT-4", "GPT-3.5", "CellMarker2.0", "SingleR", "ScType")
+idx <- match(gpt_methods, unlist(g$method_names))
+sub <- g$scores[idx, , , drop = FALSE]
+complete <- !apply(is.na(sub[, , 1]), 2, any)
+agreement <- sub[, complete, 1]
+gpt_datasets <- unlist(g$dataset_names)[complete]
+cat(sprintf("%d methods, %d datasets\n", nrow(agreement), ncol(agreement)))
+```
+
+```{r gpt-mixed, eval = have_lme4, message = FALSE, warning = FALSE}
+me <- beam_mixed_effects(agreement, gpt_methods, gpt_datasets)
+cat(sprintf("dataset shift (ICC): %.2f of the agreement variance\n", me$icc_dataset))
+```
+
+```{r gpt-bt, eval = have_psychotree, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 4}
+gf <- g$features$aligned_to(reticulate::tuple(as.list(gpt_datasets)))
+features <- c(lapply(gf[[1]], as.numeric), lapply(gf[[2]], as.character))
+bt <- beam_bradley_terry_tree(agreement, gpt_methods, gpt_datasets,
+                              features = features, minsize = 6L)
+cat("a dataset feature splits the ranking:", bt$did_split, "\n")
+w <- bt$global_worth
+ord <- order(w)
+barplot(w[ord], names.arg = gpt_methods[ord], horiz = TRUE, las = 1, col = "slateblue",
+        cex.names = 0.7, xlab = "Bradley-Terry worth (global)",
+        main = "Bradley-Terry global ranking on annotation agreement")
+```
+
+Even at 36 datasets the parameter-stability test finds no split, so the tree reduces to one global ranking. GPT-4 takes almost all of the Bradley-Terry worth, and the ranking does not reverse on any tissue, source, or normal-versus-cancer subgroup. The dataset still carries a sizable share of the agreement variance (the ICC above), so the per-dataset order varies while the pooled order holds.
+
+See `?beam_mixed_effects`, `?beam_bradley_terry_tree`, `?beam_plackett_luce`.

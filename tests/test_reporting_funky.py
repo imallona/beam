@@ -60,6 +60,40 @@ def test_funky_heatmap_panels_and_order():
     assert len(fig_all.axes) == 7
 
 
+def test_smaa_colorbar_orientation_matches_bars():
+    # The stacked bars colour rank 1 (best) with the bright end of viridis, so the
+    # colorbar legend must use the reversed colormap to read the same way. A straight
+    # colormap on the legend would put rank 1 at the dark end and invert the reading.
+    n = 3
+    normalized = np.full((n, 4), 0.5)
+    composite = np.array([0.9, 0.5, 0.1])
+    ranks = np.array([1, 2, 3])
+    fig = funky_heatmap(
+        normalized,
+        ("a", "b", "c"),
+        ("m1", "m2", "m3", "m4"),
+        composite,
+        ranks,
+        smaa_acceptability=np.eye(n),
+    )
+
+    smaa_ax = next(ax for ax in fig.axes if ax.get_xlabel().startswith("SMAA rank acceptability"))
+    cbar_ax = next(ax for ax in fig.axes if ax.get_ylabel() == "rank (1 best)")
+
+    bright = matplotlib.colormaps["viridis"](1.0)
+    bar_colors = [patch.get_facecolor() for patch in smaa_ax.patches]
+    assert any(np.allclose(c[:3], bright[:3], atol=1e-6) for c in bar_colors)
+
+    # The colorbar solids must use the reversed colormap so rank value 1 renders
+    # with the same bright colour the rank-1 bars use, not the dark end.
+    solids = next(a for a in cbar_ax.collections if type(a).__name__ == "QuadMesh")
+    assert solids.cmap.name == "viridis_r"
+    assert np.allclose(solids.cmap(solids.norm(1.0))[:3], bright[:3], atol=1e-6)
+    # The axis is flipped so rank 1 sits at the top (ylim runs high to low).
+    ylim = cbar_ax.get_ylim()
+    assert ylim[0] > ylim[1]
+
+
 def test_funky_heatmap_from_run_assembles_panels():
     # a small tensor with two datasets so leave-one-dataset-out runs.
     rng = np.random.default_rng(0)

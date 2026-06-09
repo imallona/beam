@@ -1,0 +1,107 @@
+---
+title: "5. LLM cell type annotation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{5. LLM cell type annotation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+have_beam <- requireNamespace("reticulate", quietly = TRUE) &&
+  reticulate::py_module_available("beam.datasets")
+knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>")
+```
+
+This vignette re-analyses the cell type annotation benchmark of Hou and Ji (2024, Nature Methods, DOI 10.1038/s41592-024-02235-4), which scores GPT-4 and GPT-3.5 against three reference-based annotators (CellMarker2.0, SingleR, ScType) on how well each labels the cell types of a dataset, judged against a manual annotation. The two metrics are the mean agreement score and the full match rate, both higher is better. The R functions forward to the Python `beam` core through reticulate; install it once with `install_beam_python()`.
+
+```{r libs}
+library(rbeam)
+datasets <- reticulate::import("beam.datasets")
+cards <- reticulate::import("beam.cards")
+mcda <- reticulate::import("beam.mcda")
+beam <- reticulate::import("beam")
+
+g <- datasets$load_gptcelltype()
+method_names <- unlist(g$method_names)
+metrics <- unlist(g$metric_ids)
+```
+
+## The complete block
+
+The reference-based annotators were not run on every dataset. This vignette uses the five methods Hou and Ji compare directly, on the datasets where all five were run.
+
+```{r block}
+head_methods <- c("GPT-4", "GPT-3.5", "CellMarker2.0", "SingleR", "ScType")
+idx <- match(head_methods, method_names)
+sub <- g$scores[idx, , , drop = FALSE]
+complete <- !apply(is.na(sub[, , 1]), 2, any)
+block <- sub[, complete, , drop = FALSE]
+block_datasets <- unlist(g$dataset_names)[complete]
+cat(sprintf("complete block: %d methods, %d datasets, %d metrics\n",
+            dim(block)[1], dim(block)[2], dim(block)[3]))
+```
+
+## One ranking, end to end
+
+`beam_rank` pools the two metrics across the datasets, runs the MCDA pipeline, and runs the default sensitivity analysis on the same normalization context.
+
+```{r rank}
+scores <- beam$Scores(
+  values = block,
+  tool_names = reticulate::tuple(as.list(head_methods)),
+  metric_ids = reticulate::tuple(as.list(metrics)),
+  dataset_names = reticulate::tuple(as.list(block_datasets)),
+  layout = "long"
+)
+run <- beam_rank(scores, weights = "equal", method = "saw", seed = 0L)
+cat("top-ranked under equal weights / SAW:", run$top_tool, "\n")
+ord <- order(run$result$ranks)
+for (i in ord) {
+  cat(sprintf("  %-14s composite %.3f  rank %d\n",
+              head_methods[i], run$result$composite[i], run$result$ranks[i]))
+}
+```
+
+GPT-4 ranks first. SingleR, a classical tool, ranks second, and GPT-3.5 ranks third, so the difference is specific to GPT-4 rather than to language models in general.
+
+```{r funky, fig.width = 7, fig.height = 4}
+fig_path <- tempfile(fileext = ".png")
+plot(run, fig_path)
+knitr::include_graphics(fig_path)
+```
+
+## What moves the ranking: the dataset or the choice?
+
+`beam_rank_sensitivity` splits the ranking's variance between the data and the analyst's choices, by ranking the methods on each dataset under every weighting and aggregation.
+
+```{r rank-sensitivity}
+ctx <- mcda$registry_context(as.list(metrics), "saw")
+rs <- beam_rank_sensitivity(
+  block, ctx$polarity,
+  normalization = ctx$normalization, bounds = ctx$bounds,
+  baselines = ctx$baselines, targets = ctx$targets,
+  tool_names = head_methods, dataset_names = block_datasets
+)
+cat(sprintf("dataset %.2f, weighting %.2f, aggregation %.2f, interaction %.2f\n",
+            rs$dataset_share, rs$weighting_share, rs$aggregation_share, rs$interaction_share))
+```
+
+The dataset accounts for almost all of the rank variance; the weighting and the aggregation account for very little. Which tissue is annotated decides the per-dataset order far more than the scoring choice.
+
+## Are the methods separable on agreement?
+
+`beam_critical_difference` runs the Friedman test and the Nemenyi post-hoc on the agreement scores across the complete-block datasets.
+
+```{r cd}
+agreement <- block[, , 1]
+cd <- beam_critical_difference(agreement, higher_is_better = TRUE, tool_names = head_methods)
+cat(sprintf("Friedman p = %.1e, Nemenyi CD = %.2f\n",
+            cd$friedman_pvalue, cd$critical_difference))
+ord <- order(cd$average_ranks)
+for (i in ord) {
+  cat(sprintf("  %-14s average rank %.2f\n", head_methods[i], cd$average_ranks[i]))
+}
+```
+
+GPT-4 separates from the other four methods, which sit in overlapping cliques and are not separable on agreement at this dataset count. See `?beam_rank`, `?beam_rank_sensitivity`, `?beam_critical_difference` for the function documentation, and the heterogeneity vignette for the mixed-effects and Bradley-Terry views on the same benchmark.

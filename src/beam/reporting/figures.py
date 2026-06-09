@@ -473,8 +473,13 @@ def funky_heatmap(
         ax_s.set_yticks([])
         ax_s.set_xlim(0, 1)
         ax_s.set_xlabel("SMAA rank acceptability\n(share of weightings)")
-        bar = fig.colorbar(ScalarMappable(norm=norm, cmap=cmap), ax=ax_s, fraction=0.08)
+        # The bars put rank 1 (best) at the bright end of the colormap. Reverse the
+        # colormap on the legend so the colour reads the same way, then flip the axis
+        # so rank 1 sits at the top. Without these the legend would put rank 1 at the
+        # dark end and start the scale at the worst rank.
+        bar = fig.colorbar(ScalarMappable(norm=norm, cmap=cmap.reversed()), ax=ax_s, fraction=0.08)
         bar.set_label("rank (1 best)")
+        bar.ax.invert_yaxis()
 
     if title:
         fig.suptitle(title)

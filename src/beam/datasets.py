@@ -3,7 +3,7 @@
 The headline data set is the single-cell RNA-seq clustering benchmark of
 Duo, Robinson and Soneson (2018). ``load_duo2018`` reads the bundled CSV
 into a frozen ``Duo2018`` dataclass that holds a method by data set by
-metric tensor, with missing cells exposed as ``numpy.nan``. The loader
+metric tensor, with missing cells left as ``numpy.nan``. The loader
 does not impute or drop anything: it surfaces the gaps so the caller, the
 MCDA pipeline or the heterogeneity module, can decide how to handle
 partial method-data-set coverage.
@@ -30,9 +30,12 @@ import csv
 from collections.abc import Sequence
 from dataclasses import dataclass
 from importlib import resources
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from beam.io.scores import Scores
 
 _CSV_PACKAGE: Final = "beam.data"
 _CSV_NAME: Final = "DuoSCClustering2018.csv"
@@ -67,7 +70,7 @@ _POLARITY: Final[tuple[str, ...]] = (
 class Duo2018:
     """The Duo 2018 clustering benchmark as a method by data set by metric tensor.
 
-    The tensor is built once at load time and exposed read only. Missing
+    The tensor is built once at load time and read only. Missing
     cells are ``numpy.nan``. No imputation or row or column dropping
     happens here; the helpers report coverage so callers can choose a
     policy.
@@ -216,7 +219,7 @@ class M4Forecasting:
     ----------
     method_names
         The 25 forecasting methods whose point forecasts the M4comp2018 data
-        ships, in competition rank order (Smyl, the ES-RNN winner, first).
+        ships, in competition rank order (Smyl, the ES-RNN, ranked first).
     frequency_names
         The six frequency bands, in the order they index the data set axis.
     metric_ids
@@ -449,7 +452,7 @@ def load_duo2018() -> Duo2018:
     -----
     No imputation or dropping happens here. The missing cells (5 each in
     ari, runtime and shannon_entropy_diff, 101 in nclust_deviation) are
-    exposed as NaN. Use the coverage helpers to decide on a policy.
+    left as NaN. Use the coverage helpers to decide on a policy.
     """
     csv_text = resources.files(_CSV_PACKAGE).joinpath(_CSV_NAME).read_text(encoding="utf-8")
     rows = list(csv.reader(csv_text.splitlines()))
@@ -687,6 +690,135 @@ def load_batchbench() -> BatchBench:
         dataset_names=dataset_names,
         metric_ids=_BATCHBENCH_METRICS,
         polarity=_BATCHBENCH_POLARITY,
+        scores=scores,
+        features=features,
+    )
+
+
+_GPTCELLTYPE_AGREEMENT_CSV: Final = "gptcelltype2024_agreement.csv"
+_GPTCELLTYPE_FEATURES_CSV: Final = "gptcelltype2024_features.csv"
+_GPTCELLTYPE_METRICS: Final[tuple[str, ...]] = (
+    "cell_type_annotation_agreement",
+    "cell_type_annotation_full_match_rate",
+)
+_GPTCELLTYPE_POLARITY: Final[tuple[str, ...]] = ("higher_is_better", "higher_is_better")
+# Method order: the two GPT-4 endpoints, GPT-3.5, then the three reference-based
+# classical annotators. GPT-4-mar2023 is the version-robustness variant Hou and
+# Ji ran on a subset of the data, so it has missing coverage on the datasets it
+# was not run on.
+_GPTCELLTYPE_METHOD_ORDER: Final[tuple[str, ...]] = (
+    "GPT-4",
+    "GPT-4-mar2023",
+    "GPT-3.5",
+    "CellMarker2.0",
+    "SingleR",
+    "ScType",
+)
+_GPTCELLTYPE_CAT_FEATURES: Final[tuple[str, ...]] = ("source", "tissue", "species", "sample_type")
+
+
+@dataclass(frozen=True)
+class GPTCelltype:
+    """Cell type annotation agreement scores from Hou and Ji (2024) as a tensor.
+
+    The benchmark scores GPT-4 and GPT-3.5 against three reference-based
+    annotators (CellMarker2.0, SingleR, ScType) on how well each labels the cell
+    types of a dataset, judged against a manual expert annotation. beam treats
+    each (source, tissue) pair as one dataset and each annotated cell type as one
+    observation within it. The two metrics are the mean agreement score and the
+    full match rate, both higher is better; provenance is in
+    ``src/beam/data/README.md``. The classical annotators were not run on every
+    dataset, and the March 2023 GPT-4 endpoint covers only a subset, so those
+    cells are ``numpy.nan``.
+
+    Attributes
+    ----------
+    method_names, dataset_names, metric_ids
+        Label tuples for the three axes.
+    polarity
+        Per-metric direction, aligned with ``metric_ids``.
+    scores
+        Float array of shape ``(n_methods, n_datasets, n_metrics)``.
+    features
+        Dataset-level descriptors (the ``source``, ``tissue``, ``species`` and
+        ``sample_type`` categories and the numeric cell type count), the
+        candidate splitting variables for a Bradley-Terry tree.
+    """
+
+    method_names: tuple[str, ...]
+    dataset_names: tuple[str, ...]
+    metric_ids: tuple[str, ...]
+    polarity: tuple[str, ...]
+    scores: np.ndarray
+    features: Duo2018Features
+
+    def to_scores(self) -> Scores:
+        """Return the tensor as a ``beam.Scores`` ready for ``beam.rank``."""
+        from beam.io.scores import Scores
+
+        return Scores(
+            values=self.scores,
+            tool_names=self.method_names,
+            metric_ids=self.metric_ids,
+            dataset_names=self.dataset_names,
+            layout="long",
+        )
+
+
+def load_gptcelltype() -> GPTCelltype:
+    """Load the bundled GPTCelltype (Hou and Ji 2024) annotation agreement scores.
+
+    Reads ``gptcelltype2024_agreement.csv`` (one row per cell type per method
+    that was run) and reduces it to a method by dataset by metric tensor: per
+    (method, dataset) the mean agreement over the cell types and the fraction of
+    cell types that fully match the manual annotation. Datasets and their
+    features come from ``gptcelltype2024_features.csv``, in its row order. A
+    method not run on a dataset has no rows there and surfaces as ``numpy.nan``;
+    nothing is imputed or dropped.
+
+    Returns
+    -------
+    GPTCelltype
+    """
+    text = resources.files(_CSV_PACKAGE).joinpath(_GPTCELLTYPE_AGREEMENT_CSV).read_text("utf-8")
+    rows = list(csv.DictReader(text.splitlines()))
+
+    feat_text = resources.files(_CSV_PACKAGE).joinpath(_GPTCELLTYPE_FEATURES_CSV).read_text("utf-8")
+    feat_rows = list(csv.DictReader(feat_text.splitlines()))
+    dataset_names = tuple(r["dataset"] for r in feat_rows)
+
+    present = {r["method"] for r in rows}
+    method_names = tuple(m for m in _GPTCELLTYPE_METHOD_ORDER if m in present)
+    mi = {m: i for i, m in enumerate(method_names)}
+    di = {d: i for i, d in enumerate(dataset_names)}
+
+    shape = (len(method_names), len(dataset_names))
+    agreement_sum = np.zeros(shape)
+    full_match_count = np.zeros(shape)
+    cell_type_count = np.zeros(shape)
+    for r in rows:
+        value = float(r["agreement"])
+        i, j = mi[r["method"]], di[r["dataset"]]
+        agreement_sum[i, j] += value
+        full_match_count[i, j] += 1.0 if value == 1.0 else 0.0
+        cell_type_count[i, j] += 1.0
+
+    with np.errstate(invalid="ignore", divide="ignore"):
+        mean_agreement = np.where(cell_type_count > 0, agreement_sum / cell_type_count, np.nan)
+        full_match_rate = np.where(cell_type_count > 0, full_match_count / cell_type_count, np.nan)
+    scores = np.stack([mean_agreement, full_match_rate], axis=2)
+
+    numeric = {"n_cell_types": tuple(float(r["n_cell_types"]) for r in feat_rows)}
+    categorical = {f: tuple(r[f] for r in feat_rows) for f in _GPTCELLTYPE_CAT_FEATURES}
+    features = Duo2018Features(
+        dataset_names=dataset_names, numeric=numeric, categorical=categorical
+    )
+
+    return GPTCelltype(
+        method_names=method_names,
+        dataset_names=dataset_names,
+        metric_ids=_GPTCELLTYPE_METRICS,
+        polarity=_GPTCELLTYPE_POLARITY,
         scores=scores,
         features=features,
     )

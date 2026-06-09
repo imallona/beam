@@ -97,6 +97,8 @@ website:
             text: OpenProblems batch integration
           - href: examples/cross_benchmark/cross_benchmark.qmd
             text: Cross-benchmark meta-analysis
+          - href: examples/cell_type_annotation/cell_type_annotation.qmd
+            text: LLM cell type annotation
     right:
       - icon: github
         href: https://github.com/imallona/beam
@@ -180,3 +182,4 @@ quartodoc:
         - load_openproblems
         - load_integration_benchmarks
         - load_pancreas_contrast
+        - load_gptcelltype
