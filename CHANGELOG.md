@@ -2,11 +2,12 @@
 
 All notable changes to beam will be documented in this file. The format follows Keep a Changelog (https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.2.0] - 2026-06-09
 
 ### Added
 
 - `beam.datasets.load_gptcelltype`: the Hou and Ji (2024) cell type annotation benchmark scoring GPT-4 and GPT-3.5 against CellMarker2.0, SingleR and ScType, with two new annotation-agreement metric cards and the `examples/cell_type_annotation` vignette. GPT-4 ranks first across every weighting-by-aggregation configuration while GPT-3.5 ranks with the classical tools.
+- `beam.datasets.load_deepcellseek`: a second LLM cell type annotation benchmark (Xiao et al. 2025) on the same ontology-aware agreement metric, reusing the two annotation cards. The `examples/cell_type_annotation` vignette gains a four-benchmark cross-benchmark comparison (DeepCellSeek, AnnDictionary and SOAR alongside GPTCelltype) and a `source_variance_decomposition` on the shared classical methods.
 - `beam.mcda.pairwise_superiority` and `PairwiseSuperiorityReport`: compares methods two at a time across datasets, reporting the probability of superiority (the fraction of datasets on which one method outperforms another), an equivalence band set to the metric's noise floor, a Copeland-style standing score, and a sign test. The effect-size companion to the critical-difference test, whose significance reading it complements; the HTML report's critical-difference section now states how often the top-ranked method outperforms the next. docs/explanations/pairwise-superiority.md.
 - `beam.mcda.rank_sensitivity` and `RankSensitivityReport`: an exact variance decomposition that splits a ranking's instability between the analyst's choices (weighting scheme, aggregation rule) and the data (the dataset), by running the full factorial of all three and attributing each tool's rank variance with an analysis of variance. On M4 the dataset carries about 96 percent of the rank variance and the choices under 1 percent each; the HTML report gains a "what moves the ranking" section for tensor inputs. docs/explanations/rank-sensitivity.md.
 - `beam.mcda.card_data_consistency` and `CardDataConsistencyReport`: audits raw scores against each card's declared range, baseline, target and noise floor, flagging out-of-range values and other card-data contradictions by metric name. `beam.rank` attaches it to `RunResult.card_consistency` and the HTML report gains a section; docs/explanations/card-data-consistency.md.

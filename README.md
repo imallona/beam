@@ -1,10 +1,17 @@
-# Aim
+# beam
 
-`beam` provides `b`enchmark `e`valuation `a`nd `m`etrics.
+beam (benchmark evaluation and metrics) turns benchmark results into reusable, comparable rankings. It covers:
 
-We store and manage open and reusable performance metrics so anyone running a method comparison (a benchmark) can automate decisions and reduce implicit bias.
+- Metric cards: each metric is described once in a YAML card (what it measures, its scale, range, polarity, and which comparisons and aggregations are allowed), checked against a JSON Schema and mapped to STATO, UO and OBI terms where they exist.
+- Ranking: from a tool-by-metric table or a tool-by-dataset-by-metric tensor, normalize per card, weight (equal, entropy, standard deviation, CRITIC, MEREC, AHP) and aggregate (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET).
+- Sensitivity: how much the ranking depends on the choices, through SMAA weight sampling, leave-one-metric-out and leave-one-dataset-out, weight perturbation, aggregation agreement, and a variance decomposition that separates the data from the analyst's choices.
+- Statistical comparison: Friedman-Nemenyi critical-difference diagrams, the coverage-aware Skillings-Mack test for partial data, and pairwise superiority effect sizes.
+- Metric checks: convergent and discriminant validity, Cronbach reliability, dimensionality, reference levels (random baseline and noise floor), and a card-versus-data consistency audit.
+- Heterogeneity: how much of the ranking is method-by-dataset interaction, with mixed-effects models, Bradley-Terry trees, Plackett-Luce, and a cross-benchmark variance decomposition and network meta-analysis.
+- Missing data: explicit policies, never silent imputation.
+- Interfaces: a Python API, a command-line tool, a declarative `beam.yaml` runner, a self-contained HTML report with a run manifest, and an R package.
 
-Our [documentation](https://imallona.github.io/beam/) includes howtos, vignettes, and explanations.
+[Documentation](https://imallona.github.io/beam/): how-tos, vignettes, and explanations.
 
 ## Install
 
@@ -26,11 +33,9 @@ remotes::install_github("imallona/beam", subdir = "r/beam")
 rbeam::install_beam_python()
 ```
 
-R dependencies for the heterogeneity diagnostics:
+### Heterogeneity diagnostics (optional, needs R)
 
-The MCDA ranking is pure Python and needs no R. The heterogeneity diagnostics (`beam.heterogeneity.bradley_terry_tree`, `mixed_effects`, `plackett_luce`, `source_variance_decomposition`, `network_meta_analysis`, and the matching `beam heterogeneity` CLI) call `Rscript` and need `lme4`, `glmmTMB`, `psychotree`, `partykit`, `PlackettLuce`, `qvcalc`, `meta`, `netmeta` and `jsonlite` on the R library path.
-
-From Python or the CLI, the supported route is the conda recipe [envs/heterogeneity.yml](https://github.com/imallona/beam/blob/main/envs/heterogeneity.yml), which puts Python and R in one environment so the wrapper finds `Rscript`. It pulls the R packages as conda-forge binaries, so it avoids compiling `PlackettLuce` and its solver dependencies (`CVXR`, `clarabel`) from source:
+The MCDA ranking is pure Python. The heterogeneity diagnostics (Bradley-Terry trees, mixed-effects, Plackett-Luce, variance decomposition, network meta-analysis) call `Rscript` and need `lme4`, `glmmTMB`, `psychotree`, `partykit`, `PlackettLuce`, `qvcalc`, `meta`, `netmeta` and `jsonlite`. The conda recipe puts Python and R in one environment so the wrapper finds `Rscript`:
 
 ```bash
 mamba env create -f envs/heterogeneity.yml
@@ -38,17 +43,11 @@ conda activate beam-heterogeneity
 pip install -e ".[dev]"
 ```
 
-`beam.heterogeneity.r_available()`, `.bttree_available()`, `.glmmtmb_available()` and `.plackett_luce_available()` report whether each toolchain is in place.
-
-From R, install the packages once with the bundled helper (they are Suggests, so they are not installed with `rbeam` itself):
-
-```r
-rbeam::install_beam_heterogeneity_deps()
-```
+From R, install them once with `rbeam::install_beam_heterogeneity_deps()`. The availability checks (`beam.heterogeneity.r_available()` and friends) report whether the toolchain is in place.
 
 ## Usage
 
-We have a detailed [documentation](https://imallona.github.io/beam/). TL/DR from a CSV to an HTML report:
+From a CSV to an HTML report:
 
 On a shell:
 
@@ -87,74 +86,10 @@ beam_metric_show("ari")
 beam_run("beam.yaml")
 ```
 
-## Repository layout
-
-```
-src/beam/
-  schema/                       metric_card.schema.json, JSON Schema (draft 2020-12), shipped as package data
-  metrics/                      One YAML file per metric and version; LICENSE.md is CC-BY-4.0 (cards only)
-  cards/                        Card loader, MetricCard, MetricProperties, Registry,
-                                polarities_for, properties_for
-  mcda/                         normalize, weights (equal, entropy, std, critic, merec, ahp),
-                                topsis, weighted_sum, vikor, promethee_ii, comet, rank, run,
-                                run_from_registry, registry_context, validate_for_aggregation,
-                                leave_one_metric_out, leave_one_dataset_out, smaa,
-                                smallest_weight_perturbation, aggregation_agreement,
-                                beats_random_baseline, noise_floor_separation,
-                                critical_difference, skillings_mack,
-                                coverage_aware_critical_difference,
-                                aggregate_across_datasets, reduce_tensor, Result
-  api.py                        load-rank-report procedural API: rank, RunResult
-  reporting/                    Self-contained HTML report (write_report, exposed as beam.report)
-  manifest.py                   Run manifest: hashes, card versions, software fingerprint
-  config.py                     Declarative beam.yaml runner (run_config)
-  cli.py                        beam command-line interface (entry point beam = beam.cli:main)
-  io/                           load_scores (stdlib CSV) and the optional pandas read_csv
-  scenarios.py                  Canonical simulated scenarios and the transportation benchmark
-  datasets.py                   load_duo2018, load_m4, load_openproblems and their features loaders
-  heterogeneity/                mixed_effects (lme4, glmmTMB beta engine), bradley_terry_tree
-                                (psychotree), plackett_luce (PlackettLuce), paired_comparisons,
-                                rankings_from_matrix, the availability probes, and the .R scripts
-  data/                         DuoSCClustering2018.csv (Duo et al. 2018), its features CSV, and provenance
-  owl/                          generate.py: regenerates docs/beam.owl.ttl from the cards and the schema
-r/beam/                         rbeam R package: reticulate shim for the MCDA wrappers (beam_rank, beam_report, ...), native R for the heterogeneity diagnostics
-scripts/                        one-shot helpers: ols_query.py and ols_verify.py used during the ontology lift
-tests/
-  test_schema.py                Python-side metric card validation
-  validate_cards.R              R-side metric card validation (jsonvalidate)
-  test_cards_*.py               Cards loader, registry, polarities_for, properties_for
-  test_mcda_*.py                Normalize, weights, aggregate, topsis, facade, pipeline,
-                                validate, run_from_registry, sensitivity, smaa, perturbation,
-                                cross_dataset
-  test_scenarios.py             Ground-truth checks on the four canonical scenarios
-examples/
-  duo2018/duo2018.qmd           Walkthrough vignette on the real Duo 2018 data
-  scenarios/scenarios.qmd       Consistency-check vignette across canonical scenarios
-  transportation/transportation.qmd  Cross-domain example across all methods
-  m4/m4.qmd                     M4 forecasting competition, a large real non-bio benchmark
-  openproblems/openproblems.qmd  MCDA and Bradley-Terry tree on two OpenProblems tasks
-  cross_benchmark/cross_benchmark.qmd  Meta-analysis of four integration benchmarks
-docs/
-  explanations/                 Conceptual essays (measurement theory, cards-and-pipeline)
-  tutorials/                    Learning-oriented walkthroughs
-  how-to/                       Task-oriented recipes
-  beam.owl.ttl                  OWL release artefact, regenerated by python -m beam.owl.generate
-.github/workflows/
-  ci.yml                        Python tests, R card validation, vignette rendering
-  r-ci.yml                      R CMD check on the R wrapper, linux/macos/windows
-  docs.yml                      Quarto docs site rendered and deployed to GitHub Pages
-```
-
 ## Build artefacts
 
-- Rendered vignettes: CI renders and uploads each `examples/` vignette as a self-contained HTML workflow artefact on every push and pull request, downloadable from the Actions tab on GitHub. The artefacts are `duo2018-vignette`, `scenarios-vignette`, `transportation-vignette`, `m4-vignette`, `openproblems-vignette` and `cross_benchmark-vignette`.
-- Documentation site: `.github/workflows/docs.yml` builds the Quarto site from `_quarto.yml` and deploys it to GitHub Pages on every push to main. The site indexes the tutorials, how-tos and explanations, and includes a quartodoc-generated Python API reference.
-- `metric_card.schema.json`: the canonical schema. Any tool that validates JSON against it can ingest beam metric cards.
-- `docs/beam.owl.ttl`: OWL artefact in Turtle, one instance per metric card under its STATO, UO or OBI parent where a mapping is declared. Regenerated from the cards and the schema by `python -m beam.owl.generate`; ships with each release.
-- `docs/beam.skos.ttl`: SKOS concept schemes over the card controlled vocabulary (polarity, scale type, allowed transformations, recommended normalization), one concept per allowed value with definitions and a scale hierarchy. Regenerated by `python -m beam.owl.skos`; ships with each release.
-- `CITATION.cff`: cff-version 1.2.0; GitHub renders a citation widget from it.
-- Python wheel under `dist/` after `python -m build`. Not yet on PyPI.
-- R source tarball after `R CMD build r/beam`. Built and tested on linux, macos and windows in `.github/workflows/r-ci.yml`. Not yet on CRAN.
+- [Documentation site](https://imallona.github.io/beam/): vignettes, how-tos, explanations, and the Python API reference.
+- Ontology release: `docs/beam.owl.ttl` (OWL) and `docs/beam.skos.ttl` (SKOS), regenerated from the cards on each release.
 
 ## Licence
 
@@ -163,7 +98,22 @@ docs/
 
 ## Citation
 
-See `CITATION.cff`.
+Mallona, Izaskun (2026). beam: Benchmark Evaluation And Metrics. Version 0.2.0. https://github.com/imallona/beam. ORCID 0000-0002-2853-7526.
+
+```bibtex
+@software{mallona_beam_2026,
+  author  = {Mallona, Izaskun},
+  title   = {beam: Benchmark Evaluation And Metrics},
+  version = {0.2.0},
+  year    = {2026},
+  url     = {https://github.com/imallona/beam},
+  license = {GPL-3.0-or-later}
+}
+```
+
+## Contact
+
+Izaskun Mallona, izaskun.mallona.work@gmail.com.
 
 ## Inspiration
 
