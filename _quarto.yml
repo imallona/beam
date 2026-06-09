@@ -183,3 +183,4 @@ quartodoc:
         - load_integration_benchmarks
         - load_pancreas_contrast
         - load_gptcelltype
+        - load_deepcellseek

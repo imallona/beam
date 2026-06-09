@@ -161,3 +161,23 @@ Two cards are minted from this benchmark: `cell_type_annotation_agreement` (the 
 ### License
 
 The Hou and Ji (2024) article and its supplementary tables are CC-BY-4.0; the analysis code repository carries Zenodo DOIs (10.5281/zenodo.8317406 for the package, 10.5281/zenodo.8317410 for the analysis). These derived tables are redistributed under CC-BY-4.0 with attribution; cite Hou and Ji (2024).
+
+## deepcellseek2025_agreement.csv, deepcellseek2025_features.csv
+
+A second LLM cell type annotation benchmark, scoring 11 LLM endpoints and the three classical annotators CellMarker2.0, SingleR and ScType on the same ontology-aware agreement metric as Hou and Ji (2024). Loaded by `beam.datasets.load_deepcellseek`, which reuses the `GPTCelltype` container and the two annotation cards.
+
+### Provenance
+
+Xiao T, Hua D, Wang Y, Lu X, Zhang C. Benchmarking large language models for cell typing in single-cell RNA-Seq. Briefings in Bioinformatics 2025, 26(6):bbaf677, DOI 10.1093/bib/bbaf677. The scores are Supplementary Table 4 of the article supplement file `supplementary_table_bbaf677.xlsx` (sheet "Supplementary Table 4"), per cell type per method. The OUP supplement download link is signed and expires, so there is no stable raw URL; download the supplement from the article and run the reduction script `reduce_deepcellseek.py` in this folder:
+
+```
+python reduce_deepcellseek.py supplementary_table_bbaf677.xlsx
+```
+
+### Shape
+
+`deepcellseek2025_agreement.csv` is long format `source, tissue, dataset, type, cell_type, method, score`, one row per cell type per method, the ontology-aware score (1 full match, 0.5 partial, 0 mismatch). The `type` column is "Broad Cell type", "Subtype" or "Mouse"; `load_deepcellseek` keeps the broad rows by default. `deepcellseek2025_features.csv` has one row per (source, tissue) dataset with `source, tissue, species, n_cell_types`.
+
+### License
+
+The DeepCellSeek article is CC-BY-NC. Numerical results in a published table are facts not subject to copyright, so the derived per-method scores are vendored here with attribution, the same basis used for the Tyler 2023 integration table; beam's role is reanalysis under one consistent rule, not redistribution of the article. Cite Xiao et al. (2025). The off-family SOAR and the LLM-only AnnDictionary benchmarks used in the cross-benchmark section live under `soar/` and `anndictionary/` with their own license notes.

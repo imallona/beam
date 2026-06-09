@@ -824,6 +824,106 @@ def load_gptcelltype() -> GPTCelltype:
     )
 
 
+_DEEPCELLSEEK_AGREEMENT_CSV: Final = "deepcellseek2025_agreement.csv"
+_DEEPCELLSEEK_FEATURES_CSV: Final = "deepcellseek2025_features.csv"
+# Method order: the 11 LLM endpoints, then the three reference-based annotators
+# named to match the GPTCelltype table so the two benchmarks share method labels.
+_DEEPCELLSEEK_METHOD_ORDER: Final[tuple[str, ...]] = (
+    "GPT-5",
+    "GPT-4o",
+    "Claude-4.1",
+    "Claude-3.7",
+    "Gemini-2.5",
+    "Gemini-2.0",
+    "Grok-4",
+    "Grok-3",
+    "DeepSeek-R1",
+    "Doubao-1.6",
+    "Kimi-k2",
+    "CellMarker2.0",
+    "SingleR",
+    "ScType",
+)
+
+
+def load_deepcellseek(cell_type: str = "Broad Cell type") -> GPTCelltype:
+    """Load the bundled DeepCellSeek (Briefings 2025) annotation agreement scores.
+
+    The DeepCellSeek benchmark scores 11 LLM endpoints and the three classical
+    annotators CellMarker2.0, SingleR and ScType on the same ontology-aware
+    agreement metric as Hou and Ji (2024), so it reuses the two annotation cards
+    and the :class:`GPTCelltype` container. Reads ``deepcellseek2025_agreement.csv``
+    and reduces it to a method by dataset by metric tensor (mean agreement and
+    full match rate). The classical method labels match ``load_gptcelltype`` so
+    the two benchmarks can be compared on their shared methods.
+
+    Parameters
+    ----------
+    cell_type
+        Which ``type`` rows to keep, ``"Broad Cell type"`` by default to match
+        the broad-annotation scope of ``load_gptcelltype``. Pass ``"Subtype"``
+        for the subtype rows, or ``"all"`` to keep every row.
+
+    Returns
+    -------
+    GPTCelltype
+    """
+    text = resources.files(_CSV_PACKAGE).joinpath(_DEEPCELLSEEK_AGREEMENT_CSV).read_text("utf-8")
+    rows = [
+        r for r in csv.DictReader(text.splitlines()) if cell_type == "all" or r["type"] == cell_type
+    ]
+
+    feat_text = (
+        resources.files(_CSV_PACKAGE).joinpath(_DEEPCELLSEEK_FEATURES_CSV).read_text("utf-8")
+    )
+    feat_by_dataset = {r["dataset"]: r for r in csv.DictReader(feat_text.splitlines())}
+
+    present = {r["method"] for r in rows}
+    present_datasets = [r["dataset"] for r in rows]
+    dataset_names = tuple(dict.fromkeys(present_datasets))
+    method_names = tuple(m for m in _DEEPCELLSEEK_METHOD_ORDER if m in present)
+    mi = {m: i for i, m in enumerate(method_names)}
+    di = {d: i for i, d in enumerate(dataset_names)}
+
+    shape = (len(method_names), len(dataset_names))
+    agreement_sum = np.zeros(shape)
+    full_match_count = np.zeros(shape)
+    cell_type_count = np.zeros(shape)
+    for r in rows:
+        value = float(r["score"])
+        i, j = mi[r["method"]], di[r["dataset"]]
+        agreement_sum[i, j] += value
+        full_match_count[i, j] += 1.0 if value == 1.0 else 0.0
+        cell_type_count[i, j] += 1.0
+
+    with np.errstate(invalid="ignore", divide="ignore"):
+        mean_agreement = np.where(cell_type_count > 0, agreement_sum / cell_type_count, np.nan)
+        full_match_rate = np.where(cell_type_count > 0, full_match_count / cell_type_count, np.nan)
+    scores = np.stack([mean_agreement, full_match_rate], axis=2)
+
+    numeric = {
+        "n_cell_types": tuple(
+            float(cell_type_count[:, di[d]].max()) if d in di else 0.0 for d in dataset_names
+        )
+    }
+    categorical = {
+        feat: tuple(feat_by_dataset.get(d, {}).get(feat, "") for d in dataset_names)
+        for feat in ("source", "tissue", "species")
+    }
+    features = Duo2018Features(
+        dataset_names=dataset_names, numeric=numeric, categorical=categorical
+    )
+
+    return GPTCelltype(
+        method_names=method_names,
+        dataset_names=dataset_names,
+        metric_ids=_GPTCELLTYPE_METRICS,
+        polarity=_GPTCELLTYPE_POLARITY,
+        scores=scores,
+        features=features,
+    )
+
+
 # Cross-benchmark single-cell integration set for the cross-benchmark meta-analysis.
 # Three benchmarks publish reusable per-method scores on the shared scIB metric
 # family (ARI, ASW, kBET, LISI) for an overlapping set of classical integration

@@ -1,0 +1,34 @@
+dataset,source,tissue,species,n_cell_types
+Azimuth_Lung,Azimuth,Lung,human,13
+HCL_CordBlood,HCL,CordBlood,human,8
+HCL_Spleen,HCL,Spleen,human,7
+Literature_Breast,Literature,Breast,human,8
+Literature_Colon_cancer,Literature,Colon cancer,human,6
+Literature_Colorectal_cancer,Literature,Colorectal cancer,human,13
+Literature_Liver,Literature,Liver,human,14
+Literature_Pancreas,Literature,Pancreas,human,17
+Literature_Heart,Literature,Heart,mouse,8
+Single_Cell_Portal_Abdomen,Single Cell Portal,Abdomen,mouse,12
+Single_Cell_Portal_Aorta,Single Cell Portal,Aorta,mouse,10
+Single_Cell_Portal_Brain,Single Cell Portal,Brain,mouse,5
+Single_Cell_Portal_Cerebrospinal_fluid,Single Cell Portal,Cerebrospinal fluid,mouse,6
+Single_Cell_Portal_Colon,Single Cell Portal,Colon,mouse,7
+Single_Cell_Portal_Colon'2,Single Cell Portal,Colon'2,mouse,14
+Single_Cell_Portal_Kidney'2,Single Cell Portal,Kidney'2,mouse,13
+Tabula_Muris_Kidney,Tabula Muris,Kidney,mouse,8
+Tabula_Muris_Liver,Tabula Muris,Liver,mouse,4
+Tabula_Muris_Lung,Tabula Muris,Lung,mouse,15
+Tabula_Muris_Mammary,Tabula Muris,Mammary,mouse,7
+Tabula_Muris_Marrow,Tabula Muris,Marrow,mouse,14
+Tabula_Muris_Spleen,Tabula Muris,Spleen,mouse,5
+Tabula_Muris_Thymus,Tabula Muris,Thymus,mouse,3
+Neocortical_GABAergic,Neocortical,GABAergic,literature,7
+Neocortical_Glutamatergic,Neocortical,Glutamatergic,literature,9
+Azimuth_Bone_Marrow,Azimuth,Bone Marrow,human,8
+Single_Cell_Portal_Venous_blood_T_cell,Single Cell Portal,Venous blood T cell,human,5
+Tabula_Sapiens_Endothelium,Tabula Sapiens,Endothelium,human,11
+Tabula_Sapiens_Germline,Tabula Sapiens,Germline,human,5
+Tabula_Sapiens_Lymphoid,Tabula Sapiens,Lymphoid,human,18
+Tabula_Sapiens_Myeloid,Tabula Sapiens,Myeloid,human,18
+Literature_Neocortical,Literature,Neocortical,mouse,16
+Single_Cell_Portal_Kidney,Single Cell Portal,Kidney,mouse,5

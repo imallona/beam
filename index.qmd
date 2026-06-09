@@ -25,6 +25,7 @@ Each vignette doubles as a CI integration test (rendered on every push):
 - [M4 forecasting](examples/m4/m4.qmd): 25 methods on six frequency bands.
 - [OpenProblems batch integration](examples/openproblems/openproblems.qmd): MCDA contrasted with the platform's own mean-of-scores rule, plus a Bradley-Terry tree on 50 spatial datasets.
 - [Cross-benchmark meta-analysis](examples/cross_benchmark/cross_benchmark.qmd): four single-cell integration benchmarks under one consistent rule.
+- [LLM cell type annotation](examples/cell_type_annotation/cell_type_annotation.qmd): GPT-4 and GPT-3.5 against the classical annotators on the Hou and Ji (2024) benchmark, then a cross-benchmark comparison across four LLM annotation benchmarks (GPTCelltype, DeepCellSeek, AnnDictionary, SOAR).
 
 ## Source
 
