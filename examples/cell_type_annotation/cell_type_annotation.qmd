@@ -362,8 +362,8 @@ from beam.heterogeneity import plackett_luce, plackett_luce_available
 
 if plackett_luce_available():
     pl = plackett_luce(agreement, head, polarity="higher_is_better")
-    print("Plackett-Luce ranking (first to last):", ", ".join(pl.ranking))
-    print("top method:", pl.top_tool)
+    print("Plackett-Luce ranking (first to last):", ", ".join(pl.ranking()))
+    print("top method:", pl.top_tool())
 else:
     print("R with PlackettLuce not available; skipping.")
     print("Provision it with envs/heterogeneity.yml (conda or mamba).")
