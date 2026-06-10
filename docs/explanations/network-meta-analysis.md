@@ -25,3 +25,8 @@ The network meta-analysis and the source-variance decomposition (see [the mixed-
 Call `network_meta_analysis(treatment, study, mean, sd, n)` with five parallel sequences, one entry per study arm. `IntegrationBenchmarks.network_arms()` builds them from the harmonized cross-benchmark set (study = benchmark and dataset, treatment = method, mean and sd and count over the metrics). The report carries the per-treatment effect against the reference with its confidence interval, the P-scores, the ranking, and the heterogeneity and inconsistency statistics.
 
 The fit runs in R's netmeta through a subprocess, so it needs the R toolchain. Check `netmeta_available()` first; the conda environment [envs/heterogeneity.yml](https://github.com/imallona/beam/blob/main/envs/heterogeneity.yml) provides it. The cross-benchmark vignette works this through on the four single-cell integration benchmarks.
+
+## References
+
+- Rucker, G.. Network meta-analysis, electrical networks and graph theory. Research Synthesis Methods (2012). DOI [10.1002/jrsm.1058](https://doi.org/10.1002/jrsm.1058).
+- Rucker, G., Schwarzer, G.. Ranking treatments in frequentist network meta-analysis works without resampling methods. BMC Medical Research Methodology (2015). DOI [10.1186/s12874-015-0060-8](https://doi.org/10.1186/s12874-015-0060-8).

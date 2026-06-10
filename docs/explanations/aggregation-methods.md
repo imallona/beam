@@ -40,8 +40,8 @@ SAW is the right choice when transparency matters and the metrics are on a compa
 
 ## References
 
-- Hwang, C.-L. and Yoon, K. Multiple Attribute Decision Making: Methods and Applications. Springer (1981). The origin of TOPSIS.
+- Hwang, C.-L. and Yoon, K. Multiple Attribute Decision Making: Methods and Applications. Springer (1981). The origin of TOPSIS. DOI [10.1007/978-3-642-48318-9](https://doi.org/10.1007/978-3-642-48318-9).
 - Opricovic, S. Multicriteria optimization of civil engineering systems. Faculty of Civil Engineering, Belgrade (1998).
-- Opricovic, S. and Tzeng, G.-H. Compromise solution by MCDM methods: a comparative analysis of VIKOR and TOPSIS. European Journal of Operational Research (2004).
-- Brans, J.-P. and Vincke, P. A preference ranking organisation method: the PROMETHEE method for multiple criteria decision-making. Management Science (1985).
-- OECD. Handbook on Constructing Composite Indicators (2008), on weighting and aggregation.
+- Opricovic, S. and Tzeng, G.-H. Compromise solution by MCDM methods: a comparative analysis of VIKOR and TOPSIS. European Journal of Operational Research (2004). DOI [10.1016/S0377-2217(03)00020-1](https://doi.org/10.1016/S0377-2217%2803%2900020-1).
+- Brans, J.-P. and Vincke, P. A preference ranking organisation method: the PROMETHEE method for multiple criteria decision-making. Management Science (1985). DOI [10.1287/mnsc.31.6.647](https://doi.org/10.1287/mnsc.31.6.647).
+- OECD. Handbook on Constructing Composite Indicators (2008), on weighting and aggregation. DOI [10.1787/9789264043466-en](https://doi.org/10.1787/9789264043466-en).

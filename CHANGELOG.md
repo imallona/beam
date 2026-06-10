@@ -2,6 +2,14 @@
 
 All notable changes to beam will be documented in this file. The format follows Keep a Changelog (https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- `beam.mcda.specification_curve` and `SpecificationCurveReport`: lists the ranking under every combination of weighting, aggregation and dataset that `rank_sensitivity` already runs, and reports how often the top tool holds, the most common full ordering, and how many tools ever reach the top. The HTML report draws the curve for a tensor input; on Duo the analyst-choice multiverse keeps Seurat first in all 20 combinations while adding the dataset drops it to 49 percent. docs/explanations/specification-curve.md.
+- `beam.blind`, `beam.unblind` and `Seal`: hide method names and shuffle rows for blind analysis, then restore them, with a seal whose fingerprint the run manifest records. The CLI gains `beam blind` and `beam unblind`; the ranking is unchanged by blinding, which constrains the process rather than the result. docs/explanations/analysis-blinding.md, docs/how-to/blind-an-analysis.md.
+- R wrappers `beam_specification_curve`, `beam_blind`, `beam_unblind`, `beam_write_seal`, `beam_read_seal`, and the `beam.io.write_scores` CSV writer the blind CLI round trip uses.
+
 ## [0.2.0] - 2026-06-09
 
 ### Added

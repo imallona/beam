@@ -334,6 +334,60 @@ print(f"  most influential factor: {rs.most_influential_factor}")
 
 The dataset is still the largest single factor, but here it is not the whole story the way it is on M4. The aggregation choice and the dataset-by-choice interaction carry a real share too. With 12 metrics that can disagree, how the metrics are combined moves the order more than it does on the two-metric M4 task. So on batch integration the honest report is both: the ranking depends on which dataset and on how the metrics are pooled, which is the contrast with the OpenProblems mean-of-scores leaderboard the section above draws.
 
+`specification_curve` reads the same grid as a list of rankings. Because the aggregation carries a real share here, the choice-only multiverse is less unanimous than on M4: the top method does not hold in every weighting-by-aggregation combination.
+
+```{python}
+from beam.mcda import specification_curve
+
+curve = specification_curve(rs)
+dom = curve.tool_names[curve.most_frequent_top_tool]
+print(f"choices plus dataset ({curve.n_specifications} combinations): "
+      f"{dom} first in {curve.most_frequent_top_fraction * 100:.0f}%, "
+      f"{curve.n_distinct_top_tools} methods reach the top")
+
+pooled = specification_curve(
+    rank_sensitivity(
+        result.matrix, ctx.polarity,
+        methods=["saw", "topsis", "vikor", "promethee_ii"],
+        normalization=list(ctx.normalization), bounds=list(ctx.bounds),
+        baselines=list(ctx.baselines), targets=list(ctx.targets),
+        missing="worst", tool_names=methods,
+    )
+)
+pdom = pooled.tool_names[pooled.most_frequent_top_tool]
+print(f"choices only ({pooled.n_specifications} combinations): "
+      f"{pdom} first in {pooled.most_frequent_top_fraction * 100:.0f}%")
+
+order = curve.curve_order
+dom_ranks = [curve.specifications[i].ranks[curve.most_frequent_top_tool] for i in order]
+fig, ax = plt.subplots(figsize=(8.0, 3.0))
+ax.plot(range(len(order)), dom_ranks, color="tab:red")
+ax.invert_yaxis()
+ax.set_xlabel("specification (sorted by the top method's rank)")
+ax.set_ylabel(f"rank of {dom}")
+ax.set_title("Specification curve on OpenProblems batch integration")
+fig.tight_layout()
+plt.show()
+```
+
+## Blind analysis
+
+A blind analysis fixes the weighting, the aggregation and the metric set before the method names are revealed. `beam.blind` hides the names and shuffles the rows; `beam.unblind` restores them. The order does not change, and the seal fingerprint goes into the manifest.
+
+```{python}
+from beam import blind, unblind
+
+blinded, seal = blind(scores, seed=0)
+blind_run = beam.rank(blinded, weights="equal", method="topsis", seed=0, sensitivity=False)
+restored = unblind(blind_run, seal)
+named = beam.rank(scores, weights="equal", method="topsis", seed=0, sensitivity=False)
+print("ranking identical after unblinding:",
+      dict(zip(named.tool_names, named.result.ranks))
+      == dict(zip(restored.tool_names, restored.result.ranks)))
+print("top method after unblinding:", restored.top_tool)
+print("blinding fingerprint:", blind_run.manifest["blinding"]["seal_sha256"][:12])
+```
+
 ## Pairwise superiority on ARI
 
 `pairwise_superiority` compares the methods two at a time on ARI across the six datasets, with the ARI noise floor as the equivalence band. It reports how often one method outperforms another, the effect size next to the significance the mixed-effects intervals give.

@@ -87,6 +87,45 @@ legend("topright", legend = c("biological group", "batch group", "Kaiser cutoff 
        bty = "n")
 ```
 
+## Specification curve and blind analysis
+
+The diagnostics above read the metrics. The MCDA-side specification curve reads the methods: every weighting, aggregation and dataset, with how often the top method holds. COMET is left out because it is slow on a metric-rich task.
+
+```{r spec-curve}
+mcda <- reticulate::import("beam.mcda")
+method_names <- unlist(op$method_names)
+ctx <- mcda$registry_context(as.list(metrics), "saw")
+rs <- beam_rank_sensitivity(
+  tensor, ctx$polarity,
+  methods = list("saw", "topsis", "vikor", "promethee_ii"),
+  normalization = ctx$normalization, bounds = ctx$bounds,
+  baselines = ctx$baselines, targets = ctx$targets,
+  missing = "worst", tool_names = method_names, dataset_names = op$dataset_names
+)
+curve <- beam_specification_curve(rs)
+top <- curve$tool_names[[curve$most_frequent_top_tool + 1]]
+cat(sprintf("specification curve: %s ranks first in %.0f%% of %d combinations, %d reach the top\n",
+            top, 100 * curve$most_frequent_top_fraction,
+            curve$n_specifications, curve$n_distinct_top_tools))
+```
+
+A blind analysis fixes the weighting and the metric set before the method names are seen. `beam_blind` hides the names; `beam_unblind` restores them; the ranking does not change.
+
+```{r blind}
+beam <- reticulate::import("beam")
+scores <- beam$Scores(values = tensor,
+                      tool_names = reticulate::tuple(as.list(method_names)),
+                      metric_ids = reticulate::tuple(as.list(metrics)),
+                      dataset_names = op$dataset_names, layout = "long")
+bl <- beam_blind(scores, seed = 0L)
+run <- beam_rank(bl$scores, weights = "equal", method = "topsis",
+                 missing = "worst", sensitivity = FALSE, seed = 0L)
+restored <- beam_unblind(run, bl$seal)
+cat("top method after unblinding:", restored$top_tool, "\n")
+cat("blinding fingerprint:",
+    substr(run$manifest[["blinding"]][["seal_sha256"]], 1, 12), "\n")
+```
+
 ## Reading
 
 Reliability and dimensionality dissociate on this data. The biological group has the higher alpha (0.85) but carries two factors by parallel analysis, so its alpha is partly the size of the group rather than one underlying quantity. The batch group has the lower alpha (0.61) but is a single factor its metrics track only weakly. A group can be reliable without being one thing, and one thing without being reliable, which is why the checks read together. See `?beam_metric_validity`, `?beam_metric_reliability`, `?beam_metric_dimensionality`.

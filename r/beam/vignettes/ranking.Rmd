@@ -141,6 +141,32 @@ cat("most influential factor:", rs$most_influential_factor, "\n")
 
 The dataset carries the most, close to the dataset variance share the mixed-effects model reads in the heterogeneity vignette, by a different method. This is not in tension with the stable leave-one-dataset-out result above: that asks whether the pooled order survives dropping one dataset, and it does, because pooling averages over the per-dataset disagreement. The dataset share measures that disagreement directly.
 
+## Specification curve
+
+`beam_specification_curve` reads the same grid as a list of rankings and reports how often the top method holds. It takes the report from `beam_rank_sensitivity`.
+
+```{r specification-curve}
+curve <- beam_specification_curve(rs)
+top <- curve$tool_names[[curve$most_frequent_top_tool + 1]]
+cat(sprintf("%d specifications; %s ranks first in %.0f%%, %d method(s) reach the top\n",
+            curve$n_specifications, top, 100 * curve$most_frequent_top_fraction,
+            curve$n_distinct_top_tools))
+```
+
+## Blind analysis
+
+A blind analysis fixes the weighting, the aggregation and the metric set before the method names are revealed. `beam_blind` hides the names and shuffles the rows; `beam_unblind` restores them. The ranking does not change, and the seal fingerprint is recorded in the manifest.
+
+```{r blinding}
+blinded <- beam_blind(scores, seed = 0L)
+blind_run <- beam_rank(blinded$scores, weights = "equal", method = "saw",
+                       sensitivity = FALSE, seed = 0L)
+restored <- beam_unblind(blind_run, blinded$seal)
+cat("top method after unblinding:", restored$top_tool, "\n")
+cat("blinding fingerprint:",
+    substr(blind_run$manifest[["blinding"]][["seal_sha256"]], 1, 12), "\n")
+```
+
 ## Are the methods separable? Critical difference
 
 The composite gives one ranking but does not say whether the methods differ beyond chance. `beam_critical_difference` runs the Friedman test and the Nemenyi post-hoc on the ARI block of methods observed on every dataset. Two methods whose average ranks lie within the critical difference are not separable.

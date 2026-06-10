@@ -39,3 +39,7 @@ beam does not fill by default and does not fill in silence. A missing value is o
 ## See also
 
 - [Normalization and scales](normalization-and-scales.md) explains the per-column normalization the policy acts on.
+
+## References
+
+- Skillings, J. H., Mack, G. A.. On the use of a Friedman-type statistic in balanced and unbalanced block designs. Technometrics (1981). DOI [10.1080/00401706.1981.10486261](https://doi.org/10.1080/00401706.1981.10486261).

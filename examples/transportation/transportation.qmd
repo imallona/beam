@@ -413,6 +413,45 @@ water_run = beam.rank(water, weights="equal", method="saw")
 funky_heatmap_from_run(water_run, title="Transport water block: scores and rank robustness")
 ```
 
+`specification_curve` lists the rankings the water block produces under every weighting, aggregation and terrain. The two terrains order the modes differently, so the top mode does not hold across the grid: it is the same instability the leave-one-dataset-out section reports, read as a list of rankings.
+
+```{python}
+from beam.mcda import rank_sensitivity, specification_curve
+
+ctx = water_run.context
+rs = rank_sensitivity(
+    water.values,
+    ctx.polarity,
+    normalization=list(ctx.normalization),
+    bounds=list(ctx.bounds),
+    baselines=list(ctx.baselines),
+    targets=list(ctx.targets),
+    missing="worst",
+    tool_names=water_modes,
+    dataset_names=water_terrains,
+)
+curve = specification_curve(rs)
+dom = curve.tool_names[curve.most_frequent_top_tool]
+print(f"{curve.n_specifications} specifications; {dom} first in "
+      f"{curve.most_frequent_top_fraction * 100:.0f}%, "
+      f"{curve.n_distinct_top_tools} modes reach the top")
+```
+
+A blind analysis hides the mode names before the pipeline is fixed. `beam.blind` relabels and shuffles the rows; `beam.unblind` restores them. The order does not change.
+
+```{python}
+from beam import blind, unblind
+
+blinded, seal = blind(water, seed=0)
+blind_run = beam.rank(blinded, weights="equal", method="saw", seed=0, sensitivity=False)
+restored = unblind(blind_run, seal)
+named = beam.rank(water, weights="equal", method="saw", seed=0, sensitivity=False)
+print("ranking identical after unblinding:",
+      dict(zip(named.tool_names, named.result.ranks))
+      == dict(zip(restored.tool_names, restored.result.ranks)))
+print("blinding fingerprint:", blind_run.manifest["blinding"]["seal_sha256"][:12])
+```
+
 ## Heterogeneity: the interaction dominates here
 
 The mixed-effects model puts a number on what the per-terrain sections show. Fit on speed, with the mode as a fixed effect and the terrain as a random intercept, it splits the speed variance into a between-terrain shift and the rest. The fit needs R's lme4, so the chunk runs only when it is available.

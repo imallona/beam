@@ -125,4 +125,43 @@ barplot(w[ord], names.arg = gpt_methods[ord], horiz = TRUE, las = 1, col = "slat
 
 Even at 36 datasets the parameter-stability test finds no split, so the tree reduces to one global ranking. GPT-4 takes almost all of the Bradley-Terry worth, and the ranking does not reverse on any tissue, source, or normal-versus-cancer subgroup. The dataset still carries a sizable share of the agreement variance (the ICC above), so the per-dataset order varies while the pooled order holds.
 
-See `?beam_mixed_effects`, `?beam_bradley_terry_tree`, `?beam_plackett_luce`.
+## Specification curve and blind analysis
+
+The heterogeneity models read the per-dataset variation directly. The MCDA-side specification curve reads the same benchmark from the choice side: every weighting, aggregation and dataset, with how often the top method holds. Here it runs on the Duo ARI, runtime and Shannon entropy difference.
+
+```{r spec-curve}
+mcda <- reticulate::import("beam.mcda")
+metrics3 <- c("ari", "runtime", "shannon_entropy_diff")
+ctx <- mcda$registry_context(as.list(metrics3), "saw")
+rs <- beam_rank_sensitivity(duo$tensor(metrics3), ctx$polarity,
+                            normalization = ctx$normalization, bounds = ctx$bounds,
+                            baselines = ctx$baselines, targets = ctx$targets,
+                            missing = "worst", tool_names = method_names,
+                            dataset_names = dataset_names)
+curve <- beam_specification_curve(rs)
+top <- curve$tool_names[[curve$most_frequent_top_tool + 1]]
+cat(sprintf("specification curve: %s ranks first in %.0f%% of %d combinations, %d reach the top\n",
+            top, 100 * curve$most_frequent_top_fraction,
+            curve$n_specifications, curve$n_distinct_top_tools))
+```
+
+Blinding fixes the analysis before the method names are seen, which applies to the heterogeneity models above as much as to the ranking. `beam_blind` hides the names; `beam_unblind` restores them; the result does not change.
+
+```{r blind}
+beam <- reticulate::import("beam")
+scores <- beam$Scores(values = duo$tensor(metrics3),
+                      tool_names = reticulate::tuple(as.list(method_names)),
+                      metric_ids = reticulate::tuple(as.list(metrics3)),
+                      dataset_names = reticulate::tuple(as.list(dataset_names)),
+                      layout = "long")
+bl <- beam_blind(scores, seed = 0L)
+run <- beam_rank(bl$scores, weights = "equal", method = "saw",
+                 missing = "worst", sensitivity = FALSE, seed = 0L)
+restored <- beam_unblind(run, bl$seal)
+cat("top method after unblinding:", restored$top_tool, "\n")
+cat("blinding fingerprint:",
+    substr(run$manifest[["blinding"]][["seal_sha256"]], 1, 12), "\n")
+```
+
+See `?beam_mixed_effects`, `?beam_bradley_terry_tree`, `?beam_plackett_luce`,
+`?beam_specification_curve`, `?beam_blind`.

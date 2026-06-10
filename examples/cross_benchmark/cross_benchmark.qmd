@@ -274,6 +274,47 @@ for bench in BENCH:
 
 OpenProblems is the most fragile of the three: a 0.11 absolute change to the ASW weight (out of 0.25 equal-weighted baseline) flips fastMNN to harmony. Tran's harmony lead needs a 0.24 ASW shift before LIGER takes top. scIB's fastMNN lead is the most stable: a 0.90 shift on LISI is needed before LIGER takes top, well past the [0, 1] feasible range and so practically out of reach. Each benchmark sits at a different point on the fragility axis, even though the analysis rule is the same.
 
+## Specification curve per benchmark
+
+The fragility delta is one number per benchmark. The specification curve lists the whole multiverse of analyst choices: every weighting by every aggregation on the mean-rank matrix. `rank_sensitivity` runs the grid and `specification_curve` reports how often the top method holds. The benchmarks differ here too: on Tran and scIB the top method holds across all 20 combinations, while on OpenProblems it does not.
+
+```{python}
+from beam.mcda import rank_sensitivity, specification_curve
+
+print("specification curve per benchmark (weighting x aggregation on the mean-rank matrix):")
+for bench in BENCH:
+    _, _, matrix = ib.method_metric_matrix(bench)
+    curve = specification_curve(rank_sensitivity(matrix, polarity, tool_names=CANON))
+    dom = curve.tool_names[curve.most_frequent_top_tool]
+    print(f"  {bench:12s} {dom:10s} first in {curve.most_frequent_top_fraction * 100:3.0f}% of "
+          f"{curve.n_specifications} combinations, {curve.n_distinct_top_tools} method(s) reach the top")
+```
+
+## Blind analysis
+
+A blind analysis fixes the weighting and the aggregation before the method names are revealed, so the choices cannot be tuned toward a method known to lead. These benchmarks rank on the mean-rank scale rather than through metric cards, so the demonstration uses the low-level `beam.mcda.run` with explicit polarity. `beam.blind` relabels and shuffles the rows; the seal maps the labels back. The order is the same once unblinded.
+
+```{python}
+from beam import blind
+from beam.mcda import run as mcda_run
+
+_, metrics_b, matrix = ib.method_metric_matrix("Tran")
+scores = beam.Scores(
+    values=matrix, tool_names=tuple(CANON), metric_ids=tuple(metrics_b),
+    dataset_names=None, layout="wide",
+)
+blinded, seal = blind(scores, seed=0)
+
+named = mcda_run(scores.values, polarity, weights="equal", method="saw")
+blind_res = mcda_run(blinded.values, polarity, weights="equal", method="saw")
+order_named = [scores.tool_names[i] for i in named.ranks.argsort()]
+order_unblinded = [seal.true_name(blinded.tool_names[i]) for i in blind_res.ranks.argsort()]
+print("blinded labels:", blinded.tool_names)
+print("order, named:     ", order_named)
+print("order, unblinded: ", order_unblinded)
+print("same order after unblinding:", order_named == order_unblinded)
+```
+
 ## Limits
 
 The published-rank chart and the within-five-methods Spearman comparison are computed on the first three benchmarks because Tyler does not publish an overall ranking (its paper is a methodological critique, not a recommendation). The variance decomposition pools all four sources. Numbers stay indicative, not precise: a Spearman over five methods is coarse, four benchmarks is still few for a sharp method-by-benchmark variance estimate, and the reported rankings are reconstructed (Tran's final rank directly, scIB's 0.6/0.4 overall and OpenProblems' mean score recomputed). For the pooled comparison the benchmarks also use mostly different datasets, so part of that disagreement is genuine data variability, not the benchmarker; the human pancreas section removes that confound on the one block where it can be removed. With those caveats, standardizing the decision making with beam removes part of the apparent disagreement between these benchmarks, but it does not close it: the network meta-analysis finds a significant residual inconsistency even under the shared rule. Harmonizing the analysis narrows the gap rather than erasing it.

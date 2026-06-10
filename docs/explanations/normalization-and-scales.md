@@ -53,7 +53,7 @@ The `beam.scenarios` module ships two cases that make the failure concrete. In t
 
 ## References
 
-- Stevens, S. S. On the theory of scales of measurement. Science (1946).
-- Smith, J. E. Characterizing computer performance with a single number. Communications of the ACM (1988).
-- OECD. Handbook on Constructing Composite Indicators (2008), on the choice of normalization method.
-- Van Calster, B., McLernon, D. J., van Smeden, M., Wynants, L., Steyerberg, E. W. Calibration: the Achilles heel of predictive analytics. BMC Medicine (2019), on the calibration slope and its ideal value of 1.
+- Stevens, S. S. On the theory of scales of measurement. Science (1946). DOI [10.1126/science.103.2684.677](https://doi.org/10.1126/science.103.2684.677).
+- Smith, J. E. Characterizing computer performance with a single number. Communications of the ACM (1988). DOI [10.1145/63039.63043](https://doi.org/10.1145/63039.63043).
+- OECD. Handbook on Constructing Composite Indicators (2008), on the choice of normalization method. DOI [10.1787/9789264043466-en](https://doi.org/10.1787/9789264043466-en).
+- Van Calster, B., McLernon, D. J., van Smeden, M., Wynants, L., Steyerberg, E. W. Calibration: the Achilles heel of predictive analytics. BMC Medicine (2019), on the calibration slope and its ideal value of 1. DOI [10.1186/s12916-019-1466-7](https://doi.org/10.1186/s12916-019-1466-7).

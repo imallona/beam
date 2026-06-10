@@ -437,21 +437,46 @@ for finding in flagged.violations:
 The canonical scenarios are single-dataset, so `rank_sensitivity` runs in its two-factor mode: it varies the weighting and the aggregation, and the dataset factor is absent. The constructed scenarios give it a known answer to recover. In the dominant scenario one method scores highest on every metric, so it is rank 1 in every combination and its rank variance is zero, whatever the weighting or aggregation. In the random scenario the two metrics trade off, so the order depends on the choice.
 
 ```{python}
-from beam.mcda import rank_sensitivity
+from beam.mcda import rank_sensitivity, specification_curve
 
 for name in ["dominant", "random"]:
     s = scenarios_by_name[name]
     pol = [p.polarity for p in properties_for(list(s.metric_ids))]
     rs = rank_sensitivity(s.scores, pol, tool_names=s.method_names)
-    top = s.method_names[rs.headline_tool]
+    curve = specification_curve(rs)
+    top = curve.tool_names[curve.most_frequent_top_tool]
     print(f"{name:9s}: dataset_share={rs.dataset_share}  "
           f"weighting={rs.weighting_share:.2f}  aggregation={rs.aggregation_share:.2f}  "
           f"interaction={rs.interaction_share:.2f}")
-    print(f"           top method {top} ranks first in {rs.headline_top_fraction * 100:.0f}% "
-          f"of combinations, rank span {rs.headline_rank_span}")
+    print(f"           {curve.n_specifications} specifications; top method {top} "
+          f"first in {curve.most_frequent_top_fraction * 100:.0f}%, "
+          f"{curve.n_distinct_top_tools} method(s) reach the top")
 ```
 
-The dominant scenario's top method has a rank span of zero and is rank 1 in every combination, as built: with no dataset axis and a method that scores highest everywhere, no modeling choice can move it. In the random scenario the top method's rank moves with the choice, and the variance falls on the weighting and aggregation rather than on any data, because there is no data axis to carry it.
+The dominant scenario's top method has a rank span of zero and is rank 1 in every combination, as built: with no dataset axis and a method that scores highest everywhere, no modeling choice can move it, so `specification_curve` reports it first in 100 percent of the specifications and only one method reaching the top. In the random scenario the top method's rank moves with the choice, the most-frequent-top fraction drops below 100 percent, and more than one method reaches the top, because the two metrics trade off and there is no data axis to carry the variance.
+
+A blind analysis fixes the weighting and the aggregation before the method names are known. `beam.blind` hides the names; `beam.unblind` restores them. The order is unchanged.
+
+```{python}
+from beam import blind, unblind
+
+s = scenarios_by_name["random"]
+scenario_scores = beam.Scores(
+    values=s.scores,
+    tool_names=tuple(s.method_names),
+    metric_ids=tuple(s.metric_ids),
+    dataset_names=None,
+    layout="wide",
+)
+blinded, seal = blind(scenario_scores, seed=0)
+blind_run = beam.rank(blinded, weights="equal", method="saw", seed=0, sensitivity=False)
+restored = unblind(blind_run, seal)
+named = beam.rank(scenario_scores, weights="equal", method="saw", seed=0, sensitivity=False)
+print("ranking identical after unblinding:",
+      dict(zip(named.tool_names, named.result.ranks))
+      == dict(zip(restored.tool_names, restored.result.ranks)))
+print("blinding fingerprint:", blind_run.manifest["blinding"]["seal_sha256"][:12])
+```
 
 ## A cross-domain example: transportation
 

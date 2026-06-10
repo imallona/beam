@@ -124,6 +124,18 @@ the weighting choice ({{ rank_sensitivity.weighting_pct }} percent), the aggrega
   <tr><td>{{ row.dataset }}</td><td>{{ row.rank }}</td></tr>
   {% endfor %}
 </table>
+{% if rank_sensitivity.spec_curve_figure %}
+<h3>Specification curve</h3>
+<p>Each of the {{ rank_sensitivity.n_combinations }} combinations of weighting, aggregation and
+dataset is one specification. The method that ranks first most often
+(<code>{{ rank_sensitivity.headline_tool }}</code>) ranks first in
+{{ rank_sensitivity.top_first_pct }} percent of them. The single most common ordering of all tools
+holds in {{ rank_sensitivity.modal_order_pct }} percent of specifications, and
+{{ rank_sensitivity.n_distinct_top }} distinct tool(s) rank first in at least one specification.
+The curve below plots that method's rank across the specifications, sorted from its best rank to
+its worst; the panel beneath marks which choices each specification used.</p>
+<img src="data:image/png;base64,{{ rank_sensitivity.spec_curve_figure }}" alt="specification curve"/>
+{% endif %}
 {% endif %}
 {% if perturbation %}
 <h3>Smallest weight perturbation</h3>

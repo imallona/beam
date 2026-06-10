@@ -358,6 +358,83 @@ beam.report(run, "duo2018_report.html", ground_truth_tool="Seurat")
 print("wrote duo2018_report.html")
 ```
 
+## Specification curve: every choice at once
+
+`rank_sensitivity` runs every combination of the weighting, the aggregation and the dataset, and splits the rank variance between them. `specification_curve` reads the same grid and lists the rankings, then reports how often the top method holds. The choice-only grid (weighting by aggregation, on the pooled matrix) and the choice-plus-data grid (the dataset joins it) answer different questions: the first asks whether the recommendation survives the modeling choices, the second whether it survives a change of dataset.
+
+```{python}
+from beam.mcda import rank_sensitivity, specification_curve
+
+rs = rank_sensitivity(
+    scores.values,
+    run.context.polarity,
+    normalization=list(run.context.normalization),
+    bounds=list(run.context.bounds),
+    baselines=list(run.context.baselines),
+    targets=list(run.context.targets),
+    missing="worst",
+    tool_names=duo.method_names,
+    dataset_names=duo.dataset_names,
+)
+curve = specification_curve(rs)
+dom = curve.tool_names[curve.most_frequent_top_tool]
+print(f"specifications (weighting x aggregation x dataset): {curve.n_specifications}")
+print(f"{dom} ranks first in {curve.most_frequent_top_fraction * 100:.0f}% of them")
+print(f"distinct methods reaching the top: {curve.n_distinct_top_tools}")
+
+pooled = rank_sensitivity(
+    run.matrix,
+    run.context.polarity,
+    normalization=list(run.context.normalization),
+    bounds=list(run.context.bounds),
+    baselines=list(run.context.baselines),
+    targets=list(run.context.targets),
+    tool_names=duo.method_names,
+)
+pooled_curve = specification_curve(pooled)
+pdom = pooled_curve.tool_names[pooled_curve.most_frequent_top_tool]
+print(
+    f"choices only ({pooled_curve.n_specifications} combinations): "
+    f"{pdom} first in {pooled_curve.most_frequent_top_fraction * 100:.0f}%"
+)
+```
+
+The pooled grid keeps Seurat first in every weighting-by-aggregation combination, so the top is robust to the modeling choice. Adding the twelve datasets drops the fraction, since dropping to a single dataset is where the order moves. The curve below plots the top method's rank across the full grid, sorted from its best rank to its worst.
+
+```{python}
+order = curve.curve_order
+dom_ranks = [curve.specifications[i].ranks[curve.most_frequent_top_tool] for i in order]
+fig, ax = plt.subplots(figsize=(8.0, 3.0))
+ax.plot(range(len(order)), dom_ranks, color="tab:red")
+ax.invert_yaxis()
+ax.set_xlabel("specification (sorted by the top method's rank)")
+ax.set_ylabel(f"rank of {dom}")
+ax.set_title("Specification curve on Duo 2018 (weighting x aggregation x dataset)")
+fig.tight_layout()
+plt.show()
+```
+
+## Blind analysis: fix the pipeline before seeing the names
+
+A benchmarker who can see which method is which while choosing the weighting and the metric set has room to tune the choices toward a method they expect to lead. `beam.blind` hides the method names and shuffles the rows under a seed, so the pipeline is fixed on opaque labels; `beam.unblind` restores the names afterward. The ranking does not change, because beam ranks on the score values and unblinding only renames the rows. What blinding adds is a record: the seal fingerprint goes into the run manifest.
+
+```{python}
+from beam import blind, unblind
+
+blinded, seal = blind(scores, seed=0)
+print("blinded labels:", blinded.tool_names[:3], "...")
+
+blind_run = beam.rank(blinded, weights="equal", method="saw", seed=0, sensitivity=False)
+restored = unblind(blind_run, seal)
+named_run = beam.rank(scores, weights="equal", method="saw", seed=0, sensitivity=False)
+
+named = dict(zip(named_run.tool_names, named_run.result.ranks))
+unblinded = dict(zip(restored.tool_names, restored.result.ranks))
+print("ranking identical after unblinding:", named == unblinded)
+print("top method after unblinding:", restored.top_tool)
+print("blinding fingerprint in manifest:", blind_run.manifest["blinding"]["seal_sha256"][:12])
+```
+
 ## Heterogeneity: where does the ARI variance live
 
 Leave-one-dataset-out asks whether the pooled ranking hangs on any single dataset. A mixed-effects model asks a different question: how much of the score variation is a stable method effect and how much is the method-by-dataset interaction that a single ranking hides. `beam.heterogeneity.mixed_effects` fits `score ~ method + (1 | dataset)` on one metric in R's lme4, with the method as a fixed effect and the dataset as a random intercept that absorbs how easy or hard each dataset is for every method alike. The fit needs the R toolchain, so the section below runs only when it is available.

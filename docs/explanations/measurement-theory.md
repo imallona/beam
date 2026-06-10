@@ -26,5 +26,5 @@ If a metric card hides its scale, beam cannot tell whether the chosen aggregatio
 
 ## Reading
 
-- Stevens, S. S. (1946). On the theory of scales of measurement. Science, 103(2684), 677-680.
-- Velleman, P. F., and Wilkinson, L. (1993). Nominal, ordinal, interval, and ratio typologies are misleading. The American Statistician, 47(1), 65-72.
+- Stevens, S. S. (1946). On the theory of scales of measurement. Science, 103(2684), 677-680. DOI [10.1126/science.103.2684.677](https://doi.org/10.1126/science.103.2684.677).
+- Velleman, P. F., and Wilkinson, L. (1993). Nominal, ordinal, interval, and ratio typologies are misleading. The American Statistician, 47(1), 65-72. DOI [10.1080/00031305.1993.10475938](https://doi.org/10.1080/00031305.1993.10475938).

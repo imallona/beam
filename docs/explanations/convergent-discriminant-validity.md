@@ -31,3 +31,7 @@ The result is descriptive of the methods and datasets in the input. A small benc
 ## How to read it on real data
 
 On the OpenProblems batch integration scores, the bio/batch grouping is supported but weak: mean within-group correlation 0.38 against mean between-group correlation 0.30. The biological metrics agree more among themselves (0.45) than the batch metrics do (0.24), and `graph_connectivity`, a batch metric, correlates more with the biological group than with its own. The reading is that the two axes are separable rather than cleanly distinct, so the 0.6/0.4 weighting is a softer modelling choice than a split of two independent things.
+
+## References
+
+- Campbell, D. T., Fiske, D. W.. Convergent and discriminant validation by the multitrait-multimethod matrix. Psychological Bulletin (1959). DOI [10.1037/h0046016](https://doi.org/10.1037/h0046016).

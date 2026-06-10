@@ -201,7 +201,9 @@ def _rank_sensitivity_section(result: RunResult) -> dict[str, Any] | None:
     most influential factor, and the headline tool's mean rank per dataset, or
     ``None`` when the input is single-dataset or the decomposition cannot run.
     """
-    from beam.mcda import rank_sensitivity
+    from beam.mcda import rank_sensitivity, specification_curve
+
+    from . import figures
 
     scores = result.scores
     if not scores.is_tensor or scores.dataset_names is None or scores.values.shape[1] < 2:
@@ -231,7 +233,9 @@ def _rank_sensitivity_section(result: RunResult) -> dict[str, Any] | None:
         {"dataset": name, "rank": f"{rank:.1f}"}
         for name, rank in zip(report.dataset_names, report.headline_rank_by_dataset, strict=True)
     ]
-    return {
+
+    curve = specification_curve(report)
+    section = {
         "weighting_pct": _pct(report.weighting_share),
         "aggregation_pct": _pct(report.aggregation_share),
         "dataset_pct": _pct(report.dataset_share),
@@ -243,7 +247,12 @@ def _rank_sensitivity_section(result: RunResult) -> dict[str, Any] | None:
         "headline_rank_span": report.headline_rank_span,
         "headline_by_dataset": by_dataset,
         "dropped_weightings": list(report.dropped_weightings),
+        "spec_curve_figure": figures.specification_curve_figure(curve),
+        "top_first_pct": _pct(curve.most_frequent_top_fraction),
+        "modal_order_pct": _pct(curve.modal_order_fraction),
+        "n_distinct_top": curve.n_distinct_top_tools,
     }
+    return section
 
 
 def _funky_heatmap_figure(

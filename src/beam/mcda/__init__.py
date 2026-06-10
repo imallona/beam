@@ -66,6 +66,11 @@ from .skillings_mack import (
     skillings_mack,
 )
 from .smaa import SMAAReport, smaa
+from .specification_curve import (
+    Specification,
+    SpecificationCurveReport,
+    specification_curve,
+)
 from .topsis import topsis
 from .validate import IncompatibleScaleError, validate_for_aggregation
 from .vikor import vikor
@@ -107,6 +112,8 @@ __all__ = [
     "SMAAReport",
     "SensitivityReport",
     "SkillingsMackReport",
+    "Specification",
+    "SpecificationCurveReport",
     "ToolRankSensitivity",
     "WeightPerturbationReport",
     "aggregate_across_datasets",
@@ -143,6 +150,7 @@ __all__ = [
     "skillings_mack",
     "smaa",
     "smallest_weight_perturbation",
+    "specification_curve",
     "standard_deviation_weights",
     "topsis",
     "validate_for_aggregation",

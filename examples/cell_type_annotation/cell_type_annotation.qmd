@@ -340,6 +340,48 @@ print(f"top method rank stability under leave-one-dataset-out: {lodo.rank_stabil
 print(f"most influential dataset: {block_datasets[lodo.most_influential_dataset]}")
 ```
 
+`specification_curve` lists the rankings the grid produces. The choice-only multiverse (weighting by aggregation on the pooled matrix) shows whether GPT-4 holds the top across the modeling choices; the full grid adds the dataset.
+
+```{python}
+from beam.mcda import specification_curve
+
+curve = specification_curve(rs)
+dom = curve.tool_names[curve.most_frequent_top_tool]
+print(f"choices plus dataset ({curve.n_specifications} combinations): "
+      f"{dom} first in {curve.most_frequent_top_fraction * 100:.0f}%, "
+      f"{curve.n_distinct_top_tools} methods reach the top")
+
+pooled = specification_curve(
+    rank_sensitivity(
+        run.matrix, ctx.polarity,
+        normalization=list(ctx.normalization), bounds=list(ctx.bounds),
+        baselines=list(ctx.baselines), targets=list(ctx.targets),
+        tool_names=head,
+    )
+)
+pdom = pooled.tool_names[pooled.most_frequent_top_tool]
+print(f"choices only ({pooled.n_specifications} combinations): "
+      f"{pdom} first in {pooled.most_frequent_top_fraction * 100:.0f}%")
+```
+
+## Blind analysis
+
+A blind analysis fixes the pipeline before the method names are known. This matters here, where one method (GPT-4) is the one under test: blinding removes the chance to tune the weighting toward it. `beam.blind` hides the names and shuffles the rows; `beam.unblind` restores them. The ranking is unchanged, and the seal fingerprint is recorded in the manifest.
+
+```{python}
+from beam import blind, unblind
+
+blinded, seal = blind(block_scores, seed=0)
+blind_run = beam.rank(blinded, weights="equal", method="saw", seed=0, sensitivity=False)
+restored = unblind(blind_run, seal)
+named = beam.rank(block_scores, weights="equal", method="saw", seed=0, sensitivity=False)
+print("ranking identical after unblinding:",
+      dict(zip(named.tool_names, named.result.ranks))
+      == dict(zip(restored.tool_names, restored.result.ranks)))
+print("top method after unblinding:", restored.top_tool)
+print("blinding fingerprint:", blind_run.manifest["blinding"]["seal_sha256"][:12])
+```
+
 ## Dataset weight, made concrete: equal versus cell-weighted pooling
 
 beam weights each dataset equally by default. The paper's per-cell-type accuracy weights a dataset by how many cell types it has. The dataset accounts for almost all of the variance, so the dataset weight changes the magnitudes. Here it does not change the top rank. It is a choice the reader should see rather than one beam makes silently.
@@ -496,7 +538,7 @@ print("wrote cell_type_annotation_report.html")
 
 ## Cross-benchmark: do the LLM annotation benchmarks agree?
 
-Three more recent benchmarks score LLMs at cell type annotation: DeepCellSeek (Briefings in Bioinformatics 2025), AnnDictionary (Nature Communications 2025) and Single-Cell Omics Arena (SOAR, arXiv 2412.02915). They use different models, datasets and metrics, so they cannot be pooled on a shared score. The common currency is the within-benchmark rank of the methods each benchmark has in common with the others. The three classical tools (CellMarker2.0, SingleR, ScType) connect GPTCelltype, DeepCellSeek and SOAR; GPT-4o connects DeepCellSeek, AnnDictionary and SOAR. The provenance and license of each bundled table are in `src/beam/data/`; DeepCellSeek and SOAR scores come from a pinned source, and the SOAR and AnnDictionary folders carry a note on their license status.
+Three more recent benchmarks score LLMs at cell type annotation: DeepCellSeek (Briefings in Bioinformatics 2025, [10.1093/bib/bbaf677](https://doi.org/10.1093/bib/bbaf677)), AnnDictionary (Nature Communications 2025, [10.1038/s41467-025-64511-x](https://doi.org/10.1038/s41467-025-64511-x)) and Single-Cell Omics Arena (SOAR, [arXiv:2412.02915](https://arxiv.org/abs/2412.02915)). They use different models, datasets and metrics, so they cannot be pooled on a shared score. The common currency is the within-benchmark rank of the methods each benchmark has in common with the others. The three classical tools (CellMarker2.0, SingleR, ScType) connect GPTCelltype, DeepCellSeek and SOAR; GPT-4o connects DeepCellSeek, AnnDictionary and SOAR. The provenance and license of each bundled table are in `src/beam/data/`; DeepCellSeek and SOAR scores come from a pinned source, and the SOAR and AnnDictionary folders carry a note on their license status.
 
 ```{python}
 import csv

@@ -141,6 +141,8 @@ def build_manifest(
         },
         "software": _software_fingerprint(),
     }
+    if scores.blinding_sha256 is not None:
+        manifest["blinding"] = {"blinded": True, "seal_sha256": scores.blinding_sha256}
     return manifest
 
 

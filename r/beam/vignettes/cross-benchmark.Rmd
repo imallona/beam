@@ -16,7 +16,7 @@ have_netmeta <- have_beam && requireNamespace("netmeta", quietly = TRUE) &&
 knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>")
 ```
 
-Single-cell data-integration benchmarks reach different conclusions about which method to use. This vignette asks where the disagreement comes from: the methods, the datasets, or the benchmarker's own analysis choices. beam harmonizes five benchmarks, all bundled with the package. Four of them score on the shared scIB metric family (ARI, ASW, kBET, LISI) for the five classical methods. The fifth, BatchBench (Chazarra-Gil et al. 2021, with the scores provided by the author), uses its own batch and cell-type entropy and enters on the within-benchmark rank scale. The R functions forward to the Python `beam` core; install it once with `install_beam_python()`.
+Single-cell data-integration benchmarks reach different conclusions about which method to use. This vignette asks where the disagreement comes from: the methods, the datasets, or the benchmarker's own analysis choices. beam harmonizes five benchmarks, all bundled with the package. Four of them score on the shared scIB metric family (ARI, ASW, kBET, LISI) for the five classical methods. The fifth, BatchBench (Chazarra-Gil et al. 2021, [10.1093/nar/gkab004](https://doi.org/10.1093/nar/gkab004), with the scores provided by the author), uses its own batch and cell-type entropy and enters on the within-benchmark rank scale. The R functions forward to the Python `beam` core; install it once with `install_beam_python()`.
 
 ```{r libs}
 library(rbeam)
@@ -184,6 +184,43 @@ barplot(mat, beside = TRUE, names.arg = pc_methods, col = c("steelblue", "darkor
 ```
 
 Both pipelines agree on the leader on the shared data, but the rest of the order disagrees more than the pooled Spearman would predict. The disagreement is not the data; it is in the pipeline.
+
+## Specification curve per benchmark
+
+The specification curve lists the rankings every weighting-by-aggregation combination gives on each benchmark's mean-rank matrix, and reports how often the top method holds. On Tran and scIB the top method holds across all combinations; on OpenProblems it does not.
+
+```{r spec-curve}
+mcda <- reticulate::import("beam.mcda")
+polarity <- as.list(rep("lower_is_better", length(metric_labels)))
+cat("specification curve per benchmark (weighting x aggregation on the mean-rank matrix):\n")
+for (b in bench) {
+  mm <- ib$method_metric_matrix(b)
+  rs <- mcda$rank_sensitivity(mm[[3]], polarity, tool_names = as.list(canon))
+  curve <- mcda$specification_curve(rs)
+  top <- curve$tool_names[[curve$most_frequent_top_tool + 1]]
+  cat(sprintf("  %-12s %-10s first in %3.0f%% of %d combinations, %d method(s) reach the top\n",
+              b, top, 100 * curve$most_frequent_top_fraction,
+              curve$n_specifications, curve$n_distinct_top_tools))
+}
+```
+
+## Blind analysis
+
+A blind analysis hides the method names before the pipeline is fixed. These benchmarks rank on the mean-rank scale rather than through metric cards, so the demonstration relabels the matrix and then restores the names with the seal. `beam_blind` shuffles and relabels the rows; `beam_unblind` maps them back.
+
+```{r blind}
+beam <- reticulate::import("beam")
+mm <- ib$method_metric_matrix("Tran")
+scores <- beam$Scores(values = mm[[3]],
+                      tool_names = reticulate::tuple(as.list(canon)),
+                      metric_ids = reticulate::tuple(as.list(unlist(mm[[2]]))),
+                      dataset_names = NULL, layout = "wide")
+bl <- beam_blind(scores, seed = 0L)
+restored <- beam_unblind(bl$scores, bl$seal)
+cat("blinded labels:", paste(as.character(unlist(bl$scores$tool_names)), collapse = ", "), "\n")
+cat("restored names:", paste(as.character(unlist(restored$tool_names)), collapse = ", "), "\n")
+cat("seal fingerprint:", substr(bl$seal$fingerprint, 1, 12), "\n")
+```
 
 ## Reading
 

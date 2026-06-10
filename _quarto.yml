@@ -35,6 +35,8 @@ website:
             text: Rerun from a manifest
           - href: docs/how-to/run-heterogeneity-from-the-cli.md
             text: Run heterogeneity from the CLI
+          - href: docs/how-to/blind-an-analysis.md
+            text: Run a blind analysis
       - text: Explanations
         menu:
           - href: docs/explanations/cards-and-pipeline.qmd
@@ -49,6 +51,10 @@ website:
             text: Aggregation agreement
           - href: docs/explanations/rank-sensitivity.md
             text: What moves the ranking
+          - href: docs/explanations/specification-curve.md
+            text: Specification curve
+          - href: docs/explanations/analysis-blinding.md
+            text: Analysis blinding
           - href: docs/explanations/weighting-schemes.md
             text: Weighting schemes
           - href: docs/explanations/comparing-methods-across-datasets.md
@@ -126,6 +132,9 @@ quartodoc:
         - report
         - RunResult
         - Scores
+        - blind
+        - unblind
+        - Seal
     - title: MCDA
       desc: Normalization, weights, aggregation, ranking.
       package: beam.mcda
@@ -154,6 +163,9 @@ quartodoc:
         - smaa
         - smallest_weight_perturbation
         - aggregation_agreement
+        - rank_sensitivity
+        - specification_curve
+        - pairwise_superiority
         - critical_difference
         - skillings_mack
         - coverage_aware_critical_difference

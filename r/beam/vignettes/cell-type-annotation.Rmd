@@ -13,7 +13,7 @@ have_beam <- requireNamespace("reticulate", quietly = TRUE) &&
 knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>")
 ```
 
-This vignette re-analyses the cell type annotation benchmark of Hou and Ji (2024, Nature Methods, DOI 10.1038/s41592-024-02235-4), which scores GPT-4 and GPT-3.5 against three reference-based annotators (CellMarker2.0, SingleR, ScType) on how well each labels the cell types of a dataset, judged against a manual annotation. The two metrics are the mean agreement score and the full match rate, both higher is better. The R functions forward to the Python `beam` core through reticulate; install it once with `install_beam_python()`.
+This vignette re-analyses the cell type annotation benchmark of Hou and Ji (2024, Nature Methods, DOI [10.1038/s41592-024-02235-4](https://doi.org/10.1038/s41592-024-02235-4)), which scores GPT-4 and GPT-3.5 against three reference-based annotators (CellMarker2.0, SingleR, ScType) on how well each labels the cell types of a dataset, judged against a manual annotation. The two metrics are the mean agreement score and the full match rate, both higher is better. The R functions forward to the Python `beam` core through reticulate; install it once with `install_beam_python()`.
 
 ```{r libs}
 library(rbeam)
@@ -88,6 +88,32 @@ cat(sprintf("dataset %.2f, weighting %.2f, aggregation %.2f, interaction %.2f\n"
 ```
 
 The dataset accounts for almost all of the rank variance; the weighting and the aggregation account for very little. Which tissue is annotated decides the per-dataset order far more than the scoring choice.
+
+## Specification curve
+
+`beam_specification_curve` lists the rankings the grid produces and reports how often the top method holds.
+
+```{r specification-curve}
+curve <- beam_specification_curve(rs)
+top <- curve$tool_names[[curve$most_frequent_top_tool + 1]]
+cat(sprintf("%d specifications; %s ranks first in %.0f%%, %d method(s) reach the top\n",
+            curve$n_specifications, top, 100 * curve$most_frequent_top_fraction,
+            curve$n_distinct_top_tools))
+```
+
+## Blind analysis
+
+GPT-4 is the method under test here, so blinding matters: fixing the pipeline on hidden labels removes the chance to tune the weighting toward it. `beam_blind` hides the names; `beam_unblind` restores them. The ranking does not change.
+
+```{r blinding}
+blinded <- beam_blind(scores, seed = 0L)
+blind_run <- beam_rank(blinded$scores, weights = "equal", method = "saw",
+                       sensitivity = FALSE, seed = 0L)
+restored <- beam_unblind(blind_run, blinded$seal)
+cat("top method after unblinding:", restored$top_tool, "\n")
+cat("blinding fingerprint:",
+    substr(blind_run$manifest[["blinding"]][["seal_sha256"]], 1, 12), "\n")
+```
 
 ## Are the methods separable on agreement?
 

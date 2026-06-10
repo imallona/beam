@@ -519,3 +519,67 @@ def critical_difference_figure(
         fontsize=9,
     )
     return _fig_to_base64(fig)
+
+
+def specification_curve_figure(report) -> str:
+    """Two-panel specification curve over every combination of analyst choices.
+
+    The top panel plots the rank of the method that ranks first most often, with
+    combinations sorted from its best rank to its worst, so a flat line near rank
+    1 means that method keeps the top across the choices. The other tools are
+    drawn in light gray for context. The bottom panel marks which weighting,
+    aggregation and dataset each combination used, in the same column order.
+
+    Takes a ``SpecificationCurveReport`` from ``beam.mcda.specification_curve``.
+    """
+    specs = report.specifications
+    order = list(report.curve_order)
+    n = len(order)
+    names = report.tool_names or tuple(f"tool_{i + 1}" for i in range(len(specs[0].ranks)))
+    n_tools = len(names)
+    top_idx = report.most_frequent_top_tool
+
+    levels: list[tuple[str, str]] = []
+    for level in report.weightings:
+        levels.append(("weighting", level))
+    for level in report.methods:
+        levels.append(("aggregation", level))
+    if report.dataset_names is not None:
+        for level in report.dataset_names:
+            levels.append(("dataset", level))
+
+    height = max(3.0, 0.18 * (n_tools + len(levels)) + 1.5)
+    fig = Figure(figsize=(max(6.0, 0.18 * n + 2.0), height))
+    top, bottom = fig.subplots(
+        2, 1, sharex=True, gridspec_kw={"height_ratios": [2, max(1, len(levels) // 3)]}
+    )
+
+    x = range(n)
+    for t in range(n_tools):
+        series = [specs[order[p]].ranks[t] for p in range(n)]
+        top.plot(x, series, color="#dddddd", linewidth=0.8, zorder=1)
+    top_series = [specs[order[p]].ranks[top_idx] for p in range(n)]
+    top.plot(x, top_series, color="#cc3311", linewidth=2, zorder=3, label=names[top_idx])
+    top.invert_yaxis()
+    top.set_ylabel("rank (1 ranks first)")
+    top.set_title(f"specification curve: rank of {names[top_idx]} across {n} specifications")
+    top.legend(loc="lower right", fontsize=8)
+
+    for row, (_, level) in enumerate(levels):
+        active = [
+            p
+            for p in range(n)
+            if level
+            in (
+                specs[order[p]].weighting,
+                specs[order[p]].aggregation,
+                specs[order[p]].dataset,
+            )
+        ]
+        bottom.scatter(active, [row] * len(active), s=10, color="#222222")
+    bottom.set_yticks(range(len(levels)))
+    bottom.set_yticklabels([f"{factor}: {level}" for factor, level in levels], fontsize=8)
+    bottom.invert_yaxis()
+    bottom.set_xlabel("specification (sorted by the dominant tool's rank)")
+    bottom.set_ylabel("choice")
+    return _fig_to_base64(fig)

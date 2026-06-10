@@ -30,5 +30,5 @@ The diagnostic measures whether the methods agree, not which one is correct. The
 
 ## References
 
-- Kendall, M. G. A new measure of rank correlation. Biometrika 30 (1938).
+- Kendall, M. G. A new measure of rank correlation. Biometrika 30 (1938). DOI [10.1093/biomet/30.1-2.81](https://doi.org/10.1093/biomet/30.1-2.81).
 - The five aggregations and their assumptions are covered in [Aggregation methods](aggregation-methods.md).

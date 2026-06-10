@@ -75,6 +75,10 @@ class Scores:
     source_path
         The file the scores were read from, or ``None`` when constructed
         directly from arrays. Recorded in the run manifest.
+    blinding_sha256
+        The seal fingerprint when these scores were produced by ``beam.blind``,
+        otherwise ``None``. When set, a run on these scores records the blinding
+        in its manifest.
     """
 
     values: np.ndarray
@@ -83,6 +87,7 @@ class Scores:
     dataset_names: tuple[str, ...] | None
     layout: str
     source_path: str | None = None
+    blinding_sha256: str | None = None
 
     @property
     def is_tensor(self) -> bool:
@@ -273,3 +278,31 @@ def _read_long(
 def _append_unique(order: list[str], name: str) -> None:
     if name not in order:
         order.append(name)
+
+
+def _format_cell(value: float) -> str:
+    return "NA" if np.isnan(value) else repr(float(value))
+
+
+def write_scores(scores: Scores, path: str | Path) -> None:
+    """Write a ``Scores`` to CSV in the layout it carries.
+
+    A wide score matrix is written with the tool column first and one column per
+    metric. A long tensor is written as tool, dataset, metric, score rows, with
+    missing cells written as ``NA``. ``load_scores`` reads either back.
+    """
+    path = Path(path)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        if scores.is_tensor:
+            writer.writerow(["tool", "dataset", "metric", "score"])
+            for ti, tool in enumerate(scores.tool_names):
+                for di, dataset in enumerate(scores.dataset_names or ()):
+                    for mi, metric in enumerate(scores.metric_ids):
+                        writer.writerow(
+                            [tool, dataset, metric, _format_cell(scores.values[ti, di, mi])]
+                        )
+        else:
+            writer.writerow(["tool", *scores.metric_ids])
+            for ti, tool in enumerate(scores.tool_names):
+                writer.writerow([tool, *(_format_cell(v) for v in scores.values[ti])])

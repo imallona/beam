@@ -37,3 +37,8 @@ On the Duo 2018 ARI scores, with the ARI noise floor of 0.01 as the ROPE, SC3 ha
 ## Limits
 
 The probability of superiority describes these datasets, not a population of datasets. The sign test drops equivalences, so a pair that is equivalent on most datasets has few decisive ones and a weak test, which is the honest reading when the methods are close. The comparison is paired by dataset, so it needs the same datasets for both methods; a pair with little overlap is compared on whatever they share, and the count says how many that was.
+
+## References
+
+- Benavoli, A., Corani, G., Mangili, F.. Should we really use post-hoc tests based on mean-ranks?. Journal of Machine Learning Research 17 (2016).
+- Grissom, R. J.. Probability of the superior outcome of one treatment over another. Journal of Applied Psychology (1994). DOI [10.1037/0021-9010.79.2.314](https://doi.org/10.1037/0021-9010.79.2.314).

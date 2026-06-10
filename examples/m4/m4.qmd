@@ -15,7 +15,7 @@ format:
 
 ## Goal
 
-This vignette runs beam on the M4 forecasting competition (Makridakis, Spiliotis and Assimakopoulos 2020), a large real benchmark from outside bioinformatics. M4 forecast 100,000 anonymized time series across six frequency bands (yearly, quarterly, monthly, weekly, daily, hourly). Each submitted method was scored by two error metrics, sMAPE and MASE, both lower is better. beam reads those two metrics from its registry as the cards `smape` and `mase`, treats the six frequency bands as the dataset axis, and runs the same pipeline as the bioinformatics examples.
+This vignette runs beam on the M4 forecasting competition (Makridakis, Spiliotis and Assimakopoulos 2020, [10.1016/j.ijforecast.2019.04.014](https://doi.org/10.1016/j.ijforecast.2019.04.014)), a large real benchmark from outside bioinformatics. M4 forecast 100,000 anonymized time series across six frequency bands (yearly, quarterly, monthly, weekly, daily, hourly). Each submitted method was scored by two error metrics, sMAPE and MASE, both lower is better. beam reads those two metrics from its registry as the cards `smape` and `mase`, treats the six frequency bands as the dataset axis, and runs the same pipeline as the bioinformatics examples.
 
 Three things are shown on real data. The registry does not care about the domain: forecasting metrics carry polarity, scale and normalization the same way clustering metrics do. The method ranking depends heavily on the frequency band, which is why leave-one-dataset-out and the critical-difference diagram across frequencies matter here. And the choice of how to pool the bands changes which method ranks first, so the recommendation is partly a decision about pooling rather than a fact about the methods.
 
@@ -30,7 +30,7 @@ cd M4comp2018 && git lfs pull          # the data is stored via git-lfs
 Rscript reduce_m4.R                    # writes M4_2018_by_frequency.csv
 ```
 
-`reduce_m4.R` computes, for each of the top 25 methods and each frequency band, the mean sMAPE and mean MASE over the series in that band, using the M4 metric definitions (sMAPE with the symmetric denominator; MASE scaled by the in-sample seasonal naive error, with seasonal period 1 for yearly, weekly and daily, 4 for quarterly, 12 for monthly, 24 for hourly). The reduction reproduces the published competition figures: the method that ranked first (Smyl, the ES-RNN) computes to an overall sMAPE of 11.374 and MASE of 1.536, matching the M4 paper. The table is GPL-3, derived from GPL-3 data; cite Makridakis, Spiliotis and Assimakopoulos (2020) when using it.
+`reduce_m4.R` computes, for each of the top 25 methods and each frequency band, the mean sMAPE and mean MASE over the series in that band, using the M4 metric definitions (sMAPE with the symmetric denominator; MASE scaled by the in-sample seasonal naive error, with seasonal period 1 for yearly, weekly and daily, 4 for quarterly, 12 for monthly, 24 for hourly). The reduction reproduces the published competition figures: the method that ranked first (Smyl, the ES-RNN) computes to an overall sMAPE of 11.374 and MASE of 1.536, matching the M4 paper. The table is GPL-3, derived from GPL-3 data; cite Makridakis, Spiliotis and Assimakopoulos (2020, [10.1016/j.ijforecast.2019.04.014](https://doi.org/10.1016/j.ijforecast.2019.04.014)) when using it.
 
 ## Load the table
 
@@ -260,6 +260,59 @@ print(f"top method overall: {headline}, rank 1 in {rs.headline_top_fraction * 10
 print(f"{'band':12s}  mean rank of {headline}")
 for band, mean_rank in zip(rs.dataset_names, rs.headline_rank_by_dataset):
     print(f"{band:12s}  {mean_rank:.1f}")
+```
+
+`specification_curve` lists the rankings the same grid produces and reports how often the top method holds. The full grid mixes the choices with the band; running it on the pooled matrix instead isolates the choices, so the gap between the two fractions is the band's doing.
+
+```{python}
+from beam.mcda import specification_curve
+
+curve = specification_curve(rs)
+dom = curve.tool_names[curve.most_frequent_top_tool]
+print(f"choices plus band ({curve.n_specifications} combinations): "
+      f"{dom} first in {curve.most_frequent_top_fraction * 100:.0f}%, "
+      f"{curve.n_distinct_top_tools} methods reach the top")
+
+pooled = specification_curve(
+    rank_sensitivity(
+        run.matrix, ctx.polarity,
+        normalization=list(ctx.normalization), bounds=list(ctx.bounds),
+        baselines=list(ctx.baselines), targets=list(ctx.targets),
+        tool_names=m4.method_names,
+    )
+)
+pdom = pooled.tool_names[pooled.most_frequent_top_tool]
+print(f"choices only ({pooled.n_specifications} combinations): "
+      f"{pdom} first in {pooled.most_frequent_top_fraction * 100:.0f}%")
+
+order = curve.curve_order
+dom_ranks = [curve.specifications[i].ranks[curve.most_frequent_top_tool] for i in order]
+fig, ax = plt.subplots(figsize=(8.0, 3.0))
+ax.plot(range(len(order)), dom_ranks, color="tab:red")
+ax.invert_yaxis()
+ax.set_xlabel("specification (sorted by the top method's rank)")
+ax.set_ylabel(f"rank of {dom}")
+ax.set_title("Specification curve on M4 (weighting x aggregation x band)")
+fig.tight_layout()
+plt.show()
+```
+
+## Blind analysis
+
+A blind analysis fixes the pipeline before the method names are known, so the weighting and the metric set cannot be chosen to favor a method expected to lead. `beam.blind` hides the names and shuffles the rows; `beam.unblind` restores them. The ranking is unchanged, and the seal fingerprint is recorded in the manifest.
+
+```{python}
+from beam import blind, unblind
+
+blinded, seal = blind(scores, seed=0)
+blind_run = beam.rank(blinded, weights="equal", method="saw", seed=0, sensitivity=False)
+restored = unblind(blind_run, seal)
+named = beam.rank(scores, weights="equal", method="saw", seed=0, sensitivity=False)
+print("ranking identical after unblinding:",
+      dict(zip(named.tool_names, named.result.ranks))
+      == dict(zip(restored.tool_names, restored.result.ranks)))
+print("top method after unblinding:", restored.top_tool)
+print("blinding fingerprint:", blind_run.manifest["blinding"]["seal_sha256"][:12])
 ```
 
 ## Pairwise superiority across the bands

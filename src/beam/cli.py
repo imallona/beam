@@ -12,6 +12,8 @@ Subcommands:
     beam report result.json --out report.html
     beam metric show ari
     beam heterogeneity scores.csv --model bradley-terry-tree --features features.csv
+    beam blind scores.csv --out blinded.csv --seal seal.json
+    beam unblind result.json --seal seal.json --out result.unblinded.json
     beam run beam.yaml
 
 ``beam rank`` writes a small run record (the input path and hash, the
@@ -126,6 +128,23 @@ def _build_parser() -> argparse.ArgumentParser:
     p_het.add_argument("--out", help="write the report JSON here (default stdout)")
     p_het.set_defaults(func=_cmd_heterogeneity)
 
+    p_blind = sub.add_parser(
+        "blind", help="hide tool names for blind analysis, writing a seal to unblind later"
+    )
+    p_blind.add_argument("scores", help="path to a score CSV (wide or long)")
+    p_blind.add_argument("--out", required=True, help="write the blinded score CSV here")
+    p_blind.add_argument("--seal", required=True, help="write the seal JSON here")
+    p_blind.add_argument("--seed", type=int, default=0, help="permutation seed (default 0)")
+    p_blind.set_defaults(func=_cmd_blind)
+
+    p_unblind = sub.add_parser(
+        "unblind", help="restore true tool names in a run record using a seal"
+    )
+    p_unblind.add_argument("result", help="path to a run record JSON from 'beam rank'")
+    p_unblind.add_argument("--seal", required=True, help="path to the seal JSON from 'beam blind'")
+    p_unblind.add_argument("--out", help="write the unblinded run record here (default stdout)")
+    p_unblind.set_defaults(func=_cmd_unblind)
+
     p_run = sub.add_parser("run", help="run a benchmark from a beam.yaml file")
     p_run.add_argument("config", help="path to a beam.yaml file")
     p_run.set_defaults(func=_cmd_run)
@@ -216,6 +235,38 @@ def _cmd_metric_show(args: argparse.Namespace) -> int:
 def _cmd_run(args: argparse.Namespace) -> int:
     result = run_config(args.config)
     print(f"ok: {result.top_tool} ranks first of {len(result.tool_names)} tools")
+    return _EXIT_OK
+
+
+def _cmd_blind(args: argparse.Namespace) -> int:
+    from .blinding import blind, write_seal
+    from .io import write_scores
+
+    scores = load_scores(args.scores)
+    blinded, seal = blind(scores, seed=args.seed)
+    write_scores(blinded, args.out)
+    write_seal(seal, args.seal)
+    print(
+        f"blinded {scores.n_tools} tools to {args.out}; seal {seal.fingerprint[:12]} in {args.seal}"
+    )
+    return _EXIT_OK
+
+
+def _cmd_unblind(args: argparse.Namespace) -> int:
+    from .blinding import read_seal
+
+    seal = read_seal(args.seal)
+    record = json.loads(Path(args.result).read_text(encoding="utf-8"))
+    for row in record.get("ranking", []):
+        label = row.get("tool")
+        if label in seal.mapping:
+            row["tool"] = seal.true_name(label)
+    record["unblinded"] = True
+    text = json.dumps(record, indent=2, sort_keys=True)
+    if args.out:
+        Path(args.out).write_text(text + "\n", encoding="utf-8")
+    else:
+        print(text)
     return _EXIT_OK
 
 

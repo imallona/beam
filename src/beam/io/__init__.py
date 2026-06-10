@@ -6,6 +6,6 @@ an optional pandas convenience under the ``[io]`` extra.
 """
 
 from .csv import read_csv
-from .scores import Scores, UnknownMetricError, load_scores
+from .scores import Scores, UnknownMetricError, load_scores, write_scores
 
-__all__ = ["Scores", "UnknownMetricError", "load_scores", "read_csv"]
+__all__ = ["Scores", "UnknownMetricError", "load_scores", "read_csv", "write_scores"]

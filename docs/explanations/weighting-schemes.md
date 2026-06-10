@@ -30,6 +30,6 @@ Start with equal weights as the baseline. Move to an objective scheme when you w
 
 ## References
 
-- Diakoulaki, D., Mavrotas, G., Papayannakis, L. Determining objective weights in multiple criteria problems: the CRITIC method. Computers and Operations Research 22 (1995).
-- Keshavarz-Ghorabaee, M., Amiri, M., Zavadskas, E. K., Turskis, Z., Antucheviciene, J. Determination of Objective Weights Using a New Method Based on the Removal Effects of Criteria (MEREC). Symmetry 13 (2021).
+- Diakoulaki, D., Mavrotas, G., Papayannakis, L. Determining objective weights in multiple criteria problems: the CRITIC method. Computers and Operations Research 22 (1995). DOI [10.1016/0305-0548(94)00059-H](https://doi.org/10.1016/0305-0548%2894%2900059-H).
+- Keshavarz-Ghorabaee, M., Amiri, M., Zavadskas, E. K., Turskis, Z., Antucheviciene, J. Determination of Objective Weights Using a New Method Based on the Removal Effects of Criteria (MEREC). Symmetry 13 (2021). DOI [10.3390/sym13040525](https://doi.org/10.3390/sym13040525).
 - Saaty, T. L. The Analytic Hierarchy Process. McGraw-Hill (1980).

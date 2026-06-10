@@ -35,3 +35,7 @@ It is the right tool when rank stability matters more than simplicity. Pick COME
 ## Reference
 
 Salabun, W. (2015). The Characteristic Objects Method: A New Distance-based Approach to Multicriteria Decision-making Problems. Journal of Multi-Criteria Decision Analysis, 22(1-2), 37-50.
+
+## References
+
+- Salabun, W.. The Characteristic Objects Method: a new distance-based approach to multicriteria decision-making problems. Journal of Multi-Criteria Decision Analysis (2015). DOI [10.1002/mcda.1525](https://doi.org/10.1002/mcda.1525).

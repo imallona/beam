@@ -33,3 +33,7 @@ The result is descriptive of the methods and datasets in the input. A small benc
 ## How to read it on real data
 
 On the OpenProblems batch integration scores, with the same bio/batch grouping the validity check uses, the biological group reads as one reliable scale: alpha 0.85 over seven metrics, mean inter-item correlation 0.45. The batch group does not clear the cutoff: alpha 0.62 over five metrics, mean inter-item correlation 0.24, the one group flagged as low reliability. Dropping `pcr` is the only batch removal that raises the batch alpha by more than a rounding step, from 0.62 to 0.67, so `pcr` is the batch metric least consistent with the rest of its group. The reading pairs with the validity finding: the bio/batch axis is the right split, and the biological side of it is a coherent scale while the batch side is a looser collection.
+
+## References
+
+- Cronbach, L. J.. Coefficient alpha and the internal structure of tests. Psychometrika (1951). DOI [10.1007/BF02310555](https://doi.org/10.1007/BF02310555).
