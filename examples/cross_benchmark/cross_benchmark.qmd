@@ -295,11 +295,11 @@ for bench in BENCH:
 A blind analysis fixes the weighting and the aggregation before the method names are revealed, so the choices cannot be tuned toward a method known to lead. These benchmarks rank on the mean-rank scale rather than through metric cards, so the demonstration uses the low-level `beam.mcda.run` with explicit polarity. `beam.blind` relabels and shuffles the rows; the seal maps the labels back. The order is the same once unblinded.
 
 ```{python}
-from beam import blind
+from beam import blind, Scores
 from beam.mcda import run as mcda_run
 
 _, metrics_b, matrix = ib.method_metric_matrix("Tran")
-scores = beam.Scores(
+scores = Scores(
     values=matrix, tool_names=tuple(CANON), metric_ids=tuple(metrics_b),
     dataset_names=None, layout="wide",
 )
