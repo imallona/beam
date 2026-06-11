@@ -294,6 +294,43 @@ plt.show()
 
 On this restricted block the Friedman test rejects (p around 0.002): the four ground modes are separable by speed across the five common terrains, in the fixed order motorcycle, bicycle, running, foot. The critical difference is wide enough that adjacent modes fall in the same clique, so neighbouring modes are not separable, but the extremes (motorcycle and foot) are. This is a different question from the per-terrain MCDA. It asks whether the ground modes have a stable speed ordering across the terrains they share, and here they do, because none of them has a terrain where it suddenly leads.
 
+`pairwise_transitivity` confirms it from the pairwise side: the four ground modes have a fixed speed order, so the pairwise majorities are transitive and one order is consistent with them.
+
+```{python}
+from beam.mcda import pairwise_superiority, pairwise_transitivity
+from matplotlib.colors import ListedColormap
+
+ground_sup = pairwise_superiority(block, "higher_is_better", method_names=block_modes)
+ground_trans = pairwise_transitivity(ground_sup)
+print(f"transitive: {ground_trans.is_transitive}; circular triads: {ground_trans.n_circular_triads}")
+if ground_trans.consistent_order is not None:
+    print("consistent order:", [block_modes[i] for i in ground_trans.consistent_order])
+```
+
+The dominance matrix below orders the modes by how many others they outperform. Here it is a clean upper triangle: every faster mode outperforms every slower one, with no red cell below the diagonal, so the relation is transitive. This is the opposite of the Duo ARI case, where the pairwise majorities carry a cycle.
+
+```{python}
+dom = ground_trans.dominance
+order = list(np.argsort(-dom.sum(axis=1), kind="stable"))
+labels = [block_modes[i] for i in order]
+grid = np.zeros((ground_trans.n_methods, ground_trans.n_methods))
+for r, i in enumerate(order):
+    for c, j in enumerate(order):
+        if dom[i, j] == 1:
+            grid[r, c] = 1 if r < c else 2
+fig, ax = plt.subplots(figsize=(4.5, 4.5))
+ax.imshow(grid, cmap=ListedColormap(["#f4f4f4", "#3b6ea5", "#cc3311"]), vmin=-0.5, vmax=2.5)
+ax.set_xticks(range(len(labels)))
+ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=9)
+ax.set_yticks(range(len(labels)))
+ax.set_yticklabels(labels, fontsize=9)
+ax.set_xlabel("mode outperformed (column)")
+ax.set_ylabel("mode (row), ordered by pairwise wins")
+ax.set_title("Pairwise dominance on ground modes by speed (transitive)")
+fig.tight_layout()
+plt.show()
+```
+
 ## SMAA on one terrain
 
 SMAA samples weight vectors from a Dirichlet over the three-metric simplex, runs the pipeline once per draw, and reports the share of draws in which each mode is top-ranked (its confidence factor). On the long-distance terrain with TOPSIS, no single mode owns the top rank across the weight space.

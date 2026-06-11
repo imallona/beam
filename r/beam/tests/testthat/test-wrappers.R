@@ -284,7 +284,7 @@ test_that("the remaining MCDA analysis wrappers are exported functions", {
     beam_critical_difference, beam_skillings_mack,
     beam_coverage_aware_critical_difference, beam_aggregation_agreement,
     beam_smaa, beam_leave_one_metric_out, beam_leave_one_dataset_out,
-    beam_smallest_weight_perturbation
+    beam_smallest_weight_perturbation, beam_pairwise_transitivity
   )) {
     expect_true(is.function(fn))
   }
@@ -299,6 +299,19 @@ test_that("beam_pairwise_superiority compares methods across datasets", {
   expect_s3_class(report, "python.builtin.object")
   expect_equal(report$probability_superior[1, 2], 1.0)
   expect_equal(as.integer(report$order[1]), 0L)
+})
+
+test_that("beam_pairwise_transitivity checks the pairwise majority relation", {
+  skip_if_no_beam()
+  # A transitive order: method 0 over 1 over 2 on every dataset.
+  scores <- rbind(c(0.9, 0.8, 0.7), c(0.5, 0.6, 0.4), c(0.2, 0.1, 0.3))
+  sup <- beam_pairwise_superiority(scores, "higher_is_better",
+                                   method_names = c("a", "b", "c"))
+  trans <- beam_pairwise_transitivity(sup)
+  expect_s3_class(trans, "python.builtin.object")
+  expect_true(trans$is_transitive)
+  expect_equal(as.integer(trans$n_circular_triads), 0L)
+  expect_equal(as.integer(trans$condorcet_choice), 0L)
 })
 
 test_that("reference-level wrappers run on a tool by metric matrix", {

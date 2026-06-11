@@ -404,6 +404,41 @@ print(f"pairs the sign test cannot separate: {len(sup.equivalent_pairs)} of {len
 
 With six datasets the comparison is coarse: most pairs do not reach significance, matching the wide mixed-effects intervals and the leave-one-dataset-out spans above. The pairwise view says the same as the worth panel, as a pairwise record rather than an interval.
 
+`pairwise_transitivity` reads the same pairwise relation and reports whether one order is consistent with it.
+
+```{python}
+from beam.mcda import pairwise_transitivity
+
+trans = pairwise_transitivity(sup)
+print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_triads} of {trans.n_triads}")
+```
+
+The matrix below orders the methods by how many others they outperform. A transitive relation fills the upper triangle; a red cell below the diagonal marks a method that outperforms one ranked above it, which only happens inside a cycle.
+
+```{python}
+from matplotlib.colors import ListedColormap
+
+dom = trans.dominance
+order = list(np.argsort(-dom.sum(axis=1), kind="stable"))
+labels = [methods[i] for i in order]
+grid = np.zeros((trans.n_methods, trans.n_methods))
+for r, i in enumerate(order):
+    for c, j in enumerate(order):
+        if dom[i, j] == 1:
+            grid[r, c] = 1 if r < c else 2
+fig, ax = plt.subplots(figsize=(6.0, 6.0))
+ax.imshow(grid, cmap=ListedColormap(["#f4f4f4", "#3b6ea5", "#cc3311"]), vmin=-0.5, vmax=2.5)
+ax.set_xticks(range(len(labels)))
+ax.set_xticklabels(labels, rotation=90, fontsize=7)
+ax.set_yticks(range(len(labels)))
+ax.set_yticklabels(labels, fontsize=7)
+ax.set_xlabel("method outperformed (column)")
+ax.set_ylabel("method (row), ordered by pairwise wins")
+ax.set_title("Pairwise dominance on OpenProblems ARI (red marks a cycle)")
+fig.tight_layout()
+plt.show()
+```
+
 ## Spatially variable genes: many datasets, the Bradley-Terry tree
 
 The spatially variable genes task has 14 methods, 50 spatial datasets and one correlation metric (higher is better). The 50 datasets carry real feature variation: the spatial assay technology, the organism, and a cancer or non-cancer condition, all parsed from the dataset id. This is the input the Bradley-Terry tree needs.

@@ -24,6 +24,7 @@ The five aggregation methods used below (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET
 ```{python}
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 
 import beam
 from beam.datasets import load_duo2018
@@ -240,6 +241,43 @@ print(f"method pairs the sign test cannot separate: {len(sup.equivalent_pairs)} 
 ```
 
 Most pairs are not distinguishable: across the twelve datasets the ARI differences are often inside the 0.01 floor, so neither method outperforms the other decisively. This is the critical-difference reading stated as an effect size, and it agrees with it. Beyond the method with the highest standing, the rest are largely interchangeable on ARI at this dataset count.
+
+## Pairwise transitivity on ARI
+
+The ranking is one order of the methods, but the pairwise majorities behind it need not agree with any single order. `pairwise_transitivity` reads the same pairwise relation and asks whether one order is consistent with it: it reports the method preferred to every other one, the circular triads (a method outperforms a second, the second a third, the third the first), and whether the relation is transitive.
+
+```{python}
+from beam.mcda import pairwise_transitivity
+
+trans = pairwise_transitivity(sup)
+choice = duo.method_names[trans.condorcet_choice] if trans.condorcet_choice is not None else "none"
+print(f"method preferred to every other one: {choice}")
+print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_triads} of {trans.n_triads}")
+```
+
+SC3 is preferred to every other method one at a time, yet the relation still carries one circular triad among the methods below it, so no single order agrees with all the pairwise majorities. The matrix below orders the methods by how many others they outperform. A transitive relation fills the upper triangle and leaves the lower one empty; a red cell below the diagonal marks a method that outperforms one ranked above it, which can only happen inside a cycle.
+
+```{python}
+dom = trans.dominance
+order = list(np.argsort(-dom.sum(axis=1), kind="stable"))
+names = [duo.method_names[i] for i in order]
+grid = np.zeros((trans.n_methods, trans.n_methods))
+for r, i in enumerate(order):
+    for c, j in enumerate(order):
+        if dom[i, j] == 1:
+            grid[r, c] = 1 if r < c else 2
+fig, ax = plt.subplots(figsize=(6.0, 6.0))
+ax.imshow(grid, cmap=ListedColormap(["#f4f4f4", "#3b6ea5", "#cc3311"]), vmin=-0.5, vmax=2.5)
+ax.set_xticks(range(len(names)))
+ax.set_xticklabels(names, rotation=45, ha="right", fontsize=8)
+ax.set_yticks(range(len(names)))
+ax.set_yticklabels(names, fontsize=8)
+ax.set_xlabel("method outperformed (column)")
+ax.set_ylabel("method (row), ordered by pairwise wins")
+ax.set_title("Pairwise dominance on Duo 2018 ARI (red marks a cycle)")
+fig.tight_layout()
+plt.show()
+```
 
 ## SMAA confidence
 

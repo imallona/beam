@@ -294,6 +294,41 @@ for i in np.argsort(-ps.standing):
     print(f"  {head[i]:14s} {ps.standing[i]:.2f}")
 ```
 
+`pairwise_transitivity` reads the same relation and reports whether one order is consistent with the pairwise majorities.
+
+```{python}
+from beam.mcda import pairwise_transitivity
+
+trans = pairwise_transitivity(ps)
+print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_triads} of {trans.n_triads}")
+```
+
+The matrix below orders the methods by how many others they outperform. A transitive relation fills the upper triangle; a red cell below the diagonal marks a method that outperforms one ranked above it, which only happens inside a cycle.
+
+```{python}
+from matplotlib.colors import ListedColormap
+
+dom = trans.dominance
+order = list(np.argsort(-dom.sum(axis=1), kind="stable"))
+labels = [head[i] for i in order]
+grid = np.zeros((trans.n_methods, trans.n_methods))
+for r, i in enumerate(order):
+    for c, j in enumerate(order):
+        if dom[i, j] == 1:
+            grid[r, c] = 1 if r < c else 2
+fig, ax = plt.subplots(figsize=(6.0, 6.0))
+ax.imshow(grid, cmap=ListedColormap(["#f4f4f4", "#3b6ea5", "#cc3311"]), vmin=-0.5, vmax=2.5)
+ax.set_xticks(range(len(labels)))
+ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=8)
+ax.set_yticks(range(len(labels)))
+ax.set_yticklabels(labels, fontsize=8)
+ax.set_xlabel("method outperformed (column)")
+ax.set_ylabel("method (row), ordered by pairwise wins")
+ax.set_title("Pairwise dominance on LLM cell typing (red marks a cycle)")
+fig.tight_layout()
+plt.show()
+```
+
 ## What moves the ranking: the data or the choice
 
 A common question is whether the ranking would hold under a different analysis. The sections above each measured part of this. `rank_sensitivity` combines them: it ranks the methods on each dataset, under every weighting and aggregation, and splits each method's rank variance into the dataset, the weighting, the aggregation and their interactions. This is the dataset-weight question stated directly.

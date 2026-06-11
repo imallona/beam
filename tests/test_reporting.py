@@ -104,6 +104,29 @@ def test_report_draws_critical_difference_for_multidataset(tmp_path):
     html = out.read_text(encoding="utf-8")
     assert "Critical difference across datasets" in html
     assert "Friedman test p-value" in html
+    assert "Consistency:" in html
+
+
+def test_dominance_matrix_figure_renders_for_both_cases():
+    from beam.mcda import pairwise_superiority, pairwise_transitivity
+    from beam.reporting import figures
+
+    transitive = pairwise_transitivity(
+        pairwise_superiority(
+            np.array([[0.9, 0.8, 0.7], [0.5, 0.6, 0.4], [0.2, 0.1, 0.3]]),
+            "higher_is_better",
+            method_names=["a", "b", "c"],
+        )
+    )
+    cyclic = pairwise_transitivity(
+        pairwise_superiority(
+            np.array([[3, 1, 2], [2, 3, 1], [1, 2, 3]], dtype=float),
+            "higher_is_better",
+            method_names=["a", "b", "c"],
+        )
+    )
+    assert len(figures.dominance_matrix_figure(transitive)) > 1000
+    assert len(figures.dominance_matrix_figure(cyclic)) > 1000
 
 
 def test_single_dataset_report_has_no_cd_section(tmp_path):

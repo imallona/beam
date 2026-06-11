@@ -72,6 +72,7 @@ from .specification_curve import (
     specification_curve,
 )
 from .topsis import topsis
+from .transitivity import PairwiseTransitivityReport, pairwise_transitivity
 from .validate import IncompatibleScaleError, validate_for_aggregation
 from .vikor import vikor
 from .weights import (
@@ -105,6 +106,7 @@ __all__ = [
     "PairSeparation",
     "PairSuperiority",
     "PairwiseSuperiorityReport",
+    "PairwiseTransitivityReport",
     "RandomBaselineReport",
     "RankSensitivityReport",
     "RegistryContext",
@@ -140,6 +142,7 @@ __all__ = [
     "normalization_warnings",
     "normalize",
     "pairwise_superiority",
+    "pairwise_transitivity",
     "promethee_ii",
     "rank",
     "rank_sensitivity",

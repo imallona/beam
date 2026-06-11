@@ -63,6 +63,8 @@ website:
             text: Skillings-Mack
           - href: docs/explanations/pairwise-superiority.md
             text: Pairwise superiority
+          - href: docs/explanations/transitivity.md
+            text: Pairwise transitivity
           - href: docs/explanations/missing-data.md
             text: Missing data
           - href: docs/explanations/reference-levels.md

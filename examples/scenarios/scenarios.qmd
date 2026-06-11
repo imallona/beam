@@ -355,6 +355,41 @@ print(f"highest standing: {odd.method_names[sup.order[0]]} ({sup.standing[sup.or
 print(f"pairs the sign test cannot separate: {len(sup.equivalent_pairs)} of {len(sup.per_pair)}")
 ```
 
+`pairwise_transitivity` checks whether those pairwise majorities agree with one order.
+
+```{python}
+from beam.mcda import pairwise_transitivity
+
+trans = pairwise_transitivity(sup)
+print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_triads} of {trans.n_triads}")
+```
+
+The matrix below orders the methods by how many others they outperform. A transitive relation fills the upper triangle; a red cell below the diagonal marks a method that outperforms one ranked above it, which only happens inside a cycle.
+
+```{python}
+from matplotlib.colors import ListedColormap
+
+dom = trans.dominance
+order = list(np.argsort(-dom.sum(axis=1), kind="stable"))
+labels = [odd.method_names[i] for i in order]
+grid = np.zeros((trans.n_methods, trans.n_methods))
+for r, i in enumerate(order):
+    for c, j in enumerate(order):
+        if dom[i, j] == 1:
+            grid[r, c] = 1 if r < c else 2
+fig, ax = plt.subplots(figsize=(5.0, 5.0))
+ax.imshow(grid, cmap=ListedColormap(["#f4f4f4", "#3b6ea5", "#cc3311"]), vmin=-0.5, vmax=2.5)
+ax.set_xticks(range(len(labels)))
+ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=8)
+ax.set_yticks(range(len(labels)))
+ax.set_yticklabels(labels, fontsize=8)
+ax.set_xlabel("method outperformed (column)")
+ax.set_ylabel("method (row), ordered by pairwise wins")
+ax.set_title("Pairwise dominance (red marks a cycle)")
+fig.tight_layout()
+plt.show()
+```
+
 ## Heterogeneity diagnostics on a synthetic interaction
 
 The canonical scenarios above are single-dataset (a method by metric matrix), so they cover the MCDA layer but not the heterogeneity layer, which needs a dataset axis. To show the heterogeneity diagnostics with a known ground truth, here is a small synthetic method by dataset by metric case built to contain a feature-driven ranking reversal: method A leads on the "easy" datasets and method C leads on the "hard" ones, with method B in the middle. The datasets carry a `regime` feature that marks which group they belong to.

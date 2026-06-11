@@ -20,7 +20,12 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from ..api import RunResult
 from ..cards import Registry
-from ..mcda import critical_difference, pairwise_superiority, run_from_registry
+from ..mcda import (
+    critical_difference,
+    pairwise_superiority,
+    pairwise_transitivity,
+    run_from_registry,
+)
 from . import figures
 from .narrative import recommendation
 
@@ -445,5 +450,21 @@ def _critical_difference_section(
         "n_datasets": pair.n_compared,
         "n_outperformed": pair.a_outperforms if pair.a == top else pair.b_outperforms,
         "pct": "n/a" if np.isnan(p_top) else f"{p_top * 100:.0f}",
+    }
+
+    # Whether the pairwise majorities admit a single consistent order, or carry a
+    # cycle that no aggregated ranking can represent.
+    trans = pairwise_transitivity(sup)
+    choice = (
+        result.tool_names[trans.condorcet_choice] if trans.condorcet_choice is not None else None
+    )
+    coeff = trans.coefficient_of_consistence
+    section["transitivity"] = {
+        "is_transitive": trans.is_transitive,
+        "n_circular_triads": trans.n_circular_triads,
+        "n_triads": trans.n_triads,
+        "choice": choice,
+        "coefficient": None if coeff is None else f"{coeff:.2f}",
+        "figure": figures.dominance_matrix_figure(trans),
     }
     return section

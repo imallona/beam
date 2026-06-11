@@ -229,6 +229,18 @@ higher than the next (<code>{{ critical_difference.superiority.runner }}</code>)
 {{ critical_difference.superiority.n_outperformed }} of {{ critical_difference.superiority.n_datasets }} datasets
 (probability of superiority {{ critical_difference.superiority.pct }} percent).</p>
 {% endif %}
+{% if critical_difference.transitivity %}
+{% set t = critical_difference.transitivity %}
+{% if t.is_transitive %}
+<p>Consistency: the pairwise majorities are transitive, so one order is consistent with them
+{% if t.coefficient %}(coefficient of consistence {{ t.coefficient }}){% endif %}.</p>
+{% else %}
+<p>Consistency: the pairwise majorities carry {{ t.n_circular_triads }} circular triad{{ "" if t.n_circular_triads == 1 else "s" }}
+out of {{ t.n_triads }}, so no single order agrees with all of them and the reported ranking depends on the aggregation rule
+{% if t.choice %}(though <code>{{ t.choice }}</code> is still preferred to every other method individually){% endif %}.</p>
+{% endif %}
+<img src="data:image/png;base64,{{ t.figure }}" alt="pairwise dominance matrix ordered by wins">
+{% endif %}
 {% endif %}
 
 <h2>Reproducibility</h2>

@@ -334,6 +334,41 @@ print(f"{top_method} outperforms {m4.method_names[runner]} on {n_top} of {pair.n
 
 With only six bands the sign test has little power, so few pairs reach significance, and the method with the highest standing outperforms the others on some bands and not on others. This is the band dependence the variance decomposition measured, now as a pairwise record: no method outperforms the field across every frequency.
 
+`pairwise_transitivity` asks whether those pairwise majorities agree with a single order. With the ranking moving across the bands, they need not.
+
+```{python}
+from beam.mcda import pairwise_transitivity
+
+trans = pairwise_transitivity(sup)
+print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_triads} of {trans.n_triads}")
+```
+
+The matrix below orders the methods by how many others they outperform. A transitive relation fills the upper triangle; a red cell below the diagonal marks a method that outperforms one ranked above it, which can only happen inside a cycle.
+
+```{python}
+from matplotlib.colors import ListedColormap
+
+dom = trans.dominance
+order = list(np.argsort(-dom.sum(axis=1), kind="stable"))
+labels = [m4.method_names[i] for i in order]
+grid = np.zeros((trans.n_methods, trans.n_methods))
+for r, i in enumerate(order):
+    for c, j in enumerate(order):
+        if dom[i, j] == 1:
+            grid[r, c] = 1 if r < c else 2
+fig, ax = plt.subplots(figsize=(7.0, 7.0))
+ax.imshow(grid, cmap=ListedColormap(["#f4f4f4", "#3b6ea5", "#cc3311"]), vmin=-0.5, vmax=2.5)
+ax.set_xticks(range(len(labels)))
+ax.set_xticklabels(labels, rotation=90, fontsize=6)
+ax.set_yticks(range(len(labels)))
+ax.set_yticklabels(labels, fontsize=6)
+ax.set_xlabel("method outperformed (column)")
+ax.set_ylabel("method (row), ordered by pairwise wins")
+ax.set_title("Pairwise dominance on M4 sMAPE (red marks a cycle)")
+fig.tight_layout()
+plt.show()
+```
+
 ## Report
 
 `beam.report` writes the whole run to one self-contained HTML file: the ranking, the per-band sensitivity, a critical-difference diagram across the six bands (the input is a complete tensor), and a recommendation paragraph.

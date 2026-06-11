@@ -20,9 +20,10 @@ import io
 import matplotlib
 import numpy as np
 from matplotlib.cm import ScalarMappable
-from matplotlib.colors import Normalize
+from matplotlib.colors import ListedColormap, Normalize
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 
 
 def _fig_to_base64(fig: Figure) -> str:
@@ -582,4 +583,70 @@ def specification_curve_figure(report) -> str:
     bottom.invert_yaxis()
     bottom.set_xlabel("specification (sorted by the dominant tool's rank)")
     bottom.set_ylabel("choice")
+    return _fig_to_base64(fig)
+
+
+def dominance_matrix_figure(report) -> str:
+    """Pairwise majority dominance matrix, methods ordered by their wins.
+
+    A filled cell at row i, column j means method i outperforms method j on the
+    majority of the datasets they share. Methods are ordered by how many others
+    they outperform, so a transitive relation fills the upper triangle and leaves
+    the lower one empty. A filled cell below the diagonal means a method
+    outperforms one ranked above it, which can only happen inside a cycle, so the
+    red cells mark the intransitivity directly.
+
+    Takes a ``PairwiseTransitivityReport`` from ``beam.mcda.pairwise_transitivity``.
+    """
+    dom = np.asarray(report.dominance)
+    n = report.n_methods
+    names = report.method_names or tuple(f"method_{i + 1}" for i in range(n))
+
+    if report.consistent_order is not None:
+        order = list(report.consistent_order)
+    else:
+        order = list(np.argsort(-dom.sum(axis=1), kind="stable"))
+    ordered_names = [names[i] for i in order]
+
+    tied = set()
+    for a, b in report.tied_pairs:
+        tied.add((a, b))
+        tied.add((b, a))
+
+    # 0 empty, 1 consistent edge (upper triangle), 2 back-edge (cycle), 3 tie, 4 diagonal
+    grid = np.zeros((n, n))
+    for r, i in enumerate(order):
+        for c, j in enumerate(order):
+            if i == j:
+                grid[r, c] = 4
+            elif (i, j) in tied:
+                grid[r, c] = 3
+            elif dom[i, j] == 1:
+                grid[r, c] = 1 if r < c else 2
+
+    cmap = ListedColormap(["#f4f4f4", "#3b6ea5", "#cc3311", "#cfcfcf", "#777777"])
+    side = max(3.0, 0.45 * n + 1.5)
+    fig = Figure(figsize=(side, side))
+    ax = fig.subplots()
+    ax.imshow(grid, cmap=cmap, vmin=-0.5, vmax=4.5)
+    ax.set_xticks(range(n))
+    ax.set_xticklabels(ordered_names, rotation=45, ha="right", fontsize=8)
+    ax.set_yticks(range(n))
+    ax.set_yticklabels(ordered_names, fontsize=8)
+    ax.set_xlabel("method outperformed (column)")
+    ax.set_ylabel("method (row), ordered by pairwise wins")
+
+    triads = report.n_circular_triads
+    if report.is_transitive:
+        title = "pairwise dominance: transitive, one order is consistent"
+    else:
+        title = f"pairwise dominance: {triads} circular triad{'' if triads == 1 else 's'}"
+    ax.set_title(title, fontsize=10)
+
+    legend = [
+        Patch(facecolor="#3b6ea5", label="outperforms (consistent with the order)"),
+        Patch(facecolor="#cc3311", label="outperforms a higher-ranked method (cycle)"),
+        Patch(facecolor="#cfcfcf", label="tied"),
+    ]
+    ax.legend(handles=legend, loc="lower left", fontsize=7, framealpha=0.9)
     return _fig_to_base64(fig)

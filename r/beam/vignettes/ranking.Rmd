@@ -220,6 +220,18 @@ cat("pairs the sign test cannot separate:",
 
 Most pairs are not distinguishable: across the twelve datasets the ARI differences are often inside the floor, so neither method outperforms the other decisively. This is the critical-difference reading as an effect size, and it agrees with it.
 
+## Do the pairwise majorities agree with one order?
+
+`beam_pairwise_transitivity` reads the same pairwise relation and asks whether one order is consistent with it: the method preferred to every other one, the circular triads, and whether the relation is transitive.
+
+```{r transitivity}
+trans <- beam_pairwise_transitivity(sup)
+choice <- if (is.null(trans$condorcet_choice)) "none" else method_names[trans$condorcet_choice + 1]
+cat("method preferred to every other one:", choice, "\n")
+cat("transitive:", trans$is_transitive,
+    "; circular triads:", trans$n_circular_triads, "of", trans$n_triads, "\n")
+```
+
 ## Reading
 
 Seurat ranks first under the default pipeline and holds the top in almost every random weighting and every leave-one-dataset-out run, so the recommendation does not hang on the weighting or on any single dataset. The critical-difference diagram qualifies this: on ARI alone most methods sit in overlapping cliques, so the upper-middle methods are not separable at twelve datasets. See `?beam_rank`, `?beam_smaa`, `?beam_critical_difference` for the function documentation.
