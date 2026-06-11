@@ -634,7 +634,7 @@ def dominance_matrix_figure(report) -> str:
     ax.set_yticks(range(n))
     ax.set_yticklabels(ordered_names, fontsize=8)
     ax.set_xlabel("method outperformed (column)")
-    ax.set_ylabel("method (row), ordered by pairwise wins")
+    ax.set_ylabel("method (row), ordered by methods outperformed")
 
     triads = report.n_circular_triads
     if report.is_transitive:
