@@ -15,6 +15,8 @@ format:
 
 ## Goal
 
+This dataset also has a [generated standard report](../../docs/reports/m4.html), the self-contained HTML `beam.report` emits for any run. This vignette is the narrative walkthrough behind it.
+
 This vignette runs beam on the M4 forecasting competition (Makridakis, Spiliotis and Assimakopoulos 2020, [10.1016/j.ijforecast.2019.04.014](https://doi.org/10.1016/j.ijforecast.2019.04.014)), a large real benchmark from outside bioinformatics. M4 forecast 100,000 anonymized time series across six frequency bands (yearly, quarterly, monthly, weekly, daily, hourly). Each submitted method was scored by two error metrics, sMAPE and MASE, both lower is better. beam reads those two metrics from its registry as the cards `smape` and `mase`, treats the six frequency bands as the dataset axis, and runs the same pipeline as the bioinformatics examples.
 
 Three things are shown on real data. The registry does not care about the domain: forecasting metrics carry polarity, scale and normalization the same way clustering metrics do. The method ranking depends heavily on the frequency band, which is why leave-one-dataset-out and the critical-difference diagram across frequencies matter here. And the choice of how to pool the bands changes which method ranks first, so the recommendation is partly a decision about pooling rather than a fact about the methods.
@@ -101,7 +103,7 @@ The method that ranks first here need not be the one that ranked first in the of
 
 ## Ranking by frequency band
 
-The per-band sMAPE shows why the pooled order is not the whole story. The same method can lead on one band and trail on another.
+The per-band sMAPE shows why the pooled order is not the whole story. The same method can rank first on one band and last on another.
 
 ```{python}
 smape = m4.tensor(("smape",))[:, :, 0]
@@ -113,19 +115,16 @@ band_ranks = np.empty((n_methods, n_bands), dtype=int)
 for b in range(n_bands):
     band_ranks[:, b] = np.argsort(np.argsort(smape[:, b])) + 1
 
-fig, ax = plt.subplots(figsize=(7.0, 7.5))
-im = ax.imshow(band_ranks, cmap="RdYlGn_r", aspect="auto", vmin=1, vmax=n_methods)
-ax.set_xticks(range(n_bands))
-ax.set_xticklabels(m4.frequency_names, rotation=45, ha="right")
-ax.set_yticks(range(n_methods))
-ax.set_yticklabels(m4.method_names)
-ax.set_xlabel("frequency band (dataset axis)")
-ax.set_ylabel("forecasting method")
-ax.set_title("Per-band sMAPE rank (1 = lowest sMAPE on that band)")
-cbar = fig.colorbar(im, ax=ax, ticks=[1, n_methods])
-cbar.set_label("sMAPE rank (1 = best)")
-fig.tight_layout()
-plt.show()
+from beam import plot
+
+plot.rank_heatmap(
+    band_ranks,
+    row_names=m4.method_names,
+    col_names=m4.frequency_names,
+    row_label="forecasting method",
+    col_label="frequency band (dataset axis)",
+    title="Per-band sMAPE rank (1 = lowest sMAPE on that band)",
+)
 ```
 
 ## Leave one frequency band out
@@ -146,18 +145,7 @@ for i in order[:8]:
 ```
 
 ```{python}
-order = np.argsort(run.result.ranks)
-fig, ax = plt.subplots(figsize=(7.0, 7.5))
-ax.barh(range(n_methods), lodo.rank_stability[order] * 100, color="tab:orange")
-ax.set_yticks(range(n_methods))
-ax.set_yticklabels([m4.method_names[i] for i in order])
-ax.invert_yaxis()
-ax.set_xlim(0, 100)
-ax.set_xlabel(f"rank held across {len(lodo.evaluated_datasets)} leave-one-band-out runs (percent)")
-ax.set_ylabel("forecasting method (ordered by pooled rank)")
-ax.set_title("Leave-one-frequency-band-out rank stability (equal weights, SAW)")
-fig.tight_layout()
-plt.show()
+plot.dataset_stability(run)
 ```
 
 The hourly band is the most influential. It has only a few hundred series and very different dynamics from the long yearly and quarterly series, so a method tuned for it moves a lot in the ranking when it is dropped. This is the forecasting version of the method-by-dataset interaction the other examples show.
@@ -172,7 +160,7 @@ from beam.reporting import funky_heatmap_from_run
 funky_heatmap_from_run(run, title="M4: scores and rank robustness")
 ```
 
-There are only two metrics, so the glyph grid is small. The robustness panels are more informative: many of the 25 methods change rank when a band is dropped or the aggregation is changed, and the SMAA bar puts the top ranks on several methods rather than one. The methods score close together, so the pooled order is not firm.
+There are only two metrics, so the glyph grid is small. The robustness panels carry more: many of the 25 methods change rank when a band is dropped or the aggregation is changed, and the SMAA bar spreads the top ranks across several methods rather than one. The methods score close together, so the pooled order is not firm.
 
 ## Heterogeneity: how much of the sMAPE variance is the band
 
@@ -242,14 +230,7 @@ print(f"  most influential factor: {rs.most_influential_factor}")
 ```
 
 ```{python}
-labels = ["band\n(dataset)", "weighting", "aggregation", "interactions"]
-shares = [rs.dataset_share, rs.weighting_share, rs.aggregation_share, rs.interaction_share]
-fig, ax = plt.subplots(figsize=(6.0, 3.0))
-ax.bar(labels, [s * 100 for s in shares], color=["tab:blue", "tab:green", "tab:olive", "tab:gray"])
-ax.set_ylabel("share of rank variance (percent)")
-ax.set_title("What moves the M4 ranking")
-fig.tight_layout()
-plt.show()
+plot.rank_sensitivity(rs)
 ```
 
 The band carries almost all the rank variance and the two choices almost none. The M4 order is a question of which frequency you score on, not how you weight or aggregate. This is the same reading as the mixed-effects ICC above, reached a different way: an exact factorial decomposition of the ranks rather than a random-effects model of the scores. The headline method slips across bands, which is the variance the band share counts.
@@ -285,21 +266,12 @@ pdom = pooled.tool_names[pooled.most_frequent_top_tool]
 print(f"choices only ({pooled.n_specifications} combinations): "
       f"{pdom} first in {pooled.most_frequent_top_fraction * 100:.0f}%")
 
-order = curve.curve_order
-dom_ranks = [curve.specifications[i].ranks[curve.most_frequent_top_tool] for i in order]
-fig, ax = plt.subplots(figsize=(8.0, 3.0))
-ax.plot(range(len(order)), dom_ranks, color="tab:red")
-ax.invert_yaxis()
-ax.set_xlabel("specification (sorted by the top method's rank)")
-ax.set_ylabel(f"rank of {dom}")
-ax.set_title("Specification curve on M4 (weighting x aggregation x band)")
-fig.tight_layout()
-plt.show()
+plot.specification_curve(curve)
 ```
 
 ## Blind analysis
 
-A blind analysis fixes the pipeline before the method names are known, so the weighting and the metric set cannot be chosen to favor a method expected to lead. `beam.blind` hides the names and shuffles the rows; `beam.unblind` restores them. The ranking is unchanged, and the seal fingerprint is recorded in the manifest.
+A blind analysis fixes the pipeline before the method names are known, so the weighting and the metric set cannot be chosen to favor a method expected to rank first. `beam.blind` masks the names and shuffles the rows; `beam.unblind` restores them. The ranking is unchanged, and the seal fingerprint is recorded in the manifest.
 
 ```{python}
 from beam import blind, unblind
@@ -346,27 +318,7 @@ print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_tr
 The matrix below orders the methods by how many others they outperform. A transitive relation fills the upper triangle; a red cell below the diagonal marks a method that outperforms one ranked above it, which can only happen inside a cycle.
 
 ```{python}
-from matplotlib.colors import ListedColormap
-
-dom = trans.dominance
-order = list(np.argsort(-dom.sum(axis=1), kind="stable"))
-labels = [m4.method_names[i] for i in order]
-grid = np.zeros((trans.n_methods, trans.n_methods))
-for r, i in enumerate(order):
-    for c, j in enumerate(order):
-        if dom[i, j] == 1:
-            grid[r, c] = 1 if r < c else 2
-fig, ax = plt.subplots(figsize=(7.0, 7.0))
-ax.imshow(grid, cmap=ListedColormap(["#f4f4f4", "#3b6ea5", "#cc3311"]), vmin=-0.5, vmax=2.5)
-ax.set_xticks(range(len(labels)))
-ax.set_xticklabels(labels, rotation=90, fontsize=6)
-ax.set_yticks(range(len(labels)))
-ax.set_yticklabels(labels, fontsize=6)
-ax.set_xlabel("method outperformed (column)")
-ax.set_ylabel("method (row), ordered by methods outperformed")
-ax.set_title("Pairwise dominance on M4 sMAPE (red marks a cycle)")
-fig.tight_layout()
-plt.show()
+plot.pairwise_majority(trans)
 ```
 
 ## Report

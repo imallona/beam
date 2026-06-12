@@ -15,6 +15,8 @@ format:
 
 ## Goal
 
+This dataset also has a [generated standard report](../../docs/reports/duo2018.html), the self-contained HTML `beam.report` emits for any run. This vignette is the narrative walkthrough behind it.
+
 This vignette re-analyses the fourteen single-cell clustering methods benchmarked in Duo, Robinson and Soneson (2018) with the beam metric registry and the MCDA decision module. It loads the published method by dataset by metric tensor, pulls the metric cards, and pools each metric across the twelve datasets using the rule its card recommends. It then runs the MCDA pipeline and checks how stable the ranking is under different weightings, aggregation methods, and weight perturbations. It closes with a Demsar critical-difference diagram that asks whether the methods are separable on ARI at all.
 
 ## Set-up
@@ -148,23 +150,17 @@ for i, (w, m) in enumerate(combos):
 The ranks as a heatmap, rank 1 (best) in green and rank 14 (worst) in red. A column of one colour means that method holds its rank across every configuration.
 
 ```{python}
+from beam import plot
+
 n_methods = len(duo.method_names)
-fig, ax = plt.subplots(figsize=(9.0, 6.0))
-im = ax.imshow(ranks_grid, cmap="RdYlGn_r", aspect="auto", vmin=1, vmax=n_methods)
-ax.set_xticks(range(n_methods))
-ax.set_xticklabels(duo.method_names, rotation=90)
-ax.set_yticks(range(len(row_labels)))
-ax.set_yticklabels(row_labels)
-ax.set_xlabel("clustering method")
-ax.set_ylabel("weighting / aggregation method")
-ax.set_title("Rank by configuration (ARI higher better, runtime and entropy diff lower better)")
-for i in range(ranks_grid.shape[0]):
-    for j in range(ranks_grid.shape[1]):
-        ax.text(j, i, ranks_grid[i, j], ha="center", va="center", fontsize=7, color="black")
-cbar = fig.colorbar(im, ax=ax, ticks=[1, n_methods])
-cbar.set_label("rank (1 = best)")
-fig.tight_layout()
-plt.show()
+plot.rank_heatmap(
+    ranks_grid,
+    row_names=row_labels,
+    col_names=duo.method_names,
+    row_label="weighting / aggregation method",
+    col_label="clustering method",
+    title="Rank by configuration",
+)
 ```
 
 ```{python}
@@ -201,29 +197,9 @@ for i in cd.order:
 The diagram draws each method at its average ARI rank, with rank 1 (best, highest ARI) on the left. The bars join methods whose average ranks lie within the critical difference, so the methods a bar spans are not separable on ARI at this sample size.
 
 ```{python}
-ranks_sorted = cd.average_ranks[cd.order]
-names_sorted = [block_names[i] for i in cd.order]
+from beam import plot
 
-fig, ax = plt.subplots(figsize=(9.0, 3.2))
-y = 0.0
-ax.scatter(ranks_sorted, np.full_like(ranks_sorted, y), color="black", zorder=3)
-for x, name in zip(ranks_sorted, names_sorted):
-    ax.annotate(name, (x, y), xytext=(0, 8), textcoords="offset points",
-                ha="center", rotation=90, fontsize=8)
-
-clique_y = -0.15
-for k, clique in enumerate(cd.cliques):
-    positions = [float(cd.average_ranks[i]) for i in clique]
-    ax.plot([min(positions), max(positions)], [clique_y - 0.06 * k] * 2,
-            color="tab:blue", linewidth=3, solid_capstyle="round")
-
-ax.set_xlabel("average rank on ARI (1 = best, higher ARI; ground truth direction marked)")
-ax.set_yticks([])
-ax.set_ylim(clique_y - 0.06 * len(cd.cliques) - 0.1, 0.6)
-ax.set_title(f"Friedman p={cd.friedman_pvalue:.1e}, Nemenyi CD={cd.critical_difference:.2f}")
-ax.invert_xaxis()
-fig.tight_layout()
-plt.show()
+plot.critical_difference(cd)
 ```
 
 ## Pairwise superiority on ARI
@@ -258,25 +234,7 @@ print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_tr
 SC3 is preferred to every other method one at a time, yet the relation still carries one circular triad among the methods below it, so no single order agrees with all the pairwise majorities. The matrix below orders the methods by how many others they outperform. A transitive relation fills the upper triangle and leaves the lower one empty; a red cell below the diagonal marks a method that outperforms one ranked above it, which can only happen inside a cycle.
 
 ```{python}
-dom = trans.dominance
-order = list(np.argsort(-dom.sum(axis=1), kind="stable"))
-names = [duo.method_names[i] for i in order]
-grid = np.zeros((trans.n_methods, trans.n_methods))
-for r, i in enumerate(order):
-    for c, j in enumerate(order):
-        if dom[i, j] == 1:
-            grid[r, c] = 1 if r < c else 2
-fig, ax = plt.subplots(figsize=(6.0, 6.0))
-ax.imshow(grid, cmap=ListedColormap(["#f4f4f4", "#3b6ea5", "#cc3311"]), vmin=-0.5, vmax=2.5)
-ax.set_xticks(range(len(names)))
-ax.set_xticklabels(names, rotation=45, ha="right", fontsize=8)
-ax.set_yticks(range(len(names)))
-ax.set_yticklabels(names, fontsize=8)
-ax.set_xlabel("method outperformed (column)")
-ax.set_ylabel("method (row), ordered by methods outperformed")
-ax.set_title("Pairwise dominance on Duo 2018 ARI (red marks a cycle)")
-fig.tight_layout()
-plt.show()
+plot.pairwise_majority(trans)
 ```
 
 ## SMAA confidence
@@ -354,19 +312,7 @@ print(f"\nmost influential dataset: {influential} (largest rank shift {lodo.max_
 ```
 
 ```{python}
-n_eval = len(lodo.evaluated_datasets)
-order = base_order
-fig, ax = plt.subplots(figsize=(8.0, 4.0))
-ax.barh(range(n_methods), lodo.rank_stability[order] * 100, color="tab:orange")
-ax.set_yticks(range(n_methods))
-ax.set_yticklabels([duo.method_names[i] for i in order])
-ax.invert_yaxis()
-ax.set_xlabel(f"rank held across {n_eval} leave-one-dataset-out runs (percent)")
-ax.set_ylabel("clustering method (ordered by base rank)")
-ax.set_xlim(0, 100)
-ax.set_title("Leave-one-dataset-out rank stability (equal weights / SAW)")
-fig.tight_layout()
-plt.show()
+plot.dataset_stability(run)
 ```
 
 The funky heatmap shows the same run as a glyph table, with two robustness panels: the span of ranks each method takes across the leave-one-dataset-out runs, and the span across the five aggregations (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET) holding the weighting fixed. The brackets on the left group the methods the Friedman-Nemenyi test cannot separate on ARI. The two span panels differ: dropping a dataset barely moves the order, and Seurat holds rank one, but the choice of aggregation moves it considerably. On this benchmark the order depends more on how the metrics are combined than on which datasets are pooled.
@@ -440,21 +386,12 @@ print(
 The pooled grid keeps Seurat first in every weighting-by-aggregation combination, so the top is robust to the modeling choice. Adding the twelve datasets drops the fraction, since dropping to a single dataset is where the order moves. The curve below plots the top method's rank across the full grid, sorted from its best rank to its worst.
 
 ```{python}
-order = curve.curve_order
-dom_ranks = [curve.specifications[i].ranks[curve.most_frequent_top_tool] for i in order]
-fig, ax = plt.subplots(figsize=(8.0, 3.0))
-ax.plot(range(len(order)), dom_ranks, color="tab:red")
-ax.invert_yaxis()
-ax.set_xlabel("specification (sorted by the top method's rank)")
-ax.set_ylabel(f"rank of {dom}")
-ax.set_title("Specification curve on Duo 2018 (weighting x aggregation x dataset)")
-fig.tight_layout()
-plt.show()
+plot.specification_curve(curve)
 ```
 
 ## Blind analysis: fix the pipeline before seeing the names
 
-A benchmarker who can see which method is which while choosing the weighting and the metric set has room to tune the choices toward a method they expect to lead. `beam.blind` hides the method names and shuffles the rows under a seed, so the pipeline is fixed on opaque labels; `beam.unblind` restores the names afterward. The ranking does not change, because beam ranks on the score values and unblinding only renames the rows. What blinding adds is a record: the seal fingerprint goes into the run manifest.
+A benchmarker who can see which method is which while choosing the weighting and the metric set has room to tune the choices toward a method they expect to rank first. `beam.blind` masks the method names and shuffles the rows under a seed, so the pipeline is fixed on opaque labels; `beam.unblind` restores the names afterward. The ranking does not change, because beam ranks on the score values and unblinding only renames the rows. What blinding adds is a record: the seal fingerprint goes into the run manifest.
 
 ```{python}
 from beam import blind, unblind
@@ -475,7 +412,7 @@ print("blinding fingerprint in manifest:", blind_run.manifest["blinding"]["seal_
 
 ## Heterogeneity: where does the ARI variance live
 
-Leave-one-dataset-out asks whether the pooled ranking hangs on any single dataset. A mixed-effects model asks a different question: how much of the score variation is a stable method effect and how much is the method-by-dataset interaction that a single ranking hides. `beam.heterogeneity.mixed_effects` fits `score ~ method + (1 | dataset)` on one metric in R's lme4, with the method as a fixed effect and the dataset as a random intercept that absorbs how easy or hard each dataset is for every method alike. The fit needs the R toolchain, so the section below runs only when it is available.
+Leave-one-dataset-out asks whether the pooled ranking depends on any single dataset. A mixed-effects model asks a different question: how much of the score variation is a stable method effect and how much is the method-by-dataset interaction that a single ranking does not show. `beam.heterogeneity.mixed_effects` fits `score ~ method + (1 | dataset)` on one metric in R's lme4, with the method as a fixed effect and the dataset as a random intercept that absorbs how easy or hard each dataset is for every method alike. The fit needs the R toolchain, so the section below runs only when it is available.
 
 ```{python}
 from beam.heterogeneity import mixed_effects_from_matrix, r_available
@@ -502,19 +439,7 @@ else:
 
 ```{python}
 if me is not None:
-    order = np.argsort(me.method_effects)
-    names = [me.method_names[i] for i in order]
-    means = me.method_effects[order]
-    ses = me.method_effect_se[order]
-    fig, ax = plt.subplots(figsize=(8.0, 4.0))
-    ax.errorbar(means, range(len(names)), xerr=ses, fmt="o", color="tab:blue", capsize=3)
-    ax.set_yticks(range(len(names)))
-    ax.set_yticklabels(names)
-    ax.set_xlabel("ARI marginal mean over datasets (higher ranks first)")
-    ax.set_ylabel("clustering method (ordered by marginal mean)")
-    ax.set_title("Mixed-effects method effects on ARI, with standard errors")
-    fig.tight_layout()
-    plt.show()
+    plot.model_effects(me, xlabel="ARI marginal mean over datasets (higher ranks first)")
 ```
 
 The dataset intercept takes about 0.71 of the ARI variance, so most of the spread is datasets being uniformly easy or hard rather than methods reordering. SC3 and Seurat lead the marginal means and are not separable from each other given the standard errors, which matches the critical-difference reading above. The residual share, the upper bound on the method-by-dataset interaction at one run per cell, concentrates on the two weakest methods (RaceID2 and FlowSOM) on a few simulated and four-group datasets, not on a reshuffling of the strong methods. See [the mixed-effects explanation](../../docs/explanations/heterogeneity-mixed-effects.md).
@@ -577,22 +502,15 @@ print(f"  most influential factor: {rs.most_influential_factor}")
 ```
 
 ```{python}
-labels = ["dataset", "weighting", "aggregation", "interactions"]
-shares = [rs.dataset_share, rs.weighting_share, rs.aggregation_share, rs.interaction_share]
-fig, ax = plt.subplots(figsize=(6.0, 3.0))
-ax.bar(labels, [s * 100 for s in shares], color=["tab:blue", "tab:green", "tab:olive", "tab:gray"])
-ax.set_ylabel("share of rank variance (percent)")
-ax.set_title("What moves the Duo ranking")
-fig.tight_layout()
-plt.show()
+plot.rank_sensitivity(rs)
 ```
 
-The dataset carries the most, close to the 0.71 the mixed-effects ICC put on the ARI variance, reached here by an exact factorial decomposition of the ranks rather than a random-effects model of the scores. Two methods, the same reading. This is not in tension with the stable leave-one-dataset-out result above: that asks whether the pooled order survives dropping one dataset, and it does, because pooling averages over the per-dataset disagreement. The dataset share measures that disagreement directly, by ranking on each dataset on its own. The pooled order is stable; the per-dataset orders are not, and a single ranking hides it. The weighting completed the partial cells as worst (`missing="worst"`), a stated choice the share is read against.
+The dataset carries the most, close to the 0.71 the mixed-effects ICC put on the ARI variance, reached here by an exact factorial decomposition of the ranks rather than a random-effects model of the scores. Two methods, the same reading. This is not in tension with the stable leave-one-dataset-out result above: that asks whether the pooled order survives dropping one dataset, and it does, because pooling averages over the per-dataset disagreement. The dataset share measures that disagreement directly, by ranking on each dataset on its own. The pooled order is stable; the per-dataset orders are not, and a single pooled ranking does not show that disagreement. The weighting filled the partial cells with the lowest score (`missing="worst"`), a stated choice the share is read against.
 
 ## Recommendation
 
-Under the default pipeline (equal weights, SAW) on ARI, runtime and Shannon entropy difference pooled across the twelve datasets, Seurat ranks first, and it holds that position across all sixteen weighting-by-method configurations tested above. The SMAA analysis puts Seurat top-ranked in about 99 percent of random weight draws, and the weight-perturbation check finds its top rank is not fragile: no single weight change within the threshold dislodges it. Leave-one-dataset-out adds the dataset axis to that picture: Seurat keeps its first rank in all twelve runs that drop one dataset, so the recommendation does not hang on any single dataset. On the composite, RaceID2 and SAFE rank near the bottom.
+Under the default pipeline (equal weights, SAW) on ARI, runtime and Shannon entropy difference pooled across the twelve datasets, Seurat ranks first, and it holds that position across all sixteen weighting-by-method configurations tested above. The SMAA analysis puts Seurat top-ranked in about 99 percent of random weight draws, and the weight-perturbation check finds its top rank is not fragile: no single weight change within the threshold dislodges it. Leave-one-dataset-out adds the dataset axis: Seurat keeps its first rank in all twelve runs that drop one dataset, so the recommendation does not depend on any single dataset. On the composite, RaceID2 and SAFE rank near the bottom.
 
-The critical-difference diagram qualifies this. On ARI alone, the per-dataset ranks favour SC3 (best average ARI rank), with Seurat tied close behind, and the Friedman test is clearly significant (p well below 0.05), so the methods are not all equivalent. But the Nemenyi critical difference is large relative to the rank spread, so most pairs sit inside overlapping cliques and are not separable on ARI at twelve datasets. The composite ranks Seurat first because it also pools strong runtime and entropy-difference scores, not because it is the single best on ARI. The informative reading is that Seurat is a stable top choice across these three metrics and these weightings, while the gap between the upper-middle methods on ARI alone is within the noise the test can resolve.
+The critical-difference diagram qualifies this. On ARI alone, the per-dataset ranks favour SC3 (best average ARI rank), with Seurat tied close behind, and the Friedman test is clearly significant (p well below 0.05), so the methods are not all equivalent. But the Nemenyi critical difference is large relative to the rank spread, so most pairs sit inside overlapping cliques and are not separable on ARI at twelve datasets. The composite ranks Seurat first because it also pools strong runtime and entropy-difference scores, not because it ranks first on ARI alone. Read together, Seurat is a stable top choice across these three metrics and these weightings, while the gap between the upper-middle methods on ARI alone is within the noise the test can resolve.
 
 This matches the expected narrative for Seurat (stable top choice) and for RaceID2 (a consistent low performer). It diverges on FlowSOM: here FlowSOM sits mid-pack on the composite, not among the lowest, so the expected "RaceID2 and FlowSOM are consistent low performers" holds for RaceID2 but not for FlowSOM on this metric set and pooling.

@@ -15,6 +15,8 @@ format:
 
 ## Goal
 
+This benchmark also has a [generated standard report](../../docs/reports/gptcelltype.html), the self-contained HTML `beam.report` emits for any run. This vignette is the narrative walkthrough behind it.
+
 Labeling cell types with a large language model is a current topic in single-cell RNA-seq. Hou and Ji (2024) scored GPT-4 and GPT-3.5 against three reference-based annotators (CellMarker2.0, SingleR, ScType). Each method labels the cell types of a dataset. The score is the agreement with a manual expert annotation. This vignette re-runs that benchmark through beam. It reports three things a single accuracy table does not: how stable the ranking is across the modeling choices, how much of the ranking variance comes from the dataset, and whether the ranking changes between normal and cancer tissue. GPT-4 ranks first. GPT-3.5 ranks at or below the three classical tools, so the difference is specific to GPT-4 and not to language models in general.
 
 ## Provenance of the bundled tables
@@ -163,20 +165,16 @@ for i, (w, m) in enumerate(combos):
 ```
 
 ```{python}
-n = len(head)
-fig, ax = plt.subplots(figsize=(7.0, 6.5))
-im = ax.imshow(ranks_grid, cmap="RdYlGn_r", aspect="auto", vmin=1, vmax=n)
-ax.set_xticks(range(n)); ax.set_xticklabels(head, rotation=45, ha="right")
-ax.set_yticks(range(len(row_labels))); ax.set_yticklabels(row_labels, fontsize=7)
-ax.set_xlabel("annotation method")
-ax.set_ylabel("weighting / aggregation method")
-ax.set_title("Rank by configuration (both metrics higher is better)")
-for i in range(ranks_grid.shape[0]):
-    for j in range(ranks_grid.shape[1]):
-        ax.text(j, i, ranks_grid[i, j], ha="center", va="center", fontsize=7)
-cbar = fig.colorbar(im, ax=ax, ticks=[1, n]); cbar.set_label("rank (1 = best)")
-fig.tight_layout()
-plt.show()
+from beam import plot
+
+plot.rank_heatmap(
+    ranks_grid,
+    row_names=row_labels,
+    col_names=head,
+    row_label="weighting / aggregation method",
+    col_label="annotation method",
+    title="Rank by configuration (both metrics higher is better)",
+)
 
 top_per_combo = {head[int(np.argmin(row))] for row in ranks_grid}
 print("methods top-ranked in at least one of the 20 configurations:", ", ".join(sorted(top_per_combo)))
@@ -210,16 +208,7 @@ else:
 ```
 
 ```{python}
-acc = smaa.rank_acceptability_index[:, 0]
-o = np.argsort(-acc)
-fig, ax = plt.subplots(figsize=(7.0, 3.0))
-ax.bar([head[i] for i in o], acc[o] * 100, color="seagreen")
-ax.set_ylabel("share of weight draws ranked first (percent)")
-ax.set_xlabel("method")
-ax.set_title("SMAA rank-1 acceptability")
-ax.tick_params(axis="x", rotation=45)
-fig.tight_layout()
-plt.show()
+plot.smaa(run)
 ```
 
 `leave_one_metric_out` drops each metric in turn. With two metrics this ranks on each metric alone.
@@ -265,22 +254,7 @@ for clique in cd.cliques:
 ```
 
 ```{python}
-o = np.argsort(cd.average_ranks)
-ranks_sorted = cd.average_ranks[o]
-fig, ax = plt.subplots(figsize=(7.0, 2.6))
-ax.scatter(ranks_sorted, np.zeros_like(ranks_sorted), color="black", zorder=3)
-for r, i in zip(ranks_sorted, o):
-    ax.text(r, 0.08, head[i], rotation=90, ha="center", va="bottom", fontsize=8)
-for k, clique in enumerate(cd.cliques):
-    r = [cd.average_ranks[i] for i in clique]
-    ax.plot([min(r), max(r)], [-0.1 * (k + 1)] * 2, color="steelblue", lw=3)
-ax.set_xlim(ranks_sorted.max() + 0.5, ranks_sorted.min() - 0.5)
-ax.set_yticks([])
-ax.set_ylim(-0.1 * (len(cd.cliques) + 1) - 0.05, 0.7)
-ax.set_xlabel("average rank on agreement (1 = best)")
-ax.set_title(f"Critical difference (Friedman p={cd.friedman_pvalue:.1e}, CD={cd.critical_difference:.2f})")
-fig.tight_layout()
-plt.show()
+plot.critical_difference(cd)
 ```
 
 `pairwise_superiority` is the effect-size companion: for each method pair, the share of the 36 datasets where one method scores higher, the readable version of the significance the diagram gives.
@@ -306,27 +280,7 @@ print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_tr
 The matrix below orders the methods by how many others they outperform. A transitive relation fills the upper triangle; a red cell below the diagonal marks a method that outperforms one ranked above it, which only happens inside a cycle.
 
 ```{python}
-from matplotlib.colors import ListedColormap
-
-dom = trans.dominance
-order = list(np.argsort(-dom.sum(axis=1), kind="stable"))
-labels = [head[i] for i in order]
-grid = np.zeros((trans.n_methods, trans.n_methods))
-for r, i in enumerate(order):
-    for c, j in enumerate(order):
-        if dom[i, j] == 1:
-            grid[r, c] = 1 if r < c else 2
-fig, ax = plt.subplots(figsize=(6.0, 6.0))
-ax.imshow(grid, cmap=ListedColormap(["#f4f4f4", "#3b6ea5", "#cc3311"]), vmin=-0.5, vmax=2.5)
-ax.set_xticks(range(len(labels)))
-ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=8)
-ax.set_yticks(range(len(labels)))
-ax.set_yticklabels(labels, fontsize=8)
-ax.set_xlabel("method outperformed (column)")
-ax.set_ylabel("method (row), ordered by methods outperformed")
-ax.set_title("Pairwise dominance on LLM cell typing (red marks a cycle)")
-fig.tight_layout()
-plt.show()
+plot.pairwise_majority(trans)
 ```
 
 ## What moves the ranking: the data or the choice
@@ -356,15 +310,7 @@ print(f"  most influential factor: {rs.most_influential_factor}")
 ```
 
 ```{python}
-labels = ["dataset", "weighting", "aggregation", "interactions"]
-shares = [rs.dataset_share, rs.weighting_share, rs.aggregation_share, rs.interaction_share]
-fig, ax = plt.subplots(figsize=(6.0, 3.0))
-ax.bar(labels, [s * 100 for s in shares], color=["tab:blue", "tab:green", "tab:olive", "tab:gray"])
-ax.set_ylabel("share of rank variance (percent)")
-ax.set_xlabel("source of variation")
-ax.set_title("What moves the annotation ranking")
-fig.tight_layout()
-plt.show()
+plot.rank_sensitivity(rs)
 ```
 
 The dataset accounts for almost all of the rank variance. The weighting and the aggregation account for less than one percent combined. Leave-one-dataset-out reports whether the pooled order changes when one dataset is dropped.
@@ -401,7 +347,7 @@ print(f"choices only ({pooled.n_specifications} combinations): "
 
 ## Blind analysis
 
-A blind analysis fixes the pipeline before the method names are known. This matters here, where one method (GPT-4) is the one under test: blinding removes the chance to tune the weighting toward it. `beam.blind` hides the names and shuffles the rows; `beam.unblind` restores them. The ranking is unchanged, and the seal fingerprint is recorded in the manifest.
+A blind analysis fixes the pipeline before the method names are known. This matters here, where one method (GPT-4) is the one under test: blinding removes the chance to tune the weighting toward it. `beam.blind` masks the names and shuffles the rows; `beam.unblind` restores them. The ranking is unchanged, and the seal fingerprint is recorded in the manifest.
 
 ```{python}
 from beam import blind, unblind
@@ -705,7 +651,7 @@ The benchmark accounts for about a quarter of the score variance and the method-
 
 ## Recommendation
 
-On the 36 datasets where all five methods were run, GPT-4 ranks first on the mean agreement and the full match rate pooled across datasets. It holds that position across all twenty weighting-by-aggregation configurations. The SMAA draws and the weight-perturbation check report the top rank as not fragile. SingleR, a classical reference-based tool, ranks second, and GPT-3.5 ranks with the classical tools rather than with GPT-4.
+On the 36 datasets where all five methods were run, GPT-4 ranks first on the mean agreement and the full match rate pooled across datasets. It keeps that position across all twenty weighting-by-aggregation configurations. The SMAA draws and the weight-perturbation check report the top rank as not fragile. SingleR, a classical reference-based tool, ranks second, and GPT-3.5 ranks with the classical tools rather than with GPT-4.
 
 On the critical-difference diagram GPT-4 separates from the other four methods, which sit in overlapping cliques and are not separable on agreement at 36 datasets. The rank-sensitivity decomposition puts about 96 percent of the rank variance on the dataset and less than one percent on the weighting and the aggregation combined.
 

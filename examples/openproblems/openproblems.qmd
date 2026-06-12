@@ -15,6 +15,8 @@ format:
 
 ## Goal
 
+The batch integration task also has a [generated standard report](../../docs/reports/openproblems_batch_integration.html), the self-contained HTML `beam.report` emits for any run. This vignette is the narrative walkthrough behind it.
+
 This vignette runs beam on two tasks from OpenProblems in Single-Cell Analysis (openproblems.bio, Nature Biotechnology 2025), the continuous community benchmarking platform. OpenProblems scores every method on every dataset by every metric within a task and publishes the result as a method by dataset by metric tensor, so beam can ingest it directly. The two tasks are chosen for different reasons. The batch integration task is metric-rich (13 scIB metrics), so it runs the multi-criteria decision layer. The spatially variable genes task is dataset-rich (50 spatial datasets), so it is where the Bradley-Terry tree can find a feature split that the 12-dataset Duo benchmark could not show. See [the OpenProblems explanation](../../docs/explanations/openproblems-as-a-data-source.md).
 
 ## Provenance of the bundled tables
@@ -143,21 +145,13 @@ print("beam top method:", result.tool_names[beam_order[0]])
 print("mean-of-scores top method:", methods[mean_order[0]])
 ```
 
-The two rules disagree on the leading method. This is the same point the M4 and Duo vignettes make: a benchmark recommendation is partly a decision about how the criteria are combined. beam makes that decision explicit; a single leaderboard number hides it.
+The two rules disagree on the top-ranked method. This is the same point the M4 and Duo vignettes make: a benchmark recommendation is partly a decision about how the criteria are combined. beam makes that decision explicit; a single leaderboard number does not show it.
 
 ```{python}
-composite = result.result.composite
-order = np.argsort(composite)
-fig, ax = plt.subplots(figsize=(6.5, 4.5))
-colors = ["#d1495b" if methods[i] == methods[mean_order[0]] else "#3a7ca5" for i in order]
-ax.barh(range(len(order)), composite[order], color=colors)
-ax.set_yticks(range(len(order)))
-ax.set_yticklabels([result.tool_names[i] for i in order])
-ax.set_xlabel("beam MCDA composite score (equal weights, TOPSIS)")
-ax.set_ylabel("integration method (ordered by composite)")
-ax.set_title("Batch integration: beam ranking; red marks the mean-of-scores top method")
-fig.tight_layout()
-plt.show()
+from beam import plot
+
+# The outlined bar is the method the platform's mean-of-scores rule ranks first.
+plot.ranking(result, ground_truth_tool=methods[mean_order[0]])
 ```
 
 ### A funky heatmap that shows its own rank robustness
@@ -217,7 +211,7 @@ if r_available():
     print(f"dataset shift (ICC): {me.icc_dataset:.2f} of the ARI variance")
     print(f"residual share:      {me.residual_share:.2f}")
     top = np.argsort(-me.method_effects)[:3]
-    print("leading ARI marginal means:")
+    print("highest ARI marginal means:")
     for i in top:
         print(f"  {me.method_names[i]:14s} {me.method_effects[i]:.3f} +/- {me.method_effect_se[i]:.3f}")
 else:
@@ -358,21 +352,12 @@ pdom = pooled.tool_names[pooled.most_frequent_top_tool]
 print(f"choices only ({pooled.n_specifications} combinations): "
       f"{pdom} first in {pooled.most_frequent_top_fraction * 100:.0f}%")
 
-order = curve.curve_order
-dom_ranks = [curve.specifications[i].ranks[curve.most_frequent_top_tool] for i in order]
-fig, ax = plt.subplots(figsize=(8.0, 3.0))
-ax.plot(range(len(order)), dom_ranks, color="tab:red")
-ax.invert_yaxis()
-ax.set_xlabel("specification (sorted by the top method's rank)")
-ax.set_ylabel(f"rank of {dom}")
-ax.set_title("Specification curve on OpenProblems batch integration")
-fig.tight_layout()
-plt.show()
+plot.specification_curve(curve)
 ```
 
 ## Blind analysis
 
-A blind analysis fixes the weighting, the aggregation and the metric set before the method names are revealed. `beam.blind` hides the names and shuffles the rows; `beam.unblind` restores them. The order does not change, and the seal fingerprint goes into the manifest.
+A blind analysis fixes the weighting, the aggregation and the metric set before the method names are revealed. `beam.blind` masks the names and shuffles the rows; `beam.unblind` restores them. The order does not change, and the seal fingerprint goes into the manifest.
 
 ```{python}
 from beam import blind, unblind
@@ -416,27 +401,7 @@ print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_tr
 The matrix below orders the methods by how many others they outperform. A transitive relation fills the upper triangle; a red cell below the diagonal marks a method that outperforms one ranked above it, which only happens inside a cycle.
 
 ```{python}
-from matplotlib.colors import ListedColormap
-
-dom = trans.dominance
-order = list(np.argsort(-dom.sum(axis=1), kind="stable"))
-labels = [methods[i] for i in order]
-grid = np.zeros((trans.n_methods, trans.n_methods))
-for r, i in enumerate(order):
-    for c, j in enumerate(order):
-        if dom[i, j] == 1:
-            grid[r, c] = 1 if r < c else 2
-fig, ax = plt.subplots(figsize=(6.0, 6.0))
-ax.imshow(grid, cmap=ListedColormap(["#f4f4f4", "#3b6ea5", "#cc3311"]), vmin=-0.5, vmax=2.5)
-ax.set_xticks(range(len(labels)))
-ax.set_xticklabels(labels, rotation=90, fontsize=7)
-ax.set_yticks(range(len(labels)))
-ax.set_yticklabels(labels, fontsize=7)
-ax.set_xlabel("method outperformed (column)")
-ax.set_ylabel("method (row), ordered by methods outperformed")
-ax.set_title("Pairwise dominance on OpenProblems ARI (red marks a cycle)")
-fig.tight_layout()
-plt.show()
+plot.pairwise_majority(trans)
 ```
 
 ## Spatially variable genes: many datasets, the Bradley-Terry tree
@@ -453,7 +418,7 @@ from collections import Counter
 print("technologies:", dict(Counter(categorical["technology"])))
 ```
 
-Before fitting any model, the mean correlation per method per assay technology already shows the structure: no method is best on every assay. This figure needs no R.
+Before fitting any model, the mean correlation per method per assay technology already shows the structure: no method ranks highest on every assay. This figure needs no R.
 
 ```{python}
 import warnings
@@ -467,18 +432,15 @@ for ti, tech in enumerate(technologies):
         heat[:, ti] = np.nanmean(correlation[:, tech_array == tech], axis=1)
 
 method_order = np.argsort(-np.nanmean(heat, axis=1))
-fig, ax = plt.subplots(figsize=(7.5, 5.0))
-im = ax.imshow(heat[method_order], aspect="auto", cmap="viridis")
-ax.set_xticks(range(len(technologies)))
-ax.set_xticklabels(technologies, rotation=45, ha="right")
-ax.set_yticks(range(len(svg.method_names)))
-ax.set_yticklabels([svg.method_names[i] for i in method_order])
-ax.set_xlabel("spatial assay technology")
-ax.set_ylabel("spatially-variable-genes method (ordered by mean correlation)")
-ax.set_title("Mean correlation per method per assay (the column maximum moves between methods)")
-fig.colorbar(im, ax=ax, label="mean correlation (higher is better)")
-fig.tight_layout()
-plt.show()
+plot.score_heatmap(
+    heat[method_order],
+    row_names=[svg.method_names[i] for i in method_order],
+    col_names=technologies,
+    row_label="spatially-variable-genes method (ordered by mean correlation)",
+    col_label="spatial assay technology",
+    value_label="mean correlation (higher is better)",
+    title="Mean correlation per method per assay (the column maximum moves between methods)",
+)
 ```
 
 The tree turns each dataset into pairwise method comparisons on the correlation score, then splits the datasets by their features so each leaf has its own ranking, putting a statistical test behind the pattern the heatmap shows. The fit needs R's psychotree.
@@ -504,34 +466,15 @@ else:
     print("Provision it with envs/heterogeneity.yml.")
 ```
 
-When the tree splits, each leaf has its own leading method. The plot shows the leading method per leaf and which assay technologies fall in it.
+Each leaf has its own ranking. The plot shows the number of datasets in each leaf and the method that ranks first there.
 
 ```{python}
-if bt is not None and bt.did_split:
-    leaves = bt.terminal_nodes
-    labels = []
-    tops = []
-    for node in leaves:
-        members = bt.datasets_in_node(node.id)
-        techs = sorted({t for t, d in zip(categorical["technology"], svg.dataset_names) if d in members})
-        labels.append(f"leaf {node.id} (n={node.n})\n{', '.join(techs)}")
-        tops.append(bt.node_ranking(node.id)[0])
-    fig, ax = plt.subplots(figsize=(7.0, 3.5))
-    y = range(len(leaves))
-    ax.barh(list(y), [node.n for node in leaves], color="tab:green")
-    for i, t in enumerate(tops):
-        ax.text(0.3, i, f"leads: {t}", va="center", color="white", fontsize=9)
-    ax.set_yticks(list(y))
-    ax.set_yticklabels(labels, fontsize=8)
-    ax.set_xlabel("number of datasets in the leaf")
-    ax.set_ylabel("Bradley-Terry tree leaf (split by spatial assay)")
-    ax.set_title("Leading spatially-variable-genes method per leaf")
-    fig.tight_layout()
-    plt.show()
+if bt is not None:
+    plot.bradley_terry_leaves(bt)
 ```
 
-The pooled ranking has one method at the top, but the leaves disagree: which spatially-variable-genes method leads depends on the spatial assay technology. This is the heterogeneity a single ranking hides. The 50-dataset task shows it where the 12-dataset Duo benchmark could not. See [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md).
+The pooled ranking has one method at the top, but the leaves disagree: which method ranks first depends on the spatial assay technology. A single ranking does not show this heterogeneity. The 50-dataset task shows it where the 12-dataset Duo benchmark could not. See [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md).
 
 ## Recommendation
 
-On batch integration, beam re-derives the per-metric normalization from the cards and runs explicit MCDA with sensitivity, which can place a different method first than the platform's mean-of-scores leaderboard. On spatially variable genes, the Bradley-Terry tree shows there is no single best method across assays. Both cases show the same thing: a benchmark recommendation depends on how the criteria are combined and on which datasets it is read over. beam makes both explicit rather than collapsing them into one number.
+On batch integration, beam re-derives the per-metric normalization from the cards and runs explicit MCDA with sensitivity, which can place a different method first than the platform's mean-of-scores leaderboard. On spatially variable genes, the Bradley-Terry tree shows there is no single method that ranks first across assays. Both cases show the same thing: a benchmark recommendation depends on how the criteria are combined and on which datasets it is read over. beam makes both explicit rather than collapsing them into one number.

@@ -20,9 +20,11 @@
 #' @param ... Further arguments forwarded to the Python function, for example
 #'   `normalization`, `bounds`, `baselines`, `targets` from the card context.
 #'
-#' @return The Python `AggregationAgreementReport`. Read its fields with `$`.
+#' @return A `beam_aggregation_agreement` object wrapping the Python
+#'   `AggregationAgreementReport`. Read its fields with `$`, print it for a
+#'   compact summary, or `plot()` it for the agreement heatmap.
 #'
-#' @seealso [beam_rank].
+#' @seealso [beam_normalization_agreement], [beam_rank].
 #'
 #' @export
 beam_aggregation_agreement <- function(scores, polarity, weights = "equal",
@@ -30,7 +32,7 @@ beam_aggregation_agreement <- function(scores, polarity, weights = "equal",
                                        tool_names = NULL, ...) {
   .require_beam()
   mcda <- reticulate::import("beam.mcda")
-  mcda$aggregation_agreement(
+  report <- mcda$aggregation_agreement(
     scores = scores,
     polarity = as.character(polarity),
     weights = weights,
@@ -39,4 +41,5 @@ beam_aggregation_agreement <- function(scores, polarity, weights = "equal",
     tool_names = if (is.null(tool_names)) NULL else as.character(tool_names),
     ...
   )
+  .as_beam_report(report, "beam_aggregation_agreement")
 }

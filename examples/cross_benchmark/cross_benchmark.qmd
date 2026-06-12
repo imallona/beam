@@ -41,8 +41,9 @@ from itertools import combinations
 from scipy.stats import spearmanr, rankdata
 from IPython.display import display
 
+from beam import plot
 from beam.datasets import load_integration_benchmarks, load_integration_published_ranks
-from beam.reporting import rank_bump, funky_heatmap
+from beam.reporting import funky_heatmap
 
 CANON = ["combat", "harmony", "fastmnn", "scanorama", "liger"]
 BENCH = ["Tran", "scIB", "OpenProblems"]
@@ -101,18 +102,18 @@ consensus = dict(zip(
 ))
 columns = [f"{b}\n(reported)" for b in BENCH] + ["beam\nconsensus"]
 ranks = np.array([[published[b][m] for b in BENCH] + [int(consensus[m])] for m in CANON])
-fig = rank_bump(
+fig = plot.rank_bump(
     tuple(CANON), tuple(columns), ranks, divider_after=2,
     title="Reported method ranks across three benchmarks, and the beam consensus",
 )
 display(fig)
 ```
 
-Harmony holds the top rank consistently; combat, reported anywhere from first to last, settles to the bottom on the shared metrics; the consensus order is harmony, liger, fastMNN, scanorama, combat.
+Harmony ranks first consistently; combat, reported anywhere from first to last, settles to the bottom on the shared metrics; the consensus order is harmony, liger, fastMNN, scanorama, combat.
 
 ## Funky heatmaps per benchmark
 
-The glyph tables show why the reported orders differ: the per-metric pattern over the five methods is not the same across benchmarks. Each circle is the method's standing on that metric within the benchmark (larger is better), coloured by the scIB biological and batch groups. The per-metric column maximum shifts across benchmarks for the same method, which is what drives the disagreement.
+The glyph tables show why the reported orders differ: the per-metric pattern over the five methods is not the same across benchmarks. Each circle is the method's standing on that metric within the benchmark (larger is better), coloured by the scIB biological and batch groups. The per-metric column maximum shifts across benchmarks for the same method, which is what causes the disagreement.
 
 ```{python}
 groups = ["bio", "bio", "batch", "batch"]  # ARI, ASW | kBET, LISI
@@ -157,7 +158,7 @@ fig.tight_layout()
 plt.show()
 ```
 
-A method low and to the right mixes batches well while keeping the cell types separate. harmony sits high and to the right: it mixes batches well but blurs the cell types more than the others. A benchmark that weights biology equally then ranks it below fastMNN, which is what BatchBench does, and which is why the fifth source raises the disagreement measured below.
+A method low and to the right mixes batches well while keeping the cell types separate. harmony sits high and to the right: it mixes batches well but blurs the cell types more than the others. A benchmark that weights biology equally then ranks it below fastMNN, which is what BatchBench does, and which is why the fifth source increases the disagreement measured below.
 
 ## How much of the variance is the benchmark
 
@@ -207,7 +208,7 @@ else:
     print("Provision it with envs/heterogeneity.yml.")
 ```
 
-With BatchBench in the pool, harmony no longer leads on its own: it ties with liger at the top, fastMNN follows, and combat trails. The I-squared is high and the inconsistency Q is significant: the direct and the indirect evidence for the same method pairs do not line up, which is the network-model reading of the same finding the variance decomposition reports as a large method-by-benchmark share. The pooled ranking is an average over benchmarks that disagree, and the inconsistency statistic is the honest label on it.
+With BatchBench in the pool, harmony no longer ranks first on its own: it ties with liger at the top, fastMNN follows, and combat ranks last. The I-squared is high and the inconsistency Q is significant: the direct and the indirect evidence for the same method pairs do not line up, which is the network-model reading of the same finding the variance decomposition reports as a large method-by-benchmark share. The pooled ranking is an average over benchmarks that disagree, and the inconsistency statistic is the explicit label on it.
 
 ## Same data, two pipelines: the human pancreas
 
@@ -227,7 +228,7 @@ for i, m in enumerate(pc.methods):
     print(f"  {m:10s}  Tran D4 {pc.tran_mean_rank[i]:.2f}    scIB pancreas {pc.scib_mean_rank[i]:.2f}")
 ```
 
-Both pipelines agree on the leader on the shared data, but the rest of the order disagrees more than the pooled Spearman in the previous section would predict. LIGER ranks second on Tran D4 (it took first on kBET and LISI in Tran's per-metric ranks) and tied last on scIB pancreas, where the same metrics put it near the bottom. The disagreement is not the data; it is in the pipeline.
+Both pipelines agree on the top-ranked method on the shared data, but the rest of the order disagrees more than the pooled Spearman in the previous section would predict. LIGER ranks second on Tran D4 (it took first on kBET and LISI in Tran's per-metric ranks) and tied last on scIB pancreas, where the same metrics put it near the bottom. The disagreement is not the data; it is in the pipeline.
 
 ```{python}
 import matplotlib.pyplot as plt
@@ -249,7 +250,7 @@ plt.show()
 
 ## Per-benchmark fragility: which top method is closest to flipping
 
-Within each benchmark, the smallest single-weight change that swaps the top-ranked method tells the reader how much the recommendation hangs on the analyst's weighting. beam uses the Triantaphyllou-Sanchez closed-form weight delta on the mean-rank matrix; SAW with equal weights is the baseline so the perturbation is interpretable as "how much weight off one metric is needed to flip the top".
+Within each benchmark, the smallest single-weight change that swaps the top-ranked method tells the reader how much the recommendation depends on the analyst's weighting. beam uses the Triantaphyllou-Sanchez closed-form weight delta on the mean-rank matrix; SAW with equal weights is the baseline so the perturbation is interpretable as "how much weight off one metric is needed to flip the top".
 
 ```{python}
 from beam.mcda import smallest_weight_perturbation

@@ -25,6 +25,13 @@
 
 <div class="recommendation">
 <p>{{ recommendation }}</p>
+{% if critical_difference and critical_difference.transitivity and not critical_difference.transitivity.is_transitive %}
+<p class="warning">Consistency: the pairwise majorities are not transitive
+({{ critical_difference.transitivity.n_circular_triads }} circular triad{{ "" if critical_difference.transitivity.n_circular_triads == 1 else "s" }}),
+so no single order represents them{% if critical_difference.transitivity.choice %}, though
+<code>{{ critical_difference.transitivity.choice }}</code> is the method preferred to every other one
+individually{% endif %}. See the critical-difference section below.</p>
+{% endif %}
 </div>
 
 <h2>Input</h2>
@@ -74,6 +81,10 @@ span means the order at that position depends on a choice the analyst made.</p>
 {% endif %}
 
 <h2>Sensitivity</h2>
+<p>The ranking above commits to one weighting ({{ weighting }}) and one aggregation ({{ method }}),
+the way a reader would apply the tool in practice. The sections here re-run it under the
+alternatives, so you can read how much the recommendation depends on those analyst choices rather
+than on the data.</p>
 {% if smaa_figure %}
 <h3>SMAA weight sampling</h3>
 <img src="data:image/png;base64,{{ smaa_figure }}" alt="SMAA confidence per tool">
@@ -106,6 +117,19 @@ agree at a mean Kendall tau-b of {{ aggregation_agreement.mean_tau }}.
 <code>{{ aggregation_agreement.top_tool }}</code> first, so the top recommendation does not
 depend on the aggregation choice.{% else %}They do not all rank the same tool first, so the top
 recommendation depends on which aggregation is used.{% endif %}</p>
+{% endif %}
+{% if normalization_agreement %}
+<h3>Normalization agreement</h3>
+<p>Re-ranking under {{ normalization_agreement.n_labels }} normalizations
+({{ normalization_agreement.labels }}) gives orderings that agree at a mean Kendall tau-b of
+{{ normalization_agreement.mean_tau }}. The <code>recommended</code> column is the per-metric
+default each card declares ({{ normalization_agreement.recommended_detail }}); the others apply one
+strategy to every metric.
+{% if normalization_agreement.top_is_unanimous %}Every normalization ranks
+<code>{{ normalization_agreement.top_tool }}</code> first, so the top recommendation does not
+depend on the normalization choice.{% else %}They do not all rank the same tool first, so the top
+recommendation depends on which normalization is used.{% endif %}</p>
+<img src="data:image/png;base64,{{ normalization_agreement.figure }}" alt="normalization agreement heatmap">
 {% endif %}
 {% if rank_sensitivity %}
 <h3>What moves the ranking</h3>
@@ -154,21 +178,20 @@ about {{ perturbation.delta }} on <code>{{ perturbation.metric }}</code>.</p>
 <h2>Reference levels</h2>
 {% if reference_levels.baseline_rows %}
 <h3>Chance baseline</h3>
-<p>How many tools score better than a random method on each metric that declares a chance
-baseline.</p>
+<p>How many tools score above a random method on each metric that declares a chance baseline.</p>
 <table>
-  <tr><th>metric</th><th>chance score</th><th>tools beating chance</th></tr>
+  <tr><th>metric</th><th>chance score</th><th>tools above chance</th></tr>
   {% for row in reference_levels.baseline_rows %}
   <tr><td><code>{{ row.metric }}</code></td><td>{{ row.baseline }}</td>
   <td>{{ row.n_beating }} of {{ row.n_observed }} ({{ row.pct }} percent)</td></tr>
   {% endfor %}
 </table>
 {% if reference_levels.tools_never_beating %}
-<p class="warning">Beat chance on no metric that declares a baseline:
+<p class="warning">Do not score above chance on any metric that declares a baseline:
 {{ reference_levels.tools_never_beating | join(", ") }}. On this evidence these tools are not
 distinguishable from a random method.</p>
 {% else %}
-<p>Every tool beats chance on at least one metric.</p>
+<p>Every tool scores above chance on at least one metric.</p>
 {% endif %}
 {% endif %}
 {% if reference_levels.top_pair_indistinguishable is defined %}
@@ -239,7 +262,7 @@ higher than the next (<code>{{ critical_difference.superiority.runner }}</code>)
 out of {{ t.n_triads }}, so no single order agrees with all of them and the reported ranking depends on the aggregation rule
 {% if t.choice %}(though <code>{{ t.choice }}</code> is still preferred to every other method individually){% endif %}.</p>
 {% endif %}
-<img src="data:image/png;base64,{{ t.figure }}" alt="pairwise dominance matrix ordered by wins">
+<img src="data:image/png;base64,{{ t.figure }}" alt="pairwise dominance matrix ordered by methods outperformed">
 {% endif %}
 {% endif %}
 

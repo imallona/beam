@@ -17,7 +17,7 @@ format:
 
 The MCDA core in beam is not specific to bioinformatics. This vignette runs it on a made-up transportation example to illustrate three points that the bio scenarios state but do not show as sharply. The modes of transport play the role of the methods, and the terrains play the role of the datasets. Each mode is scored on a terrain by speed (km/h, higher is better), cost (per km, lower is better), and CO2 (g per km, lower is better). The numbers are illustrative, kept in a plausible range. The three metrics are bundled metric cards (`speed`, `cost`, `co2`), so this cross-domain example reads polarity and normalization from the same registry as the bioinformatics examples. Every example here goes through the cards, whether the metrics are biological or not.
 
-The first point is a method-by-dataset interaction. No mode is fastest on every terrain. A train is fastest on the flat road and the urban hop, a motorcycle on mud and uphill, a boat on open water, and a small plane on the long distance. A single global ranking over all terrains hides this structure.
+The first point is a method-by-dataset interaction. No mode is fastest on every terrain. A train is fastest on the flat road and the urban hop, a motorcycle on mud and uphill, a boat on open water, and a small plane on the long distance. A single global ranking over all terrains does not show this structure.
 
 The second point is partial coverage. Some modes do not run on some terrains at all. A boat cannot go off-road, a small plane cannot do an urban hop, and the land modes cannot cross open water. Those cells are missing (NaN). Because no mode is feasible on every terrain, a single pooled ranking over all modes is not even well defined. The output must be per-terrain.
 
@@ -54,41 +54,24 @@ print("normalization:", tb.normalization)
 The speed heatmap below shows the full mode-by-terrain table. Infeasible cells, where a mode cannot run on a terrain, are left blank and marked with a cross. A red box marks the fastest mode on each terrain: that is the documented ground truth. Reading down any column, the fastest mode changes from terrain to terrain. Reading across any row, no mode covers every terrain.
 
 ```{python}
+from beam import plot
+
 speed = tb.metric("speed")
 n_modes = len(tb.mode_names)
 n_terrains = len(tb.terrain_names)
 
-fig, ax = plt.subplots(figsize=(6.4, 3.6))
-masked = np.ma.masked_invalid(speed)
-cmap = plt.cm.viridis.copy()
-cmap.set_bad(color="#dddddd")
-im = ax.imshow(masked, cmap=cmap, aspect="auto", norm="log")
-
-ax.set_xticks(range(n_terrains))
-ax.set_xticklabels(tb.terrain_names, rotation=45, ha="right")
-ax.set_yticks(range(n_modes))
-ax.set_yticklabels(tb.mode_names)
-ax.set_xlabel("terrain (dataset axis)")
-ax.set_ylabel("transport mode (method axis)")
-ax.set_title("Speed by mode and terrain; red box marks the fastest mode")
-
-for t in range(n_terrains):
-    fastest = int(np.nanargmax(speed[:, t]))
-    ax.add_patch(
-        plt.Rectangle(
-            (t - 0.5, fastest - 0.5), 1.0, 1.0,
-            fill=False, edgecolor="#c44e52", linewidth=2.5,
-        )
-    )
-for i in range(n_modes):
-    for j in range(n_terrains):
-        if np.isnan(speed[i, j]):
-            ax.text(j, i, "x", ha="center", va="center", color="#888888")
-
-cbar = fig.colorbar(im, ax=ax)
-cbar.set_label("speed (km/h, log scale)")
-fig.tight_layout()
-plt.show()
+plot.score_heatmap(
+    speed,
+    row_names=tb.mode_names,
+    col_names=tb.terrain_names,
+    row_label="transport mode (method axis)",
+    col_label="terrain (dataset axis)",
+    value_label="speed (km/h, log scale)",
+    log=True,
+    highlight_best_per_col=True,
+    higher_is_better=True,
+    title="Speed by mode and terrain; red box marks the fastest mode",
+)
 ```
 
 The grey cells with a cross are the mode-terrain pairs that do not run. No row is free of them, so no mode is measured on every terrain. Any ranking that pools across terrains compares modes that were measured on different subsets of conditions, which is why a single pooled ranking over all modes is not well defined here.
@@ -171,7 +154,7 @@ for terrain in ["flat_road", "urban_hop", "uphill"]:
     print(f"{terrain:12s}  {bike:6.1f}  {ebike:6.1f}  {faster}")
 ```
 
-Trail running is slower than road running on the flat road and faster on mud and uphill, so neither mode is faster everywhere they both run. A pooled speed order over the two modes has to pick one ranking, which is wrong on at least one terrain. This is the cleanest illustration of method-by-dataset interaction in the example: a clustering method that leads on one tissue and trails on another behaves the same way, and a single pooled ranking would hide the flip.
+Trail running is slower than road running on the flat road and faster on mud and uphill, so neither mode is faster everywhere they both run. A pooled speed order over the two modes has to pick one ranking, which is wrong on at least one terrain. This is the clearest illustration of method-by-dataset interaction in the example: a clustering method that ranks first on one tissue and last on another behaves the same way, and a single pooled ranking would not show that reversal.
 
 ## Five aggregations on one terrain
 
@@ -195,29 +178,21 @@ for m in methods:
     print(f"  {m:14s}  {names[int(np.argmin(ranks_by_method[m]))]}")
 ```
 
-All five methods put the plane first on the long distance under speed-heavy weights, which is the fastest mode there. The methods reshuffle the middle of the table instead. SAW, TOPSIS, VIKOR and PROMETHEE II agree on the top of the order (plane, train, motorcycle) and differ only in where the boat and the light land modes land. COMET reads the table differently: it builds its ranking from characteristic objects rather than from a direct distance to the ideal, so it ranks the boat last and pushes the e-bike down, while still keeping the plane first. The top of the order is stable across methods; the middle is method-dependent, so a claim about the exact order of the middle modes should not lean on one method.
+All five methods put the plane first on the long distance under speed-heavy weights, which is the fastest mode there. The methods reshuffle the middle of the table instead. SAW, TOPSIS, VIKOR and PROMETHEE II agree on the top of the order (plane, train, motorcycle) and differ only in where the boat and the light land modes land. COMET reads the table differently: it builds its ranking from characteristic objects rather than from a direct distance to the ideal, so it ranks the boat last and pushes the e-bike down, while still keeping the plane first. The top of the order is stable across methods; the middle is method-dependent, so a claim about the exact order of the middle modes should not depend on one method.
 
 The same ranks as a heatmap. Each column is one mode, each row one aggregation method. A column of one colour means that mode keeps its rank across methods.
 
 ```{python}
 grid = np.array([ranks_by_method[m] for m in methods])
 
-fig, ax = plt.subplots(figsize=(6.4, 3.0))
-im = ax.imshow(grid, cmap="RdYlGn_r", aspect="auto", vmin=1, vmax=len(names))
-ax.set_xticks(range(len(names)))
-ax.set_xticklabels(names, rotation=45, ha="right")
-ax.set_yticks(range(len(methods)))
-ax.set_yticklabels(methods)
-ax.set_xlabel("transport mode")
-ax.set_ylabel("aggregation method")
-ax.set_title("Long-distance rank by mode and method (speed-heavy weights)")
-for i in range(grid.shape[0]):
-    for j in range(grid.shape[1]):
-        ax.text(j, i, int(grid[i, j]), ha="center", va="center", color="black")
-cbar = fig.colorbar(im, ax=ax, ticks=range(1, len(names) + 1))
-cbar.set_label("rank (1 = best)")
-fig.tight_layout()
-plt.show()
+plot.rank_heatmap(
+    grid,
+    row_names=methods,
+    col_names=names,
+    row_label="aggregation method",
+    col_label="transport mode",
+    title="Long-distance rank by mode and method (speed-heavy weights)",
+)
 ```
 
 ## Four weightings on the same terrain
@@ -272,27 +247,10 @@ print("cliques (not separable at alpha):", groups or "none")
 ```
 
 ```{python}
-order = cd.order
-names_sorted = [block_modes[i] for i in order]
-ranks_sorted = [cd.average_ranks[i] for i in order]
-ypos = list(range(len(order)))
-best = min(ranks_sorted)
-
-fig, ax = plt.subplots(figsize=(5.8, 3.0))
-ax.barh(ypos, ranks_sorted, color="#3a7ca5")
-ax.axvspan(best, best + cd.critical_difference, color="#c44e52", alpha=0.15)
-ax.axvline(best + cd.critical_difference, color="#c44e52", linestyle="--")
-ax.set_yticks(ypos)
-ax.set_yticklabels(names_sorted)
-ax.invert_yaxis()
-ax.set_xlabel("average speed rank across the common terrains (1 = fastest)")
-ax.set_ylabel("transport mode (fastest at top)")
-ax.set_title(f"Friedman p = {cd.friedman_pvalue:.3f}; shaded band is the critical difference")
-fig.tight_layout()
-plt.show()
+plot.critical_difference_band(cd)
 ```
 
-On this restricted block the Friedman test rejects (p around 0.002): the four ground modes are separable by speed across the five common terrains, in the fixed order motorcycle, bicycle, running, foot. The critical difference is wide enough that adjacent modes fall in the same clique, so neighbouring modes are not separable, but the extremes (motorcycle and foot) are. This is a different question from the per-terrain MCDA. It asks whether the ground modes have a stable speed ordering across the terrains they share, and here they do, because none of them has a terrain where it suddenly leads.
+On this restricted block the Friedman test rejects (p around 0.002): the four ground modes are separable by speed across the five common terrains, in the fixed order motorcycle, bicycle, running, foot. The critical difference is wide enough that adjacent modes fall in the same clique, so neighbouring modes are not separable, but the extremes (motorcycle and foot) are. This is a different question from the per-terrain MCDA. It asks whether the ground modes have a stable speed ordering across the terrains they share, and here they do, because none of them has a terrain where it suddenly ranks first.
 
 ## SMAA on one terrain
 
@@ -394,7 +352,7 @@ fig.tight_layout()
 plt.show()
 ```
 
-Pooled over both terrains the plane ranks first, because its 750 km/h on the long leg pulls its mean speed far above the others. Drop the long distance and rank on open water alone, and the motorboat ranks first instead: it is the fastest mode on the water, where the plane is slow. Drop open water and the long-distance order stands, plane first. The plane's first place is not a property of water travel; it is an artifact of including the long leg in the pool. The kayak ranks last in every run under speed-heavy weights. Leave-one-dataset-out turns that into a number: the plane and the motorboat each hold their rank in only half the runs, so the pooled recommendation between them hangs entirely on whether the long-distance terrain is in the pool. This is the same caution the per-terrain sections raise, now stated as a stability measure on a complete block.
+Pooled over both terrains the plane ranks first, because its 750 km/h on the long leg pulls its mean speed far above the others. Drop the long distance and rank on open water alone, and the motorboat ranks first instead: it is the fastest mode on the water, where the plane is slow. Drop open water and the long-distance order stands, plane first. The plane's first place is not a property of water travel; it is an artifact of including the long leg in the pool. The kayak ranks last in every run under speed-heavy weights. Leave-one-dataset-out turns that into a number: the plane and the motorboat each hold their rank in only half the runs, so the pooled recommendation between them depends entirely on whether the long-distance terrain is in the pool. This is the same caution the per-terrain sections raise, now stated as a stability measure on a complete block.
 
 `pairwise_transitivity` reads both complete blocks from the pairwise side, on speed. The four land modes have a fixed speed order, so their pairwise majorities are transitive and give one consistent order, motorcycle down to foot. The water modes have no cycle either, but the plane and the boat tie. The plane is faster on the long distance and the boat on open water, so over the two terrains each outperforms the other once, and neither is the pairwise-majority first choice. The kayak is outperformed by both. The tie is the pairwise reading of the half-and-half stability above.
 
@@ -403,7 +361,7 @@ from beam.mcda import pairwise_superiority, pairwise_transitivity
 from matplotlib.colors import ListedColormap
 
 
-def dominance_grid(scores, names):
+def majority_grid(scores, names):
     sup = pairwise_superiority(scores, "higher_is_better", method_names=names)
     trans = pairwise_transitivity(sup)
     dom = trans.dominance
@@ -421,8 +379,8 @@ def dominance_grid(scores, names):
     return grid, [names[i] for i in order], trans
 
 
-land_grid, land_labels, land_trans = dominance_grid(block, block_modes)
-water_grid, water_labels, water_trans = dominance_grid(water_block[:, :, 0], water_modes)
+land_grid, land_labels, land_trans = majority_grid(block, block_modes)
+water_grid, water_labels, water_trans = majority_grid(water_block[:, :, 0], water_modes)
 print(f"land:  transitive {land_trans.is_transitive}, tied pairs {len(land_trans.tied_pairs)}")
 print(f"water: transitive {water_trans.is_transitive}, tied pairs {len(water_trans.tied_pairs)}")
 
@@ -440,7 +398,7 @@ for ax, grid, labels, title in [
     ax.set_xlabel("mode outperformed (column)")
     ax.set_title(title)
 axes[0].set_ylabel("mode (row), ordered by methods outperformed")
-fig.suptitle("Pairwise dominance by speed (blue = outperforms, grey = tie)")
+fig.suptitle("Pairwise majorities by speed (blue = outperforms, grey = tie)")
 fig.tight_layout()
 plt.show()
 ```
@@ -486,7 +444,11 @@ print(f"{curve.n_specifications} specifications; {dom} first in "
       f"{curve.n_distinct_top_tools} modes reach the top")
 ```
 
-A blind analysis hides the mode names before the pipeline is fixed. `beam.blind` relabels and shuffles the rows; `beam.unblind` restores them. The order does not change.
+```{python}
+plot.specification_curve(curve)
+```
+
+A blind analysis masks the mode names before the pipeline is fixed. `beam.blind` relabels and shuffles the rows; `beam.unblind` restores them. The order does not change.
 
 ```{python}
 from beam import blind, unblind
@@ -501,7 +463,7 @@ print("ranking identical after unblinding:",
 print("blinding fingerprint:", blind_run.manifest["blinding"]["seal_sha256"][:12])
 ```
 
-## Heterogeneity: the interaction dominates here
+## Heterogeneity: the interaction is large
 
 The mixed-effects model puts a number on what the per-terrain sections show. Fit on speed, with the mode as a fixed effect and the terrain as a random intercept, it splits the speed variance into a between-terrain shift and the rest. The fit needs R's lme4, so the chunk runs only when it is available.
 
@@ -526,4 +488,4 @@ The contrast with the other examples is clear. On M4 the band intercept takes mo
 
 This example was built so that no mode runs on every terrain and no mode is fastest on every terrain it does run on. Both facts push the analysis to be per-terrain. Partial coverage means a pooled ranking over all modes is not even well defined, since different modes are measured on different terrains. The method-by-dataset interaction means that even where a pooled ranking is computable, it reports a single order that is wrong on at least some terrains: the fast modes lead on their own terrains and trail on others.
 
-This mirrors method-by-dataset interaction in bioinformatics benchmarks. A clustering method that leads on one tissue can trail on another, and a method that needs a feature one dataset lacks is simply not applicable there, which is the same role the NaN cells play here. The transportation numbers are made up, but the structure of the problem is the same. Report per dataset and mark which method leads on each. Then use the cross-dataset tests (the critical-difference diagram, SMAA, weight perturbation) to say how much of the apparent ordering survives a change of conditions or of preferences.
+This matches method-by-dataset interaction in bioinformatics benchmarks. A clustering method that ranks first on one tissue can rank last on another, and a method that needs a feature one dataset lacks is simply not applicable there, which is the same role the NaN cells play here. The transportation numbers are made up, but the structure of the problem is the same. Report per dataset and mark which method ranks first on each. Then use the cross-dataset tests (the critical-difference diagram, SMAA, weight perturbation) to say how much of the apparent ordering survives a change of conditions or of preferences.

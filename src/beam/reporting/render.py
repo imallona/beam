@@ -164,6 +164,10 @@ def _build_context(
     if agg is not None:
         context["aggregation_agreement"] = agg
 
+    norm = _normalization_agreement_section(result)
+    if norm is not None:
+        context["normalization_agreement"] = norm
+
     rs = _rank_sensitivity_section(result)
     if rs is not None:
         context["rank_sensitivity"] = rs
@@ -194,6 +198,52 @@ def _aggregation_agreement_summary(result: RunResult) -> dict[str, Any] | None:
         "top_is_unanimous": bool(report.top_is_unanimous),
         "top_tool": result.tool_names[report.top_tool],
         "n_methods": len(report.methods),
+    }
+
+
+def _normalization_agreement_section(result: RunResult) -> dict[str, Any] | None:
+    """Summary and figure for how much the ranking depends on the normalization.
+
+    Re-ranks the matrix under the card-recommended normalization and the uniform
+    strategies, reporting the mean pairwise Kendall tau-b, whether they all rank
+    the same tool first, how many ran, and the tau-b agreement heatmap. ``None``
+    when fewer than two normalizations produce a ranking on this input.
+    """
+    from beam.mcda import normalization_agreement
+
+    ctx = result.context
+    try:
+        report = normalization_agreement(
+            result.matrix,
+            ctx.polarity,
+            weights=result.result.weighting,
+            method=result.result.method,
+            recommended=list(ctx.normalization),
+            bounds=list(ctx.bounds),
+            baselines=list(ctx.baselines),
+            targets=list(ctx.targets),
+            tool_names=result.tool_names,
+        )
+    except ValueError:
+        return None
+    tau = report.mean_pairwise_tau
+    figure = figures.agreement_heatmap(
+        report.labels,
+        report.tau_matrix,
+        mean_tau=tau,
+        choice_label="normalization",
+    )
+    recommended_detail = ", ".join(
+        f"{mid}: {strat}" for mid, strat in zip(result.metric_ids, ctx.normalization, strict=False)
+    )
+    return {
+        "mean_tau": "n/a" if np.isnan(tau) else f"{tau:.2f}",
+        "top_is_unanimous": bool(report.top_is_unanimous),
+        "top_tool": result.tool_names[report.top_tool],
+        "n_labels": len(report.labels),
+        "labels": ", ".join(report.labels),
+        "recommended_detail": recommended_detail,
+        "figure": figures._fig_to_base64(figure),
     }
 
 
@@ -339,8 +389,8 @@ def _reference_levels_section(result: RunResult) -> dict[str, Any] | None:
     """Build the chance-baseline and noise-floor section, or ``None`` when inactive.
 
     Returns a dict only when at least one metric declares a chance baseline or a
-    noise floor. The chance part lists per-metric beat counts and names the tools
-    that beat chance on no metric; the noise-floor part names the indistinguishable
+    noise floor. The chance part lists per-metric counts of tools above chance and
+    names the tools above chance on no metric; the noise-floor part names the indistinguishable
     tool pairs and flags the top two tools when they fall within the floor.
     """
     rb = result.random_baseline
@@ -430,7 +480,7 @@ def _critical_difference_section(
     cliques = [[result.tool_names[i] for i in clique] for clique in report.cliques]
     section = {
         "figure": figures.critical_difference_figure(
-            result.tool_names, report.average_ranks, report.critical_difference
+            result.tool_names, report.average_ranks, report.critical_difference, report.cliques
         ),
         "friedman_pvalue": f"{report.friedman_pvalue:.4g}",
         "critical_difference": f"{report.critical_difference:.3f}",
@@ -465,6 +515,6 @@ def _critical_difference_section(
         "n_triads": trans.n_triads,
         "choice": choice,
         "coefficient": None if coeff is None else f"{coeff:.2f}",
-        "figure": figures.dominance_matrix_figure(trans),
+        "figure": figures.pairwise_majority_figure(trans),
     }
     return section

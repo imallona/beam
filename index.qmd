@@ -27,6 +27,15 @@ Each vignette doubles as a CI integration test (rendered on every push):
 - [Cross-benchmark meta-analysis](examples/cross_benchmark/cross_benchmark.qmd): four single-cell integration benchmarks under one consistent rule.
 - [LLM cell type annotation](examples/cell_type_annotation/cell_type_annotation.qmd): GPT-4 and GPT-3.5 against the classical annotators on the Hou and Ji (2024) benchmark, then a cross-benchmark comparison across four LLM annotation benchmarks (GPTCelltype, DeepCellSeek, AnnDictionary, SOAR).
 
+## Generated reports
+
+Every run can be written to one self-contained HTML file with `beam.report`. These are the reports beam produces for each bundled dataset, the artefact a command-line or CSV user gets, built in CI and not authored:
+
+- [Duo 2018 clustering](docs/reports/duo2018.html)
+- [M4 forecasting](docs/reports/m4.html)
+- [OpenProblems batch integration](docs/reports/openproblems_batch_integration.html)
+- [LLM cell type annotation](docs/reports/gptcelltype.html)
+
 ## Source
 
 [github.com/imallona/beam](https://github.com/imallona/beam). GPL-3 code, CC-BY-4.0 metric cards.

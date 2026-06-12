@@ -15,12 +15,12 @@ format:
 
 ## Goal
 
-This vignette runs the simulated scenarios. Four scenarios with documented ground truth feed through the same MCDA report layout as the Duo vignette, to verify at a glance that the pipeline reports what each scenario was built to encode.
+This vignette runs the simulated scenarios. Four scenarios with documented ground truth feed through the same MCDA report layout as the Duo vignette, to verify that the pipeline reports what each scenario was built to encode.
 
-- random: anti-correlated scores so no method Pareto-dominates. Which method comes out on top depends entirely on weights; SMAA confidence is spread across the Pareto frontier; the top rank is fragile under weight perturbation.
-- dominant: one method dominates on every metric. It is rank 1 under any weighting; SMAA confidence factor for it is 1; no single-criterion weight perturbation can move it off the top rank.
+- random: anti-correlated scores, so no method scores higher on both metrics. Which method ranks first depends entirely on the weights; SMAA confidence is spread across the Pareto frontier; the top rank is fragile under weight perturbation.
+- dominant: one method scores highest on every metric. It is rank 1 under any weighting; its SMAA confidence factor is 1; no single-criterion weight perturbation moves it off the top rank.
 - ties: two methods produce identical scores. They share a rank under any weighting.
-- odd dataset: one method is best on most datasets, another is best on one odd dataset. The cross-dataset aggregation rule declared on each metric card picks the method best overall.
+- odd dataset: one method ranks first on most datasets, another ranks first on one odd dataset. The cross-dataset aggregation rule declared on each metric card picks the method that ranks first overall.
 
 ## Set-up
 
@@ -185,7 +185,7 @@ plt.show()
 
 ## Funky heatmap with rank robustness
 
-The funky heatmap shows a scenario as a glyph table with robustness panels next to the order. The canonical scenarios are single-dataset, so there is no leave-one-dataset-out span here; the panels shown are the rank span across the five aggregations and the SMAA rank-acceptability bar. The random scenario has the two metrics trading off against each other, so the order changes when the aggregation or the weighting changes.
+The funky heatmap shows a scenario as a glyph table with robustness panels next to the order. The canonical scenarios are single-dataset, so there is no leave-one-dataset-out span here; the panels shown are the rank span across the five aggregations and the SMAA rank-acceptability bar. In the random scenario the two metrics conflict, so the order changes when the aggregation or the weighting changes.
 
 ```{python}
 import beam
@@ -215,32 +215,22 @@ for d in range(n_datasets):
     for rank_pos, tool_idx in enumerate(order, start=1):
         ari_per_dataset_ranks[tool_idx, d] = rank_pos
 
-fig, ax = plt.subplots(figsize=(5.5, 3.0))
-im = ax.imshow(
-    ari_per_dataset_ranks, cmap="RdYlGn_r", aspect="auto",
-    vmin=1, vmax=len(odd.method_names),
-)
-ax.set_xticks(range(n_datasets))
-ax.set_xticklabels([f"d{i}" for i in range(n_datasets)])
-ax.set_yticks(range(len(odd.method_names)))
-ax.set_yticklabels(odd.method_names)
-ax.set_xlabel("dataset")
-ax.set_ylabel("method")
+from beam import plot
+
 truth_top = odd.method_names[odd.expectation.expected_top_ranked]
-ax.set_title(f"truth: {truth_top} ranks first overall; one odd dataset flips locally")
-for i in range(ari_per_dataset_ranks.shape[0]):
-    for j in range(ari_per_dataset_ranks.shape[1]):
-        ax.text(j, i, ari_per_dataset_ranks[i, j], ha="center", va="center",
-                fontweight="bold", color="black")
-cbar = fig.colorbar(im, ax=ax, ticks=range(1, len(odd.method_names) + 1))
-cbar.set_label("ARI rank (1 = best)")
-fig.tight_layout()
-plt.show()
+plot.rank_heatmap(
+    ari_per_dataset_ranks,
+    row_names=odd.method_names,
+    col_names=[f"d{i}" for i in range(n_datasets)],
+    row_label="method",
+    col_label="dataset",
+    title=f"truth: {truth_top} ranks first overall; one odd dataset reorders locally",
+)
 ```
 
 ## Normalization strategy matters
 
-Plain min-max scaling is the obvious default, and it is wrong for some metrics. Two scenarios make the failure concrete. In each one the top-ranked method under unguarded all-min_max differs from the one under the card defaults. See the explanation page on normalization and scales for the reasoning.
+Plain min-max scaling is a common default, and it is wrong for some metrics. Two scenarios make the failure concrete. In each one the top-ranked method under unguarded all-min_max differs from the one under the card defaults. See the explanation page on normalization and scales for the reasoning.
 
 ```{python}
 for s in normalization_failure_scenarios():
@@ -269,7 +259,7 @@ for s in normalization_failure_scenarios():
             print(f"  - {w}")
 ```
 
-The outlier-runtime scenario shows how a single slow method flattens the runtime column under min-max. The plot puts the normalized runtime under min-max next to the same column under the card default log_min_max.
+The outlier-runtime scenario shows how a single slow method compresses the runtime column under min-max. The plot shows the normalized runtime under min-max next to the same column under the card default log_min_max.
 
 ```{python}
 outlier = next(s for s in normalization_failure_scenarios() if s.kind == "minmax_heavy_tail")
@@ -302,11 +292,11 @@ fig.tight_layout()
 plt.show()
 ```
 
-The dashed line is the actual runtime in seconds. Under min-max the four good methods (m0 to m3) sit at almost the same height, so their real speed differences vanish and a tiny ARI difference decides the order. Under log_min_max the bars track the true ordering, so the genuinely fastest good method ranks first.
+The dashed line is the actual runtime in seconds. Under min-max the four fast methods (m0 to m3) sit at almost the same height, so their real speed differences vanish and a tiny ARI difference decides the order. Under log_min_max the bars follow the true ordering, so the fastest method ranks first.
 
 ## Are the methods separable across datasets?
 
-The MCDA composite gives one ranking, but it does not say whether that ranking is statistically real across the datasets. The Demsar (2006) Friedman test and Nemenyi post-hoc answer that. Here they run on the odd-dataset scenario, using the per-dataset ARI as the tool by dataset matrix. See the explanation page on comparing methods across datasets for the reasoning.
+The MCDA composite gives one ranking, but it does not say whether the differences hold across the datasets. The Demsar (2006) Friedman test and Nemenyi post-hoc answer that. Here they run on the odd-dataset scenario, using the per-dataset ARI as the tool by dataset matrix. See the explanation page on comparing methods across datasets for the reasoning.
 
 ```{python}
 odd = next(s for s in scenarios if s.kind == "odd_dataset")
@@ -323,27 +313,10 @@ print("cliques (not significantly different):", groups or "none")
 ```
 
 ```{python}
-order = cd.order
-names_sorted = [odd.method_names[i] for i in order]
-ranks_sorted = [cd.average_ranks[i] for i in order]
-ypos = list(range(len(order)))
-best = min(ranks_sorted)
-
-fig, ax = plt.subplots(figsize=(5.5, 3.0))
-ax.barh(ypos, ranks_sorted, color="#3a7ca5")
-ax.axvspan(best, best + cd.critical_difference, color="#c44e52", alpha=0.15)
-ax.axvline(best + cd.critical_difference, color="#c44e52", linestyle="--")
-ax.set_yticks(ypos)
-ax.set_yticklabels(names_sorted)
-ax.invert_yaxis()
-ax.set_xlabel("average rank (1 = best)")
-ax.set_ylabel("method (best at top)")
-ax.set_title(f"Friedman p = {cd.friedman_pvalue:.2f}; methods within the shaded band are not separable")
-fig.tight_layout()
-plt.show()
+plot.critical_difference_band(cd)
 ```
 
-With only five datasets the critical difference is wide. Every method falls inside the shaded band, and the Friedman test does not reject at alpha 0.05, so the data cannot separate the methods even though the MCDA composite puts m0 first. The recommendation holds under the stated weighting, but a claim that one method is better across datasets would need more datasets to support it.
+With only five datasets the critical difference is wide. Every method falls inside the shaded band, and the Friedman test does not reject at alpha 0.05, so the data cannot separate the methods even though the MCDA composite ranks m0 first. The recommendation holds under the stated weighting, but a claim that one method ranks higher across datasets would need more datasets to support it.
 
 `pairwise_superiority` reads the same data as an effect size: how often each method outperforms another across the five datasets. With so few datasets the sign test has almost no power, so the pairwise records are close and none reaches significance, the same conclusion the critical-difference band gives.
 
@@ -367,32 +340,12 @@ print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_tr
 The matrix below orders the methods by how many others they outperform. A transitive relation fills the upper triangle; a red cell below the diagonal marks a method that outperforms one ranked above it, which only happens inside a cycle.
 
 ```{python}
-from matplotlib.colors import ListedColormap
-
-dom = trans.dominance
-order = list(np.argsort(-dom.sum(axis=1), kind="stable"))
-labels = [odd.method_names[i] for i in order]
-grid = np.zeros((trans.n_methods, trans.n_methods))
-for r, i in enumerate(order):
-    for c, j in enumerate(order):
-        if dom[i, j] == 1:
-            grid[r, c] = 1 if r < c else 2
-fig, ax = plt.subplots(figsize=(5.0, 5.0))
-ax.imshow(grid, cmap=ListedColormap(["#f4f4f4", "#3b6ea5", "#cc3311"]), vmin=-0.5, vmax=2.5)
-ax.set_xticks(range(len(labels)))
-ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=8)
-ax.set_yticks(range(len(labels)))
-ax.set_yticklabels(labels, fontsize=8)
-ax.set_xlabel("method outperformed (column)")
-ax.set_ylabel("method (row), ordered by methods outperformed")
-ax.set_title("Pairwise dominance (red marks a cycle)")
-fig.tight_layout()
-plt.show()
+plot.pairwise_majority(trans)
 ```
 
 ## Heterogeneity diagnostics on a synthetic interaction
 
-The canonical scenarios above are single-dataset (a method by metric matrix), so they cover the MCDA layer but not the heterogeneity layer, which needs a dataset axis. To show the heterogeneity diagnostics with a known ground truth, here is a small synthetic method by dataset by metric case built to contain a feature-driven ranking reversal: method A leads on the "easy" datasets and method C leads on the "hard" ones, with method B in the middle. The datasets carry a `regime` feature that marks which group they belong to.
+The canonical scenarios above are single-dataset (a method by metric matrix), so they cover the MCDA layer but not the heterogeneity layer, which needs a dataset axis. To show the heterogeneity diagnostics with a known ground truth, here is a small synthetic method by dataset by metric case built to contain a feature-driven ranking reversal: method A ranks first on the "easy" datasets and method C on the "hard" ones, with method B in the middle. The datasets carry a `regime` feature that marks which group they belong to.
 
 ```{python}
 rng = np.random.default_rng(0)
@@ -405,7 +358,7 @@ for j in range(8):
     het[:, j] = np.clip(np.array(means) + rng.normal(0, 0.05, 3), 0, 1)
 ```
 
-A mixed-effects model on this metric reports a small dataset intercept and a large residual. With one observation per cell the residual is the method-by-dataset interaction confounded with noise, and here it dominates because the methods reorder between the two regimes rather than the datasets differing in difficulty. The fits need the R toolchain, so the chunks run only when it is available.
+A mixed-effects model on this metric reports a small dataset intercept and a large residual. With one observation per cell the residual is the method-by-dataset interaction confounded with noise, and here it is the largest share because the methods reorder between the two regimes rather than the datasets differing in difficulty. The fits need the R toolchain, so the chunks run only when it is available.
 
 ```{python}
 from beam.heterogeneity import (
@@ -423,7 +376,7 @@ else:
     print("R with lme4 not available; skipping the mixed-effects fit.")
 ```
 
-The Bradley-Terry tree finds the feature behind the interaction. Unlike the small real benchmarks, this synthetic case has enough datasets and a clean signal, so the parameter-stability test splits the datasets on `regime` and assigns a different leading method to each leaf, recovering exactly the reversal built into the construction.
+The Bradley-Terry tree finds the feature behind the interaction. Unlike the small real benchmarks, this synthetic case has enough datasets and a clean signal, so the parameter-stability test splits the datasets on `regime` and gives each leaf a different method ranking first, recovering exactly the reversal built into the construction.
 
 ```{python}
 if bttree_available():
@@ -490,7 +443,7 @@ for name in ["dominant", "random"]:
 
 The dominant scenario's top method has a rank span of zero and is rank 1 in every combination, as built: with no dataset axis and a method that scores highest everywhere, no modeling choice can move it, so `specification_curve` reports it first in 100 percent of the specifications and only one method reaching the top. In the random scenario the top method's rank moves with the choice, the most-frequent-top fraction drops below 100 percent, and more than one method reaches the top, because the two metrics trade off and there is no data axis to carry the variance.
 
-A blind analysis fixes the weighting and the aggregation before the method names are known. `beam.blind` hides the names; `beam.unblind` restores them. The order is unchanged.
+A blind analysis fixes the weighting and the aggregation before the method names are known. `beam.blind` masks the names; `beam.unblind` restores them. The order is unchanged.
 
 ```{python}
 from beam import blind, unblind
@@ -515,7 +468,7 @@ print("blinding fingerprint:", blind_run.manifest["blinding"]["seal_sha256"][:12
 
 ## A cross-domain example: transportation
 
-The MCDA core is not specific to bioinformatics. A worked cross-domain example scores transport modes (the methods) across terrains (the datasets) on speed, cost, and CO2, with infeasible mode-terrain pairs left as NaN. It shows the method-by-dataset interaction (no mode is fastest on every terrain) and the partial-coverage problem (no mode runs on every terrain) more sharply than the bio scenarios do. It lives in its own vignette so the content is not duplicated here: see `examples/transportation/transportation.qmd`.
+The MCDA core is not specific to bioinformatics. A worked cross-domain example scores transport modes (the methods) across terrains (the datasets) on speed, cost, and CO2, with infeasible mode-terrain pairs left as NaN. It shows the method-by-dataset interaction (no mode is fastest on every terrain) and the partial-coverage problem (no mode runs on every terrain) more sharply than the bio scenarios do. It is documented in its own vignette so the content is not duplicated here: see `examples/transportation/transportation.qmd`.
 
 ## What is missing
 

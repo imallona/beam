@@ -404,3 +404,41 @@ test_that("beam_leave_one_dataset_out runs on a tool by dataset by metric array"
   )
   expect_s3_class(report, "python.builtin.object")
 })
+
+test_that("beam_normalization_agreement returns a classed report and prints", {
+  skip_if_no_beam()
+  scores <- matrix(c(0.95, 10, 0.80, 20, 0.60, 30, 0.40, 40), ncol = 2, byrow = TRUE)
+  polarity <- c("higher_is_better", "lower_is_better")
+  report <- beam_normalization_agreement(scores, polarity, tool_names = c("a", "b", "c", "d"))
+  expect_s3_class(report, "beam_normalization_agreement")
+  expect_s3_class(report, "beam_report")
+  out <- capture.output(print(report))
+  expect_true(any(grepl("beam_normalization_agreement", out)))
+  expect_true(any(grepl("Kendall tau-b", out)))
+})
+
+test_that("beam_aggregation_agreement gets the beam_report class", {
+  skip_if_no_beam()
+  scores <- matrix(c(0.9, 30, 0.7, 50, 0.5, 40, 0.3, 20), ncol = 2, byrow = TRUE)
+  report <- beam_aggregation_agreement(scores, c("higher_is_better", "lower_is_better"))
+  expect_s3_class(report, "beam_aggregation_agreement")
+  expect_s3_class(report, "beam_report")
+})
+
+test_that("plot on an agreement report writes a file", {
+  skip_if_no_beam()
+  scores <- matrix(c(0.9, 30, 0.7, 50, 0.5, 40, 0.3, 20), ncol = 2, byrow = TRUE)
+  report <- beam_normalization_agreement(scores, c("higher_is_better", "lower_is_better"))
+  path <- tempfile(fileext = ".png")
+  plot(report, path = path)
+  expect_true(file.exists(path) && file.info(path)$size > 0)
+})
+
+test_that("beam_plot draws effect plots from a run", {
+  skip_if_no_beam()
+  run <- beam_rank(write_scores(), sensitivity = FALSE)
+  path <- tempfile(fileext = ".png")
+  beam_plot(run, "ranking", path)
+  expect_true(file.exists(path) && file.info(path)$size > 0)
+  expect_error(beam_plot(run, "not_a_plot"), "unknown plot kind")
+})

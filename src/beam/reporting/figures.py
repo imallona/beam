@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import base64
 import io
+from collections.abc import Sequence
 
 import matplotlib
 import numpy as np
@@ -23,7 +24,7 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.colors import ListedColormap, Normalize
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
-from matplotlib.patches import Patch
+from matplotlib.patches import Patch, Rectangle
 
 
 def _fig_to_base64(fig: Figure) -> str:
@@ -33,12 +34,12 @@ def _fig_to_base64(fig: Figure) -> str:
     return base64.b64encode(buffer.read()).decode("ascii")
 
 
-def ranking_figure(
+def ranking_plot(
     tool_names: tuple[str, ...],
     composite: np.ndarray,
     ranks: np.ndarray,
     ground_truth_tool: str | None = None,
-) -> str:
+) -> Figure:
     """Horizontal bar chart of the composite score per tool, rank 1 at the top.
 
     When ``ground_truth_tool`` names a tool documented to rank first, its bar
@@ -62,15 +63,25 @@ def ranking_figure(
     ax.set_ylabel("tool")
     if ground_truth_tool is not None:
         ax.legend([bars[0]], [f"documented first: {ground_truth_tool}"], loc="lower right")
-    return _fig_to_base64(fig)
+    return fig
 
 
-def normalized_heatmap(
+def ranking_figure(
+    tool_names: tuple[str, ...],
+    composite: np.ndarray,
+    ranks: np.ndarray,
+    ground_truth_tool: str | None = None,
+) -> str:
+    """Base64 PNG of :func:`ranking_plot` for the HTML report."""
+    return _fig_to_base64(ranking_plot(tool_names, composite, ranks, ground_truth_tool))
+
+
+def normalized_heatmap_plot(
     tool_names: tuple[str, ...],
     metric_ids: tuple[str, ...],
     normalized: np.ndarray,
     ranks: np.ndarray,
-) -> str:
+) -> Figure:
     """Heatmap of the normalized scores (rows tools by rank, columns metrics)."""
     order = np.argsort(ranks)
     names = [tool_names[i] for i in order]
@@ -86,14 +97,24 @@ def normalized_heatmap(
     ax.set_ylabel("tool (ordered by rank)")
     bar = fig.colorbar(image, ax=ax)
     bar.set_label("normalized score in [0, 1] (higher is preferred per metric)")
-    return _fig_to_base64(fig)
+    return fig
 
 
-def smaa_confidence_figure(
+def normalized_heatmap(
+    tool_names: tuple[str, ...],
+    metric_ids: tuple[str, ...],
+    normalized: np.ndarray,
+    ranks: np.ndarray,
+) -> str:
+    """Base64 PNG of :func:`normalized_heatmap_plot` for the HTML report."""
+    return _fig_to_base64(normalized_heatmap_plot(tool_names, metric_ids, normalized, ranks))
+
+
+def smaa_confidence_plot(
     tool_names: tuple[str, ...],
     confidence_factor: np.ndarray,
     ranks: np.ndarray,
-) -> str:
+) -> Figure:
     """Bar chart of the SMAA confidence factor (share of draws ranked first)."""
     order = np.argsort(ranks)
     names = [tool_names[i] for i in order]
@@ -107,15 +128,24 @@ def smaa_confidence_figure(
     ax.set_xlabel("share of random weightings ranked first (percent)")
     ax.set_ylabel("tool (ordered by headline rank)")
     ax.set_xlim(0, 100)
-    return _fig_to_base64(fig)
+    return fig
 
 
-def dataset_stability_figure(
+def smaa_confidence_figure(
+    tool_names: tuple[str, ...],
+    confidence_factor: np.ndarray,
+    ranks: np.ndarray,
+) -> str:
+    """Base64 PNG of :func:`smaa_confidence_plot` for the HTML report."""
+    return _fig_to_base64(smaa_confidence_plot(tool_names, confidence_factor, ranks))
+
+
+def dataset_stability_plot(
     tool_names: tuple[str, ...],
     rank_stability: np.ndarray,
     ranks: np.ndarray,
     n_datasets: int,
-) -> str:
+) -> Figure:
     """Bar chart of the per-tool leave-one-dataset-out rank stability.
 
     Each bar is the share of leave-one-dataset-out runs in which the tool kept
@@ -134,7 +164,17 @@ def dataset_stability_figure(
     ax.set_xlabel(f"rank held across {n_datasets} leave-one-dataset-out runs (percent)")
     ax.set_ylabel("tool (ordered by headline rank)")
     ax.set_xlim(0, 100)
-    return _fig_to_base64(fig)
+    return fig
+
+
+def dataset_stability_figure(
+    tool_names: tuple[str, ...],
+    rank_stability: np.ndarray,
+    ranks: np.ndarray,
+    n_datasets: int,
+) -> str:
+    """Base64 PNG of :func:`dataset_stability_plot` for the HTML report."""
+    return _fig_to_base64(dataset_stability_plot(tool_names, rank_stability, ranks, n_datasets))
 
 
 _GROUP_COLORS = (
@@ -146,6 +186,224 @@ _GROUP_COLORS = (
     "#aa3377",
     "#bbbbbb",
 )
+
+
+def rank_heatmap(
+    ranks: np.ndarray,
+    row_names: Sequence[str],
+    col_names: Sequence[str],
+    *,
+    row_label: str = "tool",
+    col_label: str = "column",
+    title: str | None = None,
+) -> Figure:
+    """Heatmap of integer ranks, one rank printed in each cell.
+
+    A general labelled rank grid: rows are tools, columns are whatever the rank
+    is taken over, a weighting-by-aggregation configuration or a dataset. Each
+    cell holds the tool's rank in that column (1 first), coloured so the better
+    ranks are green. The same plot reads as "rank by configuration" or "rank by
+    dataset" depending on what the columns are.
+
+    Parameters
+    ----------
+    ranks
+        ``(n_rows, n_cols)`` integer ranks, 1 best.
+    row_names, col_names
+        Row and column labels.
+    row_label, col_label
+        Axis labels.
+    title
+        Optional figure title.
+    """
+    ranks = np.asarray(ranks, dtype=float)
+    n_rows, n_cols = ranks.shape
+    fig = Figure(figsize=(max(4.0, 0.6 * n_cols + 2.0), max(2.5, 0.4 * n_rows + 1.0)))
+    ax = fig.subplots()
+    ax.imshow(ranks, aspect="auto", cmap="RdYlGn_r", vmin=1, vmax=max(2, n_rows))
+    ax.set_xticks(range(n_cols))
+    ax.set_xticklabels(list(col_names), rotation=45, ha="right", fontsize=8)
+    ax.set_yticks(range(n_rows))
+    ax.set_yticklabels(list(row_names), fontsize=8)
+    ax.set_xlabel(col_label)
+    ax.set_ylabel(row_label)
+    for i in range(n_rows):
+        for j in range(n_cols):
+            if not np.isnan(ranks[i, j]):
+                ax.text(j, i, f"{int(ranks[i, j])}", ha="center", va="center", fontsize=7)
+    if title:
+        ax.set_title(title, fontsize=10)
+    return fig
+
+
+def score_heatmap(
+    values: np.ndarray,
+    row_names: Sequence[str],
+    col_names: Sequence[str],
+    *,
+    row_label: str = "tool",
+    col_label: str = "dataset",
+    value_label: str = "score",
+    log: bool = False,
+    highlight_best_per_col: bool = False,
+    higher_is_better: bool = True,
+    title: str | None = None,
+) -> Figure:
+    """Heatmap of raw scores, tools by columns, NaN-aware.
+
+    Draws the raw tool-by-dataset (or tool-by-group) scores. Missing cells are
+    left grey rather than imputed. With ``highlight_best_per_col`` the best score
+    in each column is outlined, the ground-truth box the transportation and M4
+    vignettes draw. ``log`` colours on a log scale for a metric that spans orders
+    of magnitude.
+
+    Parameters
+    ----------
+    values
+        ``(n_rows, n_cols)`` raw scores, may contain NaN.
+    row_names, col_names
+        Row and column labels.
+    row_label, col_label, value_label
+        Axis and colourbar labels.
+    log
+        Colour on a log scale (values must be positive where present).
+    highlight_best_per_col
+        Outline the best cell per column, by ``higher_is_better``.
+    higher_is_better
+        Direction used to pick the best cell when highlighting.
+    title
+        Optional figure title.
+    """
+    from matplotlib.colors import LogNorm
+
+    values = np.asarray(values, dtype=float)
+    n_rows, n_cols = values.shape
+    masked = np.ma.masked_invalid(values)
+    cmap = matplotlib.colormaps["viridis"].copy()
+    cmap.set_bad("#dddddd")
+    fig = Figure(figsize=(max(4.0, 0.7 * n_cols + 2.0), max(2.5, 0.4 * n_rows + 1.0)))
+    ax = fig.subplots()
+    norm = None
+    if log:
+        positive = masked.compressed()
+        positive = positive[positive > 0]
+        if positive.size:
+            norm = LogNorm(vmin=float(positive.min()), vmax=float(positive.max()))
+    image = ax.imshow(masked, aspect="auto", cmap=cmap, norm=norm)
+    ax.set_xticks(range(n_cols))
+    ax.set_xticklabels(list(col_names), rotation=45, ha="right", fontsize=8)
+    ax.set_yticks(range(n_rows))
+    ax.set_yticklabels(list(row_names), fontsize=8)
+    ax.set_xlabel(col_label)
+    ax.set_ylabel(row_label)
+    bar = fig.colorbar(image, ax=ax, fraction=0.046)
+    bar.set_label(value_label)
+    if highlight_best_per_col:
+        for j in range(n_cols):
+            col = masked[:, j]
+            if col.count() == 0:
+                continue
+            best = int(np.ma.argmax(col) if higher_is_better else np.ma.argmin(col))
+            ax.add_patch(
+                Rectangle((j - 0.5, best - 0.5), 1, 1, fill=False, edgecolor="#cc3311", linewidth=2)
+            )
+    if title:
+        ax.set_title(title, fontsize=10)
+    return fig
+
+
+def effects_plot(
+    labels: Sequence[str],
+    estimates: np.ndarray,
+    errors: np.ndarray | None = None,
+    *,
+    xlabel: str = "estimate",
+    title: str | None = None,
+) -> Figure:
+    """Horizontal point estimates with optional error bars, best at the top.
+
+    The shared drawing for a model's per-method estimate: the mixed-effects
+    marginal means, the Plackett-Luce or Bradley-Terry worths. Methods are
+    ordered by the estimate, largest first. Overlapping error bars between
+    neighbours read as not separable.
+    """
+    labels = list(labels)
+    estimates = np.asarray(estimates, dtype=float)
+    order = np.argsort(-estimates)
+    names = [labels[i] for i in order]
+    est = estimates[order]
+    err = None if errors is None else np.asarray(errors, dtype=float)[order]
+    fig = Figure(figsize=(7, max(2.0, 0.4 * len(names) + 0.5)))
+    ax = fig.subplots()
+    ax.errorbar(
+        est, range(len(names)), xerr=err, fmt="o", color="#4477aa", ecolor="#88aacc", capsize=3
+    )
+    ax.set_yticks(range(len(names)))
+    ax.set_yticklabels(names)
+    ax.invert_yaxis()
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel("method")
+    if title:
+        ax.set_title(title, fontsize=10)
+    return fig
+
+
+def variance_shares_plot(
+    components: dict[str, float],
+    *,
+    title: str | None = None,
+) -> Figure:
+    """Bar chart of variance components as shares of the total.
+
+    Takes the ``variance_components`` map from a mixed-effects or source-variance
+    report (factor name to variance) and draws each as a share of the total, so
+    the bars sum to one. The residual or dispersion bar is greyed.
+    """
+    names = list(components)
+    values = np.array([components[k] for k in names], dtype=float)
+    total = float(values.sum())
+    shares = values / total if total > 0 else values
+    colors = ["#bbbbbb" if k.lower() in {"residual", "dispersion"} else "#4477aa" for k in names]
+    fig = Figure(figsize=(max(4.0, 1.1 * len(names) + 1.5), 3.5))
+    ax = fig.subplots()
+    ax.bar(range(len(names)), shares, color=colors)
+    ax.set_xticks(range(len(names)))
+    ax.set_xticklabels(names, rotation=20, ha="right", fontsize=9)
+    ax.set_ylabel("share of variance")
+    ax.set_xlabel("component")
+    ax.set_ylim(0, 1)
+    if title:
+        ax.set_title(title, fontsize=10)
+    return fig
+
+
+def bradley_terry_leaves_plot(report, *, title: str | None = None) -> Figure:
+    """Bar chart of the datasets per Bradley-Terry tree leaf, labelled by the
+    method ranking first in each leaf.
+
+    Each leaf of the tree is one bar, its length the number of datasets in the
+    leaf, annotated with the method that ranks first there. A tree that did not
+    split has one bar holding every dataset. Takes a ``BradleyTerryTreeReport``.
+    """
+    leaves = list(report.terminal_nodes)
+    assignment = list(report.leaf_assignment)
+    sizes, names = [], []
+    for node in leaves:
+        size = node.n if node.n is not None else assignment.count(node.id)
+        sizes.append(int(size))
+        first = report.node_ranking(node.id)[0]
+        names.append(f"leaf {node.id}: {first}")
+    fig = Figure(figsize=(7, max(2.0, 0.5 * len(leaves) + 0.8)))
+    ax = fig.subplots()
+    ax.barh(range(len(leaves)), sizes, color="#228833")
+    ax.set_yticks(range(len(leaves)))
+    ax.set_yticklabels(names, fontsize=8)
+    ax.invert_yaxis()
+    ax.set_xlabel("datasets in the leaf")
+    ax.set_ylabel("Bradley-Terry leaf (method ranking first)")
+    if title:
+        ax.set_title(title, fontsize=10)
+    return fig
 
 
 def rank_bump(
@@ -260,6 +518,9 @@ def funky_heatmap(
     consensus_low: np.ndarray | None = None,
     consensus_high: np.ndarray | None = None,
     consensus_label: str = "rank span across\naggregations (1 is best)",
+    norm_consensus_low: np.ndarray | None = None,
+    norm_consensus_high: np.ndarray | None = None,
+    norm_consensus_label: str = "rank span across\nnormalizations (1 is best)",
     smaa_acceptability: np.ndarray | None = None,
     title: str | None = None,
 ) -> Figure:
@@ -303,6 +564,11 @@ def funky_heatmap(
         the five aggregations; draws the aggregation rank-span panel.
     consensus_label
         x-axis label for the aggregation panel.
+    norm_consensus_low, norm_consensus_high
+        Optional ``(n_methods,)`` smallest and largest rank per method across
+        the normalization strategies; draws the normalization rank-span panel.
+    norm_consensus_label
+        x-axis label for the normalization panel.
     smaa_acceptability
         Optional ``(n_methods, n_ranks)`` SMAA rank-acceptability index, entry
         ``[a, k - 1]`` the share of sampled weightings ranking method ``a`` at
@@ -332,6 +598,7 @@ def funky_heatmap(
     has_lodo = rank_low is not None and rank_high is not None
     has_worth = worth is not None
     has_consensus = consensus_low is not None and consensus_high is not None
+    has_norm_consensus = norm_consensus_low is not None and norm_consensus_high is not None
     has_smaa = smaa_acceptability is not None
     n_cliques = len([c for c in cliques if len(c) > 1]) if cliques else 0
 
@@ -341,6 +608,7 @@ def funky_heatmap(
         (has_worth, "worth", 2.0),
         (has_lodo, "lodo", 2.0),
         (has_consensus, "consensus", 2.0),
+        (has_norm_consensus, "norm_consensus", 2.0),
         (has_smaa, "smaa", 2.6),
     ):
         if present:
@@ -454,6 +722,18 @@ def funky_heatmap(
             consensus_label,
         )
 
+    # Normalization-consensus rank span.
+    if has_norm_consensus:
+        _rank_span_panel(
+            ax_by_kind["norm_consensus"],
+            order,
+            ranks,
+            norm_consensus_low,
+            norm_consensus_high,
+            n_methods,
+            norm_consensus_label,
+        )
+
     # SMAA rank-acceptability stacked bar: the share of sampled weightings that
     # place each method at each rank, coloured by rank.
     if has_smaa:
@@ -488,16 +768,70 @@ def funky_heatmap(
     return fig
 
 
-def critical_difference_figure(
+def critical_difference_plot(
     tool_names: tuple[str, ...],
     average_ranks: np.ndarray,
     critical_difference: float,
-) -> str:
-    """Average-rank plot with the critical difference shown as a reference bar.
+    cliques: tuple[tuple[int, ...], ...] = (),
+) -> Figure:
+    """Canonical Friedman-Nemenyi critical-difference diagram (Demsar 2006).
 
-    Tools are placed on a rank axis where rank 1 ranks first. A horizontal bar
-    of length equal to the critical difference is drawn so the reader can see
-    which tools are closer together than the test can separate.
+    Each tool sits at its average rank across datasets, rank 1 first. The red
+    reference bar at the top is one critical difference wide. A blue bar joins
+    each group of tools whose average ranks differ by less than the critical
+    difference, the cliques the Nemenyi test cannot separate, so tools under one
+    bar are statistically tied. This is the diagram people recognise in machine
+    learning benchmarking, drawn here one tool per row so it stays readable for
+    the dozen-plus methods a bioinformatics benchmark carries.
+
+    ``cliques`` is the tuple of tool-index groups from a
+    ``CriticalDifferenceReport``; pass it to draw the connecting bars. With no
+    cliques only the points and the reference bar are drawn.
+    """
+    order = list(np.argsort(average_ranks))
+    row_of = {tool: y for y, tool in enumerate(order)}
+    names = [tool_names[i] for i in order]
+    values = np.asarray(average_ranks, dtype=float)
+    multi = [c for c in cliques if len(c) > 1]
+    fig = Figure(figsize=(8.0, max(2.5, 0.42 * len(names) + 0.5 * max(1, len(multi)))))
+    ax = fig.subplots()
+    ax.scatter(values[order], range(len(order)), color="#222222", zorder=3)
+    ax.set_yticks(range(len(names)))
+    ax.set_yticklabels(names)
+    ax.invert_yaxis()
+    ax.set_xlabel("average rank across datasets (rank 1 ranks first)")
+    ax.set_ylabel("tool")
+    lo = float(values.min())
+    ax.plot([lo, lo + critical_difference], [-1.0, -1.0], color="#cc3311", lw=3, zorder=4)
+    ax.annotate(
+        f"critical difference = {critical_difference:.2f}",
+        xy=(lo, -1.0),
+        xytext=(0, 6),
+        textcoords="offset points",
+        fontsize=9,
+        color="#cc3311",
+    )
+    for k, clique in enumerate(multi):
+        rows = [row_of[i] for i in clique]
+        ranks = [values[i] for i in clique]
+        y = max(rows) + 0.5 + 0.16 * k
+        ax.plot([min(ranks), max(ranks)], [y, y], color="#3a7ca5", lw=4, solid_capstyle="round")
+    ax.set_ylim(len(names) - 0.5 + 0.16 * max(1, len(multi)), -1.6)
+    return fig
+
+
+def critical_difference_band_plot(
+    tool_names: tuple[str, ...],
+    average_ranks: np.ndarray,
+    critical_difference: float,
+) -> Figure:
+    """Average-rank dot plot with the critical difference as a shaded band.
+
+    The alternative to :func:`critical_difference_plot`: tools are placed on a
+    rank axis, and a band one critical difference wide is shaded from the
+    top-ranked tool, so any tool inside the band is within the critical
+    difference of it. It shows the size of the critical difference but only ties
+    with the top tool, not every clique.
     """
     order = np.argsort(average_ranks)
     names = [tool_names[i] for i in order]
@@ -519,17 +853,103 @@ def critical_difference_figure(
         textcoords="offset points",
         fontsize=9,
     )
-    return _fig_to_base64(fig)
+    return fig
 
 
-def specification_curve_figure(report) -> str:
-    """Two-panel specification curve over every combination of analyst choices.
+def critical_difference_figure(
+    tool_names: tuple[str, ...],
+    average_ranks: np.ndarray,
+    critical_difference: float,
+    cliques: tuple[tuple[int, ...], ...] = (),
+) -> str:
+    """Base64 PNG of :func:`critical_difference_plot` for the HTML report."""
+    return _fig_to_base64(
+        critical_difference_plot(tool_names, average_ranks, critical_difference, cliques)
+    )
+
+
+def agreement_heatmap(
+    labels: Sequence[str],
+    tau_matrix: np.ndarray,
+    *,
+    mean_tau: float | None = None,
+    title: str | None = None,
+    choice_label: str = "choice",
+) -> Figure:
+    """Heatmap of the pairwise Kendall tau-b agreement between rankings.
+
+    Generalizable plot for any choice-agreement report whose rankings are
+    compared with Kendall tau-b: ``aggregation_agreement`` over the aggregation
+    rules and ``normalization_agreement`` over the normalizations both produce a
+    square tau matrix indexed by the configuration that ran. A cell near 1 means
+    the two configurations order the tools almost identically; a low or negative
+    cell means the choice between them changes the order. The value is written in
+    each cell so the figure reads without a separate table.
+
+    Parameters
+    ----------
+    labels
+        The configuration labels, in the row and column order of ``tau_matrix``.
+    tau_matrix
+        ``(n, n)`` Kendall tau-b matrix, diagonal 1, ``nan`` where one ranking
+        is constant.
+    mean_tau
+        Optional mean off-diagonal tau, written into the title when given.
+    title
+        Optional figure title. A default naming ``choice_label`` is used when
+        omitted.
+    choice_label
+        What the rows and columns are, used in the axis labels and the default
+        title (for example ``"aggregation"`` or ``"normalization"``).
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    labels = list(labels)
+    tau = np.asarray(tau_matrix, dtype=float)
+    n = len(labels)
+    fig = Figure(figsize=(max(3.5, 0.7 * n + 2.0), max(3.0, 0.7 * n + 1.5)))
+    ax = fig.subplots()
+    image = ax.imshow(tau, cmap="RdYlGn", vmin=-1.0, vmax=1.0)
+    ax.set_xticks(range(n))
+    ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=9)
+    ax.set_yticks(range(n))
+    ax.set_yticklabels(labels, fontsize=9)
+    ax.set_xlabel(choice_label)
+    ax.set_ylabel(choice_label)
+    for i in range(n):
+        for j in range(n):
+            value = tau[i, j]
+            text = "n/a" if np.isnan(value) else f"{value:.2f}"
+            shade = "#222222" if np.isnan(value) or abs(value) < 0.6 else "#ffffff"
+            ax.text(j, i, text, ha="center", va="center", fontsize=8, color=shade)
+    bar = fig.colorbar(image, ax=ax, fraction=0.046)
+    bar.set_label("Kendall tau-b (1 is identical order)")
+    if title is None:
+        title = f"ranking agreement across {choice_label}s"
+        if mean_tau is not None and not np.isnan(mean_tau):
+            title += f" (mean tau {mean_tau:.2f})"
+    ax.set_title(title, fontsize=10)
+    return fig
+
+
+def specification_curve_plot(report, *, compact: bool = True) -> Figure:
+    """Specification curve over every combination of analyst choices.
 
     The top panel plots the rank of the method that ranks first most often, with
     combinations sorted from its best rank to its worst, so a flat line near rank
     1 means that method keeps the top across the choices. The other tools are
-    drawn in light gray for context. The bottom panel marks which weighting,
-    aggregation and dataset each combination used, in the same column order.
+    drawn in light gray for context. The lower panels mark which choice each
+    combination used, in the same column order.
+
+    The figure width is capped rather than growing with the number of
+    combinations, since a specification curve is dense by design and a width that
+    scales with the count produces an unreadable canvas. With ``compact`` (the
+    default), the weighting and the aggregation are drawn as labelled dot rows
+    and the dataset axis is collapsed into one colour strip below them, so a
+    benchmark with many datasets stays readable. With ``compact=False`` every
+    dataset gets its own labelled row, the fuller dashboard for interactive use.
 
     Takes a ``SpecificationCurveReport`` from ``beam.mcda.specification_curve``.
     """
@@ -540,25 +960,29 @@ def specification_curve_figure(report) -> str:
     n_tools = len(names)
     top_idx = report.most_frequent_top_tool
 
-    levels: list[tuple[str, str]] = []
-    for level in report.weightings:
-        levels.append(("weighting", level))
-    for level in report.methods:
-        levels.append(("aggregation", level))
-    if report.dataset_names is not None:
-        for level in report.dataset_names:
-            levels.append(("dataset", level))
+    rows = [("weighting", level) for level in report.weightings]
+    rows += [("aggregation", level) for level in report.methods]
+    datasets = list(report.dataset_names) if report.dataset_names is not None else []
+    dataset_as_strip = compact and len(datasets) > 0
+    if datasets and not dataset_as_strip:
+        rows += [("dataset", d) for d in datasets]
 
-    height = max(3.0, 0.18 * (n_tools + len(levels)) + 1.5)
-    fig = Figure(figsize=(max(6.0, 0.18 * n + 2.0), height))
-    top, bottom = fig.subplots(
-        2, 1, sharex=True, gridspec_kw={"height_ratios": [2, max(1, len(levels) // 3)]}
-    )
+    width = max(7.0, min(13.0, 0.03 * n + 6.0))
+    n_strip_rows = len(rows) + (1 if dataset_as_strip else 0)
+    height = max(3.5, 0.16 * (n_tools + n_strip_rows) + 1.8)
+    fig = Figure(figsize=(width, height))
+    if dataset_as_strip:
+        ratios = [2.4, max(1.0, 0.16 * len(rows) + 0.4), 0.5]
+        top, mid, strip = fig.subplots(3, 1, sharex=True, gridspec_kw={"height_ratios": ratios})
+    else:
+        ratios = [2.4, max(1.0, 0.16 * len(rows) + 0.4)]
+        top, mid = fig.subplots(2, 1, sharex=True, gridspec_kw={"height_ratios": ratios})
+        strip = None
 
-    x = range(n)
+    x = list(range(n))
     for t in range(n_tools):
         series = [specs[order[p]].ranks[t] for p in range(n)]
-        top.plot(x, series, color="#dddddd", linewidth=0.8, zorder=1)
+        top.plot(x, series, color="#e3e3e3", linewidth=0.6, zorder=1)
     top_series = [specs[order[p]].ranks[top_idx] for p in range(n)]
     top.plot(x, top_series, color="#cc3311", linewidth=2, zorder=3, label=names[top_idx])
     top.invert_yaxis()
@@ -566,7 +990,7 @@ def specification_curve_figure(report) -> str:
     top.set_title(f"specification curve: rank of {names[top_idx]} across {n} specifications")
     top.legend(loc="lower right", fontsize=8)
 
-    for row, (_, level) in enumerate(levels):
+    for row, (_factor, level) in enumerate(rows):
         active = [
             p
             for p in range(n)
@@ -577,17 +1001,49 @@ def specification_curve_figure(report) -> str:
                 specs[order[p]].dataset,
             )
         ]
-        bottom.scatter(active, [row] * len(active), s=10, color="#222222")
-    bottom.set_yticks(range(len(levels)))
-    bottom.set_yticklabels([f"{factor}: {level}" for factor, level in levels], fontsize=8)
-    bottom.invert_yaxis()
-    bottom.set_xlabel("specification (sorted by the dominant tool's rank)")
-    bottom.set_ylabel("choice")
-    return _fig_to_base64(fig)
+        mid.scatter(active, [row] * len(active), s=8, color="#222222")
+    mid.set_yticks(range(len(rows)))
+    mid.set_yticklabels([f"{factor}: {level}" for factor, level in rows], fontsize=8)
+    mid.invert_yaxis()
+    mid.set_ylabel("choice")
+    if strip is None:
+        mid.set_xlabel("specification (sorted by the top tool's rank)")
+
+    if dataset_as_strip:
+        n_datasets = len(datasets)
+        index_of = {d: i for i, d in enumerate(datasets)}
+        strip_row = np.array([[index_of[specs[order[p]].dataset] for p in range(n)]], dtype=float)
+        cmap = matplotlib.colormaps["tab20"].resampled(max(2, n_datasets))
+        image = strip.imshow(
+            strip_row,
+            aspect="auto",
+            cmap=cmap,
+            vmin=-0.5,
+            vmax=n_datasets - 0.5,
+            extent=(-0.5, n - 0.5, 0.5, -0.5),
+            interpolation="nearest",
+        )
+        strip.set_yticks([0])
+        strip.set_yticklabels(["dataset"], fontsize=8)
+        strip.set_xlabel("specification (sorted by the top tool's rank)")
+        # A discrete colour key naming each dataset. It spans the full figure
+        # height so the names have room; skipped past 20 datasets, where a strip
+        # legend cannot stay readable.
+        if n_datasets <= 20:
+            bar = fig.colorbar(image, ax=[top, mid, strip], fraction=0.06, pad=0.02)
+            bar.set_ticks(range(n_datasets))
+            bar.set_ticklabels(datasets, fontsize=6)
+            bar.set_label("dataset", fontsize=7)
+    return fig
 
 
-def dominance_matrix_figure(report) -> str:
-    """Pairwise majority dominance matrix, methods ordered by their wins.
+def specification_curve_figure(report) -> str:
+    """Base64 PNG of :func:`specification_curve_plot` for the HTML report."""
+    return _fig_to_base64(specification_curve_plot(report))
+
+
+def pairwise_majority_plot(report) -> Figure:
+    """Pairwise majority matrix, methods ordered by how many they outperform.
 
     A filled cell at row i, column j means method i outperforms method j on the
     majority of the datasets they share. Methods are ordered by how many others
@@ -638,9 +1094,9 @@ def dominance_matrix_figure(report) -> str:
 
     triads = report.n_circular_triads
     if report.is_transitive:
-        title = "pairwise dominance: transitive, one order is consistent"
+        title = "pairwise majorities: transitive, one order is consistent"
     else:
-        title = f"pairwise dominance: {triads} circular triad{'' if triads == 1 else 's'}"
+        title = f"pairwise majorities: {triads} circular triad{'' if triads == 1 else 's'}"
     ax.set_title(title, fontsize=10)
 
     legend = [
@@ -649,4 +1105,9 @@ def dominance_matrix_figure(report) -> str:
         Patch(facecolor="#cfcfcf", label="tied"),
     ]
     ax.legend(handles=legend, loc="lower left", fontsize=7, framealpha=0.9)
-    return _fig_to_base64(fig)
+    return fig
+
+
+def pairwise_majority_figure(report) -> str:
+    """Base64 PNG of :func:`pairwise_majority_plot` for the HTML report."""
+    return _fig_to_base64(pairwise_majority_plot(report))

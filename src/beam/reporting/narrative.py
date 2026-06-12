@@ -116,7 +116,7 @@ def recommendation(result: RunResult) -> str:
         n_never = len(result.random_baseline.tools_never_beating)
         if n_never:
             sentences.append(
-                f"{n_never} of {n_tools} tools do not beat chance on any metric that "
+                f"{n_never} of {n_tools} tools do not score above chance on any metric that "
                 "declares a baseline."
             )
 

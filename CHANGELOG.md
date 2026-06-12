@@ -6,6 +6,14 @@ All notable changes to beam will be documented in this file. The format follows 
 
 ### Added
 
+- `beam.plot`: a plotting module that returns matplotlib figures from a run, so a notebook draws the same figures the HTML report shows. It covers the ranking and sensitivity figures, one plot per analyst choice (weighting, aggregation, normalization, dataset), the rank and score heatmaps, and the heterogeneity plots; docs/how-to/plot-a-beam-run.md.
+- `beam.mcda.normalization_agreement`: re-ranks a matrix under several normalizations and reports how much the order changes, the normalization companion to the aggregation check. The report and the funky heatmap gain a normalization panel; docs/explanations/normalization-agreement.md.
+- `scripts/generate_example_reports.py` writes one report per bundled dataset; the docs home and each vignette link to them.
+
+### Changed
+
+- The report's critical-difference figure is now the standard Friedman-Nemenyi diagram, with bars joining the methods the test cannot tell apart. The earlier shaded-band figure stays available.
+- COMET refuses inputs with more than eight metrics, where it would build thousands of objects and take minutes. The agreement and sensitivity steps skip it there, so reports on metric-rich datasets stay fast.
 - `beam.mcda.pairwise_transitivity` and `PairwiseTransitivityReport`: checks whether the pairwise majority relation behind a ranking admits one consistent order, reporting the method preferred to every other one, the circular triads (Condorcet cycles), Kendall and Babington Smith's (1940) coefficient of consistence, and whether the relation is transitive. On Duo 2018 ARI under the noise floor SC3 is preferred to every other method yet the relation still carries one cycle; the HTML report's critical-difference section states whether the majorities are transitive. R wrapper `beam_pairwise_transitivity`; docs/explanations/transitivity.md.
 - `beam.mcda.specification_curve` and `SpecificationCurveReport`: lists the ranking under every combination of weighting, aggregation and dataset that `rank_sensitivity` already runs, and reports how often the top tool holds, the most common full ordering, and how many tools ever reach the top. The HTML report draws the curve for a tensor input; on Duo the analyst-choice multiverse keeps Seurat first in all 20 combinations while adding the dataset drops it to 49 percent. docs/explanations/specification-curve.md.
 - `beam.blind`, `beam.unblind` and `Seal`: hide method names and shuffle rows for blind analysis, then restore them, with a seal whose fingerprint the run manifest records. The CLI gains `beam blind` and `beam unblind`; the ranking is unchanged by blinding, which constrains the process rather than the result. docs/explanations/analysis-blinding.md, docs/how-to/blind-an-analysis.md.

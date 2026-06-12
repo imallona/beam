@@ -37,6 +37,8 @@ website:
             text: Run heterogeneity from the CLI
           - href: docs/how-to/blind-an-analysis.md
             text: Run a blind analysis
+          - href: docs/how-to/plot-a-beam-run.md
+            text: Plot a beam run
       - text: Explanations
         menu:
           - href: docs/explanations/cards-and-pipeline.qmd
@@ -49,6 +51,8 @@ website:
             text: Aggregation methods
           - href: docs/explanations/aggregation-agreement.md
             text: Aggregation agreement
+          - href: docs/explanations/normalization-agreement.md
+            text: Normalization agreement
           - href: docs/explanations/rank-sensitivity.md
             text: What moves the ranking
           - href: docs/explanations/specification-curve.md

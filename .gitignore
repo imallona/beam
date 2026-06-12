@@ -73,3 +73,6 @@ examples/**/*_report.html
 # R vignette render artefacts
 r/beam/vignettes/*.png
 r/beam/vignettes/*.html
+
+# Generated example reports (built in CI by scripts/generate_example_reports.py)
+docs/reports/*.html

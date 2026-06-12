@@ -55,6 +55,33 @@ def _aggregation_consensus(run):
     return report.rank_low, report.rank_high
 
 
+def _normalization_consensus(run):
+    """Rank span per tool across the normalization strategies, weighting fixed.
+
+    Returns the smallest and largest rank each tool takes across the strategies,
+    the span behind the funky-heatmap normalization panel. ``(None, None)`` when
+    fewer than two normalizations run on the input.
+    """
+    from beam.mcda import normalization_agreement
+
+    ctx = run.context
+    try:
+        report = normalization_agreement(
+            run.matrix,
+            ctx.polarity,
+            weights=run.result.weighting,
+            method=run.result.method,
+            recommended=list(ctx.normalization),
+            bounds=list(ctx.bounds),
+            baselines=list(ctx.baselines),
+            targets=list(ctx.targets),
+            tool_names=run.tool_names,
+        )
+    except ValueError:
+        return None, None
+    return report.rank_low, report.rank_high
+
+
 def funky_heatmap_from_run(
     run,
     metric_groups=None,
@@ -66,6 +93,7 @@ def funky_heatmap_from_run(
     cliques=None,
     show_smaa=True,
     show_aggregation_consensus=True,
+    show_normalization_consensus=False,
 ):
     """Build a funky heatmap from a ``beam.rank`` RunResult.
 
@@ -92,6 +120,10 @@ def funky_heatmap_from_run(
         Draw the SMAA rank-acceptability panel when the run carries SMAA.
     show_aggregation_consensus
         Draw the aggregation rank-span panel.
+    show_normalization_consensus
+        Draw the normalization rank-span panel, the span each method takes
+        across the normalization strategies. Off by default to keep the figure
+        narrow; turn it on to dissect the normalization choice.
 
     Returns
     -------
@@ -108,6 +140,10 @@ def funky_heatmap_from_run(
     consensus_low = consensus_high = None
     if show_aggregation_consensus:
         consensus_low, consensus_high = _aggregation_consensus(run)
+
+    norm_consensus_low = norm_consensus_high = None
+    if show_normalization_consensus:
+        norm_consensus_low, norm_consensus_high = _normalization_consensus(run)
 
     smaa_acceptability = (
         run.smaa.rank_acceptability_index if (show_smaa and run.smaa is not None) else None
@@ -128,6 +164,8 @@ def funky_heatmap_from_run(
         worth_label=worth_label,
         consensus_low=consensus_low,
         consensus_high=consensus_high,
+        norm_consensus_low=norm_consensus_low,
+        norm_consensus_high=norm_consensus_high,
         smaa_acceptability=smaa_acceptability,
         title=title,
     )

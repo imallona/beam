@@ -35,6 +35,14 @@ from pymcdm.methods.comet_tools import FunctionExpert
 
 from ._missing import require_complete
 
+# COMET forms one characteristic object per combination of the per-criterion
+# characteristic values, so the default two-point grid gives 2**n_metrics
+# objects. Past this many metrics the grid is exponential and the result stops
+# being a meaningful aggregation, so beam refuses rather than spend minutes on a
+# 2**12-object model. The agreement and sensitivity layers drop COMET on such an
+# input the same way they drop any method that cannot run.
+_MAX_COMET_METRICS = 8
+
 
 def _weighted_sum_expert(weights: np.ndarray) -> Callable[[np.ndarray, np.ndarray], float]:
     """Build the pairwise expert function used by COMET.
@@ -134,6 +142,13 @@ def comet(
         )
     if np.any(weights < 0):
         raise ValueError("weights must be non-negative")
+    if characteristic_values is None and n_metrics > _MAX_COMET_METRICS:
+        raise ValueError(
+            f"comet builds {2**n_metrics} characteristic objects for {n_metrics} metrics "
+            f"(two per criterion); beam refuses COMET above {_MAX_COMET_METRICS} metrics because "
+            "the grid grows exponentially and the model is no longer meaningful. Use another "
+            "aggregation, or pass explicit characteristic_values with a coarser grid."
+        )
     require_complete(normalized, where="comet")
 
     per_criterion_values = _resolve_characteristic_values(characteristic_values, n_metrics)

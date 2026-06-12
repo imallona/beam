@@ -23,6 +23,10 @@ from .diagnostics import MetricDiagnosticsReport, metric_diagnostics
 from .dimensionality import MetricDimensionalityReport, metric_dimensionality
 from .facade import RegistryContext, Result, registry_context, run, run_from_registry
 from .metric_validity import MetricValidityReport, metric_validity
+from .normalization_agreement import (
+    NormalizationAgreementReport,
+    normalization_agreement,
+)
 from .normalize import (
     STRATEGIES,
     min_max_normalize,
@@ -102,6 +106,7 @@ __all__ = [
     "MetricReliabilityReport",
     "MetricValidityReport",
     "NoiseFloorReport",
+    "NormalizationAgreementReport",
     "PairPerturbation",
     "PairSeparation",
     "PairSuperiority",
@@ -139,6 +144,7 @@ __all__ = [
     "min_max_normalize",
     "nemenyi_critical_difference",
     "noise_floor_separation",
+    "normalization_agreement",
     "normalization_warnings",
     "normalize",
     "pairwise_superiority",

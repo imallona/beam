@@ -107,7 +107,7 @@ def test_report_draws_critical_difference_for_multidataset(tmp_path):
     assert "Consistency:" in html
 
 
-def test_dominance_matrix_figure_renders_for_both_cases():
+def test_pairwise_majority_figure_renders_for_both_cases():
     from beam.mcda import pairwise_superiority, pairwise_transitivity
     from beam.reporting import figures
 
@@ -125,8 +125,8 @@ def test_dominance_matrix_figure_renders_for_both_cases():
             method_names=["a", "b", "c"],
         )
     )
-    assert len(figures.dominance_matrix_figure(transitive)) > 1000
-    assert len(figures.dominance_matrix_figure(cyclic)) > 1000
+    assert len(figures.pairwise_majority_figure(transitive)) > 1000
+    assert len(figures.pairwise_majority_figure(cyclic)) > 1000
 
 
 def test_single_dataset_report_has_no_cd_section(tmp_path):

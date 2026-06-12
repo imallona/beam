@@ -5,6 +5,7 @@ This package is the Python canonical implementation of beam.
 
 from importlib import metadata
 
+from . import plot
 from .api import RunResult, rank
 from .blinding import Seal, blind, read_seal, unblind, write_seal
 from .io import Scores, load_scores
@@ -27,6 +28,7 @@ __all__ = [
     "funky_heatmap",
     "funky_heatmap_from_run",
     "load_scores",
+    "plot",
     "rank",
     "read_seal",
     "report",

@@ -80,6 +80,10 @@ jobs:
           python -m quartodoc build
         continue-on-error: true
 
+      - name: Generate one example report per bundled dataset
+        run: |
+          python scripts/generate_example_reports.py --out docs/reports
+
       - name: Render the site
         run: |
           quarto render
