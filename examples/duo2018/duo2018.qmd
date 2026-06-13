@@ -237,6 +237,27 @@ SC3 is preferred to every other method one at a time, yet the relation still car
 plot.pairwise_majority(trans)
 ```
 
+## Bayesian comparison on ARI
+
+The tests above report a p-value: the chance of the observed split if two methods scored the same. A reader choosing a method wants the probability that one method scores higher, given the data. `bayesian_sign_comparison` reads the same pairwise relation and reports, for each pair, the posterior probability that one method is practically better, that the two are practically equivalent within the floor, and that the other is practically better.
+
+```{python}
+from beam.mcda import bayesian_sign_comparison
+
+bayes = bayesian_sign_comparison(sup)
+runner = duo.method_names[bayes.order[1]]
+pair = next(p for p in bayes.per_pair if {p.a, p.b} == {bayes.order[0], bayes.order[1]})
+p_top = pair.p_a_better if pair.a == bayes.order[0] else pair.p_b_better
+print(f"P({top_method} practically better than {runner}): {p_top:.2f}")
+print(f"P(the two are practically equivalent): {pair.p_equivalent:.2f}")
+```
+
+SC3 is practically better than the methods with the lowest standing with probability near 1. Against the method with the next-highest standing the posterior favors equivalence within the floor, and most pairs stay inconclusive at the 0.95 threshold. The heatmap shows the posterior probability that the row method scores higher than the column method.
+
+```{python}
+plot.bayesian_comparison(bayes)
+```
+
 ## SMAA confidence
 
 `smaa` samples weight vectors from a Dirichlet over the three-metric simplex, runs the pipeline once per sample, and reports the confidence factor per method: the share of samples in which that method is top-ranked. A method with a confidence factor near 1 is top-ranked under almost any weighting.
@@ -383,7 +404,7 @@ print(
 )
 ```
 
-The pooled grid keeps Seurat first in every weighting-by-aggregation combination, so the top is robust to the modeling choice. Adding the twelve datasets drops the fraction, since dropping to a single dataset is where the order moves. The curve below plots the top method's rank across the full grid, sorted from its best rank to its worst.
+The pooled grid keeps Seurat first in every weighting-by-aggregation combination, so the top does not depend on the modeling choice. Adding the twelve datasets drops the fraction, since dropping to a single dataset is where the order moves. The curve below plots the top method's rank across the full grid, sorted from its highest rank to its lowest.
 
 ```{python}
 plot.specification_curve(curve)
@@ -442,7 +463,7 @@ if me is not None:
     plot.model_effects(me, xlabel="ARI marginal mean over datasets (higher ranks first)")
 ```
 
-The dataset intercept takes about 0.71 of the ARI variance, so most of the spread is datasets being uniformly easy or hard rather than methods reordering. SC3 and Seurat lead the marginal means and are not separable from each other given the standard errors, which matches the critical-difference reading above. The residual share, the upper bound on the method-by-dataset interaction at one run per cell, concentrates on the two weakest methods (RaceID2 and FlowSOM) on a few simulated and four-group datasets, not on a reshuffling of the strong methods. See [the mixed-effects explanation](../../docs/explanations/heterogeneity-mixed-effects.md).
+The dataset intercept takes about 0.71 of the ARI variance, so most of the spread is datasets being uniformly easy or hard rather than methods reordering. SC3 and Seurat have the highest marginal means and are not separable from each other given the standard errors, which matches the critical-difference reading above. The residual share, the upper bound on the method-by-dataset interaction at one run per cell, concentrates on the two lowest-scoring methods (RaceID2 and FlowSOM) on a few simulated and four-group datasets, not on a reshuffling of the higher-scoring methods. See [the mixed-effects explanation](../../docs/explanations/heterogeneity-mixed-effects.md).
 
 ## Heterogeneity: does a dataset feature reverse the ranking
 
@@ -477,7 +498,7 @@ On these 12 datasets the parameter-stability test finds no split, so the tree re
 
 ## What moves the ranking: the data or the choice
 
-The sections above measure three things separately: leave-one-dataset-out (does the pooled order hang on one dataset), the weighting-by-aggregation grid (does the order depend on the modeling choice), and the mixed-effects ICC (how much score variance is the dataset). `rank_sensitivity` puts all three on one scale. It ranks the methods on each dataset, under every weighting and aggregation, and splits each method's rank variance into the dataset, the weighting, the aggregation and their interactions.
+The sections above measure three things separately: leave-one-dataset-out (does the pooled order depend on one dataset), the weighting-by-aggregation grid (does the order depend on the modeling choice), and the mixed-effects ICC (how much score variance is the dataset). `rank_sensitivity` puts all three on one scale. It ranks the methods on each dataset, under every weighting and aggregation, and splits each method's rank variance into the dataset, the weighting, the aggregation and their interactions.
 
 ```{python}
 from beam.mcda import rank_sensitivity

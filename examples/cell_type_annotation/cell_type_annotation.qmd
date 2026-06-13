@@ -283,6 +283,17 @@ The matrix below orders the methods by how many others they outperform. A transi
 plot.pairwise_majority(trans)
 ```
 
+`bayesian_sign_comparison` reports, for each pair, the posterior probability that one method is practically better than another. With 36 datasets the posterior is sharper, so more pairs reach a decisive label than on the smaller benchmarks.
+
+```{python}
+from beam.mcda import bayesian_sign_comparison
+
+bayes = bayesian_sign_comparison(ps)
+decisive = sum(1 for p in bayes.per_pair if p.decision != "inconclusive")
+print(f"pairs with a decisive posterior at 0.95: {decisive} of {len(bayes.per_pair)}")
+plot.bayesian_comparison(bayes)
+```
+
 ## What moves the ranking: the data or the choice
 
 A common question is whether the ranking would hold under a different analysis. The sections above each measured part of this. `rank_sensitivity` combines them: it ranks the methods on each dataset, under every weighting and aggregation, and splits each method's rank variance into the dataset, the weighting, the aggregation and their interactions. This is the dataset-weight question stated directly.

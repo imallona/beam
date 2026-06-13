@@ -34,6 +34,7 @@ Agreement and consistency, each taking the matching analysis report:
 - :func:`critical_difference_band` the shaded-band alternative
 - :func:`specification_curve` the rank of the top tool across every combination
 - :func:`pairwise_majority` the pairwise majority relation and its cycles
+- :func:`bayesian_comparison` the posterior probability one method is better
 
 Grids, heterogeneity and building blocks:
 
@@ -369,6 +370,17 @@ def pairwise_majority(report) -> Figure:
     Takes a ``PairwiseTransitivityReport`` from ``beam.mcda.pairwise_transitivity``.
     """
     return _figures.pairwise_majority_plot(report)
+
+
+def bayesian_comparison(report) -> Figure:
+    """Posterior probability that the row method is practically better.
+
+    A heatmap whose cell shows the posterior probability that the row method is
+    practically better than the column method across the datasets they share,
+    from the Bayesian sign test. Takes a ``BayesianSignReport`` from
+    ``beam.mcda.bayesian_sign_comparison``.
+    """
+    return _figures.bayesian_comparison_plot(report)
 
 
 def rank_heatmap(

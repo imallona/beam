@@ -69,6 +69,8 @@ website:
             text: Pairwise superiority
           - href: docs/explanations/transitivity.md
             text: Pairwise transitivity
+          - href: docs/explanations/bayesian-comparison.md
+            text: Bayesian comparison
           - href: docs/explanations/missing-data.md
             text: Missing data
           - href: docs/explanations/reference-levels.md

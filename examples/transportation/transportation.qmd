@@ -21,7 +21,7 @@ The first point is a method-by-dataset interaction. No mode is fastest on every 
 
 The second point is partial coverage. Some modes do not run on some terrains at all. A boat cannot go off-road, a small plane cannot do an urban hop, and the land modes cannot cross open water. Those cells are missing (NaN). Because no mode is feasible on every terrain, a single pooled ranking over all modes is not even well defined. The output must be per-terrain.
 
-The third point is a crossover among the slower modes. Trail running is slower than road running on the flat road but faster on mud and uphill, where off-road traction helps. An e-bike is faster than a bicycle on the flat road and the urban hop but slower uphill, where its weight costs it. On the water the kayak is slower than the motorboat but cheaper and zero CO2, so it outranks the boat on cost and CO2 while trailing on speed. None of these crossovers appears in a single pooled order: the mode that is faster on one terrain is slower on another.
+The third point is a crossover among the slower modes. Trail running is slower than road running on the flat road but faster on mud and uphill, where off-road traction helps. An e-bike is faster than a bicycle on the flat road and the urban hop but slower uphill, where its weight costs it. On the water the kayak is slower than the motorboat but cheaper and zero CO2, so it outranks the boat on cost and CO2 while ranking lower on speed. None of these crossovers appears in a single pooled order: the mode that is faster on one terrain is slower on another.
 
 ## Set-up
 
@@ -129,7 +129,7 @@ The mode that ranks first now changes across terrains: train on the flat road an
 
 ## A crossover among the slower modes
 
-The fastest modes lead on their own terrains, but the interaction is sharper among the slower land modes, where two modes change places across terrains. Trail running is slower than road running on the flat road, where road shoes and a hard surface help, but faster on mud and uphill, where off-road traction matters. An e-bike is faster than a bicycle on the flat road and the urban hop, but its weight slows it down uphill. These are crossovers, not feasibility gaps: both modes run on the terrains in question, and which one is faster flips from terrain to terrain.
+The fastest modes rank first on their own terrains, but the interaction is sharper among the slower land modes, where two modes change places across terrains. Trail running is slower than road running on the flat road, where road shoes and a hard surface help, but faster on mud and uphill, where off-road traction matters. An e-bike is faster than a bicycle on the flat road and the urban hop, but its weight slows it down uphill. These are crossovers, not feasibility gaps: both modes run on the terrains in question, and which one is faster flips from terrain to terrain.
 
 ```{python}
 speed = tb.metric("speed")
@@ -403,6 +403,18 @@ fig.tight_layout()
 plt.show()
 ```
 
+`bayesian_sign_comparison` reads the water block on the probability scale. With two terrains the counts are tiny, so the posterior stays close to the prior and no pair reaches a decisive label. The plane and the boat each score higher on one terrain, so the posterior splits between them.
+
+```{python}
+from beam.mcda import bayesian_sign_comparison
+
+water_sup = pairwise_superiority(water_block[:, :, 0], "higher_is_better", method_names=water_modes)
+water_bayes = bayesian_sign_comparison(water_sup)
+decisive = sum(1 for p in water_bayes.per_pair if p.decision != "inconclusive")
+print(f"pairs with a decisive posterior at 0.95: {decisive} of {len(water_bayes.per_pair)}")
+plot.bayesian_comparison(water_bayes)
+```
+
 The funky heatmap shows the complete water block as a glyph table, with the leave-one-dataset-out span and the aggregation span next to the order. The block is small (three modes, three metrics, two terrains), so the panels are short, but the dataset span panel records what the text above says: the plane and the motorboat each move by a rank when a terrain is dropped.
 
 ```{python}
@@ -486,6 +498,6 @@ The contrast with the other examples is clear. On M4 the band intercept takes mo
 
 ## Why per-terrain is the informative output
 
-This example was built so that no mode runs on every terrain and no mode is fastest on every terrain it does run on. Both facts push the analysis to be per-terrain. Partial coverage means a pooled ranking over all modes is not even well defined, since different modes are measured on different terrains. The method-by-dataset interaction means that even where a pooled ranking is computable, it reports a single order that is wrong on at least some terrains: the fast modes lead on their own terrains and trail on others.
+This example was built so that no mode runs on every terrain and no mode is fastest on every terrain it does run on. Both facts push the analysis to be per-terrain. Partial coverage means a pooled ranking over all modes is not even well defined, since different modes are measured on different terrains. The method-by-dataset interaction means that even where a pooled ranking is computable, it reports a single order that is wrong on at least some terrains: the fast modes rank first on their own terrains and rank lower on others.
 
 This matches method-by-dataset interaction in bioinformatics benchmarks. A clustering method that ranks first on one tissue can rank last on another, and a method that needs a feature one dataset lacks is simply not applicable there, which is the same role the NaN cells play here. The transportation numbers are made up, but the structure of the problem is the same. Report per dataset and mark which method ranks first on each. Then use the cross-dataset tests (the critical-difference diagram, SMAA, weight perturbation) to say how much of the apparent ordering survives a change of conditions or of preferences.

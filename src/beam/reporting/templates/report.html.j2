@@ -264,6 +264,13 @@ out of {{ t.n_triads }}, so no single order agrees with all of them and the repo
 {% endif %}
 <img src="data:image/png;base64,{{ t.figure }}" alt="pairwise dominance matrix ordered by methods outperformed">
 {% endif %}
+{% if critical_difference.bayesian %}
+{% set bayes = critical_difference.bayesian %}
+<p>Posterior: under the Bayesian sign test (ROPE {{ bayes.rope }}), the probability that
+<code>{{ bayes.top }}</code> is practically better than <code>{{ bayes.runner }}</code> is {{ bayes.p_better }},
+and the probability that the two are practically equivalent is {{ bayes.p_equivalent }}.</p>
+<img src="data:image/png;base64,{{ bayes.figure }}" alt="posterior probability that the row method is practically better than the column method">
+{% endif %}
 {% endif %}
 
 <h2>Reproducibility</h2>

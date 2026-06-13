@@ -6,6 +6,11 @@ from .aggregation_agreement import (
     AggregationAgreementReport,
     aggregation_agreement,
 )
+from .bayesian import (
+    BayesianSignReport,
+    PairPosterior,
+    bayesian_sign_comparison,
+)
 from .card_consistency import (
     CardDataConsistencyReport,
     ConsistencyFinding,
@@ -92,6 +97,7 @@ from .weights import (
 __all__ = [
     "STRATEGIES",
     "AggregationAgreementReport",
+    "BayesianSignReport",
     "CardDataConsistencyReport",
     "ConsistencyFinding",
     "CriticalDifferenceReport",
@@ -108,6 +114,7 @@ __all__ = [
     "NoiseFloorReport",
     "NormalizationAgreementReport",
     "PairPerturbation",
+    "PairPosterior",
     "PairSeparation",
     "PairSuperiority",
     "PairwiseSuperiorityReport",
@@ -126,6 +133,7 @@ __all__ = [
     "aggregate_across_datasets",
     "aggregation_agreement",
     "ahp_weights",
+    "bayesian_sign_comparison",
     "beats_random_baseline",
     "card_data_consistency",
     "comet",

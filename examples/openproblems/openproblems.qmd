@@ -326,7 +326,7 @@ print(f"  interactions: {rs.interaction_share:.3f}")
 print(f"  most influential factor: {rs.most_influential_factor}")
 ```
 
-The dataset is still the largest single factor, but here it is not the whole story the way it is on M4. The aggregation choice and the dataset-by-choice interaction carry a real share too. With 12 metrics that can disagree, how the metrics are combined moves the order more than it does on the two-metric M4 task. So on batch integration the honest report is both: the ranking depends on which dataset and on how the metrics are pooled, which is the contrast with the OpenProblems mean-of-scores leaderboard the section above draws.
+The dataset is still the largest single factor, but here it is not the only one the way it is on M4. The aggregation choice and the dataset-by-choice interaction carry a real share too. With 12 metrics that can disagree, how the metrics are combined moves the order more than it does on the two-metric M4 task. So on batch integration the ranking depends on which dataset and on how the metrics are pooled, which is the contrast with the OpenProblems mean-of-scores leaderboard the section above draws.
 
 `specification_curve` reads the same grid as a list of rankings. Because the aggregation carries a real share here, the choice-only multiverse is less unanimous than on M4: the top method does not hold in every weighting-by-aggregation combination.
 
@@ -402,6 +402,17 @@ The matrix below orders the methods by how many others they outperform. A transi
 
 ```{python}
 plot.pairwise_majority(trans)
+```
+
+On the probability scale, `bayesian_sign_comparison` gives for each pair the posterior probability that one method is practically better. With six datasets most pairs stay inconclusive at the 0.95 threshold.
+
+```{python}
+from beam.mcda import bayesian_sign_comparison
+
+bayes = bayesian_sign_comparison(sup)
+decisive = sum(1 for p in bayes.per_pair if p.decision != "inconclusive")
+print(f"pairs with a decisive posterior at 0.95: {decisive} of {len(bayes.per_pair)}")
+plot.bayesian_comparison(bayes)
 ```
 
 ## Spatially variable genes: many datasets, the Bradley-Terry tree

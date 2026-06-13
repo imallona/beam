@@ -8,6 +8,7 @@ All notable changes to beam will be documented in this file. The format follows 
 
 - `beam.plot`: a plotting module that returns matplotlib figures from a run, so a notebook draws the same figures the HTML report shows. It covers the ranking and sensitivity figures, one plot per analyst choice (weighting, aggregation, normalization, dataset), the rank and score heatmaps, and the heterogeneity plots; docs/how-to/plot-a-beam-run.md.
 - `beam.mcda.normalization_agreement`: re-ranks a matrix under several normalizations and reports how much the order changes, the normalization companion to the aggregation check. The report and the funky heatmap gain a normalization panel; docs/explanations/normalization-agreement.md.
+- `beam.mcda.bayesian_sign_comparison` and `BayesianSignReport`: the Bayesian sign test (Benavoli et al. 2017) on a pairwise superiority report, giving the posterior probability that one method is practically better, that two are equivalent, or that the other is better, the posterior companion to the critical-difference and pairwise-superiority tests. The report's critical-difference section gains the posterior for the top pair and a probability heatmap; plotted by `beam.plot.bayesian_comparison`, wrapped in R as `beam_bayesian_sign_comparison`; docs/explanations/bayesian-comparison.md.
 - `scripts/generate_example_reports.py` writes one report per bundled dataset; the docs home and each vignette link to them.
 
 ### Changed

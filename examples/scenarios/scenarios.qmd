@@ -343,6 +343,17 @@ The matrix below orders the methods by how many others they outperform. A transi
 plot.pairwise_majority(trans)
 ```
 
+`bayesian_sign_comparison` gives the posterior probability that one method is practically better than another, the probability-scale companion to the sign test. With five datasets it is mostly inconclusive at the 0.95 threshold, the same limit the sign test and the critical-difference band show.
+
+```{python}
+from beam.mcda import bayesian_sign_comparison
+
+bayes = bayesian_sign_comparison(sup)
+decisive = sum(1 for p in bayes.per_pair if p.decision != "inconclusive")
+print(f"pairs with a decisive posterior at 0.95: {decisive} of {len(bayes.per_pair)}")
+plot.bayesian_comparison(bayes)
+```
+
 ## Heterogeneity diagnostics on a synthetic interaction
 
 The canonical scenarios above are single-dataset (a method by metric matrix), so they cover the MCDA layer but not the heterogeneity layer, which needs a dataset axis. To show the heterogeneity diagnostics with a known ground truth, here is a small synthetic method by dataset by metric case built to contain a feature-driven ranking reversal: method A ranks first on the "easy" datasets and method C on the "hard" ones, with method B in the middle. The datasets carry a `regime` feature that marks which group they belong to.

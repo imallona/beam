@@ -103,7 +103,7 @@ The method that ranks first here need not be the one that ranked first in the of
 
 ## Ranking by frequency band
 
-The per-band sMAPE shows why the pooled order is not the whole story. The same method can rank first on one band and last on another.
+The per-band sMAPE shows why a single pooled order is incomplete. The same method can rank first on one band and last on another.
 
 ```{python}
 smape = m4.tensor(("smape",))[:, :, 0]
@@ -179,7 +179,7 @@ else:
     print("R with lme4 not available; skipping the mixed-effects fit.")
 ```
 
-On M4 the band intercept takes most of the sMAPE variance: the bands differ mostly in how hard they are to forecast for every method alike, which is the opposite of the transportation example, where the terrain decides which mode leads. A Bradley-Terry tree on the six bands, with the seasonal period as the splitting feature, has too few datasets to find a stable split; this is the same small-sample limit the Duo benchmark hits, and why the OpenProblems spatial task (50 datasets) is where a split appears.
+On M4 the band intercept takes most of the sMAPE variance: the bands differ mostly in how hard they are to forecast for every method alike, which is the opposite of the transportation example, where the terrain decides which mode ranks first. A Bradley-Terry tree on the six bands, with the seasonal period as the splitting feature, has too few datasets to find a stable split; this is the same small-sample limit the Duo benchmark hits, and why the OpenProblems spatial task (50 datasets) is where a split appears.
 
 ```{python}
 from beam.heterogeneity import bradley_terry_tree, bttree_available
@@ -319,6 +319,17 @@ The matrix below orders the methods by how many others they outperform. A transi
 
 ```{python}
 plot.pairwise_majority(trans)
+```
+
+`bayesian_sign_comparison` puts the same comparison on the probability scale: for each pair, the posterior probability that one method is practically better. With six bands the posterior is coarse, so most pairs stay inconclusive at the 0.95 threshold.
+
+```{python}
+from beam.mcda import bayesian_sign_comparison
+
+bayes = bayesian_sign_comparison(sup)
+decisive = sum(1 for p in bayes.per_pair if p.decision != "inconclusive")
+print(f"pairs with a decisive posterior at 0.95: {decisive} of {len(bayes.per_pair)}")
+plot.bayesian_comparison(bayes)
 ```
 
 ## Report

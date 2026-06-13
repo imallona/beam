@@ -52,7 +52,7 @@ plot(run, fig_path)
 knitr::include_graphics(fig_path)
 ```
 
-## SMAA: is the top method robust to the weighting?
+## SMAA: does the top method hold across weightings?
 
 SMAA samples weight vectors and reports, per method, the share of weightings that rank it first.
 
@@ -64,7 +64,7 @@ barplot(conf[ord] * 100, names.arg = method_names[ord], horiz = TRUE, las = 1,
         main = "SMAA acceptability", xlim = c(0, 100), cex.names = 0.7)
 ```
 
-## Leave-one-dataset-out: does the order hang on one dataset?
+## Leave-one-dataset-out: does the order depend on one dataset?
 
 For each dataset dropped, the rest are pooled and re-ranked. The per-method stability is the share of those runs in which the method keeps its base rank.
 
@@ -99,10 +99,10 @@ cat("mean pairwise Kendall agreement across aggregations:",
 cat("the top rank is fragile to a small weight change:", pert$top_rank_is_fragile, "\n")
 ```
 
-`beam_rank` also reads the raw scores against the reference levels on the cards: how many tools beat the chance baseline, and which tool pairs no metric separates above its noise floor.
+`beam_rank` also reads the raw scores against the reference levels on the cards: how many tools score above the chance baseline, and which tool pairs no metric separates above its noise floor.
 
 ```{r reference-levels}
-cat("tools that beat chance on no metric:",
+cat("tools that score above chance on no metric:",
     length(run$random_baseline$tools_never_beating), "\n")
 cat("the top two tools are within the noise floor:",
     run$noise_floor$top_pair_indistinguishable, "\n")
@@ -232,6 +232,17 @@ cat("transitive:", trans$is_transitive,
     "; circular triads:", trans$n_circular_triads, "of", trans$n_triads, "\n")
 ```
 
+## How sure are we that one method is better?
+
+The tests above report a p-value. `beam_bayesian_sign_comparison` reads the same pairwise relation on the probability scale. For each pair it gives the posterior probability that one method is practically better, that the two are practically equivalent within the floor, or that the other is practically better (Benavoli et al. 2017). Plot it with `beam_plot(bayes, "bayesian_comparison")`.
+
+```{r bayesian}
+bayes <- beam_bayesian_sign_comparison(sup)
+decisive <- sum(vapply(bayes$per_pair, function(p) p$decision != "inconclusive", logical(1)))
+cat("pairs with a decisive posterior at 0.95:", decisive, "of", length(bayes$per_pair), "\n")
+beam_plot(bayes, "bayesian_comparison")
+```
+
 ## Reading
 
-Seurat ranks first under the default pipeline and holds the top in almost every random weighting and every leave-one-dataset-out run, so the recommendation does not hang on the weighting or on any single dataset. The critical-difference diagram qualifies this: on ARI alone most methods sit in overlapping cliques, so the upper-middle methods are not separable at twelve datasets. See `?beam_rank`, `?beam_smaa`, `?beam_critical_difference` for the function documentation.
+Seurat ranks first under the default pipeline and holds the top in almost every random weighting and every leave-one-dataset-out run, so the recommendation does not depend on the weighting or on any single dataset. The critical-difference diagram qualifies this: on ARI alone most methods sit in overlapping cliques, so the upper-middle methods are not separable at twelve datasets. See `?beam_rank`, `?beam_smaa`, `?beam_critical_difference` for the function documentation.

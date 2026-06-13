@@ -1111,3 +1111,46 @@ def pairwise_majority_plot(report) -> Figure:
 def pairwise_majority_figure(report) -> str:
     """Base64 PNG of :func:`pairwise_majority_plot` for the HTML report."""
     return _fig_to_base64(pairwise_majority_plot(report))
+
+
+def bayesian_comparison_plot(report) -> Figure:
+    """Heatmap of the posterior probability that the row method is better.
+
+    Cell ``[i, j]`` is the posterior probability that method ``i`` is practically
+    better than method ``j`` across the datasets they share, from the Bayesian
+    sign test. Methods are ordered by standing, so the strong cells gather in the
+    upper triangle. The value is written in each cell. Takes a
+    ``BayesianSignReport`` from ``beam.mcda.bayesian_sign_comparison``.
+    """
+    prob = np.asarray(report.probability_better, dtype=float)
+    n = prob.shape[0]
+    names = report.method_names or tuple(f"method_{i + 1}" for i in range(n))
+    order = list(report.order)
+    ordered_names = [names[i] for i in order]
+    ordered = prob[np.ix_(order, order)]
+
+    fig = Figure(figsize=(max(3.5, 0.7 * n + 2.0), max(3.0, 0.7 * n + 1.5)))
+    ax = fig.subplots()
+    ax.imshow(ordered, cmap="Blues", vmin=0.0, vmax=1.0)
+    ax.set_xticks(range(n))
+    ax.set_xticklabels(ordered_names, rotation=45, ha="right", fontsize=9)
+    ax.set_yticks(range(n))
+    ax.set_yticklabels(ordered_names, fontsize=9)
+    ax.set_xlabel("method compared against (column)")
+    ax.set_ylabel("method (row), ordered by standing")
+    for i in range(n):
+        for j in range(n):
+            value = ordered[i, j]
+            text = "" if np.isnan(value) else f"{value:.2f}"
+            shade = "#ffffff" if not np.isnan(value) and value > 0.6 else "#222222"
+            ax.text(j, i, text, ha="center", va="center", color=shade, fontsize=8)
+    ax.set_title(
+        f"posterior P(row practically better than column), ROPE {report.rope:g}",
+        fontsize=10,
+    )
+    return fig
+
+
+def bayesian_comparison_figure(report) -> str:
+    """Base64 PNG of :func:`bayesian_comparison_plot` for the HTML report."""
+    return _fig_to_base64(bayesian_comparison_plot(report))

@@ -284,7 +284,8 @@ test_that("the remaining MCDA analysis wrappers are exported functions", {
     beam_critical_difference, beam_skillings_mack,
     beam_coverage_aware_critical_difference, beam_aggregation_agreement,
     beam_smaa, beam_leave_one_metric_out, beam_leave_one_dataset_out,
-    beam_smallest_weight_perturbation, beam_pairwise_transitivity
+    beam_smallest_weight_perturbation, beam_pairwise_transitivity,
+    beam_bayesian_sign_comparison
   )) {
     expect_true(is.function(fn))
   }
@@ -312,6 +313,22 @@ test_that("beam_pairwise_transitivity checks the pairwise majority relation", {
   expect_true(trans$is_transitive)
   expect_equal(as.integer(trans$n_circular_triads), 0L)
   expect_equal(as.integer(trans$condorcet_choice), 0L)
+})
+
+test_that("beam_bayesian_sign_comparison reports posterior probabilities", {
+  skip_if_no_beam()
+  # method 0 beats 1 beats 2 on every one of several datasets.
+  scores <- rbind(
+    c(0.9, 0.85, 0.8, 0.95, 0.88, 0.9),
+    c(0.5, 0.55, 0.45, 0.5, 0.52, 0.48),
+    c(0.2, 0.1, 0.3, 0.15, 0.25, 0.2)
+  )
+  sup <- beam_pairwise_superiority(scores, "higher_is_better",
+                                   method_names = c("a", "b", "c"))
+  bayes <- beam_bayesian_sign_comparison(sup, seed = 0L)
+  expect_s3_class(bayes, "python.builtin.object")
+  expect_equal(as.integer(bayes$order[1]), 0L)
+  expect_gt(bayes$probability_better[1, 2], 0.9)
 })
 
 test_that("reference-level wrappers run on a tool by metric matrix", {

@@ -21,6 +21,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from ..api import RunResult
 from ..cards import Registry
 from ..mcda import (
+    bayesian_sign_comparison,
     critical_difference,
     pairwise_superiority,
     pairwise_transitivity,
@@ -516,5 +517,19 @@ def _critical_difference_section(
         "choice": choice,
         "coefficient": None if coeff is None else f"{coeff:.2f}",
         "figure": figures.pairwise_majority_figure(trans),
+    }
+
+    # Posterior companion: the probability that the top method is practically
+    # better than the runner-up, rather than the p-value of their difference.
+    bayes = bayesian_sign_comparison(sup)
+    bayes_pair = next(p for p in bayes.per_pair if {p.a, p.b} == {top, runner})
+    p_top_better = bayes_pair.p_a_better if bayes_pair.a == top else bayes_pair.p_b_better
+    section["bayesian"] = {
+        "top": result.tool_names[top],
+        "runner": result.tool_names[runner],
+        "p_better": f"{p_top_better:.2f}",
+        "p_equivalent": f"{bayes_pair.p_equivalent:.2f}",
+        "rope": f"{bayes.rope:g}",
+        "figure": figures.bayesian_comparison_figure(bayes),
     }
     return section
