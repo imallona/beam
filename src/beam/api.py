@@ -32,6 +32,7 @@ from .io import Scores, load_scores
 from .manifest import build_manifest
 from .mcda import (
     CardDataConsistencyReport,
+    DatasetConcordanceReport,
     DatasetSensitivityReport,
     NoiseFloorReport,
     RandomBaselineReport,
@@ -42,6 +43,7 @@ from .mcda import (
     WeightPerturbationReport,
     beats_random_baseline,
     card_data_consistency,
+    dataset_concordance,
     leave_one_dataset_out,
     leave_one_metric_out,
     noise_floor_separation,
@@ -87,6 +89,10 @@ class RunResult:
     card_consistency
         The card-versus-data audit: where the raw scores contradict the cards'
         declared range, baseline, target or noise floor. Always computed.
+    dataset_concordance
+        Agreement among the datasets on how they order the methods, with the
+        method-by-dataset cells that drive any disagreement. Present only when
+        the input was a tensor with at least two datasets.
     manifest
         The run manifest dictionary (see ``beam.manifest``).
     """
@@ -103,6 +109,7 @@ class RunResult:
     random_baseline: RandomBaselineReport | None = None
     noise_floor: NoiseFloorReport | None = None
     card_consistency: CardDataConsistencyReport | None = None
+    dataset_concordance: DatasetConcordanceReport | None = None
 
     @property
     def tool_names(self) -> tuple[str, ...]:
@@ -276,6 +283,23 @@ def rank(
         metric_ids=ids,
     )
 
+    concordance = None
+    if score_obj.is_tensor and score_obj.values.shape[1] >= 2:
+        concordance = dataset_concordance(
+            score_obj.values,
+            context.polarity,
+            weights=weights,
+            method=method,
+            dataset_names=score_obj.dataset_names,
+            tool_names=score_obj.tool_names,
+            metric_ids=ids,
+            normalization=list(context.normalization),
+            bounds=list(context.bounds),
+            baselines=list(context.baselines),
+            targets=list(context.targets),
+            missing=missing,
+        )
+
     manifest = build_manifest(
         scores=score_obj,
         metric_ids=ids,
@@ -302,6 +326,7 @@ def rank(
         random_baseline=random_baseline,
         noise_floor=noise_floor,
         card_consistency=card_consistency,
+        dataset_concordance=concordance,
     )
 
 

@@ -356,6 +356,33 @@ print(f"choices only ({pooled.n_specifications} combinations): "
       f"{pdom} first in {pooled.most_frequent_top_fraction * 100:.0f}%")
 ```
 
+## Dataset concordance: do the datasets agree on the order?
+
+The pooled ranking averages over the datasets in the complete block. `dataset_concordance` ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not. It needs no replicates and assumes nothing about the datasets being interchangeable.
+
+```{python}
+conc = run.dataset_concordance
+names = conc.dataset_names
+print(f"mean agreement across datasets (Kendall tau-b): {conc.mean_pairwise_tau:.2f}")
+print("least typical dataset:", names[conc.most_idiosyncratic_dataset])
+print("number of mutually consistent dataset groups:", len(conc.concordant_groups))
+print("where methods depart most from their own average rank:")
+for cell in conc.notable_cells[:5]:
+    side = "lower" if cell.deviation > 0 else "higher"
+    print(f"  {conc.tool_names[cell.tool]} on {names[cell.dataset]}: "
+          f"rank {cell.rank}, {side} than its mean {cell.mean_rank:.1f}")
+```
+
+```{python}
+plot.dataset_concordance(run)
+```
+
+The companion view marks where each method places higher or lower than its own typical rank, so a reader sees which methods carry the dataset disagreement rather than which method ranks best overall.
+
+```{python}
+plot.dataset_struggle(run)
+```
+
 ## Blind analysis
 
 A blind analysis fixes the pipeline before the method names are known. This matters here, where one method (GPT-4) is the one under test: blinding removes the chance to tune the weighting toward it. `beam.blind` masks the names and shuffles the rows; `beam.unblind` restores them. The ranking is unchanged, and the seal fingerprint is recorded in the manifest.

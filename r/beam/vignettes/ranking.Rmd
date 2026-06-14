@@ -141,6 +141,26 @@ cat("most influential factor:", rs$most_influential_factor, "\n")
 
 The dataset carries the most, close to the dataset variance share the mixed-effects model reads in the heterogeneity vignette, by a different method. This is not in tension with the stable leave-one-dataset-out result above: that asks whether the pooled order survives dropping one dataset, and it does, because pooling averages over the per-dataset disagreement. The dataset share measures that disagreement directly.
 
+## Dataset concordance: do the datasets agree on the order?
+
+`beam_rank` also reports how the datasets agree among themselves. `dataset_concordance` ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not. The standalone wrapper is `beam_dataset_concordance(tensor, polarity)`.
+
+```{r concordance}
+conc <- run$dataset_concordance
+cat(sprintf("mean agreement across datasets (Kendall tau-b): %.2f\n",
+            conc$mean_pairwise_tau))
+cat("least typical dataset:",
+    conc$dataset_names[[conc$most_idiosyncratic_dataset + 1]], "\n")
+```
+
+The agreement matrix and the rank-deviation map plot from the run. The deviation map marks where each method places higher or lower than its own typical rank, the method-by-dataset cells that drive the disagreement.
+
+```{r concordance-plots, fig.width = 7, fig.height = 4}
+fig_path <- tempfile(fileext = ".png")
+beam_plot(run, "dataset_struggle", fig_path)
+knitr::include_graphics(fig_path)
+```
+
 ## Specification curve
 
 `beam_specification_curve` reads the same grid as a list of rankings and reports how often the top method holds. It takes the report from `beam_rank_sensitivity`.

@@ -89,6 +89,22 @@ cat(sprintf("dataset %.2f, weighting %.2f, aggregation %.2f, interaction %.2f\n"
 
 The dataset accounts for almost all of the rank variance; the weighting and the aggregation account for very little. Which tissue is annotated decides the per-dataset order far more than the scoring choice.
 
+## Dataset concordance: do the datasets agree on the order?
+
+`dataset_concordance` ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not.
+
+```{r concordance, fig.width = 6, fig.height = 4}
+conc <- run$dataset_concordance
+cat(sprintf("mean agreement across datasets (Kendall tau-b): %.2f\n",
+            conc$mean_pairwise_tau))
+cat("least typical dataset:",
+    conc$dataset_names[[conc$most_idiosyncratic_dataset + 1]], "\n")
+
+fig_path <- tempfile(fileext = ".png")
+beam_plot(run, "dataset_struggle", fig_path)
+knitr::include_graphics(fig_path)
+```
+
 ## Specification curve
 
 `beam_specification_curve` lists the rankings the grid produces and reports how often the top method holds.

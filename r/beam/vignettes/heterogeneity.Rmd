@@ -50,6 +50,28 @@ axis(2, at = seq_along(m), labels = nm, las = 1, cex.axis = 0.7)
 
 The dataset intercept takes about 0.71 of the ARI variance, so most of the spread is datasets being uniformly easy or hard rather than methods reordering. SC3 and Seurat have the highest marginal means and are not separable from each other given the standard errors.
 
+## Dataset concordance on ARI
+
+The variance decomposition gives one number for the interaction. `beam_dataset_concordance` shows its structure feature-free: it ranks the methods within each dataset on ARI and compares every pair of per-dataset orderings with Kendall tau-b, reporting which datasets order the methods alike and which stands apart.
+
+```{r concordance, fig.width = 6, fig.height = 5}
+conc <- beam_dataset_concordance(
+  duo$tensor(list("ari")), "higher_is_better",
+  dataset_names = dataset_names, tool_names = method_names,
+  metric_ids = list("ari"), missing = "worst"
+)
+cat(sprintf("mean agreement across datasets on ARI (Kendall tau-b): %.2f\n",
+            conc$mean_pairwise_tau))
+cat("least typical dataset:",
+    conc$dataset_names[[conc$most_idiosyncratic_dataset + 1]], "\n")
+
+fig_path <- tempfile(fileext = ".png")
+beam_plot(conc, "dataset_concordance", fig_path)
+knitr::include_graphics(fig_path)
+```
+
+The datasets fall into families that order the methods alike, the same structure the Bradley-Terry tree next reads from declared features rather than from the rankings.
+
 ## Bradley-Terry tree on dataset features
 
 The variance decomposition says how much interaction there is; the Bradley-Terry tree asks which dataset feature drives it. For each dataset the methods are compared pairwise (higher ARI wins), and `psychotree::bttree` splits the datasets by their features so each leaf gets its own Bradley-Terry ranking.

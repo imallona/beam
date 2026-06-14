@@ -26,8 +26,9 @@
 #' data changes: `"weighting_effect"`, `"aggregation_effect"`,
 #' `"normalization_effect"` and `"dataset_effect"`. The ranking and stability
 #' plots are `"ranking"`, `"normalized_scores"`, `"smaa"`, `"dataset_stability"`
-#' and `"funky_heatmap"`. The agreement heatmaps are `"aggregation_agreement"`
-#' and `"normalization_agreement"`.
+#' and `"funky_heatmap"`. The agreement heatmaps are `"aggregation_agreement"`,
+#' `"normalization_agreement"` and `"dataset_concordance"`; `"dataset_struggle"`
+#' maps each method's per-dataset rank against its own mean.
 #'
 #' @param run A `RunResult` returned by [beam_rank].
 #' @param kind Character name of the `beam.plot` function to call.

@@ -355,6 +355,34 @@ print(f"choices only ({pooled.n_specifications} combinations): "
 plot.specification_curve(curve)
 ```
 
+## Dataset concordance: do the datasets agree on the order?
+
+The pooled ranking averages over the batch-integration datasets. `dataset_concordance` ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not. It needs no replicates and assumes nothing about the datasets being interchangeable.
+
+```{python}
+conc = result.dataset_concordance
+names = conc.dataset_names
+print(f"mean agreement across datasets (Kendall tau-b): {conc.mean_pairwise_tau:.2f}")
+print("least typical dataset:", names[conc.most_idiosyncratic_dataset])
+print("mutually consistent groups:",
+      [tuple(names[d] for d in g) for g in conc.concordant_groups])
+print("where methods depart most from their own average rank:")
+for cell in conc.notable_cells[:5]:
+    side = "lower" if cell.deviation > 0 else "higher"
+    print(f"  {conc.tool_names[cell.tool]} on {names[cell.dataset]}: "
+          f"rank {cell.rank}, {side} than its mean {cell.mean_rank:.1f}")
+```
+
+```{python}
+plot.dataset_concordance(result)
+```
+
+The companion view marks where each method places higher or lower than its own typical rank across the datasets, the method-by-dataset cells that drive any disagreement.
+
+```{python}
+plot.dataset_struggle(result)
+```
+
 ## Blind analysis
 
 A blind analysis fixes the weighting, the aggregation and the metric set before the method names are revealed. `beam.blind` masks the names and shuffles the rows; `beam.unblind` restores them. The order does not change, and the seal fingerprint goes into the manifest.

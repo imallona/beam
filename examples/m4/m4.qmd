@@ -150,6 +150,36 @@ plot.dataset_stability(run)
 
 The hourly band is the most influential. It has only a few hundred series and very different dynamics from the long yearly and quarterly series, so a method tuned for it moves a lot in the ranking when it is dropped. This is the forecasting version of the method-by-dataset interaction the other examples show.
 
+## Dataset concordance: do the bands agree on the order?
+
+The pooled ranking averages over the six frequency bands. `dataset_concordance` ranks the methods within each band and compares every pair of per-band orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual bands; a low mean says it does not. It needs no replicates and assumes nothing about the bands being interchangeable.
+
+```{python}
+conc = run.dataset_concordance
+names = conc.dataset_names
+print(f"mean agreement across bands (Kendall tau-b): {conc.mean_pairwise_tau:.2f}")
+print("least typical band:", names[conc.most_idiosyncratic_dataset])
+print("mutually consistent groups:",
+      [tuple(names[d] for d in g) for g in conc.concordant_groups])
+print("where methods depart most from their own average rank:")
+for cell in conc.notable_cells[:5]:
+    side = "lower" if cell.deviation > 0 else "higher"
+    print(f"  {conc.tool_names[cell.tool]} on {names[cell.dataset]}: "
+          f"rank {cell.rank}, {side} than its mean {cell.mean_rank:.1f}")
+```
+
+M4 is the contrast to Duo: the bands disagree more, which is the strong method-by-band interaction the rank-sensitivity section also reads. The agreement matrix shows the bands that pull together and the ones that stand apart.
+
+```{python}
+plot.dataset_concordance(run)
+```
+
+The companion view marks where each method places higher or lower than its own typical rank, so a reader sees which methods carry the band disagreement rather than which method ranks best overall.
+
+```{python}
+plot.dataset_struggle(run)
+```
+
 ## Funky heatmap with rank robustness
 
 The funky heatmap shows the same run as a glyph table over the two error metrics, with three robustness panels: the rank span across the six leave-one-band-out runs, the rank span across the five aggregations, and the SMAA rank-acceptability bar.

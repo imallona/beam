@@ -228,6 +228,37 @@ plot.rank_heatmap(
 )
 ```
 
+## Dataset concordance: which dataset is the odd one
+
+`dataset_concordance` ranks the methods within each dataset and reports the Kendall tau-b agreement between every pair, so it names the dataset that orders the methods unlike the rest. This scenario plants one such dataset, and the diagnostic recovers it without being told which one it is.
+
+```{python}
+odd_scores = beam.Scores(
+    values=odd.scores_per_dataset,
+    tool_names=odd.method_names,
+    metric_ids=odd.metric_ids,
+    dataset_names=tuple(f"d{i}" for i in range(n_datasets)),
+    layout="long",
+)
+odd_run = beam.rank(odd_scores, weights="equal", method="saw", missing="worst")
+conc = odd_run.dataset_concordance
+names = conc.dataset_names
+print(f"mean agreement across datasets (Kendall tau-b): {conc.mean_pairwise_tau:.2f}")
+print("least typical dataset:", names[conc.most_idiosyncratic_dataset])
+print("mutually consistent groups:",
+      [tuple(names[d] for d in g) for g in conc.concordant_groups])
+```
+
+```{python}
+plot.dataset_concordance(odd_run)
+```
+
+The struggle map shows the methods whose rank flips on the odd dataset, the cells that pull the agreement down.
+
+```{python}
+plot.dataset_struggle(odd_run)
+```
+
 ## Normalization strategy matters
 
 Plain min-max scaling is a common default, and it is wrong for some metrics. Two scenarios make the failure concrete. In each one the top-ranked method under unguarded all-min_max differs from the one under the card defaults. See the explanation page on normalization and scales for the reasoning.

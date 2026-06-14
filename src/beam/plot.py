@@ -30,6 +30,8 @@ Agreement and consistency, each taking the matching analysis report:
 
 - :func:`aggregation_agreement` the tau-b heatmap across aggregations
 - :func:`normalization_agreement` the tau-b heatmap across normalizations
+- :func:`dataset_concordance` the tau-b heatmap across datasets
+- :func:`dataset_struggle` the per-dataset rank-deviation map of each method
 - :func:`critical_difference` the canonical Friedman-Nemenyi clique-bar diagram
 - :func:`critical_difference_band` the shaded-band alternative
 - :func:`specification_curve` the rank of the top tool across every combination
@@ -322,6 +324,60 @@ def normalization_agreement(report) -> Figure:
         report.tau_matrix,
         mean_tau=report.mean_pairwise_tau,
         choice_label="normalization",
+    )
+
+
+def _concordance_report(report):
+    """Return the DatasetConcordanceReport, unwrapping a RunResult if given one."""
+    if hasattr(report, "dataset_concordance"):
+        report = report.dataset_concordance
+    if report is None:
+        raise ValueError(
+            "no dataset_concordance report; the run needs a tensor with at least two datasets"
+        )
+    return report
+
+
+def _concordance_labels(report) -> list[str]:
+    if report.dataset_names is not None:
+        return [report.dataset_names[d] for d in report.evaluated_datasets]
+    return [f"dataset_{d}" for d in report.evaluated_datasets]
+
+
+def dataset_concordance(report) -> Figure:
+    """Tau-b agreement heatmap across datasets.
+
+    Takes a ``DatasetConcordanceReport``. Accepts a ``RunResult`` too, in which
+    case its attached report is used. Each cell is the Kendall tau-b between two
+    datasets' method orderings; a low cell marks a pair of datasets that order
+    the methods differently.
+    """
+    report = _concordance_report(report)
+    return _figures.agreement_heatmap(
+        _concordance_labels(report),
+        report.tau_matrix,
+        mean_tau=report.mean_pairwise_tau,
+        choice_label="dataset",
+        title=f"dataset agreement on method ordering (mean tau-b {report.mean_pairwise_tau:.2f})",
+    )
+
+
+def dataset_struggle(report) -> Figure:
+    """Map of which methods place better or worse than usual on each dataset.
+
+    Takes a ``DatasetConcordanceReport`` (or a ``RunResult``) and draws its
+    ``rank_deviation`` table: rows are methods, columns are datasets, and each
+    cell is the method's rank on that dataset minus its mean rank across the
+    datasets. A method that struggles on a dataset relative to its own baseline
+    shows as a strong positive cell. The figure locates where the dataset
+    disagreement comes from without ranking the methods against each other.
+    """
+    report = _concordance_report(report)
+    tools = report.tool_names or tuple(f"tool_{i}" for i in range(report.rank_deviation.shape[0]))
+    return _figures.rank_deviation_heatmap(
+        tools,
+        _concordance_labels(report),
+        report.rank_deviation,
     )
 
 

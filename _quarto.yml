@@ -63,6 +63,8 @@ website:
             text: Weighting schemes
           - href: docs/explanations/comparing-methods-across-datasets.md
             text: Comparing methods across datasets
+          - href: docs/explanations/dataset-concordance.md
+            text: Dataset concordance
           - href: docs/explanations/skillings-mack.md
             text: Skillings-Mack
           - href: docs/explanations/pairwise-superiority.md

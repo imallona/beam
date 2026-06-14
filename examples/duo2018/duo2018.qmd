@@ -363,6 +363,36 @@ beam.report(run, "duo2018_report.html", ground_truth_tool="Seurat")
 print("wrote duo2018_report.html")
 ```
 
+## Dataset concordance: do the datasets agree on the order?
+
+The pooled ranking averages over the twelve datasets. `dataset_concordance` ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not, and the per-dataset orderings are the honest output. The diagnostic needs no replicates and assumes nothing about the datasets being interchangeable, so it measures the heterogeneity rather than asking how many datasets would be enough.
+
+```{python}
+conc = run.dataset_concordance
+names = conc.dataset_names
+print(f"mean agreement across datasets (Kendall tau-b): {conc.mean_pairwise_tau:.2f}")
+print("least typical dataset:", names[conc.most_idiosyncratic_dataset])
+print("mutually consistent groups:",
+      [tuple(names[d] for d in g) for g in conc.concordant_groups])
+print("where methods depart most from their own average rank:")
+for cell in conc.notable_cells[:5]:
+    side = "lower" if cell.deviation > 0 else "higher"
+    print(f"  {conc.tool_names[cell.tool]} on {names[cell.dataset]}: "
+          f"rank {cell.rank}, {side} than its mean {cell.mean_rank:.1f}")
+```
+
+The datasets group into the Koh, the Kumar and Sim, and the Zhengmix families, which is how the source studies built the data. The agreement matrix shows that structure directly.
+
+```{python}
+plot.dataset_concordance(run)
+```
+
+The companion view locates where the disagreement comes from. Each cell is a method's rank on a dataset minus its mean rank, so a strong positive cell marks a method that places lower than usual on that dataset. A few cells carry most of the spread: some methods collapse on the harder simulated datasets while sitting mid-table on average.
+
+```{python}
+plot.dataset_struggle(run)
+```
+
 ## Specification curve: every choice at once
 
 `rank_sensitivity` runs every combination of the weighting, the aggregation and the dataset, and splits the rank variance between them. `specification_curve` reads the same grid and lists the rankings, then reports how often the top method holds. The choice-only grid (weighting by aggregation, on the pooled matrix) and the choice-plus-data grid (the dataset joins it) answer different questions: the first asks whether the recommendation survives the modeling choices, the second whether it survives a change of dataset.

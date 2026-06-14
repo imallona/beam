@@ -934,6 +934,68 @@ def agreement_heatmap(
     return fig
 
 
+def rank_deviation_heatmap(
+    tool_names: Sequence[str],
+    dataset_names: Sequence[str],
+    deviation: np.ndarray,
+    *,
+    title: str | None = None,
+) -> Figure:
+    """Heatmap of each method's per-dataset rank relative to its own typical rank.
+
+    Reads the ``rank_deviation`` table from a ``DatasetConcordanceReport``: rows
+    are methods, columns are datasets, and each cell is the method's rank on that
+    dataset minus its mean rank across the datasets. A negative cell (one colour)
+    means the method places higher than its average on that dataset; a positive
+    cell (the other colour) means it places lower. A method that struggles on a
+    dataset relative to its own baseline shows as a strong positive cell, so the
+    figure reads as a map of where each method does better or worse than usual,
+    without ranking the methods against each other.
+
+    Parameters
+    ----------
+    tool_names
+        Length ``n_tools`` row labels.
+    dataset_names
+        Length ``n_datasets`` column labels, in the column order of
+        ``deviation`` (the evaluated datasets).
+    deviation
+        ``(n_tools, n_datasets)`` signed rank-deviation table.
+    title
+        Optional figure title.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    tools = list(tool_names)
+    datasets = list(dataset_names)
+    values = np.asarray(deviation, dtype=float)
+    n_tools, n_datasets = values.shape
+    limit = float(np.nanmax(np.abs(values))) if values.size else 1.0
+    limit = limit if limit > 0 else 1.0
+    fig = Figure(figsize=(max(4.0, 0.7 * n_datasets + 2.0), max(3.0, 0.45 * n_tools + 1.5)))
+    ax = fig.subplots()
+    image = ax.imshow(values, cmap="RdBu_r", vmin=-limit, vmax=limit, aspect="auto")
+    ax.set_xticks(range(n_datasets))
+    ax.set_xticklabels(datasets, rotation=45, ha="right", fontsize=9)
+    ax.set_yticks(range(n_tools))
+    ax.set_yticklabels(tools, fontsize=9)
+    ax.set_xlabel("dataset")
+    ax.set_ylabel("method")
+    for i in range(n_tools):
+        for j in range(n_datasets):
+            value = values[i, j]
+            if np.isnan(value):
+                continue
+            shade = "#ffffff" if abs(value) > 0.6 * limit else "#222222"
+            ax.text(j, i, f"{value:+.1f}", ha="center", va="center", fontsize=7, color=shade)
+    bar = fig.colorbar(image, ax=ax, fraction=0.046)
+    bar.set_label("rank minus the method's mean rank (negative is higher than usual)")
+    ax.set_title(title or "method rank by dataset, relative to each method's mean", fontsize=10)
+    return fig
+
+
 def specification_curve_plot(report, *, compact: bool = True) -> Figure:
     """Specification curve over every combination of analyst choices.
 

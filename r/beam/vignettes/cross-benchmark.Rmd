@@ -224,4 +224,6 @@ cat("seal fingerprint:", substr(bl$seal$fingerprint, 1, 12), "\n")
 
 ## Reading
 
+This vignette measures agreement between benchmarks. The single-benchmark vignettes measure agreement between the datasets inside one benchmark, with `beam_dataset_concordance`. A method ordered consistently across the datasets of one benchmark yet ranked differently across benchmarks points at the analysis pipeline rather than the data; the network meta-analysis and source-variance decomposition here are the across-benchmark counterparts of that within-benchmark concordance.
+
 Standardizing the decision making with beam removes part of the apparent disagreement between these benchmarks, but it does not close it: the network meta-analysis finds a significant residual inconsistency even under the shared rule. BatchBench makes the point sharper. It scores biology and batch mixing with equal weight, disagrees with the scIB-family benchmarks about harmony, and so raises the share of the spread that sits in the benchmarker's choices rather than the methods. Harmonizing the analysis narrows the gap rather than erasing it. See `?beam_network_meta_analysis`, `?beam_source_variance_decomposition`.

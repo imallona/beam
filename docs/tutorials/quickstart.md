@@ -92,3 +92,5 @@ beam validate scores.csv --metrics ari,nmi,runtime
 To run a whole pipeline from one declarative file (so a reviewer reruns it with a single command), see the how-to: [Run a benchmark from a beam.yaml file](../how-to/run-from-beam-yaml.md).
 
 For the concepts behind the steps above, see the explanations: [normalization and scales](../explanations/normalization-and-scales.md), [weighting schemes](../explanations/weighting-schemes.md) and [aggregation methods](../explanations/aggregation-methods.md).
+
+When the scores carry a dataset axis, `beam.rank` also reports whether the datasets agree on the order, with [dataset concordance](../explanations/dataset-concordance.md). The bundled vignettes (Duo, M4, OpenProblems, transportation) show it on real and illustrative data.

@@ -475,6 +475,43 @@ print("ranking identical after unblinding:",
 print("blinding fingerprint:", blind_run.manifest["blinding"]["seal_sha256"][:12])
 ```
 
+## Dataset concordance: land agrees, water reverses
+
+`dataset_concordance` ranks the modes within each terrain and reports the Kendall tau-b agreement between every pair of terrains. It reads on any complete block. The four ground modes share five land terrains, so they form one complete block; the water modes share two. The two blocks sit at opposite ends of the agreement scale.
+
+```{python}
+land_mode_idx = [tb.mode_names.index(m) for m in block_modes]
+land_terrain_idx = [tb.terrain_names.index(t) for t in common_terrains]
+land_block = tb.scores[np.ix_(land_mode_idx, land_terrain_idx, range(len(tb.metric_names)))]
+land = beam.Scores(
+    values=land_block,
+    tool_names=block_modes,
+    metric_ids=tb.metric_names,
+    dataset_names=common_terrains,
+    layout="long",
+)
+land_run = beam.rank(land, weights="equal", method="saw")
+
+land_conc = land_run.dataset_concordance
+water_conc = water_run.dataset_concordance
+print(f"land block, {len(common_terrains)} terrains: mean agreement (tau-b) {land_conc.mean_pairwise_tau:.2f}")
+print(f"water block, 2 terrains:  mean agreement (tau-b) {water_conc.mean_pairwise_tau:.2f}")
+```
+
+On the five land terrains the motorcycle is fastest throughout and the foot the slowest, so each terrain produces nearly the same order. On the two water terrains the fast mode changes: the small plane leads on the long-distance leg, the motorboat on open water. The mean tau-b reports the size of that gap between the two blocks.
+
+```{python}
+plot.dataset_concordance(land_run)
+```
+
+The struggle map locates the reversal. On the water block the plane and the motorboat swap places between the two terrains, which is the method-by-dataset interaction the mixed-effects model puts a number on next.
+
+```{python}
+plot.dataset_struggle(water_run)
+```
+
+A single concordance over every mode and terrain at once is not well defined, for the same reason the pooled ranking is not: no mode runs on every terrain, so the diagnostic is read within each feasible block.
+
 ## Heterogeneity: the interaction is large
 
 The mixed-effects model puts a number on what the per-terrain sections show. Fit on speed, with the mode as a fixed effect and the terrain as a random intercept, it splits the speed variance into a between-terrain shift and the rest. The fit needs R's lme4, so the chunk runs only when it is available.

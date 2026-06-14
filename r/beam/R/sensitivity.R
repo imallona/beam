@@ -112,6 +112,53 @@ beam_leave_one_dataset_out <- function(tensor, polarity, reduction_rules,
   )
 }
 
+#' Agreement among datasets on how they order the methods
+#'
+#' Ranks the methods within each dataset and compares every pair of orderings
+#' with Kendall tau-b, reporting the dataset-by-dataset agreement matrix, the most
+#' idiosyncratic dataset, a grouping of mutually consistent datasets, and the
+#' method-by-dataset cells that depart most from a method's own typical rank. It
+#' measures dataset heterogeneity without replicates and without assuming the
+#' datasets are exchangeable. Forwards to the Python `beam.mcda.dataset_concordance`.
+#'
+#' @param tensor A numeric 3D array of shape (tools, datasets, metrics).
+#' @param polarity Character vector, one per metric, each `"higher_is_better"` or
+#'   `"lower_is_better"`.
+#' @param weights Either an objective scheme name or a numeric vector of metric
+#'   weights. Default `"equal"`.
+#' @param method Aggregation method. Default `"saw"`.
+#' @param dataset_names Optional character vector of dataset labels. Default
+#'   `NULL`.
+#' @param tool_names Optional character vector of tool labels. Default `NULL`.
+#' @param metric_ids Optional character vector of metric labels. Default `NULL`.
+#' @param threshold Agreement cutoff for the dataset grouping. Default `0.5`.
+#' @param ... Further arguments forwarded to the Python function, for example
+#'   `normalization`, `bounds`, `baselines`, `targets`, `missing`.
+#'
+#' @return The Python `DatasetConcordanceReport`. Read its fields with `$`.
+#'
+#' @seealso [beam_leave_one_dataset_out], [beam_rank].
+#'
+#' @export
+beam_dataset_concordance <- function(tensor, polarity, weights = "equal",
+                                     method = "saw", dataset_names = NULL,
+                                     tool_names = NULL, metric_ids = NULL,
+                                     threshold = 0.5, ...) {
+  .require_beam()
+  mcda <- reticulate::import("beam.mcda")
+  mcda$dataset_concordance(
+    tensor = tensor,
+    polarity = as.character(polarity),
+    weights = weights,
+    method = method,
+    dataset_names = if (is.null(dataset_names)) NULL else as.character(dataset_names),
+    tool_names = if (is.null(tool_names)) NULL else as.character(tool_names),
+    metric_ids = if (is.null(metric_ids)) NULL else as.character(metric_ids),
+    threshold = threshold,
+    ...
+  )
+}
+
 #' Smallest weight change that flips the top tool
 #'
 #' Finds the smallest single-weight change that moves a different tool into first

@@ -316,6 +316,10 @@ print("order, unblinded: ", order_unblinded)
 print("same order after unblinding:", order_named == order_unblinded)
 ```
 
+## Two levels of agreement
+
+This vignette measures agreement between benchmarks. The single-benchmark vignettes measure agreement between the datasets inside one benchmark, with `dataset_concordance`. The two read together: a method can be ordered consistently across the datasets of one benchmark yet ranked differently across benchmarks, which points at the analysis pipeline rather than the data. The network meta-analysis and the source-variance decomposition above are the across-benchmark counterparts of the within-benchmark concordance.
+
 ## Limits
 
 The published-rank chart and the within-five-methods Spearman comparison are computed on the first three benchmarks because Tyler does not publish an overall ranking (its paper is a methodological critique, not a recommendation). The variance decomposition pools all four sources. Numbers stay indicative, not precise: a Spearman over five methods is coarse, four benchmarks is still few for a sharp method-by-benchmark variance estimate, and the reported rankings are reconstructed (Tran's final rank directly, scIB's 0.6/0.4 overall and OpenProblems' mean score recomputed). For the pooled comparison the benchmarks also use mostly different datasets, so part of that disagreement is genuine data variability, not the benchmarker; the human pancreas section removes that confound on the one block where it can be removed. With those caveats, standardizing the decision making with beam removes part of the apparent disagreement between these benchmarks, but it does not close it: the network meta-analysis finds a significant residual inconsistency even under the shared rule. Harmonizing the analysis narrows the gap rather than erasing it.

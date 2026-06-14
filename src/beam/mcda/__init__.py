@@ -24,6 +24,11 @@ from .cd import (
 )
 from .comet import comet
 from .cross_dataset import aggregate_across_datasets, reduce_tensor
+from .dataset_concordance import (
+    DatasetConcordanceReport,
+    RankDeviation,
+    dataset_concordance,
+)
 from .diagnostics import MetricDiagnosticsReport, metric_diagnostics
 from .dimensionality import MetricDimensionalityReport, metric_dimensionality
 from .facade import RegistryContext, Result, registry_context, run, run_from_registry
@@ -101,6 +106,7 @@ __all__ = [
     "CardDataConsistencyReport",
     "ConsistencyFinding",
     "CriticalDifferenceReport",
+    "DatasetConcordanceReport",
     "DatasetSensitivityReport",
     "IncompatibleScaleError",
     "IncompleteMatrixError",
@@ -120,6 +126,7 @@ __all__ = [
     "PairwiseSuperiorityReport",
     "PairwiseTransitivityReport",
     "RandomBaselineReport",
+    "RankDeviation",
     "RankSensitivityReport",
     "RegistryContext",
     "Result",
@@ -140,6 +147,7 @@ __all__ = [
     "coverage_aware_critical_difference",
     "critic_weights",
     "critical_difference",
+    "dataset_concordance",
     "entropy_weights",
     "equal_weights",
     "leave_one_dataset_out",
