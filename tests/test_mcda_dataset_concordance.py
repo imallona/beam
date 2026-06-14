@@ -72,6 +72,15 @@ def test_rank_deviation_shape_and_sign():
     assert report.rank_deviation[0, pos0] < 0
 
 
+def test_bare_string_polarity_for_single_metric():
+    # A one-metric tensor with polarity passed as a bare string (the shape a
+    # length-1 R vector reaches Python as through reticulate) must not be read
+    # character by character.
+    report = dataset_concordance(_three_dataset_tensor(), "higher_is_better")
+    assert report.tau_matrix.shape == (3, 3)
+    assert report.most_idiosyncratic_dataset == 2
+
+
 def test_validation_errors():
     with pytest.raises(ValueError, match="3D"):
         dataset_concordance(np.zeros((3, 2)), ["higher_is_better"])

@@ -185,7 +185,8 @@ def dataset_concordance(
     polarity
         Length ``n_metrics`` sequence of ``"higher_is_better"`` or
         ``"lower_is_better"``. Use ``beam.cards.polarities_for`` to source this
-        from the registry.
+        from the registry. A bare string is accepted for a single-metric tensor
+        and treated as the one polarity.
     weights
         Forwarded to ``run``. A named scheme or an explicit array. Objective
         schemes are recomputed within each dataset.
@@ -238,6 +239,8 @@ def dataset_concordance(
     n_tools, n_datasets, n_metrics = tensor.shape
     if n_datasets < 2:
         raise ValueError(f"dataset_concordance needs at least 2 datasets; got {n_datasets}")
+    if isinstance(polarity, str):
+        polarity = [polarity]
     if len(polarity) != n_metrics:
         raise ValueError(f"polarity has {len(polarity)} entries but tensor has {n_metrics} metrics")
 
