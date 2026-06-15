@@ -222,6 +222,37 @@ cat("restored names:", paste(as.character(unlist(restored$tool_names)), collapse
 cat("seal fingerprint:", substr(bl$seal$fingerprint, 1, 12), "\n")
 ```
 
+## A sixth source with disjoint methods: dataset discrimination
+
+Every analysis above compares method orders, so it needs shared methods. The deep-learning benchmark of Shen, He and Guan (2026, [10.1371/journal.pcbi.1014008](https://doi.org/10.1371/journal.pcbi.1014008)) overlaps the classical five only on harmony and scanorama, too few to rank-harmonize. `beam_dataset_discrimination` reports a property defined per dataset: how much each dataset separates the methods it scores, as the spread of the pooled scores (the effect size) and Kendall's W over the method-by-metric matrix (the consistency). beam treats each (dataset, scenario) pair as one unit.
+
+```{r discrimination}
+shen <- datasets$load_semisupervised_integration()
+shen_methods <- as.character(unlist(shen$method_names))
+shen_units <- as.character(unlist(shen$unit_names))
+shen_polarity <- as.character(unlist(shen$polarity))
+
+disc <- beam_dataset_discrimination(shen$scores, shen_polarity, dataset_ids = shen_units)
+cat(sprintf("%d units, %d methods\n", length(shen_units), length(shen_methods)))
+cat(sprintf("mean discrimination (spread): %.3f, mean concordance (W): %.2f\n",
+            disc$mean_spread, disc$mean_kendall_w))
+cat("most discriminating:", disc$most_discriminating, "\n")
+cat("least discriminating:", disc$least_discriminating, "\n")
+```
+
+`beam_difficulty_concordance` then splits the methods into a deep-learning family and a classical one and asks whether the families find the same datasets hard. A low concordance means the hardness is specific to a method family rather than a property of the data.
+
+```{r difficulty}
+dl <- c("scVI", "scANVI", "scGEN", "scDREAMER", "scCRAFT", "ItClust")
+families <- ifelse(shen_methods %in% dl, "DL", "classical")
+conc <- beam_difficulty_concordance(shen$scores, shen_polarity, families,
+                                    dataset_ids = shen_units)
+cat(sprintf("DL vs classical difficulty concordance: %+.2f\n", conc$concordance[1, 2]))
+cat("families disagree most on:", conc$most_divergent_dataset, "\n")
+```
+
+The Shen concordance is low: degraded labels affect only the methods that use them, so the hard units are harder for the deep-learning family. On a benchmark whose hardness is dataset complexity the families agree. A single cross-method ranking would hide which kind a benchmark measures. See `?beam_dataset_discrimination`, `?beam_difficulty_concordance`.
+
 ## Reading
 
 This vignette measures agreement between benchmarks. The single-benchmark vignettes measure agreement between the datasets inside one benchmark, with `beam_dataset_concordance`. A method ordered consistently across the datasets of one benchmark yet ranked differently across benchmarks points at the analysis pipeline rather than the data; the network meta-analysis and source-variance decomposition here are the across-benchmark counterparts of that within-benchmark concordance.

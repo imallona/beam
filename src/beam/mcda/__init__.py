@@ -29,7 +29,15 @@ from .dataset_concordance import (
     RankDeviation,
     dataset_concordance,
 )
+from .dataset_discrimination import (
+    DatasetDiscriminationReport,
+    dataset_discrimination,
+)
 from .diagnostics import MetricDiagnosticsReport, metric_diagnostics
+from .difficulty_concordance import (
+    DifficultyConcordanceReport,
+    difficulty_concordance,
+)
 from .dimensionality import MetricDimensionalityReport, metric_dimensionality
 from .facade import RegistryContext, Result, registry_context, run, run_from_registry
 from .metric_validity import MetricValidityReport, metric_validity
@@ -107,7 +115,9 @@ __all__ = [
     "ConsistencyFinding",
     "CriticalDifferenceReport",
     "DatasetConcordanceReport",
+    "DatasetDiscriminationReport",
     "DatasetSensitivityReport",
+    "DifficultyConcordanceReport",
     "IncompatibleScaleError",
     "IncompleteMatrixError",
     "InconsistentPairwiseMatrixError",
@@ -148,6 +158,8 @@ __all__ = [
     "critic_weights",
     "critical_difference",
     "dataset_concordance",
+    "dataset_discrimination",
+    "difficulty_concordance",
     "entropy_weights",
     "equal_weights",
     "leave_one_dataset_out",

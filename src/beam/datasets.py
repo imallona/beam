@@ -1357,3 +1357,150 @@ def load_pancreas_contrast() -> PancreasContrast:
         tran_mean_rank=np.nanmean(tran_rank, axis=1),
         scib_mean_rank=np.nanmean(scib_rank, axis=1),
     )
+
+
+_SHEN_CSV_NAME: Final = "shen2026_metrics.csv"
+# Semi-supervised family first, then the unsupervised family, the paper's split.
+_SHEN_METHOD_ORDER: Final[tuple[str, ...]] = (
+    "scANVI",
+    "scGEN",
+    "STACAS",
+    "scDREAMER",
+    "ItClust",
+    "Seurat",
+    "scVI",
+    "Harmony",
+    "scanorama",
+    "scCRAFT",
+)
+_SHEN_SEMISUPERVISED: Final[frozenset[str]] = frozenset(
+    {"scANVI", "scGEN", "STACAS", "scDREAMER", "ItClust"}
+)
+# The 13 scIB metric columns, all scaled to [0, 1] and higher is better.
+_SHEN_METRIC_IDS: Final[tuple[str, ...]] = (
+    "ARI_cluster/label",
+    "NMI_cluster/label",
+    "ASW_label",
+    "ASW_label/batch",
+    "isolated_label_F1",
+    "isolated_label_silhouette",
+    "graph_conn",
+    "kBET",
+    "lisi_b",
+    "lisi_c",
+    "lisi_f1",
+    "pos_rate",
+    "truepos_rate",
+)
+_SHEN_POLARITY: Final[tuple[str, ...]] = tuple("higher_is_better" for _ in _SHEN_METRIC_IDS)
+# scIB metric column -> bundled beam card id, for the ten with a card. lisi_f1,
+# pos_rate and truepos_rate have no card and map to nothing.
+_SHEN_CANONICAL_METRIC: Final[dict[str, str]] = {
+    "ARI_cluster/label": "ari",
+    "NMI_cluster/label": "nmi",
+    "ASW_label": "asw_label",
+    "ASW_label/batch": "asw_batch",
+    "isolated_label_F1": "isolated_label_f1",
+    "isolated_label_silhouette": "isolated_label_asw",
+    "graph_conn": "graph_connectivity",
+    "kBET": "kbet",
+    "lisi_b": "ilisi",
+    "lisi_c": "clisi",
+}
+
+
+@dataclass(frozen=True)
+class SemiSupervisedIntegration:
+    """Shen 2026 semi-supervised integration scores on the annotation-scenario axis.
+
+    The benchmark scores ten integration methods (five semi-supervised: scANVI,
+    scGEN, STACAS, scDREAMER, ItClust; five unsupervised: Seurat, scVI, Harmony,
+    scanorama, scCRAFT) on six datasets, each under a set of annotation scenarios
+    that degrade label supervision (full supervision, unsupervised, randomly
+    missing or wrong labels at 30/50/70 percent, partial batches, edge mixing,
+    and reference-based Azimuth, CellAssign and singleR transfers). beam treats
+    each (dataset, scenario) pair as one unit, so a method is scored once per unit
+    per metric. The 13 metrics are the scIB family, all scaled to [0, 1] and
+    higher is better; provenance is in ``src/beam/data/README.md``. A method or
+    metric not observed on a unit surfaces as ``numpy.nan``; nothing is imputed.
+
+    Attributes
+    ----------
+    method_names, metric_ids
+        Label tuples for the method and metric axes.
+    dataset_names, scenario_names
+        The six base datasets and the union of annotation scenarios.
+    unit_names, unit_dataset, unit_scenario
+        Parallel tuples for the (dataset, scenario) units; ``unit_names[i]`` is
+        ``f"{unit_dataset[i]}/{unit_scenario[i]}"``.
+    polarity
+        Per-metric direction, aligned with ``metric_ids`` (all higher is better).
+    scores
+        Float array of shape ``(n_methods, n_units, n_metrics)``.
+    """
+
+    method_names: tuple[str, ...]
+    dataset_names: tuple[str, ...]
+    scenario_names: tuple[str, ...]
+    unit_names: tuple[str, ...]
+    unit_dataset: tuple[str, ...]
+    unit_scenario: tuple[str, ...]
+    metric_ids: tuple[str, ...]
+    polarity: tuple[str, ...]
+    scores: np.ndarray
+
+    def canonical_metric_ids(self) -> tuple[str | None, ...]:
+        """The bundled card id per metric, ``None`` for metrics without a card."""
+        return tuple(_SHEN_CANONICAL_METRIC.get(m) for m in self.metric_ids)
+
+    def tensor(self, metric_ids: tuple[str, ...] | None = None) -> np.ndarray:
+        """Method by unit by metric tensor, optionally restricted to ``metric_ids``."""
+        if metric_ids is None:
+            return self.scores
+        idx = [self.metric_ids.index(m) for m in metric_ids]
+        return self.scores[:, :, idx]
+
+
+def load_semisupervised_integration() -> SemiSupervisedIntegration:
+    """Load the bundled Shen 2026 semi-supervised integration scores.
+
+    Reads ``shen2026_metrics.csv`` (one row per dataset, scenario, method and
+    metric) and reduces it to a method by (dataset, scenario) unit by metric
+    tensor. Methods are in the canonical order (semi-supervised family first);
+    units are sorted by dataset then scenario. A missing cell is ``numpy.nan``.
+
+    Returns
+    -------
+    SemiSupervisedIntegration
+    """
+    text = resources.files(_CSV_PACKAGE).joinpath(_SHEN_CSV_NAME).read_text("utf-8")
+    rows = list(csv.DictReader(text.splitlines()))
+
+    units = sorted({(r["dataset"], r["scenario"]) for r in rows})
+    datasets = tuple(dict.fromkeys(d for d, _ in units))
+    scenarios = tuple(dict.fromkeys(s for _, s in units))
+    present_methods = {r["method"] for r in rows}
+    method_names = tuple(m for m in _SHEN_METHOD_ORDER if m in present_methods)
+
+    ui = {u: i for i, u in enumerate(units)}
+    mi = {m: i for i, m in enumerate(method_names)}
+    ki = {k: i for i, k in enumerate(_SHEN_METRIC_IDS)}
+
+    scores = np.full((len(method_names), len(units), len(_SHEN_METRIC_IDS)), np.nan)
+    for r in rows:
+        metric = r["metric"]
+        if metric not in ki:
+            continue
+        scores[mi[r["method"]], ui[(r["dataset"], r["scenario"])], ki[metric]] = float(r["score"])
+
+    return SemiSupervisedIntegration(
+        method_names=method_names,
+        dataset_names=datasets,
+        scenario_names=scenarios,
+        unit_names=tuple(f"{d}/{s}" for d, s in units),
+        unit_dataset=tuple(d for d, _ in units),
+        unit_scenario=tuple(s for _, s in units),
+        metric_ids=_SHEN_METRIC_IDS,
+        polarity=_SHEN_POLARITY,
+        scores=scores,
+    )

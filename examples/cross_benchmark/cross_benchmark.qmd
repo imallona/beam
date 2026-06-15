@@ -316,6 +316,52 @@ print("order, unblinded: ", order_unblinded)
 print("same order after unblinding:", order_named == order_unblinded)
 ```
 
+## A sixth source with disjoint methods: dataset discrimination
+
+Every analysis above compares method orders, so it needs shared methods. Shen, He and Guan (2026, [10.1371/journal.pcbi.1014008](https://doi.org/10.1371/journal.pcbi.1014008)) score ten methods, five semi-supervised (scANVI, scGEN, STACAS, scDREAMER, ItClust) and five unsupervised (Seurat, scVI, Harmony, scanorama, scCRAFT), on six datasets, each under annotation scenarios that degrade label supervision from full to none. Only harmony and scanorama overlap the classical five, too few to rank-harmonize. A property defined per dataset is still available: how much each dataset separates the methods it scores. Any benchmark can report it for every dataset, whatever methods it ran. See the data README for provenance and the [dataset-discrimination explanation](../../docs/explanations/dataset-discrimination.md).
+
+`dataset_discrimination` computes it from the scores. beam treats each (dataset, scenario) pair as one unit and reports two values per unit: the spread of the pooled method scores, the effect size, and Kendall's W over the unit's method-by-metric matrix, the consistency of the order across metrics. It complements `dataset_concordance`: concordance asks whether datasets agree on the order, discrimination asks whether a dataset separates the methods at all.
+
+```{python}
+from beam.datasets import load_openproblems, load_semisupervised_integration
+from beam.mcda import dataset_discrimination, difficulty_concordance
+
+shen = load_semisupervised_integration()
+disc = dataset_discrimination(shen.scores, shen.polarity, dataset_ids=shen.unit_names)
+print(f"{len(shen.unit_names)} units (6 datasets x annotation scenarios), {len(shen.method_names)} methods")
+print(f"mean discrimination (spread): {disc.mean_spread:.3f}, mean concordance (W): {disc.mean_kendall_w:.2f}")
+print(f"most discriminating: {disc.most_discriminating}")
+print(f"least discriminating: {disc.least_discriminating}")
+display(plot.dataset_discrimination(disc, top=15))
+```
+
+The strongest discriminators are the corrupted-label scenarios (`randomly_wrong_70` and the heavily missing ones): wrong labels separate the methods that use them from the unsupervised ones. The weakest are the mild perturbations, where the methods score alike and the unit cannot rank them. On the high-spread units the colour is dark, so the metrics agree on the order there.
+
+### Are hard datasets as hard for deep learning as for classical methods?
+
+Splitting the methods into a deep-learning family and a classical one separates two kinds of hardness. `difficulty_concordance` correlates the per-family difficulty profiles across the datasets. A high concordance places the hardness in the data; a low one places it in the method family.
+
+```{python}
+dl = {"scVI", "scANVI", "scGEN", "scDREAMER", "scCRAFT", "ItClust"}
+families = ["DL" if m in dl else "classical" for m in shen.method_names]
+shen_conc = difficulty_concordance(shen.scores, shen.polarity, families, dataset_ids=shen.unit_names)
+print(f"Shen (annotation-scenario hardness): concordance {shen_conc.concordance[0, 1]:+.2f}")
+print(f"  families disagree most on: {shen_conc.most_divergent_dataset}")
+
+op = load_openproblems("batch_integration")
+op_metrics = [m for m in op.metric_ids if m != "hvg_overlap"]
+op_tensor = op.tensor(tuple(op_metrics))
+op_pol = tuple("higher_is_better" for _ in op_metrics)
+op_dl = {"scvi", "scanvi", "scalex", "scgpt_finetuned", "scgpt_zeroshot",
+         "geneformer", "scprint", "uce", "scimilarity"}
+op_families = ["DL" if m in op_dl else "classical" for m in op.method_names]
+op_conc = difficulty_concordance(op_tensor, op_pol, op_families, dataset_ids=op.dataset_names)
+print(f"OpenProblems (intrinsic-complexity hardness): concordance {op_conc.concordance[0, 1]:+.2f}")
+display(plot.difficulty_concordance(shen_conc, title="Shen 2026: do DL and classical find the same units hard?"))
+```
+
+The two benchmarks differ because their datasets are hard for different reasons. On OpenProblems the hardness is dataset complexity, and the families agree (Spearman about 0.89): a dataset hard for classical methods is hard for the deep-learning ones. On Shen the hardness is annotation quality, and the families agree weakly (about 0.32): degraded labels affect only the methods that use them. On the hardest units the deep-learning family scores below the classical one; on the easy units it scores above. Dataset complexity is shared across families; a benchmark that stresses what one family depends on is hard only for that family, which a single cross-method ranking would hide.
+
 ## Two levels of agreement
 
 This vignette measures agreement between benchmarks. The single-benchmark vignettes measure agreement between the datasets inside one benchmark, with `dataset_concordance`. The two read together: a method can be ordered consistently across the datasets of one benchmark yet ranked differently across benchmarks, which points at the analysis pipeline rather than the data. The network meta-analysis and the source-variance decomposition above are the across-benchmark counterparts of the within-benchmark concordance.

@@ -65,6 +65,8 @@ website:
             text: Comparing methods across datasets
           - href: docs/explanations/dataset-concordance.md
             text: Dataset concordance
+          - href: docs/explanations/dataset-discrimination.md
+            text: Dataset discrimination
           - href: docs/explanations/skillings-mack.md
             text: Skillings-Mack
           - href: docs/explanations/pairwise-superiority.md
@@ -175,6 +177,8 @@ quartodoc:
         - aggregation_agreement
         - rank_sensitivity
         - specification_curve
+        - dataset_discrimination
+        - difficulty_concordance
         - pairwise_superiority
         - critical_difference
         - skillings_mack

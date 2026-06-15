@@ -32,6 +32,8 @@ Agreement and consistency, each taking the matching analysis report:
 - :func:`normalization_agreement` the tau-b heatmap across normalizations
 - :func:`dataset_concordance` the tau-b heatmap across datasets
 - :func:`dataset_struggle` the per-dataset rank-deviation map of each method
+- :func:`dataset_discrimination` the per-dataset spread, coloured by concordance
+- :func:`difficulty_concordance` whether two method families find the same datasets hard
 - :func:`critical_difference` the canonical Friedman-Nemenyi clique-bar diagram
 - :func:`critical_difference_band` the shaded-band alternative
 - :func:`specification_curve` the rank of the top tool across every combination
@@ -511,3 +513,80 @@ def bradley_terry_leaves(report, *, title: str | None = None) -> Figure:
     Takes a ``BradleyTerryTreeReport`` from ``beam.heterogeneity.bradley_terry_tree``.
     """
     return _figures.bradley_terry_leaves_plot(report, title=title)
+
+
+def dataset_discrimination(report, top: int | None = None, title: str | None = None) -> Figure:
+    """Per-dataset discrimination, the spread of method scores, coloured by concordance.
+
+    Takes a ``DatasetDiscriminationReport`` from
+    ``beam.mcda.dataset_discrimination``. Each bar is one dataset's spread (how
+    far apart it pulls the methods, the effect size), sorted with the strongest
+    discriminator on top; the bar colour is Kendall's W (whether the metrics
+    agree on the order, the consistency). A long, dark bar is a dataset that
+    separates the methods and whose metrics agree on how. ``top`` keeps only the
+    most discriminating datasets.
+    """
+    from matplotlib.cm import ScalarMappable
+    from matplotlib.colors import Normalize
+
+    finite = [i for i in report.order if np.isfinite(report.spread[i])]
+    if top is not None:
+        finite = finite[:top]
+    labels = [
+        report.dataset_ids[i] if report.dataset_ids is not None else str(i) for i in finite
+    ]
+    spread = np.array([report.spread[i] for i in finite])
+    w = np.array([report.kendall_w[i] for i in finite])
+
+    norm = Normalize(vmin=0.0, vmax=1.0)
+    cmap = ScalarMappable(norm=norm, cmap="viridis").get_cmap()
+    colors = [cmap(norm(x)) if np.isfinite(x) else "#cccccc" for x in w]
+
+    fig = Figure(figsize=(7.0, max(2.5, 0.3 * len(finite) + 1.0)))
+    ax = fig.subplots()
+    y = np.arange(len(finite))[::-1]
+    ax.barh(y, spread, color=colors)
+    ax.set_yticks(y)
+    ax.set_yticklabels(labels, fontsize=8)
+    ax.set_xlabel("discrimination (spread of method scores)")
+    ax.set_title(title or "How strongly each dataset separates the methods")
+    bar = fig.colorbar(ScalarMappable(norm=norm, cmap="viridis"), ax=ax)
+    bar.set_label("metric concordance (Kendall's W)")
+    fig.tight_layout()
+    return fig
+
+
+def difficulty_concordance(report, title: str | None = None) -> Figure:
+    """Whether two method families find the same datasets hard.
+
+    Takes a ``DifficultyConcordanceReport`` from
+    ``beam.mcda.difficulty_concordance`` with exactly two families. Each point is
+    one dataset, placed at the first family's score against the second's; the
+    dashed line is equality. Points on the line are datasets the two families
+    find equally hard; points off it are family-specific. The Spearman
+    concordance is annotated: high means hardness is a property of the data, low
+    means it is a property of the method family.
+    """
+    if len(report.family_names) != 2:
+        raise ValueError("difficulty_concordance plot needs exactly two families")
+    fa, fb = report.family_names
+    xa, xb = report.family_score[0], report.family_score[1]
+    both = np.isfinite(xa) & np.isfinite(xb)
+    xa, xb = xa[both], xb[both]
+
+    fig = Figure(figsize=(5.0, 5.0))
+    ax = fig.subplots()
+    ax.scatter(xa, xb, s=25, alpha=0.7, edgecolor="#33333355")
+    lo = float(min(xa.min(), xb.min()))
+    hi = float(max(xa.max(), xb.max()))
+    ax.plot([lo, hi], [lo, hi], "--", color="#888888", linewidth=1)
+    ax.set_xlabel(f"{fa} score (higher = easier)")
+    ax.set_ylabel(f"{fb} score (higher = easier)")
+    ax.set_aspect("equal", adjustable="box")
+    rho = report.concordance[0, 1]
+    ax.set_title(
+        (title or f"Do {fa} and {fb} find the same datasets hard?")
+        + f"\nSpearman {rho:.2f}"
+    )
+    fig.tight_layout()
+    return fig
