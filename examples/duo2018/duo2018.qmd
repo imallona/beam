@@ -24,9 +24,11 @@ This vignette re-analyses the fourteen single-cell clustering methods benchmarke
 The five aggregation methods used below (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET) are wrapped from pymcdm. beam normalizes by metric card, then calls pymcdm on the normalized matrix and keeps the higher-is-better convention. The weighting schemes are beam's own, since pymcdm's reject the zeros beam's normalization produces.
 
 ```{python}
+%matplotlib inline
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
+from IPython.display import display
 
 import beam
 from beam.datasets import load_duo2018
@@ -490,7 +492,7 @@ else:
 
 ```{python}
 if me is not None:
-    plot.model_effects(me, xlabel="ARI marginal mean over datasets (higher ranks first)")
+    display(plot.model_effects(me, xlabel="ARI marginal mean over datasets (higher ranks first)"))
 ```
 
 The dataset intercept takes about 0.71 of the ARI variance, so most of the spread is datasets being uniformly easy or hard rather than methods reordering. SC3 and Seurat have the highest marginal means and are not separable from each other given the standard errors, which matches the critical-difference reading above. The residual share, the upper bound on the method-by-dataset interaction at one run per cell, concentrates on the two lowest-scoring methods (RaceID2 and FlowSOM) on a few simulated and four-group datasets, not on a reshuffling of the higher-scoring methods. See [the mixed-effects explanation](../../docs/explanations/heterogeneity-mixed-effects.md).

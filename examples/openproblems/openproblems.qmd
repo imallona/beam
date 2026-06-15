@@ -77,8 +77,10 @@ def svg_features():
 The metric directions and the reference DOIs on the metric cards come from each task's `metric_info.json` (every metric here has `maximize` true, so all are higher is better).
 
 ```{python}
+%matplotlib inline
 import numpy as np
 import matplotlib.pyplot as plt
+from IPython.display import display
 
 import beam
 from beam.datasets import load_openproblems, load_openproblems_svg_features
@@ -509,7 +511,7 @@ Each leaf has its own ranking. The plot shows the number of datasets in each lea
 
 ```{python}
 if bt is not None:
-    plot.bradley_terry_leaves(bt)
+    display(plot.bradley_terry_leaves(bt))
 ```
 
 The pooled ranking has one method at the top, but the leaves disagree: which method ranks first depends on the spatial assay technology. A single ranking does not show this heterogeneity. The 50-dataset task shows it where the 12-dataset Duo benchmark could not. See [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md).

@@ -28,6 +28,7 @@ The third point is a crossover among the slower modes. Trail running is slower t
 The five aggregation methods used below (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET) are wrapped from pymcdm. beam normalizes the scores, then calls pymcdm on the normalized matrix and keeps the higher-is-better convention. The weighting schemes are beam's own.
 
 ```{python}
+%matplotlib inline
 import numpy as np
 import matplotlib.pyplot as plt
 

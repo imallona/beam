@@ -37,6 +37,7 @@ Rscript reduce_m4.R                    # writes M4_2018_by_frequency.csv
 ## Load the table
 
 ```{python}
+%matplotlib inline
 import numpy as np
 import matplotlib.pyplot as plt
 

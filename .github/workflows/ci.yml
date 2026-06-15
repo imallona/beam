@@ -114,33 +114,21 @@ jobs:
           version: "1.5.57"
 
       - name: Render Duo vignette
-        env:
-          MPLBACKEND: Agg
         run: quarto render examples/duo2018/duo2018.qmd
 
       - name: Render scenarios vignette
-        env:
-          MPLBACKEND: Agg
         run: quarto render examples/scenarios/scenarios.qmd
 
       - name: Render transportation vignette
-        env:
-          MPLBACKEND: Agg
         run: quarto render examples/transportation/transportation.qmd
 
       - name: Render M4 vignette
-        env:
-          MPLBACKEND: Agg
         run: quarto render examples/m4/m4.qmd
 
       - name: Render OpenProblems vignette
-        env:
-          MPLBACKEND: Agg
         run: quarto render examples/openproblems/openproblems.qmd
 
       - name: Render cross-benchmark vignette
-        env:
-          MPLBACKEND: Agg
         run: quarto render examples/cross_benchmark/cross_benchmark.qmd
 
       # The repo-root _quarto.yml turns the tree into a Quarto project with

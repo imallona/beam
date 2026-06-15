@@ -27,6 +27,7 @@ This vignette runs the simulated scenarios. Four scenarios with documented groun
 The aggregation methods used below are wrapped from pymcdm. beam normalizes by metric card, then calls pymcdm on the normalized matrix and keeps the higher-is-better convention. The weighting schemes are beam's own.
 
 ```{python}
+%matplotlib inline
 import numpy as np
 import matplotlib.pyplot as plt
 

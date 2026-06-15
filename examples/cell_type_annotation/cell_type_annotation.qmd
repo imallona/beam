@@ -43,6 +43,7 @@ python src/beam/data/reduce_gptcelltype.py all.csv  # or reduces a local copy
 `load_gptcelltype` reads the bundled tables into a frozen dataclass. beam treats each (source, tissue) pair as one dataset and each annotated cell type as one observation. The two metrics are the mean agreement score and the full match rate, both higher is better.
 
 ```{python}
+%matplotlib inline
 import numpy as np
 import matplotlib.pyplot as plt
 
