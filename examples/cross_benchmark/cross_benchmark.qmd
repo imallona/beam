@@ -17,7 +17,7 @@ format:
 
 Single-cell data-integration benchmarks reach different conclusions about which method to use. This vignette asks where the disagreement comes from: the methods, the datasets, or the benchmarker's own analysis choices (which metrics, how they are scaled, how they are weighted). It runs the meta-analysis on benchmarks that publish reusable per-method scores on a shared metric set, and shows that re-ranking them all with one consistent rule removes part of the disagreement. It does not remove all of it: the network meta-analysis later in the vignette finds a significant residual disagreement between the benchmarks even under the shared rule.
 
-## The benchmarks, and why these five
+## The benchmarks, and why these
 
 Five single-cell integration benchmarks are pooled here. Four publish reusable per-method scores on the shared scIB metric family (ARI, ASW, kBET, LISI); the fifth, BatchBench, scores on its own batch and cell-type entropy and enters on the within-benchmark rank scale.
 
@@ -28,8 +28,11 @@ Five single-cell integration benchmarks are pooled here. Four publish reusable p
 | Tran et al. | Tran et al., Genome Biology 2020, [10.1186/s13059-019-1850-9](https://doi.org/10.1186/s13059-019-1850-9) | all five | ARI, ASW, kBET, LISI | supplementary Tables S4 and S7 |
 | Tyler et al. | Tyler, Guccione and Schadt, bioRxiv 2023, [10.1101/2021.11.15.468733](https://doi.org/10.1101/2021.11.15.468733) | harmony, scanorama, liger | ARI, ASW, kBET | Extended Data Table 2 |
 | BatchBench | Chazarra-Gil et al., Nucleic Acids Research 2021, [10.1093/nar/gkab004](https://doi.org/10.1093/nar/gkab004) | combat, harmony, fastMNN, scanorama | batch entropy, cell-type entropy | Supplementary Table 1, provided by the author |
+| Shen 2026 (discrimination axis only) | Shen, He and Guan, PLOS Comput Biol 2026, [10.1371/journal.pcbi.1014008](https://doi.org/10.1371/journal.pcbi.1014008) | ten semi-supervised and unsupervised DL methods (overlap: harmony, scanorama only) | own ARI, NMI, ASW and others | authors' repository, pinned commit |
 
 Tyler is a preprint as of 2026-05-28 and covers three of the five methods and three of the four metrics (the cLISI it reports is a different quantity from the iLISI the others report), so it enters as a partial-coverage block. Its kBET is the raw rejection rate (lower is better), the opposite polarity to the others; the loader handles this per source so the within-cell ranking is consistent. BatchBench covers four of the five methods (it has no LIGER) on two entropy metrics: batch entropy, where higher is better (batches better mixed), and cell-type entropy, where lower is better (a higher value means cell types are more blurred). Ruben Chazarra-Gil provided the scores by personal communication. The metrics differ from the scIB family, so BatchBench enters on the within-benchmark rank scale, the same common currency as the others.
+
+The sixth source, Shen 2026, is not pooled with the first five. Its deep-learning methods overlap the classical five only on harmony and scanorama, too few to rank-harmonize, the same disjointness that excludes scIB-E. Rather than being dropped it enters the last section on a method-agnostic axis, dataset discrimination, which any benchmark can report whatever methods it ran.
 
 The five methods common to the first three benchmarks are combat, harmony, fastMNN, scanorama and LIGER. Benchmarks excluded: Tran's repository appeared empty until the scores were found in its supplement (a repository check is not sufficient); scIB-E (Genome Biology 2025) shares the scIB metrics but its methods are deep-learning ones (scVI, scANVI and loss-function variants) with no overlap with the classical five; the Communications Biology 2025 reference-informed evaluation covers one dataset with a bespoke RBET metric and overlaps only on combat and scanorama; sc_mixology uses off-family metrics; spatial and cross-species benchmarks use different methods. The full provenance, licences and the dataset crosswalk are in `src/beam/data/README.md`.
 
@@ -339,7 +342,7 @@ The strongest discriminators are the corrupted-label scenarios (`randomly_wrong_
 
 ### Are hard datasets as hard for deep learning as for classical methods?
 
-Splitting the methods into a deep-learning family and a classical one separates two kinds of hardness. `difficulty_concordance` correlates the per-family difficulty profiles across the datasets. A high concordance places the hardness in the data; a low one places it in the method family.
+Splitting the methods into two categories, classical and deep learning, separates two kinds of hardness. `difficulty_concordance` correlates the per-category difficulty profiles across the datasets. A high concordance places the hardness in the data; a low one places it in the kind of method.
 
 ```{python}
 dl = {"scVI", "scANVI", "scGEN", "scDREAMER", "scCRAFT", "ItClust"}
@@ -360,7 +363,25 @@ print(f"OpenProblems (intrinsic-complexity hardness): concordance {op_conc.conco
 display(plot.difficulty_concordance(shen_conc, title="Shen 2026: do DL and classical find the same units hard?"))
 ```
 
-The two benchmarks differ because their datasets are hard for different reasons. On OpenProblems the hardness is dataset complexity, and the families agree (Spearman about 0.89): a dataset hard for classical methods is hard for the deep-learning ones. On Shen the hardness is annotation quality, and the families agree weakly (about 0.32): degraded labels affect only the methods that use them. On the hardest units the deep-learning family scores below the classical one; on the easy units it scores above. Dataset complexity is shared across families; a benchmark that stresses what one family depends on is hard only for that family, which a single cross-method ranking would hide.
+The two benchmarks differ because their datasets are hard for different reasons. On OpenProblems the hardness is dataset complexity, and the two categories agree (Spearman about 0.89): a dataset hard for classical methods is hard for the deep-learning ones. On Shen the hardness is annotation quality, and they agree weakly (about 0.32): degraded labels affect only the methods that use them. On the hardest units the deep-learning methods score below the classical ones; on the easy units they score above. Dataset complexity is shared; a benchmark that stresses what one category depends on is hard only for that category, which a single cross-method ranking would hide.
+
+### A controlled contrast inside scIB
+
+The OpenProblems and Shen contrasts compare the two categories across different method sets. The scIB source harmonized at the top of this vignette removes that confound: it scores deep-learning methods (scVI, scANVI, scGen, DESC, SAUCIE, trVAE) on the same five datasets and four metrics as the classical five already used, so the only thing that changes between classical and deep learning is the method. `load_scib_integration_families` returns both blocks; the deep-learning scores are extracted from the same `scib-reproducibility` table by `reduce_scib_dl.py`.
+
+```{python}
+from beam.datasets import load_scib_integration_families
+
+fam = load_scib_integration_families()
+scib_conc = difficulty_concordance(fam.scores, fam.polarity, fam.families, dataset_ids=fam.dataset_names)
+print(f"scIB (intrinsic complexity, identical data for both families): concordance {scib_conc.concordance[0, 1]:+.2f}")
+
+shared = sorted({m.lower() for m in fam.method_names} & {m.lower() for m in shen.method_names})
+print("methods now shared with Shen:", shared)
+display(plot.difficulty_concordance(scib_conc, title="scIB: do DL and classical find the same datasets hard?"))
+```
+
+On scIB the two categories agree (about 0.90), as on OpenProblems and unlike Shen, even though the datasets and metrics are held fixed and only the method changes. The low Shen concordance is therefore a property of annotation degradation, not of being a deep-learning method. Extracting these methods also lifts the deep-learning overlap: scVI, scANVI and scGen now join harmony and scanorama as methods shared with Shen, where before no deep-learning method was carried from scIB at all.
 
 ## Two levels of agreement
 

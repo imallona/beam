@@ -16,7 +16,7 @@ have_netmeta <- have_beam && requireNamespace("netmeta", quietly = TRUE) &&
 knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>")
 ```
 
-Single-cell data-integration benchmarks reach different conclusions about which method to use. This vignette asks where the disagreement comes from: the methods, the datasets, or the benchmarker's own analysis choices. beam harmonizes five benchmarks, all bundled with the package. Four of them score on the shared scIB metric family (ARI, ASW, kBET, LISI) for the five classical methods. The fifth, BatchBench (Chazarra-Gil et al. 2021, [10.1093/nar/gkab004](https://doi.org/10.1093/nar/gkab004), with the scores provided by the author), uses its own batch and cell-type entropy and enters on the within-benchmark rank scale. The R functions forward to the Python `beam` core; install it once with `install_beam_python()`.
+Single-cell data-integration benchmarks reach different conclusions about which method to use. This vignette asks where the disagreement comes from: the methods, the datasets, or the benchmarker's own analysis choices. beam harmonizes five benchmarks, all bundled with the package. Four of them score on the shared scIB metric family (ARI, ASW, kBET, LISI) for the five classical methods. The fifth, BatchBench (Chazarra-Gil et al. 2021, [10.1093/nar/gkab004](https://doi.org/10.1093/nar/gkab004), with the scores provided by the author), uses its own batch and cell-type entropy and enters on the within-benchmark rank scale. A sixth source, the deep-learning benchmark of Shen, He and Guan (2026, [10.1371/journal.pcbi.1014008](https://doi.org/10.1371/journal.pcbi.1014008)), shares too few methods to rank-harmonize and enters the last section on the method-agnostic discrimination axis instead. The R functions forward to the Python `beam` core; install it once with `install_beam_python()`.
 
 ```{r libs}
 library(rbeam)
@@ -240,7 +240,7 @@ cat("most discriminating:", disc$most_discriminating, "\n")
 cat("least discriminating:", disc$least_discriminating, "\n")
 ```
 
-`beam_difficulty_concordance` then splits the methods into a deep-learning family and a classical one and asks whether the families find the same datasets hard. A low concordance means the hardness is specific to a method family rather than a property of the data.
+`beam_difficulty_concordance` then splits the methods into two categories, classical and deep learning, and asks whether they find the same datasets hard. A low concordance means the hardness is specific to a kind of method rather than a property of the data.
 
 ```{r difficulty}
 dl <- c("scVI", "scANVI", "scGEN", "scDREAMER", "scCRAFT", "ItClust")
@@ -251,7 +251,21 @@ cat(sprintf("DL vs classical difficulty concordance: %+.2f\n", conc$concordance[
 cat("families disagree most on:", conc$most_divergent_dataset, "\n")
 ```
 
-The Shen concordance is low: degraded labels affect only the methods that use them, so the hard units are harder for the deep-learning family. On a benchmark whose hardness is dataset complexity the families agree. A single cross-method ranking would hide which kind a benchmark measures. See `?beam_dataset_discrimination`, `?beam_difficulty_concordance`.
+The Shen concordance is low: degraded labels affect only the methods that use them, so the hard units are harder for the deep-learning methods. On a benchmark whose hardness is dataset complexity the two categories agree. A single cross-method ranking would hide which kind a benchmark measures.
+
+The scIB source harmonized above scores deep-learning methods on the same datasets and metrics as the classical five, so the only thing that changes between classical and deep learning is the method. `load_scib_integration_families` returns both blocks, a controlled version of the same contrast.
+
+```{r scib_families}
+fam <- datasets$load_scib_integration_families()
+fam_polarity <- as.character(unlist(fam$polarity))
+fam_families <- as.character(unlist(fam$families))
+scib_conc <- beam_difficulty_concordance(fam$scores, fam_polarity, fam_families,
+                                         dataset_ids = as.character(unlist(fam$dataset_names)))
+cat(sprintf("scIB DL vs classical concordance (identical data): %+.2f\n",
+            scib_conc$concordance[1, 2]))
+```
+
+On scIB the two categories agree (about 0.90), as on OpenProblems and unlike Shen, with the datasets and metrics held fixed, so the low Shen concordance is a property of annotation degradation rather than of being a deep-learning method. See `?beam_dataset_discrimination`, `?beam_difficulty_concordance`.
 
 ## Reading
 

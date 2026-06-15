@@ -1504,3 +1504,121 @@ def load_semisupervised_integration() -> SemiSupervisedIntegration:
         polarity=_SHEN_POLARITY,
         scores=scores,
     )
+
+
+_SCIB_DL_CSV_NAME: Final = "scib2022_dl_metrics.csv"
+# The classical block already vendored in scib2022_metrics.csv, in display order.
+_SCIB_CLASSICAL_METHODS: Final[tuple[str, ...]] = (
+    "combat",
+    "harmony",
+    "fastmnn",
+    "scanorama",
+    "liger",
+)
+# The deep-learning block extracted from the same scIB source by reduce_scib_dl.py.
+_SCIB_DL_METHODS: Final[tuple[str, ...]] = ("scVI", "scANVI", "scGen", "DESC", "SAUCIE", "trVAE")
+_SCIB_FAMILY_METRICS: Final[tuple[str, ...]] = ("ARI", "ASW", "kBET", "LISI")
+_SCIB_FAMILY_POLARITY: Final[tuple[str, ...]] = tuple(
+    "higher_is_better" for _ in _SCIB_FAMILY_METRICS
+)
+
+
+@dataclass(frozen=True)
+class ScibIntegrationFamilies:
+    """scIB 2022 scores split into classical and deep-learning methods.
+
+    Both groups are scored on the same five real datasets (immune_cell_hum,
+    immune_cell_hum_mou, lung_atlas, mouse_brain, pancreas) and the same four
+    metrics (ARI, ASW, kBET, LISI), so the only difference between them is the
+    method, which makes this a controlled contrast for
+    :func:`beam.mcda.difficulty_concordance` and
+    :func:`beam.mcda.dataset_discrimination`. The classical scores come from the
+    bundled ``scib2022_metrics.csv`` and the deep-learning scores from
+    ``scib2022_dl_metrics.csv``; both are scIB's unscaled output averaged across
+    the two feature spaces, all higher is better. A method not scored on a
+    dataset is ``numpy.nan``; nothing is imputed. Provenance is in
+    ``src/beam/data/README.md``.
+
+    Attributes
+    ----------
+    method_names, metric_ids, dataset_names
+        Label tuples for the three axes.
+    families
+        Per-method group label aligned with ``method_names``, either
+        ``"classical"`` or ``"deep learning"``.
+    polarity
+        Per-metric direction aligned with ``metric_ids`` (all higher is better).
+    scores
+        Float array of shape ``(n_methods, n_datasets, n_metrics)``.
+    """
+
+    method_names: tuple[str, ...]
+    families: tuple[str, ...]
+    dataset_names: tuple[str, ...]
+    metric_ids: tuple[str, ...]
+    polarity: tuple[str, ...]
+    scores: np.ndarray
+
+
+def _read_scib_long(csv_name: str) -> dict[tuple[str, str], dict[str, float]]:
+    """Read a scib-format long table into ``{(dataset, metric): {method: mean}}``.
+
+    The source carries one row per feature space, so a ``(dataset, method,
+    metric)`` cell may appear more than once; the duplicates are averaged.
+    """
+    from collections import defaultdict
+
+    text = resources.files(_CSV_PACKAGE).joinpath(csv_name).read_text("utf-8")
+    raw: dict[tuple[str, str, str], list[float]] = defaultdict(list)
+    for row in csv.DictReader(text.splitlines()):
+        raw[(row["dataset"], row["metric"], row["method"])].append(float(row["score"]))
+    out: dict[tuple[str, str], dict[str, float]] = {}
+    for (dataset, metric, method), scores in raw.items():
+        out.setdefault((dataset, metric), {})[method] = float(np.mean(scores))
+    return out
+
+
+def load_scib_integration_families() -> ScibIntegrationFamilies:
+    """Load the scIB classical and deep-learning method scores on the same data.
+
+    Reads the classical methods from ``scib2022_metrics.csv`` and the
+    deep-learning methods from ``scib2022_dl_metrics.csv``, both scIB's unscaled
+    output on the five real datasets and four shared metrics, and stacks them into
+    one method by dataset by metric tensor with a per-method group label
+    (classical or deep learning). A cell absent from the source stays
+    ``numpy.nan``.
+
+    Returns
+    -------
+    ScibIntegrationFamilies
+    """
+    classical = _read_scib_long("scib2022_metrics.csv")
+    deep = _read_scib_long(_SCIB_DL_CSV_NAME)
+
+    datasets = tuple(sorted({d for d, _ in classical} | {d for d, _ in deep}))
+    method_names = _SCIB_CLASSICAL_METHODS + _SCIB_DL_METHODS
+    families = tuple(
+        "classical" if m in _SCIB_CLASSICAL_METHODS else "deep learning" for m in method_names
+    )
+
+    mi = {m: i for i, m in enumerate(method_names)}
+    di = {d: i for i, d in enumerate(datasets)}
+    ki = {k: i for i, k in enumerate(_SCIB_FAMILY_METRICS)}
+
+    scores = np.full((len(method_names), len(datasets), len(_SCIB_FAMILY_METRICS)), np.nan)
+    for cells in (classical, deep):
+        for (dataset, metric), by_method in cells.items():
+            if metric not in ki:
+                continue
+            for method, value in by_method.items():
+                if method in mi:
+                    scores[mi[method], di[dataset], ki[metric]] = value
+
+    return ScibIntegrationFamilies(
+        method_names=method_names,
+        families=families,
+        dataset_names=datasets,
+        metric_ids=_SCIB_FAMILY_METRICS,
+        polarity=_SCIB_FAMILY_POLARITY,
+        scores=scores,
+    )

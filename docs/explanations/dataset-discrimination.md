@@ -17,13 +17,13 @@ A dataset with high spread and high W separates the methods, and its metrics agr
 
 A method or metric not observed on a dataset stays NaN and is handled available-case, never imputed. Spread uses the observed methods. Kendall's W uses the complete method-by-metric block and is reported only when at least `min_methods` methods and two metrics remain.
 
-## Do method families find the same datasets hard?
+## Do the two kinds of method find the same datasets hard?
 
-A dataset can be hard because the biology is complex, in which case every method struggles, or because of something one family of methods depends on, such as label quality for semi-supervised methods, in which case another family is unaffected.
+A dataset can be hard because the biology is complex, in which case every method struggles, or because of something one kind of method depends on, such as label quality for semi-supervised methods, in which case the other kind is unaffected.
 
-`beam.mcda.difficulty_concordance` separates the two. It splits the methods into families, measures each dataset's difficulty for each family as the family's mean pooled score, and correlates the family difficulty profiles across datasets with Spearman. High concordance means the hardness comes from the data; low concordance means it comes from the method family.
+`beam.mcda.difficulty_concordance` separates the two. It splits the methods into groups, measures each dataset's difficulty for each group as the group's mean pooled score, and correlates the per-group difficulty profiles across datasets with Spearman. High concordance means the hardness comes from the data; low concordance means it comes from the kind of method.
 
-On the OpenProblems batch-integration task the deep-learning and classical families agree (Spearman about 0.89). On the Shen 2026 benchmark, whose scenarios degrade annotation quality, they agree weakly (about 0.32), and the hard cases are harder for the label-using deep-learning family.
+On the OpenProblems batch-integration task the deep-learning and classical methods agree (Spearman about 0.89). On the Shen 2026 benchmark, whose scenarios degrade annotation quality, they agree weakly (about 0.32), and the hard cases are harder for the label-using deep-learning methods.
 
 ## See also
 
