@@ -130,9 +130,7 @@ def difficulty_concordance(
         warnings.simplefilter("ignore", category=RuntimeWarning)
         pooled = np.nanmean(normalized, axis=2)  # (n_methods, n_datasets)
 
-    member_rows = [
-        [i for i, f in enumerate(families) if str(f) == name] for name in family_names
-    ]
+    member_rows = [[i for i, f in enumerate(families) if str(f) == name] for name in family_names]
     family_score = np.full((len(family_names), n_datasets), np.nan)
     for fi, rows in enumerate(member_rows):
         with warnings.catch_warnings():

@@ -53,9 +53,7 @@ def test_agreeing_metrics_give_high_kendall_w():
             [[0.9, 0.8]],
         ]
     )
-    report = dataset_discrimination(
-        scores, [HB, HB], dataset_ids=["d"]
-    )
+    report = dataset_discrimination(scores, [HB, HB], dataset_ids=["d"])
     assert report.kendall_w[0] == pytest.approx(1.0)
     assert report.n_methods_used[0] == 3
     assert report.n_metrics_used[0] == 2
@@ -97,9 +95,7 @@ def test_missing_cells_not_imputed():
 
 def test_too_few_methods_gives_nan_w():
     scores = np.array([[[0.1, 0.2]], [[0.9, 0.8]]])  # two methods
-    report = dataset_discrimination(
-        scores, [HB, HB], dataset_ids=["d"], min_methods=3
-    )
+    report = dataset_discrimination(scores, [HB, HB], dataset_ids=["d"], min_methods=3)
     assert np.isnan(report.kendall_w[0])
     # Spread is still defined for two methods.
     assert np.isfinite(report.spread[0])
@@ -151,9 +147,7 @@ def test_difficulty_concordance_family_specific():
     for m in (2, 3):
         scores[m, :, 0] = a_profile[::-1]
     families = ["A", "A", "B", "B"]
-    report = difficulty_concordance(
-        scores, [HB], families, dataset_ids=list("wxyz")
-    )
+    report = difficulty_concordance(scores, [HB], families, dataset_ids=list("wxyz"))
     assert report.concordance[0, 1] < 0
 
 

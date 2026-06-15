@@ -226,9 +226,7 @@ def dataset_discrimination(
     finite_spread = np.isfinite(spread)
     order = np.argsort(np.where(finite_spread, -spread, np.inf), kind="stable")
     mean_spread = float(np.nanmean(spread)) if finite_spread.any() else float("nan")
-    mean_kendall_w = (
-        float(np.nanmean(kendall_w)) if np.isfinite(kendall_w).any() else float("nan")
-    )
+    mean_kendall_w = float(np.nanmean(kendall_w)) if np.isfinite(kendall_w).any() else float("nan")
 
     most = least = None
     if dataset_ids is not None and finite_spread.any():

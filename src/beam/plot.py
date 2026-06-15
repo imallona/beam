@@ -532,9 +532,7 @@ def dataset_discrimination(report, top: int | None = None, title: str | None = N
     finite = [i for i in report.order if np.isfinite(report.spread[i])]
     if top is not None:
         finite = finite[:top]
-    labels = [
-        report.dataset_ids[i] if report.dataset_ids is not None else str(i) for i in finite
-    ]
+    labels = [report.dataset_ids[i] if report.dataset_ids is not None else str(i) for i in finite]
     spread = np.array([report.spread[i] for i in finite])
     w = np.array([report.kendall_w[i] for i in finite])
 
@@ -585,8 +583,7 @@ def difficulty_concordance(report, title: str | None = None) -> Figure:
     ax.set_aspect("equal", adjustable="box")
     rho = report.concordance[0, 1]
     ax.set_title(
-        (title or f"Do {fa} and {fb} find the same datasets hard?")
-        + f"\nSpearman {rho:.2f}"
+        (title or f"Do {fa} and {fb} find the same datasets hard?") + f"\nSpearman {rho:.2f}"
     )
     fig.tight_layout()
     return fig
