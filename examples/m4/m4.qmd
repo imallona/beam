@@ -266,6 +266,12 @@ plot.rank_sensitivity(rs)
 
 The band carries almost all the rank variance and the two choices almost none. The M4 order is a question of which frequency you score on, not how you weight or aggregate. This is the same reading as the mixed-effects ICC above, reached a different way: an exact factorial decomposition of the ranks rather than a random-effects model of the scores. The headline method slips across bands, which is the variance the band share counts.
 
+The shares above are pooled over the methods. The per-method version splits the same variance one method at a time. It separates a method whose rank depends on the band from one that depends on the weighting or the aggregation. The span next to each bar is the difference between the method's best and worst rank.
+
+```{python}
+plot.rank_sensitivity_by_tool(rs)
+```
+
 ```{python}
 headline = m4.method_names[rs.headline_tool]
 print(f"top method overall: {headline}, rank 1 in {rs.headline_top_fraction * 100:.0f}% of combinations")

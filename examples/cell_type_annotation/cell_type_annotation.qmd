@@ -327,6 +327,12 @@ plot.rank_sensitivity(rs)
 
 The dataset accounts for almost all of the rank variance. The weighting and the aggregation account for less than one percent combined. Leave-one-dataset-out reports whether the pooled order changes when one dataset is dropped.
 
+The shares above are pooled over the methods. The per-method version splits the same variance one method at a time. It separates a method whose rank depends on the dataset from one that depends on the weighting or the aggregation. The span next to each bar is the difference between the method's best and worst rank.
+
+```{python}
+plot.rank_sensitivity_by_tool(rs)
+```
+
 ```{python}
 lodo = run.leave_one_dataset_out
 print(f"top method rank stability under leave-one-dataset-out: {lodo.rank_stability[top]:.2f}")

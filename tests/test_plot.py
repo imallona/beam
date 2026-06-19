@@ -114,7 +114,18 @@ def test_rank_sensitivity_and_specification_curve_plots():
         tool_names=run.tool_names,
     )
     assert isinstance(plot.rank_sensitivity(rs), Figure)
+    assert isinstance(plot.rank_sensitivity_by_tool(rs), Figure)
     assert isinstance(plot.specification_curve(specification_curve(rs)), Figure)
+
+
+def test_rank_sensitivity_by_tool_handles_fixed_rank_tool():
+    """A tool that never moves is drawn without a stacked bar, not crashed on."""
+    rs = rank_sensitivity(
+        np.array([[0.95, 0.95], [0.7, 0.5], [0.3, 0.6], [0.1, 0.1]]),
+        ["higher_is_better", "higher_is_better"],
+        tool_names=("dominant", "b", "c", "worst"),
+    )
+    assert isinstance(plot.rank_sensitivity_by_tool(rs), Figure)
 
 
 def test_critical_difference_and_dominance_plots():

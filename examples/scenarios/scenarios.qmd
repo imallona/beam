@@ -486,6 +486,16 @@ for name in ["dominant", "random"]:
 
 The dominant scenario's top method has a rank span of zero and is rank 1 in every combination, as built: with no dataset axis and a method that scores highest everywhere, no modeling choice can move it, so `specification_curve` reports it first in 100 percent of the specifications and only one method reaching the top. In the random scenario the top method's rank moves with the choice, the most-frequent-top fraction drops below 100 percent, and more than one method reaches the top, because the two metrics trade off and there is no data axis to carry the variance.
 
+The per-method split shows this directly. In the dominant scenario the top method has no rank variance to split, so it is drawn empty with a "rank fixed" note. In the random scenario the methods carry weighting and aggregation shares.
+
+```{python}
+for name in ["dominant", "random"]:
+    s = scenarios_by_name[name]
+    pol = [p.polarity for p in properties_for(list(s.metric_ids))]
+    rs = rank_sensitivity(s.scores, pol, tool_names=s.method_names)
+    display(plot.rank_sensitivity_by_tool(rs, title=f"{name}: what moves each method's rank"))
+```
+
 A blind analysis fixes the weighting and the aggregation before the method names are known. `beam.blind` masks the names; `beam.unblind` restores them. The order is unchanged.
 
 ```{python}

@@ -461,6 +461,12 @@ print(f"{curve.n_specifications} specifications; {dom} first in "
 plot.specification_curve(curve)
 ```
 
+The per-method version of the rank-sensitivity split shows it one mode at a time. It separates a mode whose rank depends on the terrain from one that depends on the weighting or the aggregation. The span next to each bar is the difference between the mode's best and worst rank.
+
+```{python}
+plot.rank_sensitivity_by_tool(rs)
+```
+
 A blind analysis masks the mode names before the pipeline is fixed. `beam.blind` relabels and shuffles the rows; `beam.unblind` restores them. The order does not change.
 
 ```{python}

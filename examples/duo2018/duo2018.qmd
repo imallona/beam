@@ -560,6 +560,12 @@ plot.rank_sensitivity(rs)
 
 The dataset carries the most, close to the 0.71 the mixed-effects ICC put on the ARI variance, reached here by an exact factorial decomposition of the ranks rather than a random-effects model of the scores. Two methods, the same reading. This is not in tension with the stable leave-one-dataset-out result above: that asks whether the pooled order survives dropping one dataset, and it does, because pooling averages over the per-dataset disagreement. The dataset share measures that disagreement directly, by ranking on each dataset on its own. The pooled order is stable; the per-dataset orders are not, and a single pooled ranking does not show that disagreement. The weighting filled the partial cells with the lowest score (`missing="worst"`), a stated choice the share is read against.
 
+The shares above are pooled over the methods. The per-method version splits the same variance one method at a time. It separates a method whose rank depends on the dataset from one that depends on the weighting or the aggregation. The span next to each bar is the difference between the method's best and worst rank, read alongside its shares.
+
+```{python}
+plot.rank_sensitivity_by_tool(rs)
+```
+
 ## Recommendation
 
 Under the default pipeline (equal weights, SAW) on ARI, runtime and Shannon entropy difference pooled across the twelve datasets, Seurat ranks first, and it holds that position across all sixteen weighting-by-method configurations tested above. The SMAA analysis puts Seurat top-ranked in about 99 percent of random weight draws, and the weight-perturbation check finds its top rank is not fragile: no single weight change within the threshold dislodges it. Leave-one-dataset-out adds the dataset axis: Seurat keeps its first rank in all twelve runs that drop one dataset, so the recommendation does not depend on any single dataset. On the composite, RaceID2 and SAFE rank near the bottom.

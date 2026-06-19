@@ -15,6 +15,7 @@ Ranking and stability, each taking a ``RunResult`` from ``beam.rank``:
 - :func:`smaa` the share of random weightings that rank each tool first
 - :func:`dataset_stability` the leave-one-dataset-out rank stability
 - :func:`rank_sensitivity` the share of rank variance carried by each factor
+- :func:`rank_sensitivity_by_tool` that same split, one bar per method
 - :func:`funky_heatmap` the glyph table with the rank-robustness panels
 
 Effect dissection, each taking a ``RunResult`` and showing how the ranking
@@ -62,6 +63,7 @@ from collections.abc import Sequence
 
 import numpy as np
 from matplotlib.figure import Figure
+from matplotlib.patches import Patch
 
 from .mcda import aggregation_agreement as _aggregation_agreement
 from .mcda import normalization_agreement as _normalization_agreement
@@ -154,6 +156,60 @@ def rank_sensitivity(report) -> Figure:
     ax.set_xlabel("factor")
     ax.set_ylim(0, 1)
     ax.set_title("what moves the ranking")
+    return fig
+
+
+# Paul Tol bright palette, shared with the pooled bar above (#4477aa) and the
+# interaction grey (#bbbbbb). One hue per factor, assigned in factor order.
+_FACTOR_COLORS = ("#4477aa", "#ee6677", "#228833", "#ccbb44", "#66ccee", "#aa3377")
+_INTERACTION_COLOR = "#bbbbbb"
+
+
+def rank_sensitivity_by_tool(report, title: str | None = None) -> Figure:
+    """Per-method breakdown of what moves each method's rank.
+
+    Takes a ``RankSensitivityReport`` from ``beam.mcda.rank_sensitivity``. The
+    pooled :func:`rank_sensitivity` bar gives one share per factor over all
+    tools; this splits the same variance by method, one stacked bar each. For one
+    method most of the share can sit on the dataset and for another on the
+    weighting or aggregation, which the pooled bar cannot show. Methods are
+    ordered by rank span, largest first. Each bar is annotated with that span,
+    the difference between the method's best and worst rank over the factorial,
+    so the shares are read against how far its rank changes. A method that holds
+    one rank in every combination has no variance to split and is drawn empty
+    with a "rank fixed" note.
+    """
+    factors = report.factors
+    profiles = sorted(report.per_tool, key=lambda p: (-p.rank_span, p.tool))
+    labels = [p.name if p.name is not None else f"tool {p.tool}" for p in profiles]
+
+    fig = Figure(figsize=(7.0, max(2.5, 0.32 * len(profiles) + 1.2)))
+    ax = fig.subplots()
+    y = np.arange(len(profiles))[::-1]
+    for row, profile in zip(y, profiles, strict=True):
+        if profile.rank_span == 0:
+            ax.text(0.01, row, "rank fixed", va="center", fontsize=8, color="#888888")
+            continue
+        left = 0.0
+        for k, factor in enumerate(factors):
+            share = profile.factor_shares[factor]
+            ax.barh(row, share, left=left, color=_FACTOR_COLORS[k % len(_FACTOR_COLORS)])
+            left += share
+        ax.barh(row, profile.interaction_share, left=left, color=_INTERACTION_COLOR)
+        ax.text(1.02, row, f"span {profile.rank_span}", va="center", fontsize=8)
+
+    ax.set_yticks(y)
+    ax.set_yticklabels(labels, fontsize=8)
+    ax.set_xlim(0, 1)
+    ax.set_xlabel("share of rank variance")
+    ax.set_title(title or "what moves each method's rank")
+    handles = [
+        Patch(color=_FACTOR_COLORS[k % len(_FACTOR_COLORS)], label=f)
+        for k, f in enumerate(factors)
+    ]
+    handles.append(Patch(color=_INTERACTION_COLOR, label="interaction"))
+    ax.legend(handles=handles, loc="lower right", fontsize=8, framealpha=0.9)
+    fig.tight_layout()
     return fig
 
 

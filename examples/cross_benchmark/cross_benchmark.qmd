@@ -294,6 +294,14 @@ for bench in BENCH:
           f"{curve.n_specifications} combinations, {curve.n_distinct_top_tools} method(s) reach the top")
 ```
 
+On OpenProblems the top method does not hold across the choices, so the per-method split shows which methods carry that variance and whether it is the weighting or the aggregation. The four metrics (ARI, ASW, kBET, LISI) are the columns being combined, the criteria of the decision, not a factor in the split. The split has no factor for the dataset either. Each cell of this matrix is already a mean rank over the benchmark's datasets, so the dataset axis is collapsed and the bars carry only the weighting, the aggregation and their interaction.
+
+```{python}
+op_matrix = ib.method_metric_matrix("OpenProblems")[2]
+op_rs = rank_sensitivity(op_matrix, polarity, tool_names=CANON)
+plot.rank_sensitivity_by_tool(op_rs, title="OpenProblems: what moves each method's rank")
+```
+
 ## Blind analysis
 
 A blind analysis fixes the weighting and the aggregation before the method names are revealed, so the choices cannot be tuned toward a method known to lead. These benchmarks rank on the mean-rank scale rather than through metric cards, so the demonstration uses the low-level `beam.mcda.run` with explicit polarity. `beam.blind` relabels and shuffles the rows; the seal maps the labels back. The order is the same once unblinded.

@@ -330,6 +330,12 @@ print(f"  most influential factor: {rs.most_influential_factor}")
 
 The dataset is still the largest single factor, but here it is not the only one the way it is on M4. The aggregation choice and the dataset-by-choice interaction carry a real share too. With 12 metrics that can disagree, how the metrics are combined moves the order more than it does on the two-metric M4 task. So on batch integration the ranking depends on which dataset and on how the metrics are pooled, which is the contrast with the OpenProblems mean-of-scores leaderboard the section above draws.
 
+The shares above are pooled over the methods. The per-method version splits the same variance one method at a time. It separates a method whose rank depends on the dataset from one that depends on the weighting or the aggregation. The span next to each bar is the difference between the method's best and worst rank.
+
+```{python}
+plot.rank_sensitivity_by_tool(rs)
+```
+
 `specification_curve` reads the same grid as a list of rankings. Because the aggregation carries a real share here, the choice-only multiverse is less unanimous than on M4: the top method does not hold in every weighting-by-aggregation combination.
 
 ```{python}

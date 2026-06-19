@@ -30,7 +30,13 @@
 #' `"normalization_agreement"` and `"dataset_concordance"`; `"dataset_struggle"`
 #' maps each method's per-dataset rank against its own mean.
 #'
-#' @param run A `RunResult` returned by [beam_rank].
+#' Some plots take an analysis report in place of the run, passed as the first
+#' argument. From [beam_rank_sensitivity]: `"rank_sensitivity"`, the share of
+#' rank variance per factor pooled over the methods, and
+#' `"rank_sensitivity_by_tool"`, the same split with one bar per method.
+#'
+#' @param run A `RunResult` returned by [beam_rank], or an analysis report for
+#'   the report-based plot kinds.
 #' @param kind Character name of the `beam.plot` function to call.
 #' @param path Optional output path. When given, the figure is saved there (the
 #'   extension picks the format) and the path is returned invisibly. When

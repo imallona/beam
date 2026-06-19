@@ -141,6 +141,14 @@ cat("most influential factor:", rs$most_influential_factor, "\n")
 
 The dataset carries the most, close to the dataset variance share the mixed-effects model reads in the heterogeneity vignette, by a different method. This is not in tension with the stable leave-one-dataset-out result above: that asks whether the pooled order survives dropping one dataset, and it does, because pooling averages over the per-dataset disagreement. The dataset share measures that disagreement directly.
 
+The shares above are pooled over the methods. The `rank_sensitivity_by_tool` plot splits the same variance one method at a time. It separates a method whose rank depends on the dataset from one that depends on the weighting or the aggregation. The span next to each bar is the difference between the method's best and worst rank.
+
+```{r rank-sensitivity-by-tool, fig.width = 7, fig.height = 4}
+fig_path <- tempfile(fileext = ".png")
+beam_plot(rs, "rank_sensitivity_by_tool", fig_path)
+knitr::include_graphics(fig_path)
+```
+
 ## Dataset concordance: do the datasets agree on the order?
 
 `beam_rank` also reports how the datasets agree among themselves. `dataset_concordance` ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not. The standalone wrapper is `beam_dataset_concordance(tensor, polarity)`.

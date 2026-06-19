@@ -1,9 +1,60 @@
-"""Tests for TOPSIS aggregation."""
+"""Tests for TOPSIS aggregation, with pymcdm as the regression oracle.
+
+Both return closeness with higher is better. The oracle matrices span [0, 1] in
+every column, where pymcdm's internal min-max is the identity beam already
+applies, so the two agree on both the values and the ranking they induce.
+"""
 
 import numpy as np
 import pytest
+from pymcdm.methods import TOPSIS
 
-from beam.mcda import topsis
+from beam.mcda import rank, topsis
+
+
+def _spanning_matrix(rng, n_tools, n_metrics):
+    """Random matrix in [0, 1] with one row pinned to 0 and one to 1 per column.
+
+    The pinned rows give every column full range, so pymcdm's min-max stays
+    well defined.
+    """
+    matrix = rng.random((n_tools, n_metrics))
+    matrix[0, :] = 0.0
+    matrix[1, :] = 1.0
+    return matrix
+
+
+def test_topsis_matches_pymcdm_closeness():
+    """Closeness matches pymcdm to machine precision."""
+    rng = np.random.default_rng(20240524)
+    for _ in range(30):
+        n_tools = int(rng.integers(4, 9))
+        n_metrics = int(rng.integers(2, 6))
+        matrix = _spanning_matrix(rng, n_tools, n_metrics)
+        weights = rng.random(n_metrics)
+        weights = weights / weights.sum()
+        types = np.ones(n_metrics)
+
+        beam_score = topsis(matrix, weights)
+        oracle_score = TOPSIS()(matrix, weights, types, validation=False)
+
+        np.testing.assert_allclose(beam_score, oracle_score, atol=1e-12)
+
+
+def test_topsis_matches_pymcdm_ranking():
+    """The induced ranking matches pymcdm on seeded spanning matrices."""
+    rng = np.random.default_rng(99)
+    for _ in range(30):
+        n_tools = int(rng.integers(4, 9))
+        n_metrics = int(rng.integers(2, 6))
+        matrix = _spanning_matrix(rng, n_tools, n_metrics)
+        weights = rng.random(n_metrics)
+        weights = weights / weights.sum()
+        types = np.ones(n_metrics)
+
+        beam_ranks = rank(topsis(matrix, weights))
+        oracle_ranks = rank(TOPSIS()(matrix, weights, types, validation=False))
+        np.testing.assert_array_equal(beam_ranks, oracle_ranks)
 
 
 def test_topsis_dominator_reaches_one():
