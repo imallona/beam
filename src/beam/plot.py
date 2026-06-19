@@ -204,8 +204,7 @@ def rank_sensitivity_by_tool(report, title: str | None = None) -> Figure:
     ax.set_xlabel("share of rank variance")
     ax.set_title(title or "what moves each method's rank")
     handles = [
-        Patch(color=_FACTOR_COLORS[k % len(_FACTOR_COLORS)], label=f)
-        for k, f in enumerate(factors)
+        Patch(color=_FACTOR_COLORS[k % len(_FACTOR_COLORS)], label=f) for k, f in enumerate(factors)
     ]
     handles.append(Patch(color=_INTERACTION_COLOR, label="interaction"))
     ax.legend(handles=handles, loc="lower right", fontsize=8, framealpha=0.9)
