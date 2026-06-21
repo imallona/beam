@@ -67,6 +67,8 @@ website:
             text: Dataset concordance
           - href: docs/explanations/dataset-discrimination.md
             text: Dataset discrimination
+          - href: docs/explanations/attribution-synthesis.md
+            text: Attribution synthesis
           - href: docs/explanations/skillings-mack.md
             text: Skillings-Mack
           - href: docs/explanations/pairwise-superiority.md
@@ -183,6 +185,7 @@ quartodoc:
         - critical_difference
         - skillings_mack
         - coverage_aware_critical_difference
+        - attribution_synthesis
     - title: Heterogeneity
       desc: Mixed-effects, Bradley-Terry trees, Plackett-Luce.
       package: beam.heterogeneity

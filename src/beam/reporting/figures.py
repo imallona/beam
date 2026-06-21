@@ -413,6 +413,7 @@ def rank_bump(
     *,
     divider_after: int | None = None,
     title: str | None = None,
+    host: Figure | None = None,
 ) -> Figure:
     """A subway (bump) chart of method ranks across columns.
 
@@ -445,7 +446,9 @@ def rank_bump(
     """
     ranks = np.asarray(ranks, dtype=float)
     n_methods, n_cols = ranks.shape
-    fig = Figure(figsize=(1.7 * n_cols + 3.0, max(3.0, 0.5 * n_methods)))
+    fig = host if host is not None else Figure(
+        figsize=(1.7 * n_cols + 3.0, max(3.0, 0.5 * n_methods))
+    )
     ax = fig.subplots()
     x = np.arange(n_cols)
     for i, name in enumerate(method_names):
@@ -523,6 +526,7 @@ def funky_heatmap(
     norm_consensus_label: str = "rank span across\nnormalizations (1 is best)",
     smaa_acceptability: np.ndarray | None = None,
     title: str | None = None,
+    host: Figure | None = None,
 ) -> Figure:
     """A funky heatmap of normalized scores with optional rank-robustness panels.
 
@@ -615,7 +619,9 @@ def funky_heatmap(
             kinds.append(kind)
             width_ratios.append(w)
 
-    fig = Figure(figsize=(sum(width_ratios) + 2.5, max(2.5, 0.45 * n_methods)))
+    fig = host if host is not None else Figure(
+        figsize=(sum(width_ratios) + 2.5, max(2.5, 0.45 * n_methods))
+    )
     axes = np.atleast_1d(
         fig.subplots(1, len(width_ratios), gridspec_kw={"width_ratios": width_ratios})
     )
@@ -764,7 +770,8 @@ def funky_heatmap(
 
     if title:
         fig.suptitle(title)
-    fig.tight_layout()
+    if host is None:
+        fig.tight_layout()
     return fig
 
 
@@ -773,6 +780,7 @@ def critical_difference_plot(
     average_ranks: np.ndarray,
     critical_difference: float,
     cliques: tuple[tuple[int, ...], ...] = (),
+    host: Figure | None = None,
 ) -> Figure:
     """Canonical Friedman-Nemenyi critical-difference diagram (Demsar 2006).
 
@@ -793,7 +801,9 @@ def critical_difference_plot(
     names = [tool_names[i] for i in order]
     values = np.asarray(average_ranks, dtype=float)
     multi = [c for c in cliques if len(c) > 1]
-    fig = Figure(figsize=(8.0, max(2.5, 0.42 * len(names) + 0.5 * max(1, len(multi)))))
+    fig = host if host is not None else Figure(
+        figsize=(8.0, max(2.5, 0.42 * len(names) + 0.5 * max(1, len(multi))))
+    )
     ax = fig.subplots()
     ax.scatter(values[order], range(len(order)), color="#222222", zorder=3)
     ax.set_yticks(range(len(names)))
@@ -996,7 +1006,7 @@ def rank_deviation_heatmap(
     return fig
 
 
-def specification_curve_plot(report, *, compact: bool = True) -> Figure:
+def specification_curve_plot(report, *, compact: bool = True, host: Figure | None = None) -> Figure:
     """Specification curve over every combination of analyst choices.
 
     The top panel plots the rank of the method that ranks first most often, with
@@ -1032,7 +1042,7 @@ def specification_curve_plot(report, *, compact: bool = True) -> Figure:
     width = max(7.0, min(13.0, 0.03 * n + 6.0))
     n_strip_rows = len(rows) + (1 if dataset_as_strip else 0)
     height = max(3.5, 0.16 * (n_tools + n_strip_rows) + 1.8)
-    fig = Figure(figsize=(width, height))
+    fig = host if host is not None else Figure(figsize=(width, height))
     if dataset_as_strip:
         ratios = [2.4, max(1.0, 0.16 * len(rows) + 0.4), 0.5]
         top, mid, strip = fig.subplots(3, 1, sharex=True, gridspec_kw={"height_ratios": ratios})
@@ -1216,3 +1226,254 @@ def bayesian_comparison_plot(report) -> Figure:
 def bayesian_comparison_figure(report) -> str:
     """Base64 PNG of :func:`bayesian_comparison_plot` for the HTML report."""
     return _fig_to_base64(bayesian_comparison_plot(report))
+
+
+def _group_order(metric_ids, groups):
+    """Indices that sort metrics by group, keeping the within-group input order."""
+    seen: list[str] = []
+    for g in groups:
+        if g not in seen:
+            seen.append(g)
+    order: list[int] = []
+    for g in seen:
+        order += [i for i, gi in enumerate(groups) if gi == g]
+    return order, seen
+
+
+def metric_correlation_heatmap(
+    report, *, host: Figure | None = None, title: str | None = None
+) -> Figure:
+    """Oriented metric correlation heatmap, metrics grouped by construct.
+
+    Draws the polarity-oriented Spearman correlation between metrics from a
+    ``MetricValidityReport`` on a diverging scale centred at zero, with the
+    metrics ordered and bracketed by their construct group. The block structure
+    on the diagonal is the convergent evidence (within-group agreement); the
+    off-block cells are the discriminant evidence (between-group agreement).
+
+    Takes a ``MetricValidityReport`` from ``beam.mcda.metric_validity``.
+    """
+    corr = np.asarray(report.correlation, dtype=float)
+    n = corr.shape[0]
+    labels = (
+        list(report.metric_ids) if report.metric_ids is not None else [str(i) for i in range(n)]
+    )
+    groups = list(report.groups)
+    order, group_names = _group_order(labels, groups)
+    ordered = corr[np.ix_(order, order)]
+    names = [labels[i] for i in order]
+    ordered_groups = [groups[i] for i in order]
+
+    fig = host if host is not None else Figure(figsize=(6.5, 5.6))
+    ax = fig.subplots()
+    cmap = matplotlib.colormaps["RdBu_r"].copy()
+    cmap.set_bad("#dddddd")
+    im = ax.imshow(np.ma.masked_invalid(ordered), cmap=cmap, vmin=-1.0, vmax=1.0)
+    ax.set_xticks(range(n))
+    ax.set_yticks(range(n))
+    ax.set_xticklabels(names, rotation=90, fontsize=7)
+    ax.set_yticklabels(names, fontsize=7)
+
+    # Group separators between the blocks.
+    boundaries = []
+    pos = 0
+    for g in group_names:
+        size = ordered_groups.count(g)
+        pos += size
+        if pos < n:
+            boundaries.append(pos - 0.5)
+    for b in boundaries:
+        ax.axhline(b, color="#222222", linewidth=1.0)
+        ax.axvline(b, color="#222222", linewidth=1.0)
+
+    # Group brackets and labels down the left margin.
+    start = 0
+    for g in group_names:
+        size = ordered_groups.count(g)
+        mid = start + (size - 1) / 2.0
+        ax.annotate(
+            g,
+            xy=(-0.06, mid),
+            xycoords=("axes fraction", "data"),
+            rotation=90,
+            ha="center",
+            va="center",
+            fontsize=9,
+            fontweight="bold",
+        )
+        start += size
+    bar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    bar.set_label("oriented Spearman correlation")
+    if title:
+        ax.set_title(title, fontsize=10)
+    return fig
+
+
+def reliability_if_dropped_plot(
+    report,
+    *,
+    alpha_threshold: float = 0.7,
+    host: Figure | None = None,
+    title: str | None = None,
+) -> Figure:
+    """Cronbach's alpha if each metric is dropped, faceted by construct group.
+
+    One facet per group with at least three metrics. Each bar is the group's
+    standardized alpha recomputed without that metric; a bar above the group's
+    own alpha (the dashed reference line) marks a metric whose removal makes the
+    group more reliable. A second dotted line marks the ``alpha_threshold``
+    adequacy cutoff.
+
+    Takes a ``MetricReliabilityReport`` from ``beam.mcda.metric_reliability``.
+    """
+    by_group: dict[str, list[tuple[str, float]]] = {}
+    for metric, group, alpha_without in report.alpha_if_dropped:
+        by_group.setdefault(group, []).append((metric, alpha_without))
+    group_names = list(by_group)
+    if not group_names:
+        group_names = ["(no group with 3+ metrics)"]
+        by_group[group_names[0]] = []
+
+    fig = host if host is not None else Figure(figsize=(2.8 * len(group_names) + 1.0, 3.4))
+    axes = np.atleast_1d(fig.subplots(1, len(group_names), sharey=True))
+
+    # A focused y-range so the small differences between the dropped-metric
+    # alphas are visible; the reference lines (group alpha, adequacy cutoff) are
+    # what the panel is read against, so a zoomed baseline is the right view.
+    all_values = [a for entries in by_group.values() for _, a in entries]
+    refs = [v for v in report.alpha_by_group.values() if np.isfinite(v)] + [alpha_threshold]
+    finite = [v for v in all_values if np.isfinite(v)] + refs
+    low = min(finite) - 0.05 if finite else 0.0
+    high = min(1.0, max(finite) + 0.05) if finite else 1.0
+
+    for i, (ax, group) in enumerate(zip(axes, group_names, strict=True)):
+        entries = by_group[group]
+        metrics = [m for m, _ in entries]
+        values = np.array([a for _, a in entries], dtype=float)
+        group_alpha = report.alpha_by_group.get(group)
+        ax.bar(range(len(metrics)), values, color="#4477aa")
+        ax.set_xticks(range(len(metrics)))
+        ax.set_xticklabels(metrics, rotation=90, fontsize=6)
+        if group_alpha is not None and np.isfinite(group_alpha):
+            ax.axhline(group_alpha, color="#ee6677", linestyle="--", linewidth=1.2,
+                       label=f"group alpha {group_alpha:.2f}")
+        ax.axhline(alpha_threshold, color="#888888", linestyle=":", linewidth=1.0,
+                   label=f"adequacy {alpha_threshold:g}")
+        ax.set_ylim(low, high)
+        ax.set_title(group, fontsize=8)
+        if i == 0:
+            ax.legend(fontsize=5.5, loc="lower left")
+    axes[0].set_ylabel("alpha if dropped")
+    if title:
+        fig.suptitle(title, fontsize=10)
+    return fig
+
+
+def dimensionality_scree_plot(
+    report, *, host: Figure | None = None, title: str | None = None
+) -> Figure:
+    """Eigenvalue scree per construct group, with the Kaiser cutoff at one.
+
+    One line per assessed group joining the descending eigenvalues of its
+    oriented metric-correlation matrix against the component index. The
+    horizontal line at one is the Kaiser rule; the number of components parallel
+    analysis retains (the recommended reading) is annotated per group. A group
+    whose curve clears the line at more than one component carries more than one
+    factor.
+
+    Takes a ``MetricDimensionalityReport`` from ``beam.mcda.metric_dimensionality``.
+    """
+    fig = host if host is not None else Figure(figsize=(5.6, 3.6))
+    ax = fig.subplots()
+    colors = ["#4477aa", "#ee6677", "#228833", "#aa3377"]
+    max_k = 1
+    for i, (group, eigenvalues) in enumerate(report.eigenvalues_by_group.items()):
+        values = np.asarray(eigenvalues, dtype=float)
+        x = np.arange(1, len(values) + 1)
+        max_k = max(max_k, len(values))
+        n_parallel = report.parallel_components_by_group.get(group)
+        color = colors[i % len(colors)]
+        ax.plot(x, values, "-o", color=color, markersize=5,
+                label=f"{group} (parallel analysis: {n_parallel})")
+    ax.axhline(1.0, color="#888888", linestyle="--", linewidth=1.0, label="Kaiser cutoff = 1")
+    ax.set_xticks(range(1, max_k + 1))
+    ax.set_xlabel("component")
+    ax.set_ylabel("eigenvalue")
+    ax.legend(fontsize=8, loc="upper right")
+    if title:
+        ax.set_title(title, fontsize=10)
+    return fig
+
+
+def network_forest_plot(report, *, host: Figure | None = None, title: str | None = None) -> Figure:
+    """Forest plot of network-meta effects against the reference treatment.
+
+    Each method's pooled mean-rank difference from the reference, with its 95
+    percent confidence interval as a horizontal whisker and a vertical line at
+    zero. Smaller is better when the effect measure is a mean-rank difference, so
+    a method whose interval sits left of zero outranks the reference. The P-score
+    (the probability a method outranks a random competitor) is annotated per row.
+
+    Takes a ``NetworkMetaReport`` from ``beam.heterogeneity.network_meta_analysis``.
+    """
+    treatments = list(report.treatments)
+    effect = np.asarray(report.effect, dtype=float)
+    lower = np.asarray(report.effect_lower, dtype=float)
+    upper = np.asarray(report.effect_upper, dtype=float)
+    pscore = np.asarray(report.pscore, dtype=float)
+    order = list(np.argsort(effect))
+    names = [treatments[i] for i in order]
+
+    fig = host if host is not None else Figure(figsize=(6.5, max(2.5, 0.5 * len(names) + 1.0)))
+    ax = fig.subplots()
+    y = np.arange(len(order))
+    for k, i in enumerate(order):
+        ax.plot([lower[i], upper[i]], [y[k], y[k]], color="#4477aa", linewidth=2.5,
+                solid_capstyle="round")
+        ax.plot([effect[i]], [y[k]], marker="o", color="#222222", markersize=5, zorder=3)
+        ax.annotate(f"P={pscore[i]:.2f}", xy=(upper[i], y[k]), xytext=(6, 0),
+                    textcoords="offset points", va="center", fontsize=7, color="#555555")
+    ax.axvline(0.0, color="#cc3311", linestyle="--", linewidth=1.0)
+    ax.set_yticks(y)
+    ax.set_yticklabels(names)
+    ax.invert_yaxis()
+    ax.set_xlabel(f"mean-rank difference vs {report.reference} (smaller is better)")
+    ax.set_ylabel("method")
+    if title:
+        ax.set_title(title, fontsize=10)
+    return fig
+
+
+def attribution_progression_plot(
+    report, *, host: Figure | None = None, title: str | None = None
+) -> Figure:
+    """Stacked share of a common rank-variance budget across settings.
+
+    One stacked bar per setting, split into the analyst-choice, dataset, and
+    benchmarker shares of a common rank-variance budget. The settings run in the
+    order given, from one benchmark to a same-data contrast, so the rising
+    analyst-choice share shows the dataset contribution being removed by design.
+
+    Takes an ``AttributionReport`` from ``beam.mcda.attribution_synthesis``.
+    """
+    settings = list(report.settings)
+    labels = [s.label for s in settings]
+    analyst = np.array([s.analyst_choice_share for s in settings], dtype=float)
+    dataset = np.array([s.dataset_share for s in settings], dtype=float)
+    benchmarker = np.array([s.benchmarker_share for s in settings], dtype=float)
+
+    fig = host if host is not None else Figure(figsize=(1.6 * len(settings) + 2.0, 4.0))
+    ax = fig.subplots()
+    x = np.arange(len(settings))
+    ax.bar(x, analyst, label="analyst choice", color="#ee6677")
+    ax.bar(x, dataset, bottom=analyst, label="dataset", color="#4477aa")
+    ax.bar(x, benchmarker, bottom=analyst + dataset, label="benchmarker", color="#228833")
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, fontsize=8)
+    ax.set_ylim(0, 1)
+    ax.set_ylabel("share of rank-variance budget")
+    ax.set_xlabel("setting")
+    ax.legend(fontsize=8, loc="upper center", ncol=3, bbox_to_anchor=(0.5, 1.12))
+    if title:
+        ax.set_title(title, fontsize=10, pad=20)
+    return fig

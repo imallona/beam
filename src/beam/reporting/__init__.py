@@ -94,6 +94,7 @@ def funky_heatmap_from_run(
     show_smaa=True,
     show_aggregation_consensus=True,
     show_normalization_consensus=False,
+    host=None,
 ):
     """Build a funky heatmap from a ``beam.rank`` RunResult.
 
@@ -168,4 +169,5 @@ def funky_heatmap_from_run(
         norm_consensus_high=norm_consensus_high,
         smaa_acceptability=smaa_acceptability,
         title=title,
+        host=host,
     )

@@ -642,3 +642,53 @@ def difficulty_concordance(report, title: str | None = None) -> Figure:
     )
     fig.tight_layout()
     return fig
+
+
+def metric_correlation(report, *, title: str | None = None) -> Figure:
+    """Oriented metric correlation heatmap, metrics grouped by construct.
+
+    Takes a ``MetricValidityReport`` from ``beam.mcda.metric_validity`` and draws
+    the polarity-oriented Spearman correlations on a diverging scale, bracketed
+    by group. See ``beam.reporting.figures.metric_correlation_heatmap``.
+    """
+    return _figures.metric_correlation_heatmap(report, title=title)
+
+
+def metric_reliability_dropped(
+    report, *, alpha_threshold: float = 0.7, title: str | None = None
+) -> Figure:
+    """Cronbach's alpha if each metric is dropped, faceted by group.
+
+    Takes a ``MetricReliabilityReport`` from ``beam.mcda.metric_reliability``.
+    See ``beam.reporting.figures.reliability_if_dropped_plot``.
+    """
+    return _figures.reliability_if_dropped_plot(
+        report, alpha_threshold=alpha_threshold, title=title
+    )
+
+
+def metric_dimensionality_scree(report, *, title: str | None = None) -> Figure:
+    """Eigenvalue scree per metric group with the Kaiser cutoff.
+
+    Takes a ``MetricDimensionalityReport`` from ``beam.mcda.metric_dimensionality``.
+    See ``beam.reporting.figures.dimensionality_scree_plot``.
+    """
+    return _figures.dimensionality_scree_plot(report, title=title)
+
+
+def network_forest(report, *, title: str | None = None) -> Figure:
+    """Forest plot of network-meta effects against the reference treatment.
+
+    Takes a ``NetworkMetaReport`` from ``beam.heterogeneity.network_meta_analysis``.
+    See ``beam.reporting.figures.network_forest_plot``.
+    """
+    return _figures.network_forest_plot(report, title=title)
+
+
+def attribution_progression(report, *, title: str | None = None) -> Figure:
+    """Stacked rank-variance budget across settings (analyst, data, benchmarker).
+
+    Takes an ``AttributionReport`` from ``beam.mcda.attribution_synthesis``.
+    See ``beam.reporting.figures.attribution_progression_plot``.
+    """
+    return _figures.attribution_progression_plot(report, title=title)
