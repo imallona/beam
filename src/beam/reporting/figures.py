@@ -446,8 +446,10 @@ def rank_bump(
     """
     ranks = np.asarray(ranks, dtype=float)
     n_methods, n_cols = ranks.shape
-    fig = host if host is not None else Figure(
-        figsize=(1.7 * n_cols + 3.0, max(3.0, 0.5 * n_methods))
+    fig = (
+        host
+        if host is not None
+        else Figure(figsize=(1.7 * n_cols + 3.0, max(3.0, 0.5 * n_methods)))
     )
     ax = fig.subplots()
     x = np.arange(n_cols)
@@ -619,8 +621,10 @@ def funky_heatmap(
             kinds.append(kind)
             width_ratios.append(w)
 
-    fig = host if host is not None else Figure(
-        figsize=(sum(width_ratios) + 2.5, max(2.5, 0.45 * n_methods))
+    fig = (
+        host
+        if host is not None
+        else Figure(figsize=(sum(width_ratios) + 2.5, max(2.5, 0.45 * n_methods)))
     )
     axes = np.atleast_1d(
         fig.subplots(1, len(width_ratios), gridspec_kw={"width_ratios": width_ratios})
@@ -801,8 +805,10 @@ def critical_difference_plot(
     names = [tool_names[i] for i in order]
     values = np.asarray(average_ranks, dtype=float)
     multi = [c for c in cliques if len(c) > 1]
-    fig = host if host is not None else Figure(
-        figsize=(8.0, max(2.5, 0.42 * len(names) + 0.5 * max(1, len(multi))))
+    fig = (
+        host
+        if host is not None
+        else Figure(figsize=(8.0, max(2.5, 0.42 * len(names) + 0.5 * max(1, len(multi)))))
     )
     ax = fig.subplots()
     ax.scatter(values[order], range(len(order)), color="#222222", zorder=3)
@@ -1355,10 +1361,20 @@ def reliability_if_dropped_plot(
         ax.set_xticks(range(len(metrics)))
         ax.set_xticklabels(metrics, rotation=90, fontsize=6)
         if group_alpha is not None and np.isfinite(group_alpha):
-            ax.axhline(group_alpha, color="#ee6677", linestyle="--", linewidth=1.2,
-                       label=f"group alpha {group_alpha:.2f}")
-        ax.axhline(alpha_threshold, color="#888888", linestyle=":", linewidth=1.0,
-                   label=f"adequacy {alpha_threshold:g}")
+            ax.axhline(
+                group_alpha,
+                color="#ee6677",
+                linestyle="--",
+                linewidth=1.2,
+                label=f"group alpha {group_alpha:.2f}",
+            )
+        ax.axhline(
+            alpha_threshold,
+            color="#888888",
+            linestyle=":",
+            linewidth=1.0,
+            label=f"adequacy {alpha_threshold:g}",
+        )
         ax.set_ylim(low, high)
         ax.set_title(group, fontsize=8)
         if i == 0:
@@ -1393,8 +1409,14 @@ def dimensionality_scree_plot(
         max_k = max(max_k, len(values))
         n_parallel = report.parallel_components_by_group.get(group)
         color = colors[i % len(colors)]
-        ax.plot(x, values, "-o", color=color, markersize=5,
-                label=f"{group} (parallel analysis: {n_parallel})")
+        ax.plot(
+            x,
+            values,
+            "-o",
+            color=color,
+            markersize=5,
+            label=f"{group} (parallel analysis: {n_parallel})",
+        )
     ax.axhline(1.0, color="#888888", linestyle="--", linewidth=1.0, label="Kaiser cutoff = 1")
     ax.set_xticks(range(1, max_k + 1))
     ax.set_xlabel("component")
@@ -1428,11 +1450,23 @@ def network_forest_plot(report, *, host: Figure | None = None, title: str | None
     ax = fig.subplots()
     y = np.arange(len(order))
     for k, i in enumerate(order):
-        ax.plot([lower[i], upper[i]], [y[k], y[k]], color="#4477aa", linewidth=2.5,
-                solid_capstyle="round")
+        ax.plot(
+            [lower[i], upper[i]],
+            [y[k], y[k]],
+            color="#4477aa",
+            linewidth=2.5,
+            solid_capstyle="round",
+        )
         ax.plot([effect[i]], [y[k]], marker="o", color="#222222", markersize=5, zorder=3)
-        ax.annotate(f"P={pscore[i]:.2f}", xy=(upper[i], y[k]), xytext=(6, 0),
-                    textcoords="offset points", va="center", fontsize=7, color="#555555")
+        ax.annotate(
+            f"P={pscore[i]:.2f}",
+            xy=(upper[i], y[k]),
+            xytext=(6, 0),
+            textcoords="offset points",
+            va="center",
+            fontsize=7,
+            color="#555555",
+        )
     ax.axvline(0.0, color="#cc3311", linestyle="--", linewidth=1.0)
     ax.set_yticks(y)
     ax.set_yticklabels(names)

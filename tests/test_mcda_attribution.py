@@ -66,9 +66,7 @@ def test_same_data_contrast_has_no_dataset_share():
 
 def test_same_data_contrast_identical_orders_are_undefined():
     """Two identical orderings have no rank movement, so the shares are nan."""
-    setting = setting_from_same_data_contrast(
-        {"a": [1, 2, 3], "b": [1, 2, 3]}, "identical"
-    )
+    setting = setting_from_same_data_contrast({"a": [1, 2, 3], "b": [1, 2, 3]}, "identical")
     a, d, b = _shares(setting)
     assert np.isnan(a) and np.isnan(d) and np.isnan(b)
 
