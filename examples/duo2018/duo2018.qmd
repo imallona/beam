@@ -21,7 +21,7 @@ This vignette re-analyses the fourteen single-cell clustering methods benchmarke
 
 ## Set-up
 
-The five aggregation methods used below (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET) are wrapped from pymcdm. beam normalizes by metric card, then calls pymcdm on the normalized matrix and keeps the higher-is-better convention. The weighting schemes are beam's own, since pymcdm's reject the zeros beam's normalization produces.
+The five [aggregation methods](../../docs/explanations/aggregation-methods.md) used below (SAW, TOPSIS, VIKOR, PROMETHEE II, [COMET](../../docs/explanations/comet.md)) are wrapped from pymcdm. beam normalizes by metric card, then calls pymcdm on the normalized matrix and keeps the higher-is-better convention. The [weighting schemes](../../docs/explanations/weighting-schemes.md) are beam's own, since pymcdm's reject the zeros beam's normalization produces.
 
 ```{python}
 %matplotlib inline
@@ -55,7 +55,7 @@ print("metrics:", ", ".join(duo.metric_ids))
 
 ## Missing cells
 
-Four metrics are recorded. ARI, runtime and Shannon entropy difference each have five missing cells; cluster-count deviation has 101 of 168 cells missing because several methods do not report a fixed cluster count for every dataset. With more than half its cells empty, cluster-count deviation cannot be pooled across datasets without an imputation choice that would drive the result, so this analysis uses the three well-populated metrics: ARI, runtime, and Shannon entropy difference.
+Four metrics are recorded. ARI, runtime and Shannon entropy difference each have five [missing cells](../../docs/explanations/missing-data.md); cluster-count deviation has 101 of 168 cells missing because several methods do not report a fixed cluster count for every dataset. With more than half its cells empty, cluster-count deviation cannot be pooled across datasets without an imputation choice that would drive the result, so this analysis uses the three well-populated metrics: ARI, runtime, and Shannon entropy difference.
 
 ```{python}
 for metric_id in duo.metric_ids:
@@ -173,7 +173,7 @@ print("  " + ", ".join(sorted(top_per_combo)))
 
 ## Critical-difference diagram on ARI
 
-The MCDA composite gives one ranking, but it does not say whether the methods are separable. The Demsar (2006) Friedman test ranks the methods on each dataset and asks whether the average ranks differ more than chance. The Nemenyi post-hoc gives the critical difference: two methods whose average ranks differ by less than it are not distinguishable from this data.
+The MCDA composite gives one ranking, but it does not say whether the methods are separable. The Demsar (2006) [Friedman test](../../docs/explanations/comparing-methods-across-datasets.md) ranks the methods on each dataset and asks whether the average ranks differ more than chance. The Nemenyi post-hoc gives the critical difference: two methods whose average ranks differ by less than it are not distinguishable from this data.
 
 This runs on ARI alone, on the block of methods observed on all twelve datasets. SAFE and ascend have missing ARI cells, so they are dropped here to keep the block complete; the remaining twelve methods are observed on all twelve datasets.
 
@@ -206,7 +206,7 @@ plot.critical_difference(cd)
 
 ## Pairwise superiority on ARI
 
-The critical-difference diagram says which methods are separable, but not by how much or how often one method outperforms another. `pairwise_superiority` compares the methods two at a time across the datasets, with the ARI noise floor (0.01) as the equivalence band: a method counts as outperforming another on a dataset only when the difference clears that floor. The probability of superiority is the fraction of datasets on which one method outperforms the other, an effect size that does not depend on the pool.
+The critical-difference diagram says which methods are separable, but not by how much or how often one method outperforms another. `pairwise_superiority` [compares the methods two at a time](../../docs/explanations/pairwise-superiority.md) across the datasets, with the ARI noise floor (0.01) as the equivalence band: a method counts as outperforming another on a dataset only when the difference clears that floor. The probability of superiority is the fraction of datasets on which one method outperforms the other, an effect size that does not depend on the pool.
 
 ```{python}
 from beam.mcda import pairwise_superiority
@@ -222,7 +222,7 @@ Most pairs are not distinguishable: across the twelve datasets the ARI differenc
 
 ## Pairwise transitivity on ARI
 
-The ranking is one order of the methods, but the pairwise majorities behind it need not agree with any single order. `pairwise_transitivity` reads the same pairwise relation and asks whether one order is consistent with it: it reports the method preferred to every other one, the circular triads (a method outperforms a second, the second a third, the third the first), and whether the relation is transitive.
+The ranking is one order of the methods, but the pairwise majorities behind it need not agree with any single order. `pairwise_transitivity` reads the same pairwise relation and asks whether one order is [consistent with it](../../docs/explanations/transitivity.md): it reports the method preferred to every other one, the circular triads (a method outperforms a second, the second a third, the third the first), and whether the relation is transitive.
 
 ```{python}
 from beam.mcda import pairwise_transitivity
@@ -241,7 +241,7 @@ plot.pairwise_majority(trans)
 
 ## Bayesian comparison on ARI
 
-The tests above report a p-value: the chance of the observed split if two methods scored the same. A reader choosing a method wants the probability that one method scores higher, given the data. `bayesian_sign_comparison` reads the same pairwise relation and reports, for each pair, the posterior probability that one method is practically better, that the two are practically equivalent within the floor, and that the other is practically better.
+The tests above report a p-value: the chance of the observed split if two methods scored the same. A reader choosing a method wants the probability that one method scores higher, given the data. [`bayesian_sign_comparison`](../../docs/explanations/bayesian-comparison.md) reads the same pairwise relation and reports, for each pair, the posterior probability that one method is practically better, that the two are practically equivalent within the floor, and that the other is practically better.
 
 ```{python}
 from beam.mcda import bayesian_sign_comparison
@@ -338,7 +338,7 @@ print(f"\nmost influential dataset: {influential} (largest rank shift {lodo.max_
 plot.dataset_stability(run)
 ```
 
-The funky heatmap shows the same run as a glyph table, with two robustness panels: the span of ranks each method takes across the leave-one-dataset-out runs, and the span across the five aggregations (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET) holding the weighting fixed. The brackets on the left group the methods the Friedman-Nemenyi test cannot separate on ARI. The two span panels differ: dropping a dataset barely moves the order, and Seurat holds rank one, but the choice of aggregation moves it considerably. On this benchmark the order depends more on how the metrics are combined than on which datasets are pooled.
+The [funky heatmap](../../docs/explanations/funky-heatmaps-and-robustness.md) shows the same run as a glyph table, with two robustness panels: the span of ranks each method takes across the leave-one-dataset-out runs, and the span across the five aggregations (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET) holding the weighting fixed. The brackets on the left group the methods the Friedman-Nemenyi test cannot separate on ARI. The two span panels differ: dropping a dataset barely moves the order, and Seurat holds rank one, but the choice of aggregation moves it considerably. On this benchmark the order depends more on how the metrics are combined than on which datasets are pooled.
 
 ```{python}
 from beam.mcda import critical_difference
@@ -367,7 +367,7 @@ print("wrote duo2018_report.html")
 
 ## Dataset concordance: do the datasets agree on the order?
 
-The pooled ranking averages over the twelve datasets. `dataset_concordance` ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not, and the per-dataset orderings are the honest output. The diagnostic needs no replicates and assumes nothing about the datasets being interchangeable, so it measures the heterogeneity rather than asking how many datasets would be enough.
+The pooled ranking averages over the twelve datasets. [`dataset_concordance`](../../docs/explanations/dataset-concordance.md) ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not, and the per-dataset orderings are the honest output. The diagnostic needs no replicates and assumes nothing about the datasets being interchangeable, so it measures the heterogeneity rather than asking how many datasets would be enough.
 
 ```{python}
 conc = run.dataset_concordance
@@ -397,7 +397,7 @@ plot.dataset_struggle(run)
 
 ## Specification curve: every choice at once
 
-`rank_sensitivity` runs every combination of the weighting, the aggregation and the dataset, and splits the rank variance between them. `specification_curve` reads the same grid and lists the rankings, then reports how often the top method holds. The choice-only grid (weighting by aggregation, on the pooled matrix) and the choice-plus-data grid (the dataset joins it) answer different questions: the first asks whether the recommendation survives the modeling choices, the second whether it survives a change of dataset.
+[`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) runs every combination of the weighting, the aggregation and the dataset, and splits the rank variance between them. [`specification_curve`](../../docs/explanations/specification-curve.md) reads the same grid and lists the rankings, then reports how often the top method holds. The choice-only grid (weighting by aggregation, on the pooled matrix) and the choice-plus-data grid (the dataset joins it) answer different questions: the first asks whether the recommendation survives the modeling choices, the second whether it survives a change of dataset.
 
 ```{python}
 from beam.mcda import rank_sensitivity, specification_curve
@@ -444,7 +444,7 @@ plot.specification_curve(curve)
 
 ## Blind analysis: fix the pipeline before seeing the names
 
-A benchmarker who can see which method is which while choosing the weighting and the metric set has room to tune the choices toward a method they expect to rank first. `beam.blind` masks the method names and shuffles the rows under a seed, so the pipeline is fixed on opaque labels; `beam.unblind` restores the names afterward. The ranking does not change, because beam ranks on the score values and unblinding only renames the rows. What blinding adds is a record: the seal fingerprint goes into the run manifest.
+A benchmarker who can see which method is which while choosing the weighting and the metric set has room to tune the choices toward a method they expect to rank first. [`beam.blind`](../../docs/explanations/analysis-blinding.md) masks the method names and shuffles the rows under a seed, so the pipeline is fixed on opaque labels; `beam.unblind` restores the names afterward. The ranking does not change, because beam ranks on the score values and unblinding only renames the rows. What blinding adds is a record: the seal fingerprint goes into the run manifest.
 
 ```{python}
 from beam import blind, unblind
@@ -526,7 +526,7 @@ else:
     print("Provision it with envs/heterogeneity.yml (conda or mamba).")
 ```
 
-On these 12 datasets the parameter-stability test finds no split, so the tree reduces to a single Bradley-Terry ranking led by SC3, the same order the net pairwise preferences and the marginal means give. A dozen datasets is too few for the test to separate a feature-dependent regime from sampling noise, which is also why the critical-difference diagram and the variance decomposition both report a stable global ranking here. The tree is more informative on a benchmark with many datasets carrying real feature variation; the OpenProblems spatially_variable_genes vignette is where a split appears. See [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md).
+On these 12 datasets the parameter-stability test finds no split, so the tree reduces to a single Bradley-Terry ranking led by SC3, the same order the net pairwise preferences and the marginal means give. A dozen datasets is too few for the test to separate a feature-dependent regime from sampling noise, which is also why the critical-difference diagram and the variance decomposition both report a stable global ranking here. The tree is more informative on a benchmark with many datasets carrying real feature variation; the [OpenProblems spatially_variable_genes vignette](../openproblems/openproblems.qmd) is where a split appears. See [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md).
 
 ## What moves the ranking: the data or the choice
 

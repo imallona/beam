@@ -1,6 +1,6 @@
 # COMET
 
-COMET, the Characteristic Objects METhod (Salabun 2015), is one of the [aggregation methods](aggregation-methods.md) in the multi-criteria decision analysis (MCDA) pipeline. It takes the same input as the others, a matrix of tools by metrics already normalized to the unit interval and oriented so higher is better, plus a weight per metric, and returns one preference value per tool. What sets it apart is that its ranking is rank reversal free: adding or removing a tool cannot change the order of the others. This page explains how it reaches that property and when it is the better choice over weighted sum or TOPSIS.
+COMET, the Characteristic Objects METhod (Salabun 2015), is one of the [aggregation methods](aggregation-methods.md) in the multi-criteria decision analysis (MCDA) pipeline. It takes the same input as the others, a matrix of tools by metrics already [normalized](normalization-and-scales.md) to the unit interval and oriented so higher is better, plus a weight per metric, and returns one preference value per tool. What sets it apart is that its ranking is rank reversal free: adding or removing a tool cannot change the order of the others. This page explains how it reaches that property and when it is the better choice over weighted sum or TOPSIS.
 
 beam wraps pymcdm for COMETf. beam supplies the characteristic values and the expert rule described below, and pymcdm builds the Matrix of Expert Judgement, the preference of each characteristic object, and the fuzzy interpolation that scores the tools.
 

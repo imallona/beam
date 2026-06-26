@@ -46,7 +46,7 @@ On the [Duo 2018 clustering benchmark](../../examples/duo2018/duo2018.qmd) the d
 
 The default weightings are equal, entropy, standard deviation, and CRITIC. MEREC is left out by default because it takes the logarithm of the scores and refuses a zero, and the default min_max normalization maps each column minimum to zero. Pass MEREC explicitly with a normalization that keeps the scores positive.
 
-Every combination must produce a ranking. The distance and outranking aggregations (TOPSIS, VIKOR, PROMETHEE II, COMET) refuse a slice with missing cells, so a tensor with gaps needs `missing="worst"` to complete the matrix, or a restriction to the feasible subset. A factor level that still fails on the input is dropped, and the report names what it dropped.
+Every combination must produce a ranking. The distance and outranking aggregations (TOPSIS, VIKOR, PROMETHEE II, [COMET](comet.md)) refuse a slice with missing cells, so a tensor with gaps needs `missing="worst"` to complete the matrix, or a restriction to the feasible subset. A factor level that still fails on the input is dropped, and the report names what it dropped.
 
 COMET is slow on a metric-rich benchmark. It builds characteristic objects whose count grows fast with the number of metrics, so on a task with a dozen metrics drop it and pass the other four aggregations.
 

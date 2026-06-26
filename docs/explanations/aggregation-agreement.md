@@ -1,12 +1,12 @@
 # Aggregation agreement: does the benchmark result depend on the aggregation method?
 
-beam offers five aggregations: SAW, TOPSIS, VIKOR, PROMETHEE II and COMET. Each combines the per-metric scores into a composite under each aggregation method own assumptions, and the headline ranking commits to one of them  The question tat follows is whether that commitment changes the evaluation results. `beam.mcda.aggregation_agreement` addresses this by re-ranking the same (normalized) input metrics matrix under each aggregation, holding the weighting fixed. Then, the agreement of the ranks is reported.
+beam offers [five aggregations](aggregation-methods.md): SAW, TOPSIS, VIKOR, PROMETHEE II and [COMET](comet.md). Each combines the per-metric scores into a composite under each aggregation method own assumptions, and the headline ranking commits to one of them  The question tat follows is whether that commitment changes the evaluation results. `beam.mcda.aggregation_agreement` addresses this by re-ranking the same (normalized) input metrics matrix under each aggregation, holding the weighting fixed. Then, the agreement of the ranks is reported.
 
 This can be read as a diagnostic of choice sensitivity, complementing beam's leave-one-metric-out and leave-one-dataset-out functions and weight variation via stochastic multicriteria acceptability analysis (SMAA). This aggregation agreement procedure evaluates the remaining degree of freedom to choose a final rank.
 
 ## Method
 
-Normalization and weighting happen before aggregation and do not depend on the aggregation rule, so the weight vector is the same across the five methods. So only the aggregation step is evaluated here. The diagnostic runs the full pipeline once per method, collects the per-tool ranks, and compares every pair of rankings.
+[Normalization](normalization-and-scales.md) and [weighting](weighting-schemes.md) happen before aggregation and do not depend on the aggregation rule, so the weight vector is the same across the five methods. So only the aggregation step is evaluated here. The diagnostic runs the full pipeline once per method, collects the per-tool ranks, and compares every pair of rankings.
 
 Agreement between two rankings is measured with the Kendall tau-b coefficient. tau-b counts the concordant and discordant pairs of tools and corrects for ties, which matters here because beam uses competition ranking, so ties are common. tau-b is 1 for identical orderings, -1 for exact reversals, and near 0 when the two methods order the tools randomly. The report plots the full method-by-method tau matrix and a single mean of its off-diagonal entries as a summary.
 

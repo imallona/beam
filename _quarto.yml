@@ -7,6 +7,7 @@ project:
     - "docs/explanations/*.md"
     - "docs/explanations/*.qmd"
     - "examples/*/*.qmd"
+    - "docs/reference/*.qmd"
     - "docs/metric-cards.qmd"
     - "index.qmd"
 
@@ -119,9 +120,14 @@ website:
             text: Cross-benchmark meta-analysis
           - href: examples/cell_type_annotation/cell_type_annotation.qmd
             text: LLM cell type annotation
+      - href: docs/reference/index.qmd
+        text: Reference
     right:
       - icon: github
         href: https://github.com/imallona/beam
+
+metadata-files:
+  - docs/reference/_sidebar.yml
 
 format:
   html:

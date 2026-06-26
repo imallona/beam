@@ -22,7 +22,7 @@ A critical-difference diagram draws the methods along a rank axis and connects t
 
 Call `critical_difference(scores, higher_is_better=True)` with a tool by dataset matrix. Set `higher_is_better=False` for a cost metric such as runtime, so the faster method still ranks near 1. The report carries the average ranks, the Friedman statistic and p-value, the critical difference, and the cliques.
 
-The test needs at least three methods and at least two datasets. It adds to the MCDA composite rather than replacing it: the composite says which method to prefer under a stated weighting, and the Friedman-Nemenyi result says whether the data support drawing a line between the methods at all.
+The test needs at least three methods and at least two datasets. It adds to the MCDA composite rather than replacing it: the composite says which method to prefer under a stated [weighting](weighting-schemes.md), and the Friedman-Nemenyi result says whether the data support drawing a line between the methods at all.
 
 When the matrix has missing cells the Friedman ranks are no longer defined. The Skillings-Mack (1981) test generalizes the global statistic to incomplete blocks at the cost of the Nemenyi cliques; see [Skillings-Mack: coverage-aware Friedman](skillings-mack.md).
 

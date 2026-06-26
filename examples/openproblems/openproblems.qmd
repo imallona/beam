@@ -17,7 +17,7 @@ format:
 
 The batch integration task also has a [generated standard report](../../docs/reports/openproblems_batch_integration.html), the self-contained HTML `beam.report` emits for any run. This vignette is the narrative walkthrough behind it.
 
-This vignette runs beam on two tasks from OpenProblems in Single-Cell Analysis (openproblems.bio, Nature Biotechnology 2025), the continuous community benchmarking platform. OpenProblems scores every method on every dataset by every metric within a task and publishes the result as a method by dataset by metric tensor, so beam can ingest it directly. The two tasks are chosen for different reasons. The batch integration task is metric-rich (13 scIB metrics), so it runs the multi-criteria decision layer. The spatially variable genes task is dataset-rich (50 spatial datasets), so it is where the Bradley-Terry tree can find a feature split that the 12-dataset Duo benchmark could not show. See [the OpenProblems explanation](../../docs/explanations/openproblems-as-a-data-source.md).
+This vignette runs beam on two tasks from OpenProblems in Single-Cell Analysis (openproblems.bio, Nature Biotechnology 2025), the continuous community benchmarking platform. OpenProblems scores every method on every dataset by every metric within a task and publishes the result as a method by dataset by metric tensor, so beam can ingest it directly. The two tasks are chosen for different reasons. The batch integration task is metric-rich (13 scIB metrics), so it runs the multi-criteria decision layer. The spatially variable genes task is dataset-rich (50 spatial datasets), so it is where the Bradley-Terry tree can find a feature split that the 12-dataset [Duo benchmark](../duo2018/duo2018.qmd) could not show. See [the OpenProblems explanation](../../docs/explanations/openproblems-as-a-data-source.md).
 
 ## Provenance of the bundled tables
 
@@ -100,7 +100,7 @@ tensor = tensor[keep]
 print(f"{len(methods)} methods, {len(metrics)} metrics, {len(op.dataset_names)} datasets")
 ```
 
-`card_data_consistency` checks the scores against what the 12 cards declare, before any normalization. The scIB metrics are scaled to [0, 1] on the platform, so the audit gives a clean bill here; it would name any metric whose values fell outside its declared range.
+[`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks the scores against what the 12 cards declare, before any normalization. The scIB metrics are scaled to [0, 1] on the platform, so the audit gives a clean bill here; it would name any metric whose values fell outside its declared range.
 
 ```{python}
 from beam.mcda import card_data_consistency, registry_context
@@ -147,7 +147,7 @@ print("beam top method:", result.tool_names[beam_order[0]])
 print("mean-of-scores top method:", methods[mean_order[0]])
 ```
 
-The two rules disagree on the top-ranked method. This is the same point the M4 and Duo vignettes make: a benchmark recommendation is partly a decision about how the criteria are combined. beam makes that decision explicit; a single leaderboard number does not show it.
+The two rules disagree on the top-ranked method. This is the same point the [M4](../m4/m4.qmd) and Duo vignettes make: a benchmark recommendation is partly a decision about how the criteria are combined. beam makes that decision explicit; a single leaderboard number does not show it.
 
 ```{python}
 from beam import plot
@@ -158,7 +158,7 @@ plot.ranking(result, ground_truth_tool=methods[mean_order[0]])
 
 ### A funky heatmap that shows its own rank robustness
 
-The funky heatmap shows a multi-metric benchmark with methods as rows sorted best first, metrics as circles sized by the score and coloured by group (here the scIB biological-conservation and batch-correction groups), and an overall bar. beam adds three panels: a worth panel with the ARI marginal mean and a 95 percent interval from the mixed-effects model (overlapping intervals mean two methods are not separable), the span of ranks each method takes across the leave-one-dataset-out runs, and the SMAA rank-acceptability bar (the share of random weightings that put a method at each rank). The row order and circle sizes depend on the normalization, which beam takes from the metric cards rather than defaulting to min-max.
+The [funky heatmap](../../docs/explanations/funky-heatmaps-and-robustness.md) shows a multi-metric benchmark with methods as rows sorted best first, metrics as circles sized by the score and coloured by group (here the scIB biological-conservation and batch-correction groups), and an overall bar. beam adds three panels: a worth panel with the ARI marginal mean and a 95 percent interval from the mixed-effects model (overlapping intervals mean two methods are not separable), the span of ranks each method takes across the leave-one-dataset-out runs, and the SMAA rank-acceptability bar (the share of random weightings that put a method at each rank). The row order and circle sizes depend on the normalization, which beam takes from the metric cards rather than defaulting to min-max.
 
 ```{python}
 from beam.heterogeneity import mixed_effects_from_matrix, r_available
@@ -198,7 +198,7 @@ With only six datasets the leave-one-dataset-out spans are wide: the top methods
 
 ### Where the ARI variance lives
 
-A mixed-effects model on one metric splits the score variation into a stable method effect and the method-by-dataset interaction. We run it on ARI. The fit needs R's lme4, so the chunk runs only when it is available.
+A [mixed-effects model](../../docs/explanations/heterogeneity-mixed-effects.md) on one metric splits the score variation into a stable method effect and the method-by-dataset interaction. We run it on ARI. The fit needs R's lme4, so the chunk runs only when it is available.
 
 ```{python}
 from beam.heterogeneity import mixed_effects_from_matrix, r_available
@@ -303,7 +303,7 @@ Dimensionality and reliability point in opposite directions here. The biological
 
 ## What moves the batch-integration ranking
 
-The OpenProblems leaderboard pools by the mean of the scaled scores; beam can pool any of several ways. `rank_sensitivity` asks how much that choice matters against the data. It runs every combination of weighting, aggregation and dataset, and splits the rank variance. COMET is left out of the aggregations here: it builds characteristic objects whose count grows fast with the number of criteria, so it is slow on a 12-metric task. The other four aggregations are quick.
+The OpenProblems leaderboard pools by the mean of the scaled scores; beam can pool any of several ways. [`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) asks how much that choice matters against the data. It runs every combination of weighting, aggregation and dataset, and splits the rank variance. COMET is left out of the aggregations here: it builds characteristic objects whose count grows fast with the number of criteria, so it is slow on a 12-metric task. The other four aggregations are quick.
 
 ```{python}
 from beam.mcda import rank_sensitivity
@@ -336,7 +336,7 @@ The shares above are pooled over the methods. The per-method version splits the 
 plot.rank_sensitivity_by_tool(rs)
 ```
 
-`specification_curve` reads the same grid as a list of rankings. Because the aggregation carries a real share here, the choice-only multiverse is less unanimous than on M4: the top method does not hold in every weighting-by-aggregation combination.
+[`specification_curve`](../../docs/explanations/specification-curve.md) reads the same grid as a list of rankings. Because the aggregation carries a real share here, the choice-only multiverse is less unanimous than on M4: the top method does not hold in every weighting-by-aggregation combination.
 
 ```{python}
 from beam.mcda import specification_curve
@@ -365,7 +365,7 @@ plot.specification_curve(curve)
 
 ## Dataset concordance: do the datasets agree on the order?
 
-The pooled ranking averages over the batch-integration datasets. `dataset_concordance` ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not. It needs no replicates and assumes nothing about the datasets being interchangeable.
+The pooled ranking averages over the batch-integration datasets. [`dataset_concordance`](../../docs/explanations/dataset-concordance.md) ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not. It needs no replicates and assumes nothing about the datasets being interchangeable.
 
 ```{python}
 conc = result.dataset_concordance
@@ -393,7 +393,7 @@ plot.dataset_struggle(result)
 
 ## Blind analysis
 
-A blind analysis fixes the weighting, the aggregation and the metric set before the method names are revealed. `beam.blind` masks the names and shuffles the rows; `beam.unblind` restores them. The order does not change, and the seal fingerprint goes into the manifest.
+A [blind analysis](../../docs/explanations/analysis-blinding.md) fixes the weighting, the aggregation and the metric set before the method names are revealed. `beam.blind` masks the names and shuffles the rows; `beam.unblind` restores them. The order does not change, and the seal fingerprint goes into the manifest.
 
 ```{python}
 from beam import blind, unblind
@@ -411,7 +411,7 @@ print("blinding fingerprint:", blind_run.manifest["blinding"]["seal_sha256"][:12
 
 ## Pairwise superiority on ARI
 
-`pairwise_superiority` compares the methods two at a time on ARI across the six datasets, with the ARI noise floor as the equivalence band. It reports how often one method outperforms another, the effect size next to the significance the mixed-effects intervals give.
+`pairwise_superiority` [compares the methods two at a time](../../docs/explanations/pairwise-superiority.md) on ARI across the six datasets, with the ARI noise floor as the equivalence band. It reports how often one method outperforms another, the effect size next to the significance the mixed-effects intervals give.
 
 ```{python}
 from beam.mcda import pairwise_superiority
@@ -425,7 +425,7 @@ print(f"pairs the sign test cannot separate: {len(sup.equivalent_pairs)} of {len
 
 With six datasets the comparison is coarse: most pairs do not reach significance, matching the wide mixed-effects intervals and the leave-one-dataset-out spans above. The pairwise view says the same as the worth panel, as a pairwise record rather than an interval.
 
-`pairwise_transitivity` reads the same pairwise relation and reports whether one order is consistent with it.
+`pairwise_transitivity` reads the same pairwise relation and reports whether one order is [consistent with it](../../docs/explanations/transitivity.md).
 
 ```{python}
 from beam.mcda import pairwise_transitivity
@@ -440,7 +440,7 @@ The matrix below orders the methods by how many others they outperform. A transi
 plot.pairwise_majority(trans)
 ```
 
-On the probability scale, `bayesian_sign_comparison` gives for each pair the posterior probability that one method is practically better. With six datasets most pairs stay inconclusive at the 0.95 threshold.
+On the probability scale, [`bayesian_sign_comparison`](../../docs/explanations/bayesian-comparison.md) gives for each pair the posterior probability that one method is practically better. With six datasets most pairs stay inconclusive at the 0.95 threshold.
 
 ```{python}
 from beam.mcda import bayesian_sign_comparison

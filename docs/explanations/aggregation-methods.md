@@ -1,6 +1,6 @@
 # Aggregation methods
 
-After normalizing the metrics results, beam holds a tool by metric matrix in the unit interval, with every column oriented so higher is better, plus a weight per metric. Aggregation turns that matrix into one preference score per tool, which then becomes a ranking. beam offers four aggregation methods on this page: SAW, TOPSIS, VIKOR and PROMETHEE II ([COMET](comet.md) has its own page). They differ in what they compute and in what they assume about the scale of the normalized scores.
+After [normalizing](normalization-and-scales.md) the metrics results, beam holds a tool by metric matrix in the unit interval, with every column oriented so higher is better, plus a weight per metric. Aggregation turns that matrix into one preference score per tool, which then becomes a ranking. beam offers four aggregation methods on this page: SAW, TOPSIS, VIKOR and PROMETHEE II ([COMET](comet.md) has its own page). They differ in what they compute and in what they assume about the scale of the normalized scores.
 
 beam wraps pymcdm for these methods rather than reimplementing their algorithms. Each beam function calls the matching pymcdm method with an identity normalization, so pymcdm runs on beam's already normalized matrix, and with every metric typed as positive because the matrix is oriented higher is better. beam keeps the shared input and output contract, applies the higher-is-better convention described below, and handles the corner cases (for example a single tool) that pymcdm does not.
 

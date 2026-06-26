@@ -19,7 +19,7 @@ This dataset also has a [generated standard report](../../docs/reports/m4.html),
 
 This vignette runs beam on the M4 forecasting competition (Makridakis, Spiliotis and Assimakopoulos 2020, [10.1016/j.ijforecast.2019.04.014](https://doi.org/10.1016/j.ijforecast.2019.04.014)), a large real benchmark from outside bioinformatics. M4 forecast 100,000 anonymized time series across six frequency bands (yearly, quarterly, monthly, weekly, daily, hourly). Each submitted method was scored by two error metrics, sMAPE and MASE, both lower is better. beam reads those two metrics from its registry as the cards `smape` and `mase`, treats the six frequency bands as the dataset axis, and runs the same pipeline as the bioinformatics examples.
 
-Three things are shown on real data. The registry does not care about the domain: forecasting metrics carry polarity, scale and normalization the same way clustering metrics do. The method ranking depends heavily on the frequency band, which is why leave-one-dataset-out and the critical-difference diagram across frequencies matter here. And the choice of how to pool the bands changes which method ranks first, so the recommendation is partly a decision about pooling rather than a fact about the methods.
+Three things are shown on real data. The registry does not care about the domain: forecasting metrics carry polarity, scale and normalization the same way clustering metrics do. The method ranking depends heavily on the frequency band, which is why leave-one-dataset-out and the [critical-difference diagram](../../docs/explanations/comparing-methods-across-datasets.md) across frequencies matter here. And the choice of how to pool the bands changes which method ranks first, so the recommendation is partly a decision about pooling rather than a fact about the methods.
 
 ## Provenance of the bundled table
 
@@ -64,7 +64,7 @@ for p in properties_for(list(m4.metric_ids)):
     )
 ```
 
-Before ranking, `card_data_consistency` checks that the scores honour what those cards declare: every value inside the declared range, the baselines and targets in range, the noise floors positive. It reads the raw scores against the cards, so a unit mismatch (a metric on a percent scale against a fraction card, say) is caught here rather than distorting the normalization silently.
+Before ranking, [`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks that the scores honour what those cards declare: every value inside the declared range, the baselines and targets in range, the noise floors positive. It reads the raw scores against the cards, so a unit mismatch (a metric on a percent scale against a fraction card, say) is caught here rather than distorting the normalization silently.
 
 ```{python}
 from beam.mcda import card_data_consistency, registry_context
@@ -153,7 +153,7 @@ The hourly band is the most influential. It has only a few hundred series and ve
 
 ## Dataset concordance: do the bands agree on the order?
 
-The pooled ranking averages over the six frequency bands. `dataset_concordance` ranks the methods within each band and compares every pair of per-band orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual bands; a low mean says it does not. It needs no replicates and assumes nothing about the bands being interchangeable.
+The pooled ranking averages over the six frequency bands. [`dataset_concordance`](../../docs/explanations/dataset-concordance.md) ranks the methods within each band and compares every pair of per-band orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual bands; a low mean says it does not. It needs no replicates and assumes nothing about the bands being interchangeable.
 
 ```{python}
 conc = run.dataset_concordance
@@ -169,7 +169,7 @@ for cell in conc.notable_cells[:5]:
           f"rank {cell.rank}, {side} than its mean {cell.mean_rank:.1f}")
 ```
 
-M4 is the contrast to Duo: the bands disagree more, which is the strong method-by-band interaction the rank-sensitivity section also reads. The agreement matrix shows the bands that pull together and the ones that stand apart.
+M4 is the contrast to [Duo](../duo2018/duo2018.qmd): the bands disagree more, which is the strong method-by-band interaction the rank-sensitivity section also reads. The agreement matrix shows the bands that pull together and the ones that stand apart.
 
 ```{python}
 plot.dataset_concordance(run)
@@ -183,7 +183,7 @@ plot.dataset_struggle(run)
 
 ## Funky heatmap with rank robustness
 
-The funky heatmap shows the same run as a glyph table over the two error metrics, with three robustness panels: the rank span across the six leave-one-band-out runs, the rank span across the five aggregations, and the SMAA rank-acceptability bar.
+The [funky heatmap](../../docs/explanations/funky-heatmaps-and-robustness.md) shows the same run as a glyph table over the two error metrics, with three robustness panels: the rank span across the six leave-one-band-out runs, the rank span across the five aggregations, and the SMAA rank-acceptability bar.
 
 ```{python}
 from beam.reporting import funky_heatmap_from_run
@@ -195,7 +195,7 @@ There are only two metrics, so the glyph grid is small. The robustness panels ca
 
 ## Heterogeneity: how much of the sMAPE variance is the band
 
-The leave-one-band-out check asks whether the ranking leans on one band. A mixed-effects model asks the complementary question: how much of the sMAPE variation is a stable method effect and how much is the method-by-band interaction. It needs R's lme4, so the chunk runs only when it is available.
+The leave-one-band-out check asks whether the ranking leans on one band. A [mixed-effects model](../../docs/explanations/heterogeneity-mixed-effects.md) asks the complementary question: how much of the sMAPE variation is a stable method effect and how much is the method-by-band interaction. It needs R's lme4, so the chunk runs only when it is available.
 
 ```{python}
 from beam.heterogeneity import mixed_effects_from_matrix, r_available
@@ -210,7 +210,7 @@ else:
     print("R with lme4 not available; skipping the mixed-effects fit.")
 ```
 
-On M4 the band intercept takes most of the sMAPE variance: the bands differ mostly in how hard they are to forecast for every method alike, which is the opposite of the transportation example, where the terrain decides which mode ranks first. A Bradley-Terry tree on the six bands, with the seasonal period as the splitting feature, has too few datasets to find a stable split; this is the same small-sample limit the Duo benchmark hits, and why the OpenProblems spatial task (50 datasets) is where a split appears.
+On M4 the band intercept takes most of the sMAPE variance: the bands differ mostly in how hard they are to forecast for every method alike, which is the opposite of the transportation example, where the terrain decides which mode ranks first. A [Bradley-Terry tree](../../docs/explanations/heterogeneity-bradley-terry.md) on the six bands, with the seasonal period as the splitting feature, has too few datasets to find a stable split; this is the same small-sample limit the Duo benchmark hits, and why the OpenProblems spatial task (50 datasets) is where a split appears.
 
 ```{python}
 from beam.heterogeneity import bradley_terry_tree, bttree_available
@@ -236,7 +236,7 @@ else:
 
 ## What moves the ranking: the band or the choice
 
-The leave-one-band-out check and the mixed-effects ICC both say the band matters. `rank_sensitivity` puts that on the same scale as the two modeling choices and says how much each one moves the ranking. It runs every combination of weighting scheme, aggregation rule and band, then splits each method's rank variance into a share for each factor by analysis of variance. The design is a balanced full factorial, so the shares are exact, not sampled.
+The leave-one-band-out check and the mixed-effects ICC both say the band matters. [`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) puts that on the same scale as the two modeling choices and says how much each one moves the ranking. It runs every combination of [weighting scheme](../../docs/explanations/weighting-schemes.md), [aggregation rule](../../docs/explanations/aggregation-methods.md) and band, then splits each method's rank variance into a share for each factor by analysis of variance. The design is a balanced full factorial, so the shares are exact, not sampled.
 
 ```{python}
 from beam.mcda import rank_sensitivity
@@ -280,7 +280,7 @@ for band, mean_rank in zip(rs.dataset_names, rs.headline_rank_by_dataset):
     print(f"{band:12s}  {mean_rank:.1f}")
 ```
 
-`specification_curve` lists the rankings the same grid produces and reports how often the top method holds. The full grid mixes the choices with the band; running it on the pooled matrix instead isolates the choices, so the gap between the two fractions is the band's doing.
+[`specification_curve`](../../docs/explanations/specification-curve.md) lists the rankings the same grid produces and reports how often the top method holds. The full grid mixes the choices with the band; running it on the pooled matrix instead isolates the choices, so the gap between the two fractions is the band's doing.
 
 ```{python}
 from beam.mcda import specification_curve
@@ -308,7 +308,7 @@ plot.specification_curve(curve)
 
 ## Blind analysis
 
-A blind analysis fixes the pipeline before the method names are known, so the weighting and the metric set cannot be chosen to favor a method expected to rank first. `beam.blind` masks the names and shuffles the rows; `beam.unblind` restores them. The ranking is unchanged, and the seal fingerprint is recorded in the manifest.
+A [blind analysis](../../docs/explanations/analysis-blinding.md) fixes the pipeline before the method names are known, so the weighting and the metric set cannot be chosen to favor a method expected to rank first. `beam.blind` masks the names and shuffles the rows; `beam.unblind` restores them. The ranking is unchanged, and the seal fingerprint is recorded in the manifest.
 
 ```{python}
 from beam import blind, unblind
@@ -326,7 +326,7 @@ print("blinding fingerprint:", blind_run.manifest["blinding"]["seal_sha256"][:12
 
 ## Pairwise superiority across the bands
 
-`rank_sensitivity` showed the band carries the ranking. `pairwise_superiority` reads the same fact pair by pair: how often one method outperforms another across the six bands on sMAPE. sMAPE declares no noise floor, so the equivalence band is zero here; any difference counts.
+`rank_sensitivity` showed the band carries the ranking. [`pairwise_superiority`](../../docs/explanations/pairwise-superiority.md) reads the same fact pair by pair: how often one method outperforms another across the six bands on sMAPE. sMAPE declares no noise floor, so the equivalence band is zero here; any difference counts.
 
 ```{python}
 from beam.mcda import pairwise_superiority
@@ -343,7 +343,7 @@ print(f"{top_method} outperforms {m4.method_names[runner]} on {n_top} of {pair.n
 
 With only six bands the sign test has little power, so few pairs reach significance, and the method with the highest standing outperforms the others on some bands and not on others. This is the band dependence the variance decomposition measured, now as a pairwise record: no method outperforms the field across every frequency.
 
-`pairwise_transitivity` asks whether those pairwise majorities agree with a single order. With the ranking moving across the bands, they need not.
+[`pairwise_transitivity`](../../docs/explanations/transitivity.md) asks whether those pairwise majorities agree with a single order. With the ranking moving across the bands, they need not.
 
 ```{python}
 from beam.mcda import pairwise_transitivity
@@ -358,7 +358,7 @@ The matrix below orders the methods by how many others they outperform. A transi
 plot.pairwise_majority(trans)
 ```
 
-`bayesian_sign_comparison` puts the same comparison on the probability scale: for each pair, the posterior probability that one method is practically better. With six bands the posterior is coarse, so most pairs stay inconclusive at the 0.95 threshold.
+[`bayesian_sign_comparison`](../../docs/explanations/bayesian-comparison.md) puts the same comparison on the probability scale: for each pair, the posterior probability that one method is practically better. With six bands the posterior is coarse, so most pairs stay inconclusive at the 0.95 threshold.
 
 ```{python}
 from beam.mcda import bayesian_sign_comparison

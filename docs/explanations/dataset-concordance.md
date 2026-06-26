@@ -12,7 +12,7 @@ Hence, beam does not estimate the number of datasets, akin to a power analysis, 
 
 ## Implementation
 
-For each dataset the methods are ranked on that dataset's tool by metric matrix, holding the weighting, aggregation and normalization the standard run carries. Each pair of per-dataset rankings is compared with Kendall tau-b, which handles the tied ranks that competition ranking produces. A dataset whose single-dataset matrix the pipeline cannot rank, for example one with a missing cell under the error policy, is dropped and noted in `evaluated_datasets`.
+For each dataset the methods are ranked on that dataset's tool by metric matrix, holding the [weighting](weighting-schemes.md), [aggregation](aggregation-methods.md) and [normalization](normalization-and-scales.md) the standard run carries. Each pair of per-dataset rankings is compared with Kendall tau-b, which handles the tied ranks that competition ranking produces. A dataset whose single-dataset matrix the pipeline cannot rank, for example one with a missing cell under the error policy, is dropped and noted in `evaluated_datasets`.
 
 As a result, the report provides:
 

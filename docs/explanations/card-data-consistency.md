@@ -4,7 +4,7 @@ A metric card is a formalization and hence, to some extent, a contract. It decla
 
 `beam.mcda.card_data_consistency` reads the raw scores against the card values, before any normalization, and reports where they disagree. It is the data-facing companion to the schema validation: `validate.py` checks that the requested aggregation is licit for the declared [scale type](measurement-theory.md), and this audit checks that the data honours the declared values.
 
-A recurring failure is a unit mismatch. A metric defined on the `[0, 1]` fraction scale is reported as a percentage, so the column runs to 100 against a card that declares the `[0, 1]` range. The column is still numeric and still interval, so it passes the schema validation and the scale-versus-method check. It then distorts the min-max normalization for that metric, which stretches its contribution to the composite, and the weighting that rests on it. The audit catches this on the raw scores: it reports the metric by name, counts how many tools fall outside the range, and gives the worst value, in one pass over every metric.
+A recurring failure is a unit mismatch. A metric defined on the `[0, 1]` fraction scale is reported as a percentage, so the column runs to 100 against a card that declares the `[0, 1]` range. The column is still numeric and still interval, so it passes the schema validation and the scale-versus-method check. It then distorts the min-max normalization for that metric, which stretches its contribution to the composite, and the [weighting](weighting-schemes.md) that rests on it. The audit catches this on the raw scores: it reports the metric by name, counts how many tools fall outside the range, and gives the worst value, in one pass over every metric.
 
 ## Checks
 
