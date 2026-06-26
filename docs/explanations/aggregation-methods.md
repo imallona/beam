@@ -1,6 +1,6 @@
 # Aggregation methods
 
-After normalizing the metrics results, beam holds a tool by metric matrix in the unit interval, with every column oriented so higher is better, plus a weight per metric. Aggregation turns that matrix into one preference score per tool, which then becomes a ranking. beam offers four aggregation methods on this page: SAW, TOPSIS, VIKOR and PROMETHEE II (COMET has its own page). They differ in what they compute and in what they assume about the scale of the normalized scores.
+After normalizing the metrics results, beam holds a tool by metric matrix in the unit interval, with every column oriented so higher is better, plus a weight per metric. Aggregation turns that matrix into one preference score per tool, which then becomes a ranking. beam offers four aggregation methods on this page: SAW, TOPSIS, VIKOR and PROMETHEE II ([COMET](comet.md) has its own page). They differ in what they compute and in what they assume about the scale of the normalized scores.
 
 beam wraps pymcdm for these methods rather than reimplementing their algorithms. Each beam function calls the matching pymcdm method with an identity normalization, so pymcdm runs on beam's already normalized matrix, and with every metric typed as positive because the matrix is oriented higher is better. beam keeps the shared input and output contract, applies the higher-is-better convention described below, and handles the corner cases (for example a single tool) that pymcdm does not.
 
@@ -34,7 +34,7 @@ Because the usual preference function looks only at the sign of each difference,
 
 ## Choosing an aggregation method
 
-SAW is the easiest choice when transparency matters and the metrics are on a comparable interval scale. TOPSIS and VIKOR both reward balance across metrics, with VIKOR adding explicit control for how much a single weak metric should count. PROMETHEE II is the most conservative about scale, since in its default form it reads only the order of the tools on each metric. Running more than one method and comparing the rankings is itself a sensitivity check: a recommendation that holds across methods is more reliable than one that depends on the choice of aggregation. 
+SAW is the easiest choice when transparency matters and the metrics are on a comparable interval scale. TOPSIS and VIKOR both reward balance across metrics, with VIKOR adding explicit control for how much a single weak metric should count. PROMETHEE II is the most conservative about scale, since in its default form it reads only the order of the tools on each metric. Running more than one method and comparing the rankings is itself a sensitivity check: a recommendation that holds across methods is more reliable than one that depends on the choice of aggregation. This is what [aggregation agreement](aggregation-agreement.md) measures. 
 
 The nature of the input metrics and their redundancy, e.g. speed or memory versus biologically-driven evaluation, and their (lack of) correlation, impact the aggregation method choice.
 

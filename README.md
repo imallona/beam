@@ -1,15 +1,6 @@
 # beam
 
-beam (benchmark evaluation and metrics) turns benchmark results into reusable, comparable rankings. It covers:
-
-- Metric cards: each metric is described once in a YAML card (what it measures, its scale, range, polarity, and which comparisons and aggregations are allowed), checked against a JSON Schema and mapped to STATO, UO and OBI terms where they exist.
-- Ranking: from a tool-by-metric table or a tool-by-dataset-by-metric tensor, normalize per card, weight (equal, entropy, standard deviation, CRITIC, MEREC, AHP) and aggregate (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET).
-- Sensitivity: how much the ranking depends on the choices, through SMAA weight sampling, leave-one-metric-out and leave-one-dataset-out, weight perturbation, aggregation agreement, and a variance decomposition that separates the data from the analyst's choices.
-- Statistical comparison: Friedman-Nemenyi critical-difference diagrams, the coverage-aware Skillings-Mack test for partial data, and pairwise superiority effect sizes.
-- Metric checks: convergent and discriminant validity, Cronbach reliability, dimensionality, reference levels (random baseline and noise floor), and a card-versus-data consistency audit.
-- Heterogeneity: how much of the ranking is method-by-dataset interaction, with mixed-effects models, Bradley-Terry trees, Plackett-Luce, and a cross-benchmark variance decomposition and network meta-analysis.
-- Missing data: explicit policies, never silent imputation.
-- Interfaces: a Python API, a command-line tool, a declarative `beam.yaml` runner, a self-contained HTML report with a run manifest, and an R package.
+beam  is a benchmark evaluation and metrics suite. For benchmarks as in method comparisons, mainly in bioinformatics.
 
 [Documentation](https://imallona.github.io/beam/): how-tos, vignettes, and explanations.
 

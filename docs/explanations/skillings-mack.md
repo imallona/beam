@@ -6,7 +6,7 @@ The Skillings-Mack (1981) test fills the gap with a Friedman-type statistic that
 
 ## What the test does
 
-The input is the same tool by dataset matrix the Friedman test takes, with NaN allowed. The test answers the same global question, "are the methods separable across the datasets, or does the apparent ranking sit within noise". It does not give pairwise comparisons; the Nemenyi post-hoc needs the complete-matrix construction it generalizes.
+The input is the same tool by dataset matrix the Friedman test takes, with NaN allowed. The test answers the same global question, "are the methods separable across the datasets, or does the apparent ranking fall within noise". It does not give pairwise comparisons; the Nemenyi post-hoc needs the complete-matrix construction it generalizes.
 
 ## Construction
 
@@ -51,9 +51,9 @@ There is one caveat. scipy's `friedmanchisquare` applies a tie correction that d
 Two consistent strategies:
 
 - Restrict the matrix to the complete block of methods and datasets where every method ran, and call `critical_difference`. This gives a global test and the Nemenyi cliques but drops every dataset where any method failed to run. Use it when the complete block is large enough.
-- Keep every observed score and call `skillings_mack` on the partial matrix. This gives a global test only, with no pairwise cliques. Use it when restricting to the complete block throws away most of the data.
+- Keep every observed score and call `skillings_mack` on the partial matrix. This gives a global test only, with no pairwise cliques. Use it when restricting to the complete block drops most of the data.
 
-The mixed-effects model in `beam.heterogeneity.mixed_effects` runs on partial data too, and answers a different question: how much of the score variance is due to the dataset rather than the method. Skillings-Mack tests the null that the methods are equivalent across the observed blocks; the mixed-effects model splits the variance assuming the methods do differ.
+The [mixed-effects model](heterogeneity-mixed-effects.md) in `beam.heterogeneity.mixed_effects` runs on partial data too, and answers a different question: how much of the score variance is due to the dataset rather than the method. Skillings-Mack tests the null that the methods are equivalent across the observed blocks; the mixed-effects model splits the variance assuming the methods do differ.
 
 ## References
 

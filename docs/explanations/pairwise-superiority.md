@@ -1,12 +1,12 @@
 # Comparing two methods at a time
 
-The critical-difference diagram says which methods differ beyond chance. It does not say by how much, or how often one method outperforms another. Its mean-rank post-hoc also depends on the whole pool: add or drop a method and two others can change from "different" to "the same" (Benavoli, Corani and Mangili 2016). `beam.mcda.pairwise_superiority` answers the missing question with an effect size that does not depend on the pool.
+The [critical-difference diagram](comparing-methods-across-datasets.md) says which methods differ beyond chance. It does not say by how much, or how often one method outperforms another. Its mean-rank post-hoc also depends on the whole pool: add or drop a method and two others can change from "different" to "the same" (Benavoli, Corani and Mangili 2016). `beam.mcda.pairwise_superiority` answers the missing question with an effect size that does not depend on the pool.
 
 ## How it works
 
 For a pair of methods, look at the datasets they share. On each one, the method with the higher score outperforms the other on that dataset, for that metric. Over the datasets this gives three numbers: how often A outperforms B, how often B outperforms A, and how often the two are equivalent.
 
-Two methods are equivalent on a dataset when their scores differ by no more than the region of practical equivalence, the ROPE. Set the ROPE to the metric's noise floor (`comparability.noise_floor`), the smallest difference the card calls interpretable, and one method counts as outperforming the other only when the difference clears that floor. With a ROPE of zero, any non-zero difference counts.
+Two methods are equivalent on a dataset when their scores differ by no more than the region of practical equivalence, the ROPE. Set the ROPE to the metric's [noise floor](reference-levels.md) (`comparability.noise_floor`), the smallest difference the card calls interpretable, and one method counts as outperforming the other only when the difference clears that floor. With a ROPE of zero, any non-zero difference counts.
 
 The probability of superiority of A over B is the fraction of shared datasets on which A outperforms B. It is a common-language effect size, the standard name for it (Grissom 1994): how often A scores higher than B on a dataset like these. A sign test on the decisive datasets, equivalences dropped, says whether the difference is more than chance.
 
@@ -28,15 +28,15 @@ report.equivalent_pairs      # pairs the sign test cannot tell apart
 
 ## On real data
 
-On the Duo 2018 ARI scores, with the ARI noise floor of 0.01 as the ROPE, SC3 has the highest standing. But most method pairs are practically equivalent: the sign test cannot separate more than half of them, because the differences across the twelve datasets are often within the noise floor. This agrees with the critical-difference reading, where most methods sit in overlapping cliques, and states it as an effect size: even the two leading methods are within the floor on most datasets rather than one clearly ahead of the other.
+On the [Duo 2018](../../examples/duo2018/duo2018.qmd) Adjusted Rand Index (ARI) scores, with the ARI noise floor of 0.01 as the ROPE, SC3 has the highest standing. But most method pairs are practically equivalent: the sign test cannot separate more than half of them, because the differences across the twelve datasets are often within the noise floor. This agrees with the critical-difference reading, where most methods sit in overlapping cliques, and states it as an effect size: even the two leading methods are within the floor on most datasets rather than one clearly ahead of the other.
 
 ## How it relates to the other checks
 
 `critical_difference` tests significance across all methods at once. `noise_floor_separation` reads the aggregate scores, one value per method, and flags pairs no metric separates above the floor. `pairwise_superiority` works across the datasets, pair by pair, and reports an effect size with the noise floor as the equivalence band. Significance, aggregate separation, and per-dataset effect size are three readings of the same question, and they are stronger together.
 
-## Limits
+## Limitations
 
-The probability of superiority describes these datasets, not a population of datasets. The sign test drops equivalences, so a pair that is equivalent on most datasets has few decisive ones and a weak test, which is the honest reading when the methods are close. The comparison is paired by dataset, so it needs the same datasets for both methods; a pair with little overlap is compared on whatever they share, and the count says how many that was.
+The probability of superiority describes these datasets, not a population of datasets. The sign test drops equivalences, so a pair that is equivalent on most datasets has few decisive ones and a weak test, which is the expected reading when the methods are close. The comparison is paired by dataset, so it needs the same datasets for both methods; a pair with little overlap is compared on whatever they share, and the count says how many that was.
 
 ## References
 

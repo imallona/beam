@@ -1,6 +1,6 @@
 # Comparing methods across datasets: Friedman and Nemenyi
 
-The MCDA builds a metric composite to give a rank and consolidated score to each method. It does not say whether that ranking is real. If the methods are close and the influence of the datasets is large, the order at the top can be an artifact of which datasets happened to be included. Demsar (2006) gives the standard answer for this setting: rank the methods on each dataset, then test the ranks. beam implements it in `beam.mcda.critical_difference`.
+The [multi-criteria decision analysis (MCDA) aggregation](aggregation-methods.md) builds a metric composite to give a rank and consolidated score to each method. It does not say whether that ranking is real. If the methods are close and the influence of the datasets is large, the order at the top can be an artifact of which datasets happened to be included. Demsar (2006) gives the standard answer for this setting: rank the methods on each dataset, then test the ranks. beam implements it in `beam.mcda.critical_difference`.
 
 ## Implementation
 

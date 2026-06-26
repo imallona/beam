@@ -1,12 +1,12 @@
 # Weighting schemes
 
-After every metric is normalized to the unit interval, the MCDA pipeline combines the columns into one score per tool. The weights decide how much each metric counts. The schemes split into two families. Objective schemes read the weights off the score matrix itself, so two analysts handed the same matrix get the same weights. The subjective scheme, AHP, asks the analyst for pairwise judgments instead, so the weights carry an explicit opinion about which metrics matter.
+After every metric is [normalized](normalization-and-scales.md) to the unit interval, the multi-criteria decision analysis (MCDA) pipeline [combines the columns](aggregation-methods.md) into one score per tool. The weights decide how much each metric counts. The schemes split into two families. Objective schemes read the weights off the score matrix itself, so two analysts handed the same matrix get the same weights. The subjective scheme, AHP, asks the analyst for pairwise judgments instead, so the weights carry an explicit opinion about which metrics matter.
 
 ## The objective schemes
 
 All objective schemes take the same normalized tool by metric matrix and return a non-negative weight vector that sums to 1. They differ in what they treat as informative.
 
-Equal weights give every metric the same share. This is the honest default when there is no reason to prefer one metric over another, and it is the baseline the other schemes are measured against. It ignores the data.
+Equal weights give every metric the same share. This is the default when there is no reason to prefer one metric over another, and it is the baseline the other schemes are measured against. It ignores the data.
 
 Entropy weights, in the Shannon sense, give a metric more weight when its scores spread out across the tools and less weight when the tools score alike. A metric on which every tool scores the same cannot separate the tools, so it earns almost no weight. Entropy first turns each column into a probability mass, so the weights do not change if a single column is rescaled by a positive constant. Use it when you want the data to decide and you want the result to be unaffected by the units of any one metric.
 
@@ -22,11 +22,16 @@ AHP, the Analytic Hierarchy Process, does not read the score matrix. It asks the
 
 Because the judgments are made one pair at a time, they can contradict each other. If A is rated twice as important as B, and B twice as important as C, then consistency would put A four times as important as C, but the analyst might write something else. AHP measures this with a consistency ratio. A perfectly consistent matrix has a ratio of 0. Saaty's rule is that a ratio above 0.1 means the judgments are too inconsistent to trust and should be revised. beam returns the consistency ratio next to the weights and warns, or raises on request, when it goes above 0.1.
 
-Use AHP when the choice of weights is a stakeholder decision rather than a property of the data, for example when a benchmark must reflect that accuracy matters more than runtime by an agreed amount. Its cost is that someone has to supply and defend the pairwise judgments, and the consistency check is what keeps those judgments honest.
+Use AHP when the choice of weights is a stakeholder decision rather than a property of the data, for example when a benchmark must reflect that accuracy matters more than runtime by an agreed amount. Its cost is that someone has to supply and defend the pairwise judgments, and the consistency check is what keeps those judgments coherent.
 
 ## Choosing a scheme
 
 Start with equal weights as the baseline. Move to an objective scheme when you want the data to set the weights: entropy or standard deviation for plain spread, CRITIC when metrics may be redundant, MEREC when you care about each metric's marginal effect. Pick AHP only when the weights encode a deliberate value judgment that the objective schemes cannot represent, and report the consistency ratio so the judgment can be audited.
+
+## See also
+
+- [Rank sensitivity](rank-sensitivity.md)
+- [Specification curve](specification-curve.md)
 
 ## References
 

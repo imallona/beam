@@ -2,7 +2,7 @@
 
 beam offers five aggregations: SAW, TOPSIS, VIKOR, PROMETHEE II and COMET. Each combines the per-metric scores into a composite under each aggregation method own assumptions, and the headline ranking commits to one of them  The question tat follows is whether that commitment changes the evaluation results. `beam.mcda.aggregation_agreement` addresses this by re-ranking the same (normalized) input metrics matrix under each aggregation, holding the weighting fixed. Then, the agreement of the ranks is reported.
 
-This can be read as a diagnostic of choice sensitivity, complementing beam's leave-one-metric-out and leave-one-dataset-out functions and weight variation via SMAA. This aggregation agreement procedure evaluates the remaining degree of freedom to choose a final rank.
+This can be read as a diagnostic of choice sensitivity, complementing beam's leave-one-metric-out and leave-one-dataset-out functions and weight variation via stochastic multicriteria acceptability analysis (SMAA). This aggregation agreement procedure evaluates the remaining degree of freedom to choose a final rank.
 
 ## Method
 
@@ -10,13 +10,13 @@ Normalization and weighting happen before aggregation and do not depend on the a
 
 Agreement between two rankings is measured with the Kendall tau-b coefficient. tau-b counts the concordant and discordant pairs of tools and corrects for ties, which matters here because beam uses competition ranking, so ties are common. tau-b is 1 for identical orderings, -1 for exact reversals, and near 0 when the two methods order the tools randomly. The report plots the full method-by-method tau matrix and a single mean of its off-diagonal entries as a summary.
 
-The report also gives a consensus ranking, the ranking of the per-method mean ranks, and a diagnostic flag reporting whether the top ranked method is stable across aggregations.  The per-tool smallest and largest rank across the methods are the rank span drawn in the consensus panel of the funky heatmap.
+The report also gives a consensus ranking, the ranking of the per-method mean ranks, and a diagnostic flag reporting whether the top ranked method is stable across aggregations.  The per-tool smallest and largest rank across the methods are the rank span drawn in the consensus panel of the [funky heatmap](funky-heatmaps-and-robustness.md).
 
 ## Interpretation
 
 A high mean tau means the recommendation is stable under the aggregation choice: whichever method a reader prefers, they reach about the same order. A low mean tau means the aggregation rule is itself deciding the order, and a ranking presented under one method should be read with that in mind.
 
-The Duo 2018 clustering benchmark is a worked example. On the three-metric pooled matrix (ARI, runtime, Shannon entropy difference) under equal weights, the five aggregations agree at a mean pairwise tau-b of 0.65, and Seurat is the unanimous top under every one of them. So the top recommendation does not depend on the aggregation choice. The agreement is not complete, though. PROMETHEE II correlates only 0.34 to 0.54 with the others, so the ordering in the middle of the ranking depends on which method is used.
+The [Duo 2018 clustering benchmark](../../examples/duo2018/duo2018.qmd) is a worked example. On the three-metric pooled matrix (the Adjusted Rand Index, runtime, Shannon entropy difference) under equal weights, the five aggregations agree at a mean pairwise tau-b of 0.65, and Seurat is the unanimous top under every one of them. So the top recommendation does not depend on the aggregation choice. The agreement is not complete, though. PROMETHEE II correlates only 0.34 to 0.54 with the others, so the ordering in the middle of the ranking depends on which method is used.
 
 ## How to use it
 

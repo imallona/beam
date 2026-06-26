@@ -2,11 +2,11 @@
 
 The per-card coverage table in [ontology mappings](ontology-mappings.md) lists the metrics that carry no STATO term today. This document drafts the upstream proposals for the gaps beam cares about for the long run. They can be filed against the STATO issue tracker at https://github.com/ISA-tools/stato/issues rather than filled by a beam-private IRI. Each proposal gives a label, a definition, a likely parent class, and the beam card it comes from. The proposals ask STATO to assign the identifier; beam does not mint one.
 
-These cover the Group 1 gaps only. The operational measurands (runtime, peak_memory) and the toy transportation metrics (cost, speed, co2) are anchored by UO where a unit exists and are out of STATO scope, so they are not proposed here.
+These cover the Group 1 gaps only. The operational measurands (runtime, peak_memory) and the toy [transportation metrics](../../examples/transportation/transportation.qmd) (cost, speed, co2) are anchored by UO where a unit exists and are out of STATO scope, so they are not proposed here.
 
 ## How to file one
 
-Open an issue on the STATO tracker with the proposed label, the definition, and the parent class named below. Attach the primary reference. When STATO assigns an IRI, write it into the matching card under `mappings.stato`, regenerate the OWL artefact with `python -m beam.owl.generate`, and update the coverage table in ontology-mappings.md.
+Open an issue on the STATO tracker with the proposed label, the definition, and the parent class named below. Attach the primary reference. When STATO assigns an IRI, write it into the matching card under `mappings.stato`, regenerate the OWL artefact with `python -m beam.owl.generate`, and update the coverage table in [ontology mappings](ontology-mappings.md).
 
 ## Proposals
 

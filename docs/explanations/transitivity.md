@@ -57,9 +57,9 @@ trans.coefficient_of_consistence  # Kendall's coefficient, or None when pairs ar
 
 ## On real data
 
-On the Duo 2018 ARI scores, with the ARI noise floor of 0.01 as the equivalence
+On the [Duo 2018](../../examples/duo2018/duo2018.qmd) Adjusted Rand Index (ARI) scores, with the ARI noise floor of 0.01 as the equivalence
 band, SC3 is preferred to every other method by pairwise majority, the same method
-the standing score, the marginal means and the Bradley-Terry ranking pick out. Even
+the standing score, the marginal means and the [Bradley-Terry ranking](heterogeneity-bradley-terry.md) pick out. Even
 so the relation is not transitive: one circular triad sits among the other methods,
 so no single order agrees with every pairwise majority. The cycle is among methods
 that the critical-difference diagram and the pairwise effect sizes already place in
@@ -73,15 +73,15 @@ what separates a real cycle from one made of differences too small to interpret.
 
 ## How it relates to the other checks
 
-`critical_difference` tests whether the methods are separable across datasets on one
-metric. `pairwise_superiority` reports, pair by pair, how often one outperforms the
+[`critical_difference`](comparing-methods-across-datasets.md) tests whether the methods are separable across datasets on one
+metric. [`pairwise_superiority`](pairwise-superiority.md) reports, pair by pair, how often one outperforms the
 other. `pairwise_transitivity` reads that same pairwise relation and asks the prior
 question: does a single ranking even make sense here, or do the pairwise results
-contradict each other. `aggregation_agreement` shows that the aggregation rules
+contradict each other. [`aggregation_agreement`](aggregation-agreement.md) shows that the aggregation rules
 disagree; a cycle is one reason they can. Each check answers a different question,
 so they are best read together.
 
-## Limits
+## Limitations
 
 The relation describes these datasets, not a population of datasets. Transitivity is
 a property of the majority counts, so a relation with many tied pairs gives a partial

@@ -1,6 +1,6 @@
 # Analysis blinding
 
-If a benchmarker can see which method is which while choosing the weighting, the aggregation and the metric set, those choices can shift toward a preferred method. This can happen via unconscious biases and without intent. Different choices give different rankings, and it is easy to settle on the one that fits an expected result (Gelman and Loken 2013; Simmons, Nelson and Simonsohn 2011). One way to avoid it is blind analysis: run the analysis on methods whose labels are hidden, then reveal the labels (MacCoun and Perlmutter 2015; Klein and Roodman 2005).
+If a benchmarker can see which method is which while choosing the [weighting](weighting-schemes.md), the [aggregation](aggregation-methods.md) and the metric set, those choices can shift toward a preferred method. This can happen via unconscious biases and without intent. Different choices give different rankings, and it is easy to settle on the one that fits an expected result (Gelman and Loken 2013; Simmons, Nelson and Simonsohn 2011). One way to avoid it is blind analysis: run the analysis on methods whose labels are hidden, then reveal the labels (MacCoun and Perlmutter 2015; Klein and Roodman 2005).
 
 `beam.blind` applies this to a score table. It replaces the tool names with opaque labels and shuffles the rows under a seed, so neither the names nor the order carry the methods' identity. The analyst runs the full beam pipeline on the blinded scores, fixes the configuration, then calls `beam.unblind` with the seal to restore the true names.
 
@@ -40,6 +40,11 @@ beam blind scores.csv --out blinded.csv --seal seal.json --seed 7
 beam rank blinded.csv --weights entropy --method topsis --out result.json
 beam unblind result.json --seal seal.json --out result.unblinded.json
 ```
+
+## See also
+
+- [Specification curve](specification-curve.md)
+- [Rank sensitivity](rank-sensitivity.md)
 
 ## References
 

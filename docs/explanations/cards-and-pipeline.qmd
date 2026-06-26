@@ -1,8 +1,8 @@
-# What the MCDA pipeline reads from the metric cards
+# What the multi-criteria decision analysis (MCDA) pipeline reads from the metric cards
 
 A metric card declares fields covering identity, kind, inputs, output, semantics, comparability, implementations, examples, and provenance.
 
-For why the normalization strategy depends on the measurement scale of the metric, and where plain min-max scaling fails, see the page on normalization and scales.
+For why the normalization strategy depends on the [measurement scale](measurement-theory.md) of the metric, and where plain min-max scaling fails, see the page on [normalization and scales](normalization-and-scales.md).
 
 ## Data flow
 
@@ -36,13 +36,13 @@ Solid edges mark fields read by the current pipeline. Dashed edges describe decl
 
 - `polarity`: passed to `normalize`, which inverts columns marked `lower_is_better` and rescales each column to [0, 1]. The output matrix is oriented so higher values mean better performance for every column.
 - `range_lower`, `range_upper`: when both bounds are declared on a card, `run_from_registry` passes them to `normalize`. The min-max and baseline-relative strategies use the theoretical range rather than the empirical extrema, so two benchmarks that use the same metric on different score subsets produce comparable rescaled values. Observations outside the declared range raise, whatever the strategy.
-- `comparability.recommended_normalization`: `run_from_registry` reads this per metric and rescales that column with the named strategy, defaulting to `min_max`. The options are `min_max`, `log_min_max`, `rank`, `zscore`, and `baseline_relative`. The choice depends on the measurement scale of the metric; see the page on normalization and scales. Runtime and peak memory use `log_min_max`; the Adjusted Rand Index uses `baseline_relative`.
+- `comparability.recommended_normalization`: `run_from_registry` reads this per metric and rescales that column with the named strategy, defaulting to `min_max`. The options are `min_max`, `log_min_max`, `rank`, `zscore`, and `baseline_relative`. The choice depends on the measurement scale of the metric; see the page on [normalization and scales](normalization-and-scales.md). Runtime and peak memory use `log_min_max`; the Adjusted Rand Index uses `baseline_relative`.
 - `semantics.score_of_random_baseline`: the chance-level value of a metric, read by the `baseline_relative` strategy so a method no better than chance maps to 0 rather than the column midpoint.
 - `scale_type`: `validate_for_aggregation` refuses SAW or TOPSIS on columns whose declared scale type is `nominal` or `ordinal`. Only `interval` and `ratio` columns pass.
 - `allowed_transformations`: `validate_for_aggregation` checks that the card permits the transform the chosen strategy applies. Min-max and baseline-relative need `affine` or `min_max`; `log_min_max` needs `log`; `rank` needs `rank`; `zscore` needs `z_score` or `affine`. This replaces the earlier blanket check for `affine`, so a ratio metric normalized by `log_min_max` is validated against `log` rather than against an `affine` grant it does not need.
 - `comparability.recommended_aggregation_across_datasets`: `aggregate_across_datasets` reads this when reducing a tool by dataset matrix to a tool vector for one metric. Ratio metrics whose values span orders of magnitude (runtime, peak memory) declare `geometric_mean` per Smith 1988 ([10.1145/63039.63043](https://doi.org/10.1145/63039.63043)); bounded interval and ratio metrics declare `arithmetic_mean`.
 
-`run_from_registry` also runs a guard after it picks the strategies. For any column still using min-max, it warns when a declared bound is missing (the scale rests on the data and shifts when the method set changes) and when the column is heavy-tailed (one outlier dominates the rescale). The warnings travel on the `Result` and do not block the run.
+`run_from_registry` also runs a guard after it picks the strategies. For any column still using min-max, it warns when a declared bound is missing (the scale rests on the data and shifts when the method set changes) and when the column is heavy-tailed (one outlier dominates the rescale). The warnings are attached to the `Result` and do not block the run.
 
 ## Fields declared but not enforced
 
