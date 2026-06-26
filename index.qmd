@@ -3,33 +3,29 @@ title: "beam"
 subtitle: "Benchmark Evaluation and Metrics"
 ---
 
-beam is a metric formalization layer for bioinformatics benchmarks. It ships metric cards (YAML, JSON Schema) with measurement-theory grounded metadata, a multi-criteria decision pipeline with sensitivity primitives, and method-dataset heterogeneity diagnostics.
+beam is a metric formalization layer for method comparisons and benchmarks in bioinformatics and beyond. It standardizes performance metrics in metric cards with measurement-theory grounded metadata. It also provides multi-criteria decision making features, and evaluates the driving forces of method-dataset heterogeneity.
 
-The metric cards are mapped to STATO, UO, OBI and HuggingFace evaluate where external terms exist; the OWL release artefact at [docs/beam.owl.ttl](docs/beam.owl.ttl) is regenerated from the cards on each release.
+The metric cards are mapped to STATO, UO, OBI and HuggingFace evaluate where available. The OWL is available at [docs/beam.owl.ttl](docs/beam.owl.ttl) and regenerated from the cards on each release.
 
 ## Where to start
 
-- [Quick start](docs/tutorials/quickstart.md). The five-line path from a CSV to an HTML report.
-- [How to run from beam.yaml](docs/how-to/run-from-beam-yaml.md). The declarative runner that produces a reproducible artefact.
+- [Quick start](docs/tutorials/quickstart.md). The five-line path from a CSV to an metrics evaluation HTML report.
+- [How to run from beam.yaml](docs/how-to/run-from-beam-yaml.md). The declarative beam specification.
 - [How to use beam from R](docs/how-to/use-beam-from-r.md). The R interface (reticulate-backed; same metric cards and pipeline).
-- [Cards and pipeline](docs/explanations/cards-and-pipeline.qmd). What a metric card carries and how the pipeline consumes it.
-- [Comparing methods across datasets](docs/explanations/comparing-methods-across-datasets.md). Friedman-Nemenyi and Skillings-Mack.
+- [Cards and pipeline](docs/explanations/cards-and-pipeline.qmd). What a metric card encodes and how is it processed.
+- [Comparing methods across datasets](docs/explanations/comparing-methods-across-datasets.md). Diagnostics on method-dataset performance variability.
 
 ## Worked vignettes
 
-Each vignette doubles as a CI integration test (rendered on every push):
-
-- [Duo 2018 clustering](examples/duo2018/duo2018.qmd): the canonical walkthrough, 14 methods on 12 single-cell RNA-seq datasets.
+- [Duo 2018 clustering](examples/duo2018/duo2018.qmd): scRNA-seq clustering with 14 methods on 12 datasets.
 - [Simulated scenarios](examples/scenarios/scenarios.qmd): consistency checks against documented ground truth.
 - [Transportation modes](examples/transportation/transportation.qmd): cross-domain example with partial coverage.
 - [M4 forecasting](examples/m4/m4.qmd): 25 methods on six frequency bands.
 - [OpenProblems batch integration](examples/openproblems/openproblems.qmd): MCDA contrasted with the platform's own mean-of-scores rule, plus a Bradley-Terry tree on 50 spatial datasets.
-- [Cross-benchmark meta-analysis](examples/cross_benchmark/cross_benchmark.qmd): four single-cell integration benchmarks under one consistent rule.
-- [LLM cell type annotation](examples/cell_type_annotation/cell_type_annotation.qmd): GPT-4 and GPT-3.5 against the classical annotators on the Hou and Ji (2024) benchmark, then a cross-benchmark comparison across four LLM annotation benchmarks (GPTCelltype, DeepCellSeek, AnnDictionary, SOAR).
+- [Cross-benchmark meta-analysis](examples/cross_benchmark/cross_benchmark.qmd): consistency across independently published scRNA-seq integration benchmarks.
+- [LLM cell type annotation](examples/cell_type_annotation/cell_type_annotation.qmd): GPT-4 and GPT-3.5, GPTCelltype etc versus classical annotation methods.
 
-## Generated reports
-
-Every run can be written to one self-contained HTML file with `beam.report`. These are the reports beam produces for each bundled dataset, the artefact a command-line or CSV user gets, built in CI and not authored:
+We also provide the standard reports for some of these comparisons.
 
 - [Duo 2018 clustering](docs/reports/duo2018.html)
 - [M4 forecasting](docs/reports/m4.html)

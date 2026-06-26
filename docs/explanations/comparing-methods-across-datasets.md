@@ -1,8 +1,8 @@
 # Comparing methods across datasets: Friedman and Nemenyi
 
-The MCDA composite gives one ranking of the methods. It does not say whether that ranking is real. If the methods are close and the datasets disagree, the order at the top can be an artifact of which datasets happened to be included. Demsar (2006) gives the standard answer for this setting: rank the methods on each dataset, then test the ranks. beam implements it in `beam.mcda.critical_difference`.
+The MCDA builds a metric composite to give a rank and consolidated score to each method. It does not say whether that ranking is real. If the methods are close and the influence of the datasets is large, the order at the top can be an artifact of which datasets happened to be included. Demsar (2006) gives the standard answer for this setting: rank the methods on each dataset, then test the ranks. beam implements it in `beam.mcda.critical_difference`.
 
-## What the test does
+## Implementation
 
 The input is a tool by dataset matrix for one metric or for an MCDA composite. On each dataset the methods are ranked, with 1 for the best. Each method then has an average rank across the datasets. The Friedman test asks whether these average ranks differ more than chance would produce if all methods were equivalent. A small p-value means at least one method is consistently ahead or behind.
 
@@ -26,7 +26,7 @@ The test needs at least three methods and at least two datasets. It adds to the 
 
 When the matrix has missing cells the Friedman ranks are no longer defined. The Skillings-Mack (1981) test generalizes the global statistic to incomplete blocks at the cost of the Nemenyi cliques; see [Skillings-Mack: coverage-aware Friedman](skillings-mack.md).
 
-## A caveat
+## Limitations
 
 The Nemenyi post-hoc compares every pair of methods and is conservative. When the question is whether one new method beats a fixed set of baselines, comparing to a single control with the Bonferroni-Dunn correction has more power, as Demsar notes. beam currently implements the all-pairs Nemenyi case.
 

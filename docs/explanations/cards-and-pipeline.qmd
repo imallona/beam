@@ -1,6 +1,6 @@
 # What the MCDA pipeline reads from the metric cards
 
-A metric card declares fields covering identity, kind, inputs, output, semantics, comparability, implementations, examples, and provenance. The pipeline binds to a growing subset of these. In the current release the ontology-aware entry `run_from_registry` reads per-metric `polarity`, declared `range` bounds, declared `scale_type`, the set of `allowed_transformations`, the `comparability.recommended_normalization` strategy, and `semantics.score_of_random_baseline`. The cross-dataset aggregation primitive reads `comparability.recommended_aggregation_across_datasets`. The remaining fields are kept as metadata and are not enforced.
+A metric card declares fields covering identity, kind, inputs, output, semantics, comparability, implementations, examples, and provenance.
 
 For why the normalization strategy depends on the measurement scale of the metric, and where plain min-max scaling fails, see the page on normalization and scales.
 
@@ -30,7 +30,7 @@ flowchart LR
     CD -->|per-tool vector| S
 ```
 
-Solid edges mark fields read by the current pipeline. Dashed edges mark fields declared in the metric cards but not yet read.
+Solid edges mark fields read by the current pipeline. Dashed edges describe declared fields, but not yet used.
 
 ## Fields read
 
@@ -49,12 +49,4 @@ Solid edges mark fields read by the current pipeline. Dashed edges mark fields d
 - `meaningful_zero`: declared on every card; no current reader.
 - `uncertainty_model`: declared on derived metrics; the pipeline does not propagate uncertainty through aggregation.
 - `monotonic`: declared on every card; no current reader.
-- `comparability.comparable_within` and free-form `aggregation_rules` notes: declared on every card; read only by humans.
-
-## Planned enforcement
-
-1. Use the declared `uncertainty_model` to propagate standard errors through normalization and aggregation, so the composite carries a usable error bar.
-2. Enforce `comparability.comparable_within` to refuse cross-task aggregation when no card permits it.
-3. Turn free-form `aggregation_rules` notes into machine-readable constraints over time; the `recommended_aggregation_across_datasets` enum is the first such migration.
-
-As each item lands, the matching edge in the diagram moves from dashed to solid.
+- `comparability.comparable_within` and free-form `aggregation_rules` notes: documentation to be read by humans.
