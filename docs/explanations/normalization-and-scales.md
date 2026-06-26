@@ -6,8 +6,8 @@ The multi-criteria decision analysis (MCDA) procedure rescales every metric to t
 
 Min-max scaling maps the smallest value in a column to 0 and the largest to 1. It is simple and it keeps the order of the methods. It has three failure modes that matter for benchmarks.
 
-1. One outlier sets the scale. Runtime and peak memory span orders of magnitude. If one method is a hundred times slower than the rest, it sets the top of the range, and every other method maps to a value near the same end. The real speed differences among the good methods then disappear, and the ranking turns on whichever metric still has spread.
-2. A meaningful zero is lost. The Adjusted Rand Index is corrected for chance, so a value of 0 means no better than random. Min-max against the declared range of -1 to 1 maps that 0 to 0.5, half way to the best possible score. A method that learned nothing then looks average, and it can outrank a method that is genuinely, if modestly, better once a second metric enters the sum.
+1. One outlier sets the scale. Runtime and peak memory span orders of magnitude. If one method is a hundred times slower than the rest, it sets the top of the range, and every other method maps to a value near the same end. The speed differences among the fast methods then disappear, and the ranking turns on whichever metric still has spread.
+2. A meaningful zero is lost. The Adjusted Rand Index is corrected for chance, so a value of 0 means no better than random. Min-max against the declared range of -1 to 1 maps that 0 to 0.5, half way to the best possible score. A method scoring at chance then looks average, and it can outrank a method that is modestly better once a second metric enters the sum.
 3. an empirical bound is not stable. Runtime has no upper limit, so min-max uses the largest observed value as the top of the scale. Add a new method to the table and the scale shifts, which changes the normalized score of every method already there. A leaderboard that grows over time is not comparable from one version to the next.
 
 ## Measurement theory
@@ -22,7 +22,7 @@ Min-max subtracts the minimum, so it is an affine transform with a nonzero offse
 
 ## On affines
 
-Each metric card lists the transforms allowed on it. Runtime and peak memory list `affine` among them. Strictly, a pure ratio scale allows only multiplication by a positive constant, not the full affine family, so one could argue `affine` overstates what is meaning-preserving on these cards. We keep `affine` on the cards for two reasons. It records that a unit change, such as seconds to milliseconds, is a sensible operation, and removing it would block anyone who picks min-max for a ratio metric on purpose. Rather than forbid min-max on ratio metrics, the card steers the pipeline to a better default, and the guard warns when min-max is used on a heavy-tailed column. The decision stays with the analyst, and the card makes the safe choice the easy one.
+Each metric card lists the transforms allowed on it. Runtime and peak memory list `affine` among them. Strictly, a pure ratio scale allows only multiplication by a positive constant, not the full affine family, so one could argue `affine` overstates what is meaning-preserving on these cards. We keep `affine` on the cards for two reasons. It records that a unit change, such as seconds to milliseconds, is valid, and removing it would block anyone who picks min-max for a ratio metric on purpose. The card defaults to a normalization that keeps ratio structure, and the guard warns when min-max is used on a heavy-tailed column. The decision stays with the analyst.
 
 ## The six strategies
 
@@ -30,10 +30,10 @@ Each metric card declares `comparability.recommended_normalization`. The pipelin
 
 - `min_max` is the default. Use it for bounded metrics whose declared range is the natural scale, such as normalized mutual information (NMI) in 0 to 1.
 - `log_min_max` takes the logarithm first, then min-max. It keeps the multiplicative structure of a ratio metric, so a single slow method no longer compresses the others. Runtime and peak memory use it. It needs strictly positive values.
-- `rank` maps the position within the column to the unit interval. It drops the size of the gaps between methods but is immune to outliers and free of any scale assumption.
+- `rank` maps the position within the column to the unit interval. It drops the size of the gaps between methods but resists outliers and makes no scale assumption.
 - `zscore` standardizes the column and passes it through the logistic function, so the result stays in the open unit interval. The mean method maps to 0.5 and an outlier is compressed smoothly rather than setting the scale.
 - `baseline_relative` rescales against a declared chance score. A method no better than chance maps to 0 instead of the column midpoint. The Adjusted Rand Index uses it, with a chance baseline of 0. It is defined for higher-is-better metrics.
-- `target_relative` is for a metric whose ideal is a fixed value, not the highest or the lowest score. The calibration slope is the example: a value of 1 means the predicted risks are correctly scaled, below 1 means they are too extreme, above 1 means they are too moderate. The strategy takes the absolute deviation from the target and min-max scales it with flipped polarity, so the method nearest the target maps to 1 and the farthest to 0. It needs the card to declare `semantics.target`.
+- `target_relative` is for a metric whose ideal is a fixed value, not the highest or the lowest score. The calibration slope is the example: a value of 1 means the predicted risks match the target, below 1 means they are too extreme, above 1 means they are too moderate. The strategy takes the absolute deviation from the target and min-max scales it with flipped polarity, so the method nearest the target maps to 1 and the farthest to 0. It needs the card to declare `semantics.target`.
 
 ## Metrics whose ideal is a fixed point
 
@@ -47,7 +47,7 @@ The pipeline runs a check after it picks the strategies. For any column that sti
 
 ## Examples
 
-The `beam.scenarios` module ships two cases that make the failure concrete. In the heavy-tail case, plain min-max ranks a slower method first because a runtime outlier hides the speed ladder, while `log_min_max` ranks the fastest good method first. In the chance-baseline case, plain min-max ranks a random-level method above a better one, while `baseline_relative` puts back the correct order. Both are used as regression tests, so the contrast stays true as the code changes.
+The `beam.scenarios` module ships two cases that make the failure concrete. In the heavy-tail case, plain min-max ranks a slower method first because a runtime outlier hides the speed ladder, while `log_min_max` ranks the fastest method first. In the chance-baseline case, plain min-max ranks a random-level method above one with a higher raw score, while `baseline_relative` puts back the correct order. Both are used as regression tests, so the contrast stays true as the code changes.
 
 ## See also
 

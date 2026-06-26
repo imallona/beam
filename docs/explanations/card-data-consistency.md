@@ -22,7 +22,7 @@ A note is a data-dependent observation, true of this particular score matrix but
 - `noise_floor_exceeds_spread`: a positive noise floor is at least as wide as the whole observed spread, so the metric separates no pair of tools on this data.
 - `no_observations`: every cell of the metric is missing.
 
-The `ok` flag is true when there are no violations. Notes do not clear it but are surfaced, because a constant metric or a floor wider than the spread is worth knowing before the ranking is read.
+The `ok` flag is true when there are no violations. Notes do not clear it but are surfaced.
 
 ## Redundant checks
 

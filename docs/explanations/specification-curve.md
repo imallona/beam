@@ -8,7 +8,7 @@ beam already runs the full grid in [`beam.mcda.rank_sensitivity`](rank-sensitivi
 
 `specification_curve` takes a `RankSensitivityReport` and returns a `SpecificationCurveReport`. It does no new ranking; it post-processes the grid that `rank_sensitivity` already ran.
 
-- `specifications`: one record per combination, with the factor levels that define it, the full tool ordering it produces, and the tool it ranks first.
+- `specifications`: one record per combination, with the factor levels that define it, the full tool ordering it produces, and the top-ranked tool.
 - `most_frequent_top_fraction`: the fraction of combinations that rank the same tool first. Near 1 means the top is stable across the choices.
 - `modal_order_fraction`: the fraction of combinations that produce the single most common ordering of all tools. This is stricter than the top fraction, since it asks the whole order to repeat.
 - `n_distinct_top_tools`: how many tools rank first in at least one combination.

@@ -84,7 +84,7 @@ for p in props:
 
 The MCDA pipeline works on a method by metric matrix, so the twelve datasets have to be pooled into one value per metric first. For each metric this code applies the rule the card declares, using a NaN-aware reduction so the five missing cells do not skew a method's pooled score. ARI and Shannon entropy difference use a NaN-aware arithmetic mean; runtime uses a NaN-aware geometric mean (the mean of the logs, then exponentiated, over the observed datasets only).
 
-The NaN handling lives here in the example, not in the core pipeline. `beam.mcda.aggregate_across_datasets` is not NaN-aware by design; pushing coverage-aware pooling into the core normalization, weighting and aggregation is future work tied to the heterogeneity module. Doing it at the example level keeps the choice explicit: a method's pooled score is the average over the datasets where it was actually measured. The five gaps fall on SAFE (two datasets) and ascend (three datasets); every other method is observed on all twelve.
+The NaN handling is in the example, not in the core pipeline. `beam.mcda.aggregate_across_datasets` is not NaN-aware by design; pushing coverage-aware pooling into the core normalization, weighting and aggregation is future work tied to the heterogeneity module. At the example level, a method's pooled score is the average over the datasets where it was actually measured. The five gaps fall on SAFE (two datasets) and ascend (three datasets); every other method is observed on all twelve.
 
 ```{python}
 def pool_metric(metric_id, rule):
@@ -102,7 +102,7 @@ print("pooled matrix shape:", pooled.shape)
 print("pooled matrix all finite:", bool(np.isfinite(pooled).all()))
 ```
 
-`card_data_consistency` checks the pooled scores against what the cards declare: every value inside the declared range, the chance baseline and noise floor sane. It reads the raw scores, before normalization, so a card or data error (a value outside the declared range, a metric reported on the wrong scale) is named here rather than silently distorting the ranking.
+`card_data_consistency` checks the pooled scores against what the cards declare: every value inside the declared range, the chance baseline and noise floor sane. It reads the raw scores, before normalization, so a card or data error (a value outside the declared range, a metric reported on the wrong scale) is named here.
 
 ```{python}
 from beam.mcda import card_data_consistency, registry_context
@@ -233,7 +233,7 @@ print(f"method preferred to every other one: {choice}")
 print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_triads} of {trans.n_triads}")
 ```
 
-SC3 is preferred to every other method one at a time, yet the relation still carries one circular triad among the methods below it, so no single order agrees with all the pairwise majorities. The matrix below orders the methods by how many others they outperform. A transitive relation fills the upper triangle and leaves the lower one empty; a red cell below the diagonal marks a method that outperforms one ranked above it, which can only happen inside a cycle.
+SC3 is preferred to every other method one at a time, yet the relation still contains one circular triad among the methods below it, so no single order agrees with all the pairwise majorities. The matrix below orders the methods by how many others they outperform. A transitive relation fills the upper triangle and leaves the lower one empty; a red cell below the diagonal marks a method that outperforms one ranked above it, which can only happen inside a cycle.
 
 ```{python}
 plot.pairwise_majority(trans)
@@ -367,7 +367,7 @@ print("wrote duo2018_report.html")
 
 ## Dataset concordance: do the datasets agree on the order?
 
-The pooled ranking averages over the twelve datasets. [`dataset_concordance`](../../docs/explanations/dataset-concordance.md) ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not, and the per-dataset orderings are the honest output. The diagnostic needs no replicates and assumes nothing about the datasets being interchangeable, so it measures the heterogeneity rather than asking how many datasets would be enough.
+The pooled ranking averages over the twelve datasets. [`dataset_concordance`](../../docs/explanations/dataset-concordance.md) ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not, and the per-dataset orderings diverge. The diagnostic needs no replicates and assumes nothing about the datasets being interchangeable, so it measures the heterogeneity rather than asking how many datasets would be enough.
 
 ```{python}
 conc = run.dataset_concordance

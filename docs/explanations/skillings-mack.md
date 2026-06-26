@@ -1,12 +1,12 @@
 # Skillings-Mack: coverage-aware Friedman
 
-The Demsar Friedman-Nemenyi test in `beam.mcda.critical_difference` only runs on a complete tool by dataset matrix. Real benchmarks rarely give one: methods time out, error on an input, or were not run on every dataset. beam's missing-data policy refuses to fill those gaps, so the critical-difference test refuses the matrix and points the user to the complete-case block. On a wide table with many partial methods, that block can shrink to nothing.
+The Demsar Friedman-Nemenyi test in `beam.mcda.critical_difference` only runs on a complete tool by dataset matrix. Real benchmarks rarely give one: methods time out, error on an input, or were not run on every dataset. beam's missing-data policy refuses to fill those gaps, so the critical-difference test refuses the matrix and points the user to the complete-case block. On a wide table with many partial methods, that block can become empty.
 
 The Skillings-Mack (1981) test fills the gap with a Friedman-type statistic that does not need a complete matrix. It is exposed as `beam.mcda.skillings_mack` and as the convenience alias `beam.mcda.coverage_aware_critical_difference`.
 
 ## What the test does
 
-The input is the same tool by dataset matrix the Friedman test takes, with NaN allowed. The test answers the same global question, "are the methods separable across the datasets, or does the apparent ranking fall within noise". It does not give pairwise comparisons; the Nemenyi post-hoc needs the complete-matrix construction it generalizes.
+The input is the same tool by dataset matrix the Friedman test takes, with NaN allowed. The test answers the same global question, "are the methods separable across the datasets, or does the apparent ranking fall within noise". It does not give pairwise comparisons; the Nemenyi post-hoc needs the complete-matrix construction that Skillings-Mack generalizes.
 
 ## Construction
 
@@ -50,13 +50,16 @@ There is one caveat. scipy's `friedmanchisquare` applies a tie correction that d
 
 Two consistent strategies:
 
-- Restrict the matrix to the complete block of methods and datasets where every method ran, and call `critical_difference`. This gives a global test and the Nemenyi cliques but drops every dataset where any method failed to run. Use it when the complete block is large enough.
-- Keep every observed score and call `skillings_mack` on the partial matrix. This gives a global test only, with no pairwise cliques. Use it when restricting to the complete block drops most of the data.
+- Restrict the matrix to the complete block of methods and datasets where every method ran, and call `critical_difference`. This gives a global test and the Nemenyi cliques but drops every dataset where any method failed to run. It fits when the complete block is large enough.
+- Keep every observed score and call `skillings_mack` on the partial matrix. This gives a global test only, with no pairwise cliques. It fits when restricting to the complete block drops most of the data.
 
 The [mixed-effects model](heterogeneity-mixed-effects.md) in `beam.heterogeneity.mixed_effects` runs on partial data too, and answers a different question: how much of the score variance is due to the dataset rather than the method. Skillings-Mack tests the null that the methods are equivalent across the observed blocks; the mixed-effects model splits the variance assuming the methods do differ.
+
+## See also
+
+- [Comparing methods across datasets](comparing-methods-across-datasets.md)
 
 ## References
 
 - Skillings JH, Mack GA. On the use of a Friedman-type statistic in balanced and unbalanced block designs. Technometrics 1981, 23(2):171-177. DOI [10.1080/00401706.1981.10486261](https://doi.org/10.1080/00401706.1981.10486261).
 - Demsar J. Statistical comparisons of classifiers over multiple data sets. Journal of Machine Learning Research 7 (2006).
-- The companion essay [Comparing methods across datasets](comparing-methods-across-datasets.md) covers the complete-case Friedman-Nemenyi test, which Skillings-Mack generalizes.

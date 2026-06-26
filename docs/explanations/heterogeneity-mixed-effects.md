@@ -12,7 +12,7 @@ The method is a fixed effect: each method gets a marginal mean over datasets, wi
 
 The variance splits into two parts: the dataset variance and the residual variance. The intraclass correlation, the dataset variance over the total, is the share of the spread that is a pure dataset shift. A high value means the datasets differ mostly in difficulty, not in which method they favour. A low value means most of the variation is within datasets, where the method-by-dataset interaction occurs.
 
-A single global ranking is safe when the interaction is small: the method that leads on average leads nearly everywhere. When the interaction is large, the average hides reversals, and the better answer is "use method A on data like this, method B on data like that". This is the [Strobl critique](heterogeneity-bradley-terry.md), that one method does not fit all datasets, written as a variance component.
+A single global ranking is safe when the interaction is small: the method that leads on average leads nearly everywhere. When the interaction is large, the average hides reversals, and an appropriate split is "use method A on data like this, method B on data like that". This is the [Strobl critique](heterogeneity-bradley-terry.md), that one method does not fit all datasets, written as a variance component.
 
 With one run per (method, dataset) cell, the usual single-run benchmark, the interaction cannot be separated from measurement noise. There is one number per cell and two things to explain it with, so they are confounded; the residual is their sum. beam reports the residual share as the upper bound on the interaction and says so. To split them you need replicates, several runs of the same method on the same dataset. When the input has them, the auto path fits
 

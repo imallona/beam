@@ -17,7 +17,7 @@ format:
 
 This benchmark also has a [generated standard report](../../docs/reports/gptcelltype.html), the self-contained HTML `beam.report` emits for any run. This vignette is the narrative walkthrough behind it.
 
-Labeling cell types with a large language model is a current topic in single-cell RNA-seq. Hou and Ji (2024) scored GPT-4 and GPT-3.5 against three reference-based annotators (CellMarker2.0, SingleR, ScType). Each method labels the cell types of a dataset. The score is the agreement with a manual expert annotation. This vignette re-runs that benchmark through beam. It reports three things a single accuracy table does not: how stable the ranking is across the modeling choices, how much of the ranking variance comes from the dataset, and whether the ranking changes between normal and cancer tissue. GPT-4 ranks first. GPT-3.5 ranks at or below the three classical tools, so the difference is specific to GPT-4 and not to language models in general.
+Labeling cell types with a large language model is a current topic in single-cell RNA-seq. Hou and Ji (2024) scored GPT-4 and GPT-3.5 against three reference-based annotators (CellMarker2.0, SingleR, ScType). Each method labels the cell types of a dataset. The score is the agreement with a manual expert annotation. This vignette re-runs that benchmark through beam. It reports how stable the ranking is across the modeling choices, how much of the ranking variance comes from the dataset, and whether the ranking changes between normal and cancer tissue. GPT-4 ranks first. GPT-3.5 ranks at or below the three classical tools, so the difference is specific to GPT-4 and not to language models in general.
 
 ## Provenance of the bundled tables
 
@@ -136,7 +136,7 @@ GPT-4 ranks first. SingleR, a classical tool, ranks second, and GPT-3.5 ranks th
 
 ## The card audit
 
-[`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks the pooled scores against the cards before any normalization: every value inside the declared [0, 1] range, every baseline and floor sane. A unit or scale error would be named here rather than silently distorting the ranking.
+[`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks the pooled scores against the cards before any normalization: every value inside the declared [0, 1] range, every baseline and floor sane. A unit or scale error would be named here.
 
 ```{python}
 audit = run.card_consistency
@@ -410,7 +410,7 @@ print("blinding fingerprint:", blind_run.manifest["blinding"]["seal_sha256"][:12
 
 ## Dataset weight, made concrete: equal versus cell-weighted pooling
 
-beam weights each dataset equally by default. The paper's per-cell-type accuracy weights a dataset by how many cell types it has. The dataset accounts for almost all of the variance, so the dataset weight changes the magnitudes. Here it does not change the top rank. It is a choice the reader should see rather than one beam makes silently.
+beam weights each dataset equally by default. The paper's per-cell-type accuracy weights a dataset by how many cell types it has. The dataset accounts for almost all of the variance, so the dataset weight changes the magnitudes. Here it does not change the top rank.
 
 ```{python}
 n_cell_types = np.array(g.features.numeric["n_cell_types"])[complete]

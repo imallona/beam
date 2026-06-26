@@ -2,7 +2,7 @@
 
 A ranking pooling different metrics aims to answer, across all the datasets at once, which method performs best on average. It cannot say whether the datasets agree on that order.
 
-`beam.mcda.dataset_concordance` measures that agreement directly. It ranks the methods within each dataset separately, then compares every pair of per-dataset orderings with the Kendall tau-b rank correlation. The output is a dataset by dataset agreement matrix and a single mean-agreement summary. A high mean says the pooled ranking represents the individual datasets. A low one says it does not, and a single pooled number then hides heterogeneity the reader should see.
+`beam.mcda.dataset_concordance` measures that agreement directly. It ranks the methods within each dataset separately, then compares every pair of per-dataset orderings with the Kendall tau-b rank correlation. The output is a dataset by dataset agreement matrix and a single mean-agreement summary. A high mean says the pooled ranking represents the individual datasets. A low one says it does not, and a single pooled number then obscures the heterogeneity.
 
 ## Why not a power analysis
 

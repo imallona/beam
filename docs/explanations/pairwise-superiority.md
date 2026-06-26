@@ -1,6 +1,6 @@
 # Comparing two methods at a time
 
-The [critical-difference diagram](comparing-methods-across-datasets.md) says which methods differ beyond chance. It does not say by how much, or how often one method outperforms another. Its mean-rank post-hoc also depends on the whole pool: add or drop a method and two others can change from "different" to "the same" (Benavoli, Corani and Mangili 2016). `beam.mcda.pairwise_superiority` answers the missing question with an effect size that does not depend on the pool.
+The [critical-difference diagram](comparing-methods-across-datasets.md) says which methods differ beyond chance. It does not say by how much, or how often one method outperforms another. Its mean-rank post-hoc also depends on the whole pool: add or drop a method and two others can change from "different" to "the same" (Benavoli, Corani and Mangili 2016). `beam.mcda.pairwise_superiority` reports an effect size that does not depend on the pool.
 
 ## How it works
 
@@ -28,11 +28,11 @@ report.equivalent_pairs      # pairs the sign test cannot tell apart
 
 ## On real data
 
-On the [Duo 2018](../../examples/duo2018/duo2018.qmd) Adjusted Rand Index (ARI) scores, with the ARI noise floor of 0.01 as the ROPE, SC3 has the highest standing. But most method pairs are practically equivalent: the sign test cannot separate more than half of them, because the differences across the twelve datasets are often within the noise floor. This agrees with the critical-difference reading, where most methods sit in overlapping cliques, and states it as an effect size: even the two leading methods are within the floor on most datasets rather than one clearly ahead of the other.
+On the [Duo 2018](../../examples/duo2018/duo2018.qmd) Adjusted Rand Index (ARI) scores, with the ARI noise floor of 0.01 as the ROPE, SC3 has the highest standing. But most method pairs are practically equivalent: the sign test cannot separate more than half of them, because the differences across the twelve datasets are often within the noise floor. This agrees with the critical-difference reading, where most methods fall in overlapping cliques, and states it as an effect size: even the two leading methods are within the floor on most datasets rather than one clearly outperforming the other.
 
-## How it relates to the other checks
+## Related checks
 
-`critical_difference` tests significance across all methods at once. `noise_floor_separation` reads the aggregate scores, one value per method, and flags pairs no metric separates above the floor. `pairwise_superiority` works across the datasets, pair by pair, and reports an effect size with the noise floor as the equivalence band. Significance, aggregate separation, and per-dataset effect size are three readings of the same question, and they are stronger together.
+[`critical_difference`](comparing-methods-across-datasets.md) tests significance across all methods at once. [`noise_floor_separation`](reference-levels.md) reads the aggregate scores, one value per method, and flags pairs no metric separates above the floor. `pairwise_superiority` works across the datasets, pair by pair, and reports an effect size with the noise floor as the equivalence band. Significance, aggregate separation, and per-dataset effect size are three readings of the same question.
 
 ## Limitations
 

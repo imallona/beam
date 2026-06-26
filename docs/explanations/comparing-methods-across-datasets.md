@@ -12,7 +12,7 @@ The Friedman test does not say which methods differ from which. For that, beam r
 
 The Nemenyi critical difference is $q \sqrt{k (k + 1) / (6 N)}$, where $k$ is the number of methods, $N$ the number of datasets, and $q$ the Studentized range value for $k$ at the chosen alpha, divided by the square root of two. beam computes $q$ exactly with scipy, so it is correct for any number of methods, not only the small tables printed in the paper. As a check, for five methods at alpha 0.05 the $q$ term is 2.728, the value in Demsar's Table 5.
 
-The formula shows the two ways to earn power: more datasets shrink the critical difference, and fewer methods shrink it. With many methods and few datasets the critical difference is large, and most pairs come out unseparable. That is the informative reading, not a defect.
+The formula shows the two ways to earn power: more datasets shrink the critical difference, and fewer methods shrink it. With many methods and few datasets the critical difference is large, and most pairs come out unseparable.
 
 ## Cliques
 

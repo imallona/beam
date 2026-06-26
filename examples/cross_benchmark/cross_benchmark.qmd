@@ -211,7 +211,7 @@ else:
     print("Provision it with envs/heterogeneity.yml.")
 ```
 
-With BatchBench in the pool, harmony no longer ranks first on its own: it ties with liger at the top, fastMNN follows, and combat ranks last. The I-squared is high and the inconsistency Q is significant: the direct and the indirect evidence for the same method pairs do not line up, which is the network-model reading of the same finding the variance decomposition reports as a large method-by-benchmark share. The pooled ranking is an average over benchmarks that disagree, and the inconsistency statistic is the explicit label on it.
+With BatchBench in the pool, harmony no longer ranks first on its own: it ties with liger at the top, fastMNN follows, and combat ranks last. The I-squared is high and the inconsistency Q is significant: the direct and the indirect evidence for the same method pairs do not line up, which is the network-model reading of the same finding the variance decomposition reports as a large method-by-benchmark share. The pooled ranking is an average over benchmarks that disagree, and the inconsistency statistic quantifies it.
 
 ## Same data, two pipelines: the human pancreas
 
@@ -371,7 +371,7 @@ print(f"OpenProblems (intrinsic-complexity hardness): concordance {op_conc.conco
 display(plot.difficulty_concordance(shen_conc, title="Shen 2026: do DL and classical find the same units hard?"))
 ```
 
-The two benchmarks differ because their datasets are hard for different reasons. On OpenProblems the hardness is dataset complexity, and the two categories agree (Spearman about 0.89): a dataset hard for classical methods is hard for the deep-learning ones. On Shen the hardness is annotation quality, and they agree weakly (about 0.32): degraded labels affect only the methods that use them. On the hardest units the deep-learning methods score below the classical ones; on the easy units they score above. Dataset complexity is shared; a benchmark that stresses what one category depends on is hard only for that category, which a single cross-method ranking would hide.
+The two benchmarks differ because their datasets are hard for different reasons. On OpenProblems the hardness is dataset complexity, and the two categories agree (Spearman about 0.89): a dataset hard for classical methods is hard for the deep-learning ones. On Shen the hardness is annotation quality, and they agree weakly (about 0.32): degraded labels affect only the methods that use them. On the hardest units the deep-learning methods score below the classical ones; on the easy units they score above. Dataset complexity is shared; a benchmark that stresses what one category depends on is hard only for that category, which a single cross-method ranking would not show.
 
 ### A controlled contrast inside scIB
 

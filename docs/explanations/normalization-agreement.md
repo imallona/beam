@@ -22,9 +22,9 @@ A candidate that cannot run on the input is dropped rather than failing the whol
 
 ## Interpreting results
 
-A high mean tau means the recommendation is stable under the normalization choice: whichever rescaling a reader prefers, they reach about the same order. A low mean tau means the rescaling is itself deciding the order, and a ranking presented under one normalization should be read with that in mind.
+A high mean tau means the recommendation is stable under the normalization choice: whichever rescaling a reader prefers, they reach about the same order. A low mean tau means the rescaling is itself deciding the order.
 
-The [Duo 2018 clustering benchmark](../../examples/duo2018/duo2018.qmd) is a worked example. On the three-metric pooled matrix (the Adjusted Rand Index, runtime, Shannon entropy difference) under equal weights, the card-recommended normalization and the four uniform strategies agree at a mean pairwise tau-b of 0.64, and Seurat is the unanimous top under every one of them. So the top recommendation does not depend on the rescaling. The agreement is not complete. The recommended normalization agrees with `min_max` at tau-b 0.79 but with `rank` at only 0.36, because the rank normalization drops the gap sizes that the other strategies keep, so the ordering in the middle of the table moves. This is the typical pattern. The leader is often stable while the mid-tier is not, and a report that prints one full ordering without this caveat overstates how settled the middle is.
+The [Duo 2018 clustering benchmark](../../examples/duo2018/duo2018.qmd) is a worked example. On the three-metric pooled matrix (the Adjusted Rand Index, runtime, Shannon entropy difference) under equal weights, the card-recommended normalization and the four uniform strategies agree at a mean pairwise tau-b of 0.64, and Seurat is the unanimous top under every one of them. So the top recommendation does not depend on the rescaling. The agreement is not complete. The recommended normalization agrees with `min_max` at tau-b 0.79 but with `rank` at only 0.36, because the rank normalization drops the gap sizes that the other strategies keep, so the ordering in the middle of the table moves. This is the typical pattern. The leader is often stable while the mid-tier is not.
 
 ## How to run
 
@@ -34,10 +34,13 @@ For plotting, `beam.plot.normalization_agreement(run)` generates the tau-b heatm
 
 ## Limitations
 
-The diagnostic measures whether the normalizations agree, not which one is correct. The strategies encode different decisions about what a comparable score is: `min_max` treats the observed range as the scale, `rank` treats only the order as meaningful, `log_min_max` treats ratios as the meaningful structure. A disagreement among them is a real disagreement about how the metric should be read, not an error to be averaged away. The consensus ranking is a convenience summary, not a preferred normalization. When the strategies disagree the right response is to report the disagreement and the reason the card recommends what it does, covered in [Normalization and scales](normalization-and-scales.md).
+The diagnostic measures whether the normalizations agree, not which one is correct. The strategies encode different decisions about what a comparable score is: `min_max` treats the observed range as the scale, `rank` treats only the order as meaningful, `log_min_max` treats ratios as the meaningful structure. A disagreement among them is a real disagreement about how the metric should be read. The consensus ranking is a convenience summary, not a preferred normalization. When the strategies disagree, report the disagreement and the reason the card recommends what it does, covered in [Normalization and scales](normalization-and-scales.md).
+
+## See also
+
+- [Normalization and scales](normalization-and-scales.md)
+- [Aggregation agreement](aggregation-agreement.md)
 
 ## References
 
 - Kendall, M. G. A new measure of rank correlation. Biometrika 30 (1938). DOI [10.1093/biomet/30.1-2.81](https://doi.org/10.1093/biomet/30.1-2.81).
-- The normalization strategies and when each is appropriate are covered in [Normalization and scales](normalization-and-scales.md).
-- The companion diagnostic on the aggregation rule is [Aggregation agreement](aggregation-agreement.md).

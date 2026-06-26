@@ -10,7 +10,7 @@ Every aggregation in beam takes the same two inputs and returns the same kind of
 
 ## SAW
 
-Simple additive weighting (SAW) is the dot product of the normalized scores and the weights. The score of a tool is the weighted sum of its per-metric values. It is the most readable method: the contribution of each metric is explicit, and a unit gain on a metric raises the score by exactly that metric's weight. SAW assumes the normalized values are on a common interval scale, so that adding them is meaningful and a gain on one metric trades off linearly against a loss on another. It is the default when a reader wants to see exactly how the ranking was built.
+Simple additive weighting (SAW) is the dot product of the normalized scores and the weights. The score of a tool is the weighted sum of its per-metric values. Each metric's contribution is explicit, and a unit gain on a metric raises the score by exactly that metric's weight. SAW assumes the normalized values are on a common interval scale, so that adding them is meaningful and a gain on one metric trades off linearly against a loss on another. It is the default when a reader wants to see exactly how the ranking was built.
 
 ## TOPSIS
 

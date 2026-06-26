@@ -12,7 +12,7 @@ Spearman, a rank correlation, allows to search for association no matter the met
 
 The function requires a label per metric, supplied by the user This is a domain judgement, so beam takes it as an argument rather than reading it from the cards. Typically, labels reflect computational characteristics (max set size, wallclock time; and biology-driven metrics). Grouping the correlations by that label splits them in two.
 
-Within-group correlations are the convergent evidence. Metrics that claim to measure one construct should agree with each other. Between-group correlations are the discriminant evidence. Metrics that claim to measure different constructs should agree less. When the mean within-group correlation is higher than the mean between-group correlation, the grouping holds up, and treating the groups as separate criteria in the [weighting](weighting-schemes.md) is supported by the data rather than asserted. `discriminant_ok` records that comparison.
+Within-group correlations are the convergent evidence. Metrics that claim to measure one construct should agree with each other. Between-group correlations are the discriminant evidence. Metrics that claim to measure different constructs should agree less. When the mean within-group correlation is higher than the mean between-group correlation, the grouping holds up, and treating the groups as separate criteria in the [weighting](weighting-schemes.md) is supported by the data. `discriminant_ok` records that comparison.
 
 beam reports two kinds of metric discrimination problems or properties:
 - A redundant pair is two metrics in the same group whose correlation is at or above a threshold (0.9 by default). They order the methods almost identically, so carrying both adds little and double-counts one construct. One is a candidate to drop.
@@ -20,7 +20,7 @@ beam reports two kinds of metric discrimination problems or properties:
 
 ## Example
 
-On the [OpenProblems batch integration scores](../../examples/openproblems/openproblems.qmd), the bio/batch grouping is supported but weak: mean within-group correlation 0.38 against mean between-group correlation 0.30. The biological metrics agree more among themselves (0.45) than the batch metrics do (0.24), and `graph_connectivity`, a batch metric, correlates more with the biological group than with its own. The reading is that the two axes are separable rather than cleanly distinct.
+On the [OpenProblems batch integration scores](../../examples/openproblems/openproblems.qmd), the bio/batch grouping is supported but weak: mean within-group correlation 0.38 against mean between-group correlation 0.30. The biological metrics agree more among themselves (0.45) than the batch metrics do (0.24), and `graph_connectivity`, a batch metric, correlates more with the biological group than with its own. The reading is that the two axes are separable but not orthogonal.
 
 ## See also
 

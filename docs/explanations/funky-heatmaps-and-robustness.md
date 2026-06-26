@@ -2,9 +2,9 @@
 
 The funky heatmap is the glyph table that dynbenchmark/dynverse, OpenProblems and other benchmarking platformas and benchmark use to summarize a multi-metric benchmark at a glance. 
 
-Methods are the rows, sorted best first. Metrics are the columns. Each cell is a circle whose radius grows with the score, with its colour marking the metric group, and a final overall column carries the aggregate. It is a dense, readable summary. 
+Methods are the rows, sorted best first. Metrics are the columns. Each cell is a circle whose radius grows with the score, with its colour marking the metric group, and a final overall column carries the aggregate. It is a dense summary. 
 
-Read alone it looks like a settled ranking, yet it doesn't have to. Both the circle sizes and the row order depend on the [normalization](normalization-and-scales.md), which is usually min-max, and a different normalization moves the circles and can reorder the rows. beam reads the normalization from the metric cards rather than fixing min-max, and then adds panels that let the table carry its own robustness.
+Read alone it looks like a final ranking, though the order can change under a different analysis. Both the circle sizes and the row order depend on the [normalization](normalization-and-scales.md), which is usually min-max, and a different normalization moves the circles and can reorder the rows. beam reads the normalization from the metric cards rather than fixing min-max, and then adds panels that let the table carry its own robustness.
 
 ## The glyph grid and its overlays
 
@@ -20,7 +20,7 @@ The worth panel answers whether two adjacent methods are separable. It draws the
 
 The critical-difference cliques answer whether the methods are statistically separable across datasets. They draw brackets grouping the rows that the Friedman-Nemenyi test cannot separate, the `cliques` from `beam.mcda.critical_difference`. A bracket over the top several rows says those methods cannot be told apart from the data at hand.
 
-Each overlay asks one version of the same question: would this row order stay the same under a reasonable change. The change is dropping a dataset, choosing a different aggregation, sampling the weights, or accounting for the model uncertainty. The plain funky heatmap answers none of these. It reads as more settled than the data support, because the single row order hides the spread that every panel makes visible.
+Each overlay asks one version of the same question: would this row order stay the same under a reasonable change. The change is dropping a dataset, choosing a different aggregation, sampling the weights, or accounting for the model uncertainty. The plain funky heatmap answers none of these.
 
 ## How to use it
 

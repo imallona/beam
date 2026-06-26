@@ -14,7 +14,7 @@ The report also gives a consensus ranking, the ranking of the per-method mean ra
 
 ## Interpretation
 
-A high mean tau means the recommendation is stable under the aggregation choice: whichever method a reader prefers, they reach about the same order. A low mean tau means the aggregation rule is itself deciding the order, and a ranking presented under one method should be read with that in mind.
+A high mean tau means the recommendation is stable under the aggregation choice: whichever method a reader prefers, they reach about the same order. A low mean tau means the aggregation rule is itself deciding the order.
 
 The [Duo 2018 clustering benchmark](../../examples/duo2018/duo2018.qmd) is a worked example. On the three-metric pooled matrix (the Adjusted Rand Index, runtime, Shannon entropy difference) under equal weights, the five aggregations agree at a mean pairwise tau-b of 0.65, and Seurat is the unanimous top under every one of them. So the top recommendation does not depend on the aggregation choice. The agreement is not complete, though. PROMETHEE II correlates only 0.34 to 0.54 with the others, so the ordering in the middle of the ranking depends on which method is used.
 
@@ -26,9 +26,12 @@ In case an aggregation method fails to run on the input then it is dropped from 
 
 ## What it does not do
 
-The diagnostic measures whether the methods agree, not which one is correct. The five aggregations encode different value judgements: TOPSIS rewards closeness to an ideal point, VIKOR seeks a compromise solution, PROMETHEE II nets pairwise outranking flows. A disagreement among them is a real disagreement about what a good composite metric is, not an error to be averaged away. The consensus ranking is a convenience summary. Typically, incompatible results from different aggregation methods point to some disagreement that has to be further evaluated.
+The diagnostic measures whether the methods agree, not which one is correct. The five aggregations encode different value judgements: TOPSIS rewards closeness to an ideal point, VIKOR seeks a compromise solution, PROMETHEE II nets pairwise outranking flows. A disagreement among them is a disagreement about what a composite metric should do. The consensus ranking is a convenience summary. Typically, incompatible results from different aggregation methods point to some disagreement that has to be further evaluated.
+
+## See also
+
+- [Aggregation methods](aggregation-methods.md)
 
 ## References
 
 - Kendall, M. G. A new measure of rank correlation. Biometrika 30 (1938). DOI [10.1093/biomet/30.1-2.81](https://doi.org/10.1093/biomet/30.1-2.81).
-- The five aggregations and their assumptions are covered in [Aggregation methods](aggregation-methods.md).

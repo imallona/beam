@@ -324,7 +324,7 @@ fig.tight_layout()
 plt.show()
 ```
 
-The dashed line is the actual runtime in seconds. Under min-max the four fast methods (m0 to m3) sit at almost the same height, so their real speed differences vanish and a tiny ARI difference decides the order. Under log_min_max the bars follow the true ordering, so the fastest method ranks first.
+The dashed line is the actual runtime in seconds. Under min-max the four fast methods (m0 to m3) sit at almost the same height, so their speed differences vanish and a tiny ARI difference decides the order. Under log_min_max the bars follow the true ordering, so the fastest method ranks first.
 
 ## Are the methods separable across datasets?
 

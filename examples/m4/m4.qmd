@@ -64,7 +64,7 @@ for p in properties_for(list(m4.metric_ids)):
     )
 ```
 
-Before ranking, [`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks that the scores honour what those cards declare: every value inside the declared range, the baselines and targets in range, the noise floors positive. It reads the raw scores against the cards, so a unit mismatch (a metric on a percent scale against a fraction card, say) is caught here rather than distorting the normalization silently.
+Before ranking, [`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks that the scores honour what those cards declare: every value inside the declared range, the baselines and targets in range, the noise floors positive. It reads the raw scores against the cards, so a unit mismatch (a metric on a percent scale against a fraction card, say) is caught here.
 
 ```{python}
 from beam.mcda import card_data_consistency, registry_context
@@ -100,7 +100,7 @@ for i in order[:5]:
     print(f"  {run.result.ranks[i]:>2d}  {m4.method_names[i]}")
 ```
 
-The method that ranks first here need not be the one that ranked first in the official competition. The official M4 ranking pools by OWA over all 100,000 series, so the monthly and yearly bands (48,000 and 23,000 series) dominate. beam treats each band as one dataset and weights the six equally, which lifts methods that do well on the small high-frequency bands. The top method depends on the pooling choice. The next sections make that dependence visible rather than settling on one number.
+The method that ranks first here need not be the one that ranked first in the official competition. The official M4 ranking pools by OWA over all 100,000 series, so the monthly and yearly bands (48,000 and 23,000 series) dominate. beam treats each band as one dataset and weights the six equally, which lifts methods that do well on the small high-frequency bands. The top method depends on the pooling choice. The next sections examine that dependence rather than settling on one number.
 
 ## Ranking by frequency band
 
@@ -264,7 +264,7 @@ print(f"  most influential factor: {rs.most_influential_factor}")
 plot.rank_sensitivity(rs)
 ```
 
-The band carries almost all the rank variance and the two choices almost none. The M4 order is a question of which frequency you score on, not how you weight or aggregate. This is the same reading as the mixed-effects ICC above, reached a different way: an exact factorial decomposition of the ranks rather than a random-effects model of the scores. The headline method slips across bands, which is the variance the band share counts.
+The band accounts for almost all the rank variance and the two choices almost none. The M4 order is a question of which frequency you score on, not how you weight or aggregate. This is the same reading as the mixed-effects ICC above, reached a different way: an exact factorial decomposition of the ranks rather than a random-effects model of the scores. The headline method ranks differently across bands, which is the variance the band share counts.
 
 The shares above are pooled over the methods. The per-method version splits the same variance one method at a time. It separates a method whose rank depends on the band from one that depends on the weighting or the aggregation. The span next to each bar is the difference between the method's best and worst rank.
 
@@ -380,4 +380,4 @@ print("wrote m4_report.html")
 
 ## Recommendation
 
-Pooled with equal weight per frequency band and SAW over sMAPE and MASE, the ranking favours methods that do well across all six bands, not only on the high-volume monthly and yearly series. The official competition order differs: it pools by OWA weighted by the number of series, so the monthly and yearly bands dominate and the ES-RNN of Smyl ranks first. The leave-one-band-out analysis points at the hourly band as the one the ranking leans on most, and with only six bands the critical-difference diagram has little power to separate the top methods. The top methods are close together, and which one comes first turns on whether the bands are weighted equally or by series count. beam writes that choice into the manifest instead of leaving it implicit.
+Pooled with equal weight per frequency band and SAW over sMAPE and MASE, the ranking favours methods that do well across all six bands, not only on the high-volume monthly and yearly series. The official competition order differs: it pools by OWA weighted by the number of series, so the monthly and yearly bands dominate and the ES-RNN of Smyl ranks first. The leave-one-band-out analysis points at the hourly band as the one the ranking leans on most, and with only six bands the critical-difference diagram has little power to separate the top methods. The top methods are close together, and which one comes first turns on whether the bands are weighted equally or by series count. The choice is recorded in the manifest.

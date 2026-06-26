@@ -21,7 +21,7 @@ The first point is a method-by-dataset interaction. No mode is fastest on every 
 
 The second point is [partial coverage](../../docs/explanations/missing-data.md). Some modes do not run on some terrains at all. A boat cannot go off-road, a small plane cannot do an urban hop, and the land modes cannot cross open water. Those cells are missing (NaN). Because no mode is feasible on every terrain, a single pooled ranking over all modes is not even well defined. The output must be per-terrain.
 
-The third point is a crossover among the slower modes. Trail running is slower than road running on the flat road but faster on mud and uphill, where off-road traction helps. An e-bike is faster than a bicycle on the flat road and the urban hop but slower uphill, where its weight costs it. On the water the kayak is slower than the motorboat but cheaper and zero CO2, so it outranks the boat on cost and CO2 while ranking lower on speed. None of these crossovers appears in a single pooled order: the mode that is faster on one terrain is slower on another.
+The third point is a crossover among the slower modes. Trail running is slower than road running on the flat road but faster on mud and uphill, where off-road traction helps. An e-bike is faster than a bicycle on the flat road and the urban hop but slower uphill, where its weight slows it. On the water the kayak is slower than the motorboat but cheaper and zero CO2, so it outranks the boat on cost and CO2 while ranking lower on speed. None of these crossovers appears in a single pooled order: the mode that is faster on one terrain is slower on another.
 
 ## Set-up
 
@@ -109,7 +109,7 @@ for terrain in tb.terrain_names:
     print(f"  {terrain:15s}  {top:12s}  {fastest:16s}  {top == fastest}")
 ```
 
-Under equal weights the cheap, low-CO2 modes rank near the top on the land terrains even when they are slow. Speed is only one of three equally weighted metrics, so it does not decide the order on its own. An equal-weight composite can reward a mode that looks good only because the weighting discounts how long the trip would actually take.
+Under equal weights the cheap, low-CO2 modes rank near the top on the land terrains even when they are slow. Speed is only one of three equally weighted metrics, so it does not decide the order on its own. An equal-weight composite ranks slow modes high because speed is weighted equally with cost and CO2.
 
 Now weight speed heavily (0.8 on speed, 0.1 on cost, 0.1 on CO2) and rerun. With speed in charge, the per-terrain top-ranked mode tracks the ground truth, and a different mode ranks first on different terrains.
 
@@ -272,7 +272,7 @@ print(f"\nmost confident top-ranked mode: {most} "
       f"({smaa_report.confidence_factor.max():.2f} of samples)")
 ```
 
-The confidence is split between the train (about 0.37) and the plane (about 0.35), with running and bicycle taking the rest. No mode crosses half, so the long-distance top rank depends on the weighting: depending on how a user trades speed against cost and CO2, either the train or the plane comes out first. The SMAA confidence summarizes that, rather than a single composite that would pick one and hide the split.
+The confidence is split between the train (about 0.37) and the plane (about 0.35), with running and bicycle taking the rest. No mode crosses half, so the long-distance top rank depends on the weighting: depending on how a user trades speed against cost and CO2, either the train or the plane comes out first. The SMAA confidence shows the distribution across ranks rather than a single composite.
 
 ## Weight perturbation on one terrain
 
