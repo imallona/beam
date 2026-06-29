@@ -10,7 +10,9 @@ vignette: >
 ```{r setup, include = FALSE}
 have_beam <- requireNamespace("reticulate", quietly = TRUE) &&
   reticulate::py_module_available("beam.datasets")
-knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>")
+knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>",
+                      message = FALSE, warning = FALSE,
+                      dpi = 140, out.width = "100%", fig.width = 7, fig.height = 4.5)
 ```
 
 beam ranks methods from a tool by metric score matrix with multi-criteria decision analysis, then qualifies the ranking with sensitivity and statistical checks. This vignette runs the pipeline on the Duo, Robinson and Soneson (2018) single-cell clustering benchmark bundled with the package: 14 methods, 12 datasets, and the three well-populated metrics ARI (higher is better), runtime and Shannon entropy difference (lower is better). The R functions forward to the Python `beam` core through reticulate; install it once with `install_beam_python()`.
@@ -44,41 +46,30 @@ run <- beam_rank(scores, weights = "equal", method = "saw", seed = 0L)
 cat("top-ranked under equal weights / SAW:", run$top_tool, "\n")
 ```
 
-The funky heatmap shows the run as a glyph table: methods as rows, metrics as circles sized by the card-resolved normalized score, a composite bar, and the rank-robustness panels.
+The funky heatmap shows the run as a glyph table: methods as rows, metrics as circles sized by the card-resolved normalized score, a composite bar, and the rank-robustness columns (leave-one-dataset-out stability and SMAA rank certainty). It is drawn natively in R with the funkyheatmap package.
 
-```{r funky, fig.width = 7, fig.height = 5}
-fig_path <- tempfile(fileext = ".png")
-plot(run, fig_path)
-knitr::include_graphics(fig_path)
+```{r funky, fig.width = 8, fig.height = 7.5}
+plot(run, metric_groups = c("accuracy", "cost", "accuracy"))
 ```
 
 ## SMAA: does the top method hold across weightings?
 
 SMAA samples weight vectors and reports, per method, the share of weightings that rank it first.
 
-```{r smaa, fig.width = 7, fig.height = 4}
-conf <- run$smaa$confidence_factor
-ord <- order(conf)
-barplot(conf[ord] * 100, names.arg = method_names[ord], horiz = TRUE, las = 1,
-        col = "seagreen", xlab = "share of random weightings ranked first (%)",
-        main = "SMAA acceptability", xlim = c(0, 100), cex.names = 0.7)
+```{r smaa, fig.height = 4}
+beam_plot(run, "smaa")
 ```
 
 ## Leave-one-dataset-out: does the order depend on one dataset?
 
 For each dataset dropped, the rest are pooled and re-ranked. The per-method stability is the share of those runs in which the method keeps its base rank.
 
-```{r lodo, fig.width = 7, fig.height = 4}
+```{r lodo, fig.height = 4}
 lodo <- run$leave_one_dataset_out
-base_rank <- run$result$ranks
-ord <- order(base_rank)
-barplot(lodo$rank_stability[ord] * 100, names.arg = method_names[ord], horiz = TRUE,
-        las = 1, col = "darkorange", xlim = c(0, 100), cex.names = 0.7,
-        xlab = "rank held across leave-one-dataset-out runs (%)",
-        main = "Leave-one-dataset-out stability")
 cat("most influential dataset:",
     lodo$dataset_names[[lodo$most_influential_dataset + 1]],
     "(largest rank shift", lodo$max_rank_shift, ")\n")
+beam_plot(run, "dataset_stability")
 ```
 
 ## The checks are callable on their own
@@ -143,10 +134,8 @@ The dataset carries the most, close to the dataset variance share the mixed-effe
 
 The shares above are pooled over the methods. The `rank_sensitivity_by_tool` plot splits the same variance one method at a time. It separates a method whose rank depends on the dataset from one that depends on the weighting or the aggregation. The span next to each bar is the difference between the method's best and worst rank.
 
-```{r rank-sensitivity-by-tool, fig.width = 7, fig.height = 4}
-fig_path <- tempfile(fileext = ".png")
-beam_plot(rs, "rank_sensitivity_by_tool", fig_path)
-knitr::include_graphics(fig_path)
+```{r rank-sensitivity-by-tool, fig.height = 5}
+beam_plot(rs, "rank_sensitivity_by_tool")
 ```
 
 ## Dataset concordance: do the datasets agree on the order?
@@ -163,10 +152,8 @@ cat("least typical dataset:",
 
 The agreement matrix and the rank-deviation map plot from the run. The deviation map marks where each method places higher or lower than its own typical rank, the method-by-dataset cells that drive the disagreement.
 
-```{r concordance-plots, fig.width = 7, fig.height = 4}
-fig_path <- tempfile(fileext = ".png")
-beam_plot(run, "dataset_struggle", fig_path)
-knitr::include_graphics(fig_path)
+```{r concordance-plots, fig.height = 5}
+beam_plot(run, "dataset_struggle")
 ```
 
 ## Specification curve
@@ -205,22 +192,9 @@ complete <- !apply(is.na(ari), 1, any)
 block <- ari[complete, ]
 block_names <- method_names[complete]
 cd <- beam_critical_difference(block, higher_is_better = TRUE, tool_names = block_names)
-
-ord <- order(cd$average_ranks)
-ranks_sorted <- cd$average_ranks[ord]
-names_sorted <- block_names[ord]
-plot(ranks_sorted, rep(0, length(ranks_sorted)), pch = 19, xlim = rev(range(cd$average_ranks)),
-     ylim = c(-1, 0.6), axes = FALSE, xlab = "average rank on ARI (1 = best)", ylab = "",
-     main = sprintf("Friedman p = %.1e, Nemenyi CD = %.2f",
-                    cd$friedman_pvalue, cd$critical_difference))
-axis(1)
-text(ranks_sorted, 0.05, names_sorted, srt = 90, adj = 0, cex = 0.7)
-cliques <- cd$cliques
-for (k in seq_along(cliques)) {
-  idx <- unlist(cliques[[k]]) + 1
-  segments(min(cd$average_ranks[idx]), -0.1 * k, max(cd$average_ranks[idx]), -0.1 * k,
-           col = "steelblue", lwd = 3)
-}
+cat(sprintf("Friedman p = %.1e, Nemenyi CD = %.2f\n",
+            cd$friedman_pvalue, cd$critical_difference))
+beam_plot(cd, "critical_difference")
 ```
 
 When the matrix has gaps, `beam_skillings_mack` is the coverage-aware version of the same test, run on the full ARI matrix.
@@ -264,7 +238,7 @@ cat("transitive:", trans$is_transitive,
 
 The tests above report a p-value. `beam_bayesian_sign_comparison` reads the same pairwise relation on the probability scale. For each pair it gives the posterior probability that one method is practically better, that the two are practically equivalent within the floor, or that the other is practically better (Benavoli et al. 2017). Plot it with `beam_plot(bayes, "bayesian_comparison")`.
 
-```{r bayesian}
+```{r bayesian, fig.height = 5}
 bayes <- beam_bayesian_sign_comparison(sup)
 decisive <- sum(vapply(bayes$per_pair, function(p) p$decision != "inconclusive", logical(1)))
 cat("pairs with a decisive posterior at 0.95:", decisive, "of", length(bayes$per_pair), "\n")

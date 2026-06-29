@@ -16,39 +16,36 @@
 }
 
 
-#' Plot a beam run with the public plotting API
+#' Plot a beam run or analysis report natively in R
 #'
-#' Calls one of the `beam.plot` functions on a [beam_rank] result and either
-#' returns the matplotlib `Figure` or saves it to a file. The figure code lives
-#' in Python, so an R plot is the same one the HTML report embeds.
+#' Dispatches `kind` to a native ggplot2 builder and either returns the plot
+#' object or saves it to a file. The figures are drawn in R with ggplot2, and
+#' \pkg{patchwork} for the funky-heatmap panels, so they no longer depend on the
+#' Python matplotlib code.
 #'
-#' The effect-dissection plots show how the ranking moves when one choice or the
-#' data changes: `"weighting_effect"`, `"aggregation_effect"`,
-#' `"normalization_effect"` and `"dataset_effect"`. The ranking and stability
-#' plots are `"ranking"`, `"normalized_scores"`, `"smaa"`, `"dataset_stability"`
-#' and `"funky_heatmap"`. The agreement heatmaps are `"aggregation_agreement"`,
-#' `"normalization_agreement"` and `"dataset_concordance"`; `"dataset_struggle"`
-#' maps each method's per-dataset rank against its own mean.
+#' Run-based kinds take a [beam_rank] result: `"ranking"`, `"normalized_scores"`,
+#' `"smaa"`, `"dataset_stability"`, `"funky_heatmap"`, and the effect bump charts
+#' `"weighting_effect"`, `"aggregation_effect"`, `"normalization_effect"` and
+#' `"dataset_effect"`. Report-based kinds take the matching analysis report (or a
+#' run, when the report can be derived from it): `"rank_sensitivity"`,
+#' `"rank_sensitivity_by_tool"`, `"aggregation_agreement"`,
+#' `"normalization_agreement"`, `"dataset_concordance"`, `"dataset_struggle"`,
+#' `"dataset_discrimination"`, `"bayesian_comparison"`, `"pairwise_majority"` and
+#' `"critical_difference"`.
 #'
-#' Some plots take an analysis report in place of the run, passed as the first
-#' argument. From [beam_rank_sensitivity]: `"rank_sensitivity"`, the share of
-#' rank variance per factor pooled over the methods, and
-#' `"rank_sensitivity_by_tool"`, the same split with one bar per method.
-#'
-#' @param run A `RunResult` returned by [beam_rank], or an analysis report for
-#'   the report-based plot kinds.
-#' @param kind Character name of the `beam.plot` function to call.
+#' @param run A `beam_run` from [beam_rank], or an analysis report.
+#' @param kind Character name of the plot.
 #' @param path Optional output path. When given, the figure is saved there (the
 #'   extension picks the format) and the path is returned invisibly. When
-#'   `NULL`, the matplotlib `Figure` is returned.
-#' @param ... Other keyword arguments forwarded to the chosen plot function.
+#'   `NULL`, the ggplot object is returned.
+#' @param ... Other arguments forwarded to the chosen builder.
 #'
-#' @return Invisibly the output path when `path` is given, otherwise the
-#'   matplotlib `Figure`.
+#' @return Invisibly the output path when `path` is given, otherwise the ggplot
+#'   object.
 #'
 #' @seealso [beam_funky_heatmap], [beam_rank].
 #'
-#' @examplesIf reticulate::py_module_available("beam.mcda")
+#' @examplesIf reticulate::py_module_available("beam.mcda") && requireNamespace("ggplot2", quietly = TRUE)
 #' scores <- tempfile(fileext = ".csv")
 #' write.csv(
 #'   data.frame(tool = c("a", "b", "c"),
@@ -62,17 +59,14 @@
 #' @export
 beam_plot <- function(run, kind, path = NULL, ...) {
   .require_beam()
-  plot_mod <- reticulate::import("beam.plot")
-  fn <- tryCatch(plot_mod[[kind]], error = function(e) NULL)
-  if (is.null(fn) || !inherits(fn, "python.builtin.object")) {
+  .need("ggplot2")
+  builder <- .beam_plot_kinds[[kind]]
+  if (is.null(builder)) {
     stop(sprintf("unknown plot kind '%s'; see ?beam_plot for the list", kind), call. = FALSE)
   }
-  fig <- fn(run, ...)
-  if (is.null(path)) {
-    return(fig)
-  }
-  fig$savefig(path, bbox_inches = "tight")
-  invisible(path)
+  fig <- builder(run, ...)
+  if (is.null(path)) return(fig)
+  .beam_save(fig, path)
 }
 
 
@@ -101,47 +95,54 @@ print.beam_report <- function(x, ...) {
 }
 
 
+#' Plot a beam run result as a funky heatmap
+#'
+#' S3 `plot` method for the object returned by [beam_rank]. A thin alias for
+#' [beam_funky_heatmap], so `plot(result)` draws the glyph table with beam's
+#' rank-robustness columns.
+#'
+#' @param x A `beam_run` object returned by [beam_rank].
+#' @param path Optional output path, as in [beam_funky_heatmap].
+#' @param ... Other keyword arguments forwarded to [beam_funky_heatmap].
+#' @return Invisibly the output path when `path` is given, otherwise the figure.
+#'
+#' @exportS3Method base::plot
+plot.beam_run <- function(x, path = NULL, ...) {
+  beam_funky_heatmap(x, path = path, ...)
+}
+
+
 #' Plot a normalization-agreement report as a tau-b heatmap
 #'
-#' S3 `plot` method for [beam_normalization_agreement]. Delegates to the Python
-#' `beam.plot.normalization_agreement`.
+#' S3 `plot` method for [beam_normalization_agreement].
 #'
 #' @param x A `beam_normalization_agreement` object.
-#' @param path Optional output path; when `NULL` the matplotlib `Figure` is
-#'   returned.
+#' @param path Optional output path; when `NULL` the ggplot object is returned.
 #' @param ... Ignored.
-#' @return Invisibly the output path when `path` is given, otherwise the `Figure`.
+#' @return Invisibly the output path when `path` is given, otherwise the plot.
 #'
 #' @exportS3Method base::plot
 plot.beam_normalization_agreement <- function(x, path = NULL, ...) {
-  .plot_report(x, "normalization_agreement", path)
+  .plot_or_save(.k_normalization_agreement(x), path)
 }
 
 
 #' Plot an aggregation-agreement report as a tau-b heatmap
 #'
-#' S3 `plot` method for [beam_aggregation_agreement]. Delegates to the Python
-#' `beam.plot.aggregation_agreement`.
+#' S3 `plot` method for [beam_aggregation_agreement].
 #'
 #' @param x A `beam_aggregation_agreement` object.
-#' @param path Optional output path; when `NULL` the matplotlib `Figure` is
-#'   returned.
+#' @param path Optional output path; when `NULL` the ggplot object is returned.
 #' @param ... Ignored.
-#' @return Invisibly the output path when `path` is given, otherwise the `Figure`.
+#' @return Invisibly the output path when `path` is given, otherwise the plot.
 #'
 #' @exportS3Method base::plot
 plot.beam_aggregation_agreement <- function(x, path = NULL, ...) {
-  .plot_report(x, "aggregation_agreement", path)
+  .plot_or_save(.k_aggregation_agreement(x), path)
 }
 
 
-.plot_report <- function(report, kind, path) {
-  .require_beam()
-  plot_mod <- reticulate::import("beam.plot")
-  fig <- plot_mod[[kind]](report)
-  if (is.null(path)) {
-    return(fig)
-  }
-  fig$savefig(path, bbox_inches = "tight")
-  invisible(path)
+.plot_or_save <- function(fig, path) {
+  if (is.null(path)) return(fig)
+  .beam_save(fig, path)
 }

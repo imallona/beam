@@ -19,6 +19,10 @@ All notable changes to beam will be documented in this file. The format follows 
 
 ### Changed
 
+- rbeam draws every plot natively with ggplot2 and patchwork, replacing the matplotlib figures it drew through reticulate.
+- The funky heatmap keeps its leave-one-dataset-out span, aggregation span and SMAA acceptability bar on one aligned row axis.
+- Each plot sizes to its content, so a small chart no longer stretches to the width of a wide one.
+- Adds `beam_funky_table` and `beam_rank_bump` for plots from raw matrices; all five R vignettes use the native plots.
 - The report's critical-difference figure is now the standard Friedman-Nemenyi diagram, with bars joining the methods the test cannot tell apart. The earlier shaded-band figure stays available.
 - COMET refuses inputs with more than eight metrics, where it would build thousands of objects and take minutes. The agreement and sensitivity steps skip it there, so reports on metric-rich datasets stay fast.
 - `beam.mcda.pairwise_transitivity` and `PairwiseTransitivityReport`: checks whether the pairwise majority relation behind a ranking admits one consistent order, reporting the method preferred to every other one, the circular triads (Condorcet cycles), Kendall and Babington Smith's (1940) coefficient of consistence, and whether the relation is transitive. On Duo 2018 ARI under the noise floor SC3 is preferred to every other method yet the relation still carries one cycle; the HTML report's critical-difference section states whether the majorities are transitive. R wrapper `beam_pairwise_transitivity`; docs/explanations/transitivity.md.
