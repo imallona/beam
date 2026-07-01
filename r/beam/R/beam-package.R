@@ -12,6 +12,7 @@
 #' [beam_metric_show]) and the heterogeneity entry points work directly.
 #'
 #' @keywords internal
+#' @importFrom ggplot2 .data
 "_PACKAGE"
 
 .beam <- NULL

@@ -10,7 +10,9 @@ vignette: >
 ```{r setup, include = FALSE}
 have_beam <- requireNamespace("reticulate", quietly = TRUE) &&
   reticulate::py_module_available("beam.datasets")
-knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>")
+knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>",
+                      message = FALSE, warning = FALSE,
+                      dpi = 140, out.width = "100%", fig.width = 7, fig.height = 4.5)
 ```
 
 This vignette re-analyses the cell type annotation benchmark of Hou and Ji (2024, Nature Methods, DOI [10.1038/s41592-024-02235-4](https://doi.org/10.1038/s41592-024-02235-4)), which scores GPT-4 and GPT-3.5 against three reference-based annotators (CellMarker2.0, SingleR, ScType) on how well each labels the cell types of a dataset, judged against a manual annotation. The two metrics are the mean agreement score and the full match rate, both higher is better. The R functions forward to the Python `beam` core through reticulate; install it once with `install_beam_python()`.
@@ -65,10 +67,8 @@ for (i in ord) {
 
 GPT-4 ranks first. SingleR, a classical tool, ranks second, and GPT-3.5 ranks third, so the difference is specific to GPT-4 rather than to language models in general.
 
-```{r funky, fig.width = 7, fig.height = 4}
-fig_path <- tempfile(fileext = ".png")
-plot(run, fig_path)
-knitr::include_graphics(fig_path)
+```{r funky, fig.height = 4.5}
+plot(run)
 ```
 
 ## What moves the ranking: the dataset or the choice?
@@ -93,16 +93,13 @@ The dataset accounts for almost all of the rank variance; the weighting and the 
 
 `dataset_concordance` ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not.
 
-```{r concordance, fig.width = 6, fig.height = 4}
+```{r concordance, fig.height = 4}
 conc <- run$dataset_concordance
 cat(sprintf("mean agreement across datasets (Kendall tau-b): %.2f\n",
             conc$mean_pairwise_tau))
 cat("least typical dataset:",
     conc$dataset_names[[conc$most_idiosyncratic_dataset + 1]], "\n")
-
-fig_path <- tempfile(fileext = ".png")
-beam_plot(run, "dataset_struggle", fig_path)
-knitr::include_graphics(fig_path)
+beam_plot(run, "dataset_struggle")
 ```
 
 ## Specification curve
@@ -140,10 +137,7 @@ agreement <- block[, , 1]
 cd <- beam_critical_difference(agreement, higher_is_better = TRUE, tool_names = head_methods)
 cat(sprintf("Friedman p = %.1e, Nemenyi CD = %.2f\n",
             cd$friedman_pvalue, cd$critical_difference))
-ord <- order(cd$average_ranks)
-for (i in ord) {
-  cat(sprintf("  %-14s average rank %.2f\n", head_methods[i], cd$average_ranks[i]))
-}
+beam_plot(cd, "critical_difference")
 ```
 
 GPT-4 separates from the other four methods, which sit in overlapping cliques and are not separable on agreement at this dataset count. See `?beam_rank`, `?beam_rank_sensitivity`, `?beam_critical_difference` for the function documentation, and the heterogeneity vignette for the mixed-effects and Bradley-Terry views on the same benchmark.

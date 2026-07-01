@@ -71,6 +71,8 @@ jobs:
             any::knitr
             any::rmarkdown
             any::reticulate
+            any::ggplot2
+            any::patchwork
             any::lme4
             any::glmmTMB
             any::psychotree
