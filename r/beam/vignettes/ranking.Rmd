@@ -168,6 +168,12 @@ cat(sprintf("%d specifications; %s ranks first in %.0f%%, %d method(s) reach the
             curve$n_distinct_top_tools))
 ```
 
+```{r specification-curve-plot, fig.height = 5}
+beam_plot(curve, "specification_curve")
+```
+
+The top line is the rank of the most-frequent top method across the sorted grid; the panel below marks the weighting, aggregation and dataset of each specification.
+
 ## Blind analysis
 
 A blind analysis fixes the weighting, the aggregation and the metric set before the method names are revealed. `beam_blind` hides the names and shuffles the rows; `beam_unblind` restores them. The ranking does not change, and the seal fingerprint is recorded in the manifest.

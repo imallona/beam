@@ -53,6 +53,73 @@ test_that("robustness and concordance kinds read a tensor run", {
   }
 })
 
+metric_scores <- function() {
+  set.seed(2)
+  bio <- rnorm(30)
+  batch <- rnorm(30)
+  cbind(bio + rnorm(30, 0, 0.15), bio + rnorm(30, 0, 0.15), bio + rnorm(30, 0, 0.15),
+        batch + rnorm(30, 0, 0.15), batch + rnorm(30, 0, 0.15), batch + rnorm(30, 0, 0.15))
+}
+
+test_that("metric-quality kinds draw from their reports", {
+  skip_if_no_beam()
+  skip_if_no_ggplot()
+  scores <- metric_scores()
+  pol <- rep("higher_is_better", 6)
+  grp <- rep(c("bio", "batch"), each = 3)
+  ids <- paste0("m", 1:6)
+  val <- beam_metric_validity(scores, pol, grp, metric_ids = ids)
+  rel <- beam_metric_reliability(scores, pol, grp, metric_ids = ids)
+  dim_ <- beam_metric_dimensionality(scores, pol, grp, metric_ids = ids)
+  expect_s3_class(beam_plot(val, "metric_correlation"), "ggplot")
+  expect_s3_class(beam_plot(rel, "metric_reliability_dropped"), "ggplot")
+  expect_s3_class(beam_plot(dim_, "metric_dimensionality_scree"), "ggplot")
+})
+
+test_that("specification curve and critical difference band draw", {
+  skip_if_no_beam()
+  skip_if_no_patchwork()
+  set.seed(3)
+  arr <- array(runif(4 * 3 * 2), dim = c(4, 3, 2))
+  rs <- beam_rank_sensitivity(arr, c("higher_is_better", "lower_is_better"),
+                              tool_names = paste0("t", 1:4),
+                              dataset_names = paste0("d", 1:3))
+  curve <- beam_specification_curve(rs)
+  expect_s3_class(beam_plot(curve, "specification_curve"), "ggplot")
+
+  complete <- matrix(runif(20), nrow = 4, dimnames = list(paste0("t", 1:4), NULL))
+  cd <- beam_critical_difference(complete, higher_is_better = TRUE, tool_names = paste0("t", 1:4))
+  expect_s3_class(beam_plot(cd, "critical_difference_band"), "ggplot")
+})
+
+test_that("difficulty concordance draws from two families", {
+  skip_if_no_beam()
+  skip_if_no_ggplot()
+  set.seed(4)
+  arr <- array(runif(4 * 6 * 2), dim = c(4, 6, 2))
+  fam <- c("classical", "classical", "dl", "dl")
+  dc <- beam_difficulty_concordance(arr, rep("higher_is_better", 2), fam,
+                                    dataset_ids = paste0("u", 1:6))
+  expect_s3_class(beam_plot(dc, "difficulty_concordance"), "ggplot")
+})
+
+test_that("heterogeneity kinds draw when their R packages are present", {
+  skip_if_no_beam()
+  skip_if_no_ggplot()
+  set.seed(5)
+  ari <- matrix(runif(4 * 6, 0.3, 0.9), nrow = 4,
+                dimnames = list(paste0("t", 1:4), paste0("d", 1:6)))
+  if (requireNamespace("lme4", quietly = TRUE)) {
+    me <- beam_mixed_effects(ari, paste0("t", 1:4), paste0("d", 1:6))
+    expect_s3_class(beam_plot(me, "variance_components"), "ggplot")
+  }
+  if (requireNamespace("psychotree", quietly = TRUE)) {
+    bt <- beam_bradley_terry_tree(ari, paste0("t", 1:4), paste0("d", 1:6),
+                                  features = list(size = seq_len(6)), minsize = 3L)
+    expect_s3_class(beam_plot(bt, "bradley_terry_leaves"), "ggplot")
+  }
+})
+
 test_that("an unknown kind is rejected", {
   skip_if_no_beam()
   run <- beam_rank(write_scores(), sensitivity = FALSE)

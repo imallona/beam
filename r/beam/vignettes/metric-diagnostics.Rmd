@@ -50,12 +50,15 @@ data.frame(
 
 Convergent validity asks whether same-group metrics agree; discriminant validity asks whether different-group metrics agree less (Campbell and Fiske 1959).
 
-```{r validity}
+```{r validity, fig.height = 5}
 v <- diag$validity
 cat(sprintf("mean within-group correlation:  %.2f\n", v$mean_convergent))
 cat(sprintf("mean between-group correlation: %.2f\n", v$mean_discriminant))
 cat("the split separates (within > between):", v$discriminant_ok, "\n")
+beam_plot(v, "metric_correlation")
 ```
+
+Metrics are ordered by group; a darker within-group block than between-group cells means the split holds.
 
 ## Reliability: does each group hold together as one scale?
 
@@ -63,18 +66,10 @@ Standardized Cronbach's alpha per group (Cronbach 1951). A group above the conve
 
 ```{r reliability, fig.height = 3.6}
 rel <- diag$reliability
-alpha <- unlist(rel$alpha_by_group)
-reliab <- data.frame(group = names(alpha), alpha = alpha, reliable = alpha >= 0.7)
-ggplot2::ggplot(reliab, ggplot2::aes(group, alpha, fill = reliable)) +
-  ggplot2::geom_col(show.legend = FALSE) +
-  ggplot2::geom_hline(yintercept = 0.7, linetype = "dashed") +
-  ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", alpha)), vjust = 1.6, colour = "white") +
-  ggplot2::scale_fill_manual(values = c(`TRUE` = "#228833", `FALSE` = "#ee6677")) +
-  ggplot2::ylim(0, 1) +
-  ggplot2::labs(x = NULL, y = "standardized Cronbach's alpha",
-                title = "Reliability per metric group (0.7 cutoff)") +
-  ggplot2::theme_minimal(base_size = 11)
+beam_plot(rel, "metric_reliability_dropped")
 ```
+
+Each bar is the group alpha recomputed with one metric removed, one facet per group. A bar above the dashed group-alpha line marks a metric whose removal raises reliability; the dotted line is the 0.7 cutoff.
 
 ## Dimensionality: how many factors does each group carry?
 
@@ -82,22 +77,10 @@ Cronbach's alpha reads a group as one scale when it is high, but it cannot test 
 
 ```{r scree, fig.height = 4}
 dim_rep <- diag$dimensionality
-ev_bio <- unlist(dim_rep$eigenvalues_by_group$bio)
-ev_batch <- unlist(dim_rep$eigenvalues_by_group$batch)
-scree <- rbind(
-  data.frame(component = seq_along(ev_bio), eigenvalue = ev_bio, group = "biological"),
-  data.frame(component = seq_along(ev_batch), eigenvalue = ev_batch, group = "batch")
-)
-ggplot2::ggplot(scree, ggplot2::aes(component, eigenvalue, colour = group)) +
-  ggplot2::geom_line(linewidth = 1) +
-  ggplot2::geom_point(size = 2.4) +
-  ggplot2::geom_hline(yintercept = 1, linetype = "dotted") +
-  ggplot2::scale_colour_manual(values = c(biological = "#4477aa", batch = "#ee6677"), name = NULL) +
-  ggplot2::scale_x_continuous(breaks = seq_len(max(scree$component))) +
-  ggplot2::labs(x = "component", y = "eigenvalue",
-                title = "Scree plot of the metric correlation matrix (Kaiser cutoff at 1)") +
-  ggplot2::theme_minimal(base_size = 11)
+beam_plot(dim_rep, "metric_dimensionality_scree")
 ```
+
+One line per group joins its eigenvalues. The legend gives the factor count parallel analysis keeps. A curve that clears the Kaiser line at more than one component carries more than one factor.
 
 ## Specification curve and blind analysis
 
@@ -119,6 +102,10 @@ top <- curve$tool_names[[curve$most_frequent_top_tool + 1]]
 cat(sprintf("specification curve: %s ranks first in %.0f%% of %d combinations, %d reach the top\n",
             top, 100 * curve$most_frequent_top_fraction,
             curve$n_specifications, curve$n_distinct_top_tools))
+```
+
+```{r spec-curve-plot, fig.height = 5}
+beam_plot(curve, "specification_curve")
 ```
 
 A blind analysis fixes the weighting and the metric set before the method names are seen. `beam_blind` hides the names; `beam_unblind` restores them; the ranking does not change.

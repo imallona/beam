@@ -58,6 +58,20 @@ result$manifest        # named list (write to JSON if you want)
 
 The heterogeneity entry points (`beam_mixed_effects`, `beam_bradley_terry_tree`, `beam_plackett_luce`, `beam_source_variance_decomposition`) run natively in R using lme4, glmmTMB, psychotree and PlackettLuce, with no Python involved. Those packages are Suggests, so each entry point needs only its own package installed and stops with a clear message otherwise.
 
+## Plots
+
+The figures are drawn natively in R with ggplot2 (and patchwork for the multi-panel ones), so they match the Python package's plots without calling matplotlib. `plot(result)` draws the funky heatmap for a run. `beam_plot(x, kind)` selects a figure and returns the ggplot object, or writes a file when a path is given:
+
+```r
+result <- beam_rank("scores.csv", sensitivity = TRUE)
+plot(result)                                   # funky heatmap
+beam_plot(result, "specification_curve", "curve.png")
+beam_plot(mixed, "variance_components")
+beam_plot(validity, "metric_correlation")
+```
+
+The kinds cover ranking and stability (`ranking`, `normalized_scores`, `smaa`, `dataset_stability`, `funky_heatmap`, `specification_curve`, `critical_difference`, `critical_difference_band`), the choice-effect bump charts (`weighting_effect`, `aggregation_effect`, `normalization_effect`, `dataset_effect`), the agreement and concordance heatmaps (`aggregation_agreement`, `normalization_agreement`, `dataset_concordance`, `dataset_struggle`, `pairwise_majority`, `bayesian_comparison`, `dataset_discrimination`, `difficulty_concordance`), the heterogeneity reports (`model_effects`, `variance_components`, `bradley_terry_leaves`, `network_forest`, `attribution_progression`), and the metric-quality reports (`metric_correlation`, `metric_reliability_dropped`, `metric_dimensionality_scree`). The full list is in `?beam_plot`.
+
 ## License
 
 GPL (>= 3), matching the Python package.

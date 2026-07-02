@@ -30,8 +30,13 @@
 #' run, when the report can be derived from it): `"rank_sensitivity"`,
 #' `"rank_sensitivity_by_tool"`, `"aggregation_agreement"`,
 #' `"normalization_agreement"`, `"dataset_concordance"`, `"dataset_struggle"`,
-#' `"dataset_discrimination"`, `"bayesian_comparison"`, `"pairwise_majority"` and
-#' `"critical_difference"`.
+#' `"dataset_discrimination"`, `"bayesian_comparison"`, `"pairwise_majority"`,
+#' `"critical_difference"`, `"critical_difference_band"` and
+#' `"specification_curve"`. The heterogeneity and metric-quality reports have
+#' their own kinds: `"model_effects"`, `"variance_components"`,
+#' `"bradley_terry_leaves"`, `"difficulty_concordance"`, `"network_forest"`,
+#' `"metric_correlation"`, `"metric_reliability_dropped"`,
+#' `"metric_dimensionality_scree"` and `"attribution_progression"`.
 #'
 #' @param run A `beam_run` from [beam_rank], or an analysis report.
 #' @param kind Character name of the plot.
