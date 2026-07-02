@@ -41,6 +41,10 @@ beam_plot(me, "model_effects", xlabel = "ARI marginal mean (higher ranks first)"
           title = "Mixed-effects method effects on ARI")
 ```
 
+```{r variance-components, eval = have_lme4, fig.height = 3.4}
+beam_plot(me, "variance_components", title = "ARI variance by component")
+```
+
 The dataset intercept takes about 0.71 of the ARI variance, so most of the spread is datasets being uniformly easy or hard rather than methods reordering. SC3 and Seurat have the highest marginal means and are not separable from each other given the standard errors.
 
 ## Dataset concordance on ARI
@@ -77,16 +81,12 @@ bt <- beam_bradley_terry_tree(ari, method_names, dataset_names,
                               features = features, minsize = 4L)
 ```
 
-```{r bt-show, eval = have_psychotree, fig.height = 4}
+```{r bt-show, eval = have_psychotree, fig.height = 3.4}
 cat("a dataset feature splits the ranking:", bt$did_split, "\n")
-worth <- data.frame(method = method_names, worth = bt$global_worth)
-ggplot2::ggplot(worth, ggplot2::aes(stats::reorder(method, worth), worth)) +
-  ggplot2::geom_col(fill = "#aa3377") +
-  ggplot2::coord_flip() +
-  ggplot2::labs(x = NULL, y = "Bradley-Terry worth (global)",
-                title = "Bradley-Terry global ranking on ARI") +
-  ggplot2::theme_minimal(base_size = 11)
+beam_plot(bt, "bradley_terry_leaves", title = "Bradley-Terry tree leaves on ARI")
 ```
+
+Each bar is one tree leaf, sized by the datasets it holds and labelled by the method that ranks first there. A tree that did not split shows one bar over all datasets.
 
 On these twelve datasets the parameter-stability test finds no split, so the tree reduces to one global Bradley-Terry ranking led by SC3. A dozen datasets is too few to separate a feature-dependent regime from sampling noise.
 
@@ -132,13 +132,8 @@ features <- c(lapply(gf[[1]], as.numeric), lapply(gf[[2]], as.character))
 bt <- beam_bradley_terry_tree(agreement, gpt_methods, gpt_datasets,
                               features = features, minsize = 6L)
 cat("a dataset feature splits the ranking:", bt$did_split, "\n")
-worth <- data.frame(method = gpt_methods, worth = bt$global_worth)
-ggplot2::ggplot(worth, ggplot2::aes(stats::reorder(method, worth), worth)) +
-  ggplot2::geom_col(fill = "#aa3377") +
-  ggplot2::coord_flip() +
-  ggplot2::labs(x = NULL, y = "Bradley-Terry worth (global)",
-                title = "Bradley-Terry global ranking on annotation agreement") +
-  ggplot2::theme_minimal(base_size = 11)
+beam_plot(bt, "bradley_terry_leaves",
+          title = "Bradley-Terry tree leaves on annotation agreement")
 ```
 
 Even at 36 datasets the parameter-stability test finds no split, so the tree reduces to one global ranking. GPT-4 takes almost all of the Bradley-Terry worth, and the ranking does not reverse on any tissue, source, or normal-versus-cancer subgroup. The dataset still carries a sizable share of the agreement variance (the ICC above), so the per-dataset order varies while the pooled order holds.
@@ -161,6 +156,10 @@ top <- curve$tool_names[[curve$most_frequent_top_tool + 1]]
 cat(sprintf("specification curve: %s ranks first in %.0f%% of %d combinations, %d reach the top\n",
             top, 100 * curve$most_frequent_top_fraction,
             curve$n_specifications, curve$n_distinct_top_tools))
+```
+
+```{r spec-curve-plot, fig.height = 5}
+beam_plot(curve, "specification_curve")
 ```
 
 Blinding fixes the analysis before the method names are seen, which applies to the heterogeneity models above as much as to the ranking. `beam_blind` hides the names; `beam_unblind` restores them; the result does not change.

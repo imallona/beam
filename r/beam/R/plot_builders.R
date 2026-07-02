@@ -73,7 +73,7 @@ NULL
   if (is.null(order)) order <- order(values, decreasing = TRUE)
   labels <- factor(labels[order], levels = rev(labels[order]))
   df <- data.frame(label = labels, value = values[order])
-  numeric_fill <- length(fill) == length(values)
+  numeric_fill <- is.numeric(fill) && length(fill) == length(values)
   if (numeric_fill) df$fill <- fill[order]
   p <- ggplot2::ggplot(df, ggplot2::aes(.data$value, .data$label))
   if (numeric_fill) {

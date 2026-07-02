@@ -114,6 +114,10 @@ cat(sprintf("%d specifications; %s ranks first in %.0f%%, %d method(s) reach the
             curve$n_distinct_top_tools))
 ```
 
+```{r specification-curve-plot, fig.height = 5}
+beam_plot(curve, "specification_curve")
+```
+
 ## Blind analysis
 
 GPT-4 is the method under test here, so blinding matters: fixing the pipeline on hidden labels removes the chance to tune the weighting toward it. `beam_blind` hides the names; `beam_unblind` restores them. The ranking does not change.

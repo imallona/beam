@@ -126,17 +126,12 @@ A network meta-analysis pools all five sources into one ranking, the way clinica
 ```{r netmeta, eval = have_netmeta, fig.height = 3.6}
 arms <- ib$network_arms()
 nma <- beam_network_meta_analysis(arms[[1]], arms[[2]], arms[[3]], arms[[4]], arms[[5]])
-pscores <- data.frame(method = as.character(unlist(nma$treatments)), pscore = nma$pscore)
-ggplot2::ggplot(pscores, ggplot2::aes(stats::reorder(method, pscore), pscore)) +
-  ggplot2::geom_col(fill = "#4477aa") +
-  ggplot2::coord_flip() +
-  ggplot2::ylim(0, 1) +
-  ggplot2::labs(x = NULL, y = "P-score (higher is better)",
-                title = "Network meta-analysis ranking of the methods") +
-  ggplot2::theme_minimal(base_size = 11)
+beam_plot(nma, "network_forest")
 cat(sprintf("I-squared %.2f; inconsistency Q = %.1f on %.0f df, p = %.1e\n",
             nma$i2, nma$q_total, nma$df_total, nma$pval_total))
 ```
+
+Each method's pooled mean-rank difference from the combat reference is shown with its 95 percent interval; an interval left of the zero line outranks the reference. The P-score is the probability the method outranks a random competitor.
 
 With BatchBench in the pool, harmony no longer leads on its own: it ties with liger at the top, fastMNN follows, and combat trails. The high I-squared and the significant inconsistency Q say the direct and the indirect evidence do not line up, the network reading of the residual disagreement.
 
@@ -241,6 +236,12 @@ cat("most discriminating:", disc$most_discriminating, "\n")
 cat("least discriminating:", disc$least_discriminating, "\n")
 ```
 
+```{r discrimination-plot, fig.height = 5}
+beam_plot(disc, "dataset_discrimination", top = 20)
+```
+
+Each bar is one unit's spread of method scores, coloured by Kendall's W, the agreement of the metrics on the method order within that unit.
+
 `beam_difficulty_concordance` then splits the methods into two categories, classical and deep learning, and asks whether they find the same datasets hard. A low concordance means the hardness is specific to a kind of method rather than a property of the data.
 
 ```{r difficulty}
@@ -251,6 +252,12 @@ conc <- beam_difficulty_concordance(shen$scores, shen_polarity, families,
 cat(sprintf("DL vs classical difficulty concordance: %+.2f\n", conc$concordance[1, 2]))
 cat("families disagree most on:", conc$most_divergent_dataset, "\n")
 ```
+
+```{r difficulty-plot, fig.height = 5}
+beam_plot(conc, "difficulty_concordance")
+```
+
+Each point is one unit, at the classical score against the deep-learning score. Points off the equality line are hard for one family only.
 
 The Shen concordance is low: degraded labels affect only the methods that use them, so the hard units are harder for the deep-learning methods. On a benchmark whose hardness is dataset complexity the two categories agree. A single cross-method ranking would hide which kind a benchmark measures.
 
