@@ -388,7 +388,7 @@ plot.bayesian_comparison(bayes)
 
 ## Heterogeneity diagnostics on a synthetic interaction
 
-The canonical scenarios above are single-dataset (a method by metric matrix), so they cover the MCDA layer but not the heterogeneity layer, which needs a dataset axis. To show the heterogeneity diagnostics with a known ground truth, here is a small synthetic method by dataset by metric case built to contain a feature-driven ranking reversal: method A ranks first on the "easy" datasets and method C on the "hard" ones, with method B in the middle. The datasets carry a `regime` feature that marks which group they belong to.
+The canonical scenarios above are single-dataset (a method by metric matrix), so they cover the MCDA layer but not the heterogeneity layer, which needs more than one dataset. To show the heterogeneity diagnostics with a known ground truth, here is a small synthetic method by dataset by metric case built to contain a feature-driven ranking reversal: method A ranks first on the "easy" datasets and method C on the "hard" ones, with method B in the middle. The datasets carry a `regime` feature that marks which group they belong to.
 
 ```{python}
 rng = np.random.default_rng(0)
@@ -463,7 +463,7 @@ for finding in flagged.violations:
     print(" ", finding.severity, finding.message)
 ```
 
-## What moves the ranking with no dataset axis
+## What moves the ranking with a single dataset
 
 The canonical scenarios are single-dataset, so [`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) runs in its two-factor mode: it varies the weighting and the aggregation, and the dataset factor is absent. The constructed scenarios give it a known answer to recover. In the dominant scenario one method scores highest on every metric, so it is rank 1 in every combination and its rank variance is zero, whatever the weighting or aggregation. In the random scenario the two metrics trade off, so the order depends on the choice.
 
@@ -484,7 +484,7 @@ for name in ["dominant", "random"]:
           f"{curve.n_distinct_top_tools} method(s) reach the top")
 ```
 
-The dominant scenario's top method has a rank span of zero and is rank 1 in every combination, as built: with no dataset axis and a method that scores highest everywhere, no modeling choice can move it, so [`specification_curve`](../../docs/explanations/specification-curve.md) reports it first in 100 percent of the specifications and only one method reaching the top. In the random scenario the top method's rank moves with the choice, the most-frequent-top fraction drops below 100 percent, and more than one method reaches the top, because the two metrics trade off and there is no data axis to carry the variance.
+The dominant scenario's top method has a rank span of zero and is rank 1 in every combination, as built: with a single dataset and a method that scores highest everywhere, no modeling choice can move it, so [`specification_curve`](../../docs/explanations/specification-curve.md) reports it first in 100 percent of the specifications and only one method reaching the top. In the random scenario the top method's rank moves with the choice, the most-frequent-top fraction drops below 100 percent, and more than one method reaches the top, because the two metrics trade off and there is no dataset factor to carry the variance.
 
 The per-method split shows this directly. In the dominant scenario the top method has no rank variance to split, so it is drawn empty with a "rank fixed" note. In the random scenario the methods carry weighting and aggregation shares.
 
@@ -528,5 +528,5 @@ The MCDA core is not specific to bioinformatics. A worked cross-domain example s
 This vignette uses two metrics (ARI and runtime) and short tools lists for legibility. The next milestones widen it.
 
 1. Add cards for Shannon entropy difference and cluster-count deviation; rerun the canonical scenarios with four metrics so the SMAA simplex has higher dimension.
-2. Done: the Bradley-Terry tree and the mixed-effects model are demonstrated above on a synthetic multi-dataset interaction with a known regime feature; extend the canonical scenarios with a dataset axis so the odd-dataset scenario itself carries the split.
+2. Done: the Bradley-Terry tree and the mixed-effects model are demonstrated above on a synthetic multi-dataset interaction with a known regime feature; extend the canonical scenarios with more than one dataset so the odd-dataset scenario itself carries the split.
 3. Add a noise-floor field on the metric card and report whether the weight-perturbation flip would survive a noise-floor-sized change.

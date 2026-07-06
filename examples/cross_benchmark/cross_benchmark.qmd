@@ -76,7 +76,7 @@ combat ranks first in one benchmark and last in another; the reported rankings b
 
 ## beam's consistent re-ranking
 
-beam re-ranks all three from their raw scores with one rule: four shared metrics, equal weight, ranked within the common methods so the per-benchmark scale does not matter. The dataset axis is pooled per benchmark.
+beam re-ranks all three from their raw scores with one rule: four shared metrics, equal weight, ranked within the common methods so the per-benchmark scale does not matter. The datasets are pooled per benchmark.
 
 ```{python}
 cell = defaultdict(list)
@@ -294,7 +294,7 @@ for bench in BENCH:
           f"{curve.n_specifications} combinations, {curve.n_distinct_top_tools} method(s) reach the top")
 ```
 
-On OpenProblems the top method does not hold across the choices, so the per-method split shows which methods carry that variance and whether it is the weighting or the aggregation. The four metrics (ARI, ASW, kBET, LISI) are the columns being combined, the criteria of the decision, not a factor in the split. The split has no factor for the dataset either. Each cell of this matrix is already a mean rank over the benchmark's datasets, so the dataset axis is collapsed and the bars carry only the weighting, the aggregation and their interaction.
+On OpenProblems the top method does not hold across the choices, so the per-method split shows which methods carry that variance and whether it is the weighting or the aggregation. The four metrics (ARI, ASW, kBET, LISI) are the columns being combined, the criteria of the decision, not a factor in the split. The split has no factor for the dataset either. Each cell of this matrix is already a mean rank over the benchmark's datasets, so the datasets are collapsed and the bars carry only the weighting, the aggregation and their interaction.
 
 ```{python}
 op_matrix = ib.method_metric_matrix("OpenProblems")[2]

@@ -1,6 +1,6 @@
 # Add a new metric card
 
-Each metric card is one YAML file under `src/beam/metrics/<id>/v1.yaml`. The card carries the metadata the pipeline needs to normalize, weight and aggregate the metric correctly: polarity (higher or lower better), scale type, range, allowed transformations, a recommended normalization, and the ontology mappings (STATO, UO, OBI, HuggingFace evaluate) where an external term exists.
+Each metric card is one YAML file under `src/beam/metrics/<id>/v1.yaml`. The card carries the metadata the pipeline needs to normalize, weight and aggregate the metric correctly: [polarity](../explanations/measurement-theory.md) (higher or lower better), scale type, range, allowed transformations, a [recommended normalization](../explanations/normalization-and-scales.md), and the [ontology mappings](../explanations/ontology-mappings.md) (STATO, UO, OBI, HuggingFace evaluate) where an external term exists.
 
 This recipe walks through adding a card for a new metric called `recall_at_k`.
 

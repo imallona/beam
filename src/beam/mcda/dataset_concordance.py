@@ -43,7 +43,7 @@ class RankDeviation:
 
     Fields:
         tool: index into the tool axis.
-        dataset: original index into the dataset axis (not the evaluated-only
+        dataset: original index into the datasets (not the evaluated-only
             position).
         rank: the method's 1-based rank on that dataset, 1 is the highest place.
         mean_rank: the method's mean rank across the evaluated datasets.

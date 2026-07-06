@@ -64,7 +64,7 @@ With no `path` it returns the matplotlib figure object instead of saving. This f
 
 ## 4. Reach into the result
 
-`result` is the Python `RunResult` object. Use `$` to access fields:
+`result` is the Python [`RunResult`](../reference/RunResult.qmd) object. Use `$` to access fields:
 
 ```r
 result$top_tool          # character: the tool ranked first

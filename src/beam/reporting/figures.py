@@ -1025,7 +1025,7 @@ def specification_curve_plot(report, *, compact: bool = True, host: Figure | Non
     combinations, since a specification curve is dense by design and a width that
     scales with the count produces an unreadable canvas. With ``compact`` (the
     default), the weighting and the aggregation are drawn as labelled dot rows
-    and the dataset axis is collapsed into one colour strip below them, so a
+    and the datasets are collapsed into one colour strip below them, so a
     benchmark with many datasets stays readable. With ``compact=False`` every
     dataset gets its own labelled row, the fuller dashboard for interactive use.
 

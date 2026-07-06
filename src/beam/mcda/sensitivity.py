@@ -203,7 +203,7 @@ def leave_one_dataset_out(
     """Pool all datasets and rank, then re-rank with each dataset left out.
 
     The headline ranking pools a tool by dataset by metric tensor across the
-    dataset axis (one reduction rule per metric) into a tool by metric matrix
+    datasets (one reduction rule per metric) into a tool by metric matrix
     and ranks it. This analysis asks how much that ranking depends on any single
     dataset: for each dataset d, drop d, pool the remaining datasets the same
     way, re-rank, and compare to the base ranking. The result is a per-tool rank

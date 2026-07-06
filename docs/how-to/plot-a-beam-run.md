@@ -1,12 +1,12 @@
 # Plot a beam run
 
-`beam.plot` returns matplotlib figures you can show in a notebook, drop into a Quarto vignette, or write to a file. Every function returns a `matplotlib.figure.Figure`, so you can adjust it before saving. The figure code is shared with the HTML report, so a plot you draw here is the same one the report embeds.
+`beam.plot` returns matplotlib figures you can show in a notebook, drop into a Quarto vignette, or write to a file. Every function returns a `matplotlib.figure.Figure`, so you can adjust it before saving. The figure code is shared with the [HTML report](../reference/report.qmd), so a plot you draw here is the same one the report embeds.
 
 This recipe shows the three groups of plots and how to save them.
 
 ## Get a run
 
-Every plot starts from a `RunResult`.
+Every plot starts from a [`RunResult`](../reference/RunResult.qmd).
 
 ```python
 import beam
@@ -27,7 +27,7 @@ plot.dataset_stability(run)  # leave-one-dataset-out rank stability (tensor inpu
 plot.funky_heatmap(run)      # the glyph table with the rank-robustness panels
 ```
 
-`smaa` and `dataset_stability` need the matching sensitivity report; they raise a clear error when the run was made with `sensitivity=False` or, for the dataset plots, on a single-dataset input.
+[`smaa`](../reference/smaa.qmd) and `dataset_stability` need the matching sensitivity report; they raise a clear error when the run was made with `sensitivity=False` or, for the dataset plots, on a single-dataset input.
 
 ## Effect dissection
 
@@ -58,7 +58,7 @@ plot.critical_difference(report)    # canonical Friedman-Nemenyi clique-bar diag
 plot.critical_difference_band(report)  # the shaded-band alternative
 ```
 
-The critical-difference plot is the canonical Demsar diagram: each tool at its average rank, with a blue bar joining each clique the Nemenyi test cannot separate.
+The [critical-difference plot](../explanations/comparing-methods-across-datasets.md) is the canonical Demsar diagram: each tool at its average rank, with a blue bar joining each clique the Nemenyi test cannot separate.
 
 ## Grids, heterogeneity, and building blocks
 
@@ -85,7 +85,7 @@ plot.save(fig, "normalization_effect.pdf")
 
 ## Dissect one effect in the funky heatmap
 
-The funky heatmap can carry an extra rank-span panel per choice so you can read several effects in one figure. The normalization panel is off by default to keep the figure narrow; turn it on when you want it.
+The [funky heatmap](../explanations/funky-heatmaps-and-robustness.md) can carry an extra rank-span panel per choice so you can read several effects in one figure. The normalization panel is off by default to keep the figure narrow; turn it on when you want it.
 
 ```python
 plot.funky_heatmap(

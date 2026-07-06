@@ -16,7 +16,7 @@ def aggregate_across_datasets(
 ) -> np.ndarray:
     """Reduce a tool by dataset score matrix to a tool vector for one metric.
 
-    Used to fold the dataset dimension out of a benchmark before MCDA, so
+    Used to reduce a benchmark over its datasets before MCDA, so
     that the rest of the pipeline can work on a tool by metric matrix. The
     choice of rule comes from the metric card's
     ``comparability.recommended_aggregation_across_datasets`` field.
@@ -84,10 +84,10 @@ def reduce_tensor(
     metric_ids: Sequence[str] | None = None,
     on_zero_coverage: str = "error",
 ) -> np.ndarray:
-    """Fold the dataset axis of a tool by dataset by metric tensor, nan-aware.
+    """Reduce a tool by dataset by metric tensor over its datasets, nan-aware.
 
-    Each metric column is reduced over the dataset axis with its own rule, so
-    the MCDA pipeline downstream sees a tool by metric matrix. Unlike
+    Each metric column is reduced over the datasets with its own rule, so
+    the downstream MCDA pipeline receives a tool by metric matrix. Unlike
     ``aggregate_across_datasets``, this function tolerates missing cells: a tool
     measured on only some datasets is summarized over the datasets where it was
     observed. This available-case summary is not imputation; it estimates each

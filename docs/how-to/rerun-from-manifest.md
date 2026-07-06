@@ -1,6 +1,6 @@
 # Rerun a beam analysis from a manifest
 
-Every `beam.rank` run writes a manifest: a JSON record of the input file path and content hash, the metric card ids and versions, the weighting scheme, the aggregation method, the SMAA seed and sample count, the per-metric normalization, the software fingerprint (python, numpy, scipy, pymcdm, pyyaml, jsonschema versions), and the host fingerprint. The manifest is what travels with a publication: a reader can run beam against it and reproduce the analysis byte for byte where possible.
+Every [`beam.rank`](../reference/rank.qmd) run writes a manifest: a JSON record of the input file path and content hash, the metric card ids and versions, the [weighting scheme](../explanations/weighting-schemes.md), the [aggregation method](../explanations/aggregation-methods.md), the [SMAA](../reference/smaa.qmd) seed and sample count, the [per-metric normalization](../explanations/normalization-and-scales.md), the software fingerprint (python, numpy, scipy, pymcdm, pyyaml, jsonschema versions), and the host fingerprint. The manifest is what travels with a publication: a reader can run beam against it and reproduce the analysis byte for byte where possible.
 
 This recipe walks through rerunning a recorded analysis.
 

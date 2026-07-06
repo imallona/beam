@@ -469,7 +469,7 @@ def specification_curve(report, compact: bool = True) -> Figure:
     """Rank of the top tool across every combination of analyst choices.
 
     Takes a ``SpecificationCurveReport`` from ``beam.mcda.specification_curve``.
-    With ``compact`` (the default) the dataset axis is one colour strip; pass
+    With ``compact`` (the default) the datasets are one colour strip; pass
     ``compact=False`` for the full per-dataset dashboard.
     """
     return _figures.specification_curve_plot(report, compact=compact)

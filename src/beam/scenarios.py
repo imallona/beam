@@ -100,9 +100,9 @@ def _pool_with_recommended_rules(
 ) -> np.ndarray:
     """Reduce a (n_tools, n_datasets, n_metrics) tensor to (n_tools, n_metrics).
 
-    Each metric column is folded over the dataset axis using the rule
+    Each metric column is reduced over the datasets using the rule
     declared on its card (arithmetic_mean, geometric_mean, median,
-    rank_mean). When no rule is declared the function falls back to
+    rank_mean). When no rule is declared the function uses the
     arithmetic mean.
     """
     props = properties_for(list(metric_ids))
@@ -442,7 +442,7 @@ class TransportationBenchmark:
 
     Fields:
         mode_names: the transport modes (rows).
-        terrain_names: the terrains (the dataset axis).
+        terrain_names: the terrains (the datasets).
         metric_names: the metric card ids ("speed", "cost", "co2").
         scores: (n_modes, n_terrains, n_metrics) with NaN where a mode cannot
             run on a terrain.

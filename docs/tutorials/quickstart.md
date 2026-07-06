@@ -1,6 +1,6 @@
 # Quickstart
 
-beam ranks the tools in a benchmark from a tool-by-metric table of scores. It reads the metric meaning (polarity, scale, normalization) from metric cards, normalizes the scores, combines them into one composite score per tool, and reports a ranking with a sensitivity analysis.
+beam ranks the tools in a benchmark from a tool-by-metric table of scores. It reads the metric meaning (polarity, scale, normalization) from [metric cards](../explanations/cards-and-pipeline.qmd), [normalizes](../explanations/normalization-and-scales.md) the scores, [combines them into one composite score](../explanations/aggregation-methods.md) per tool, and reports a ranking with a sensitivity analysis.
 
 This tutorial goes from a small CSV to an HTML report, first in Python and then from the command line. Copy each block as you go and run it.
 
@@ -15,7 +15,7 @@ pip install ./beam
 
 ## Step 1: write a small scores file
 
-beam reads a wide CSV. The first column holds the tool name. Every other column header is a metric id that must resolve to a metric card. Here we use three cards that ship with beam: ari (adjusted Rand index, higher is better), nmi (normalized mutual information, higher is better) and runtime (seconds, lower is better). beam reads the polarity from the cards, so you do not need to flip the runtime column yourself.
+beam reads a wide CSV. The first column holds the tool name. Every other column header is a metric id that must resolve to a metric card. Here we use three cards that ship with beam: ari (adjusted Rand index, higher is better), nmi (normalized mutual information, higher is better) and runtime (seconds, lower is better). beam reads the [polarity](../explanations/measurement-theory.md) from the cards, so you do not need to flip the runtime column yourself.
 
 Save this as scores.csv:
 
@@ -36,11 +36,11 @@ result = beam.rank(scores)
 beam.report(result, "report.html")
 ```
 
-`beam.load_scores` reads the CSV and checks every metric id against the registry. An unknown id raises `UnknownMetricError`, so a typo in a header fails early rather than ranking on the wrong column. `beam.rank` normalizes each column per its card, applies equal weights and the SAW aggregation by default, runs the default sensitivity analysis, and builds a run manifest. `beam.report` writes one self-contained HTML file with the figures embedded, so report.html opens in a browser without any other files.
+[`beam.load_scores`](../reference/load_scores.qmd) reads the CSV and checks every metric id against the [registry](../reference/Registry.qmd). An unknown id raises `UnknownMetricError`, so a typo in a header fails early rather than ranking on the wrong column. [`beam.rank`](../reference/rank.qmd) normalizes each column per its card, applies [equal weights](../reference/equal_weights.qmd) and the [SAW aggregation](../reference/weighted_sum.qmd) by default, runs the default [sensitivity analysis](../explanations/funky-heatmaps-and-robustness.md), and builds a [run manifest](../how-to/rerun-from-manifest.md). [`beam.report`](../reference/report.qmd) writes one self-contained HTML file with the figures embedded, so report.html opens in a browser without any other files.
 
 ## Step 3: read the RunResult
 
-`beam.rank` returns a `RunResult`. The fields you reach for most often:
+`beam.rank` returns a [`RunResult`](../reference/RunResult.qmd). The fields you use most often:
 
 ```python
 result.top_tool        # name of the tool ranked first
@@ -51,9 +51,9 @@ result.result.composite  # composite score per tool
 result.result.normalized # the normalized tool-by-metric matrix
 ```
 
-`result.result` is the MCDA result: it carries the ranks, the composite scores, the normalized matrix, the weighting vector and the method name. The sensitivity reports live on `result.smaa`, `result.leave_one_out` and `result.perturbation`; they are `None` when you pass `sensitivity=False`. `result.manifest` is a dictionary recording the input, the metrics, the parameters and the normalization. That record is what lets a reader reproduce the run.
+`result.result` is the MCDA result: it holds the ranks, the composite scores, the normalized matrix, the weighting vector and the method name. The sensitivity reports are on [`result.smaa`](../reference/smaa.qmd), [`result.leave_one_out`](../reference/leave_one_metric_out.qmd) and [`result.perturbation`](../reference/smallest_weight_perturbation.qmd); they are `None` when you pass `sensitivity=False`. `result.manifest` is a dictionary recording the input, the metrics, the parameters and the normalization. That record is what lets a reader reproduce the run.
 
-You can change the weighting and the aggregation through arguments. For example, entropy weights with the TOPSIS aggregation:
+You can change the weighting and the aggregation through arguments. For example, [entropy weights](../reference/entropy_weights.qmd) with the [TOPSIS aggregation](../reference/topsis.qmd):
 
 ```python
 result = beam.rank(scores, weights="entropy", method="topsis")
@@ -93,4 +93,4 @@ To run a whole pipeline from one declarative file (so a reviewer reruns it with 
 
 For the concepts behind the steps above, see the explanations: [normalization and scales](../explanations/normalization-and-scales.md), [weighting schemes](../explanations/weighting-schemes.md) and [aggregation methods](../explanations/aggregation-methods.md).
 
-When the scores carry a dataset axis, `beam.rank` also reports whether the datasets agree on the order, with [dataset concordance](../explanations/dataset-concordance.md). The bundled vignettes (Duo, M4, OpenProblems, transportation) show it on real and illustrative data.
+When each metric is calculated on more than one dataset, `beam.rank` also reports whether the datasets agree on the order, with [dataset concordance](../explanations/dataset-concordance.md). The bundled vignettes ([Duo](../../examples/duo2018/duo2018.qmd), [M4](../../examples/m4/m4.qmd), [OpenProblems](../../examples/openproblems/openproblems.qmd), [transportation](../../examples/transportation/transportation.qmd)) show it on real and illustrative data.

@@ -1,6 +1,6 @@
 # Run a benchmark from a beam.yaml file
 
-Use this recipe when you want a whole beam run captured in one file: the input scores, the metric selection, the weighting and aggregation, the sensitivity settings, and the output paths. The beam.yaml and the written manifest.json together are the artifact a reviewer reruns to reproduce your ranking.
+Use this recipe when you want a whole beam run captured in one file: the input scores, the metric selection, the [weighting](../explanations/weighting-schemes.md) and [aggregation](../explanations/aggregation-methods.md), the sensitivity settings, and the output paths. The beam.yaml and the written [manifest.json](rerun-from-manifest.md) together are the artifact a reviewer reruns to reproduce your ranking.
 
 ## Write the beam.yaml
 
@@ -47,9 +47,9 @@ metrics is optional. It picks and reorders the metric columns to use. Each entry
 
 weighting.method sets how the metric weights are derived. It accepts equal (the default when the block is absent), entropy, std, critic or merec.
 
-aggregation.method sets how the normalized scores combine into one score per tool. It accepts saw (the default when the block is absent), topsis, vikor, promethee_ii or comet.
+aggregation.method sets how the [normalized](../explanations/normalization-and-scales.md) scores combine into one score per tool. It accepts saw (the default when the block is absent), topsis, vikor, promethee_ii or comet.
 
-sensitivity turns the sensitivity analysis on or off by its presence. Include the block to run the analysis; omit it to skip it. The smaa entry sets the sample count n and the seed, which default to 1000 and 42 so two runs reproduce.
+sensitivity turns the sensitivity analysis on or off by its presence. Include the block to run the analysis; omit it to skip it. The [smaa](../reference/smaa.qmd) entry sets the sample count n and the seed, which default to 1000 and 42 so two runs reproduce.
 
 outputs is optional and each entry is optional. report writes the self-contained HTML report. manifest writes manifest.json, the run record. scores_normalized writes the normalized tool-by-metric matrix as a CSV.
 
@@ -59,7 +59,7 @@ Keep beam.yaml and the written manifest.json together with the scores file. mani
 
 ## Pinning a card version
 
-Each metric entry may pin a card version, which is the artifact a reviewer needs to reproduce a ranking exactly:
+Each metric entry may pin a [card](../explanations/cards-and-pipeline.qmd) version, which is the artifact a reviewer needs to reproduce a ranking exactly:
 
 ```yaml
 metrics:

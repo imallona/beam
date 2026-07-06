@@ -362,9 +362,9 @@ def _coerce_scores(
 def _matrix_for_ranking(
     scores: Scores, registry: Registry, on_zero_coverage: str = "error"
 ) -> np.ndarray:
-    """Fold a tool by dataset by metric tensor to a tool by metric matrix.
+    """Reduce a tool by dataset by metric tensor to a tool by metric matrix.
 
-    Each metric column is reduced over the dataset axis with the rule on its
+    Each metric column is reduced over the datasets with the rule on its
     card (``comparability.recommended_aggregation_across_datasets``), nan-aware
     so a tool missing on some datasets is summarized over the datasets where it
     was observed. A tool with no observation at all for a metric leaves a

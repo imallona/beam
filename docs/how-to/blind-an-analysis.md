@@ -1,6 +1,6 @@
 # Run a blind analysis
 
-Hide the method names while you fix the analysis pipeline, then restore them. This is the blind analysis practice from particle physics and clinical trials: choose the weighting, the aggregation and the metric set without knowing which method is which, so the choices cannot be tuned toward a preferred result. See the explanation in docs/explanations/analysis-blinding.md for the reasoning and the references.
+Hide the method names while you fix the analysis pipeline, then restore them. This is the blind analysis practice from particle physics and clinical trials: choose the weighting, the aggregation and the metric set without knowing which method is which, so the choices cannot be tuned toward a preferred result. See the explanation in [docs/explanations/analysis-blinding.md](../explanations/analysis-blinding.md) for the reasoning and the references.
 
 ## From Python
 
@@ -24,7 +24,7 @@ final = beam.unblind(result, seal)
 print(final.top_tool)
 ```
 
-The run manifest on a blinded run records the seal fingerprint:
+The run [manifest](rerun-from-manifest.md) on a blinded run records the seal fingerprint:
 
 ```python
 result.manifest["blinding"]   # {"blinded": True, "seal_sha256": "..."}
