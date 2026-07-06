@@ -155,7 +155,7 @@ NULL
     ggplot2::scale_y_reverse(breaks = seq_len(max(ranks))) +
     ggplot2::scale_colour_manual(values = grDevices::colorRampPalette(.beam_palette)(length(method_names)),
                                  guide = "none") +
-    ggplot2::expand_limits(x = n_col + 0.6) +
+    ggplot2::expand_limits(x = n_col + 0.5 + 0.09 * max(nchar(method_names))) +
     ggplot2::labs(x = NULL, y = "rank (1 best)", title = title) +
     theme_beam() +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 20, hjust = 1))

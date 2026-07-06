@@ -103,6 +103,43 @@ test_that("difficulty concordance draws from two families", {
   expect_s3_class(beam_plot(dc, "difficulty_concordance"), "ggplot")
 })
 
+test_that("funky heatmap draws clique brackets and a rank-sensitivity bar has coloured sources", {
+  skip_if_no_beam()
+  skip_if_no_patchwork()
+  run <- beam_rank(write_tensor(), sensitivity = TRUE, missing = "available", seed = 1L)
+  cliques <- list(c("a", "b"), c("c", "d"))
+  expect_s3_class(beam_funky_heatmap(run, cliques = cliques), "ggplot")
+
+  set.seed(5)
+  arr <- array(runif(4 * 3 * 2), dim = c(4, 3, 2))
+  rs <- beam_rank_sensitivity(arr, c("higher_is_better", "lower_is_better"),
+                              tool_names = paste0("t", 1:4), dataset_names = paste0("d", 1:3))
+  expect_s3_class(beam_plot(rs, "rank_sensitivity"), "ggplot")
+})
+
+test_that("grouped rank bars, variance highlight, theme and palette are exported", {
+  bars <- beam_rank_bars(c("a", "b", "c"),
+                         list(one = c(1, 2, 3), two = c(2, 1, 3)))
+  expect_s3_class(bars, "ggplot")
+  expect_s3_class(beam_theme(), "theme")
+  expect_type(beam_palette(), "character")
+  expect_named(beam_palette(roles = TRUE))
+})
+
+test_that("variance components highlight a named component", {
+  skip_if_no_beam()
+  skip_if_not(requireNamespace("lme4", quietly = TRUE), "lme4 not installed")
+  set.seed(6)
+  methods <- rep(c("a", "b", "c"), times = 6)
+  benchmarks <- rep(c("x", "y"), each = 9)
+  datasets <- paste0(benchmarks, rep(rep(1:3, each = 3), 2))
+  scores <- runif(length(methods))
+  sv <- beam_source_variance_decomposition(methods, datasets, benchmarks, scores)
+  expect_s3_class(
+    beam_plot(sv, "variance_components", highlight = "method:benchmark", annotation = "note"),
+    "ggplot")
+})
+
 test_that("heterogeneity kinds draw when their R packages are present", {
   skip_if_no_beam()
   skip_if_no_ggplot()

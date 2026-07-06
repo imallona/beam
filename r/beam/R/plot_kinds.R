@@ -119,14 +119,32 @@ NULL
 }
 
 # Report-based kinds
+
+# One vertical bar per variance source, coloured by source: the analyst choices
+# (weighting, aggregation) in red, the data (dataset) in blue, and the
+# interaction in grey, so the bar colours show whether a choice or the data moves
+# the ranking. Each bar is labelled with its share.
 .k_rank_sensitivity <- function(report) {
   factors <- .chr(report$factors)
   shares <- vapply(factors, function(f) .num(report$factor_shares[[f]]), numeric(1))
   labels <- c(factors, "interaction")
   values <- c(shares, .num(report$interaction_share))
-  fill <- c(rep(.beam_palette[1], length(factors)), .beam_palette[7])
-  .bar_plot(values, labels, order = seq_along(labels), fill = fill,
-            value_label = "share of rank variance", title = "what moves the ranking")
+  keep <- is.finite(values)
+  labels <- labels[keep]
+  values <- values[keep]
+  role <- ifelse(labels == "dataset", "data",
+                 ifelse(labels == "interaction", "residual", "analyst"))
+  df <- data.frame(factor = factor(labels, levels = labels), value = values,
+                   fill = unname(.beam_source_colours[role]))
+  p <- ggplot2::ggplot(df, ggplot2::aes(.data$factor, .data$value)) +
+    ggplot2::geom_col(fill = df$fill) +
+    ggplot2::geom_text(ggplot2::aes(label = formatC(.data$value, format = "f", digits = 3)),
+                       vjust = -0.4, size = 3, colour = "#555555") +
+    ggplot2::coord_cartesian(ylim = c(0, 1), clip = "off") +
+    ggplot2::labs(x = NULL, y = "share of rank variance", title = "what moves the ranking") +
+    theme_beam() +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 20, hjust = 1))
+  .sized(p, width = max(3.5, 1.1 * length(labels) + 1.5), height = 3.6)
 }
 
 .k_rank_sensitivity_by_tool <- function(report, title = NULL) {
@@ -353,20 +371,25 @@ NULL
 }
 
 # Heterogeneity kinds
-.k_variance_components <- function(report, title = NULL) {
+# `highlight` names one or more components to colour as the benchmarker (green),
+# the disagreement that is a benchmarker choice rather than the method or the
+# data; the rest are data (blue) and the residual grey. `annotation` adds a
+# caption, for example how a highlighted share moves as sources are added.
+.k_variance_components <- function(report, title = NULL, highlight = NULL, annotation = NULL) {
   vc <- reticulate::py_to_r(report$variance_components)
   names_ <- names(vc)
   vals <- as.numeric(unlist(vc))
   total <- sum(vals[is.finite(vals) & vals > 0])
   shares <- if (total > 0) vals / total else vals
-  is_resid <- tolower(names_) %in% c("residual", "dispersion")
-  df <- data.frame(component = factor(names_, levels = names_), share = shares, resid = is_resid)
-  p <- ggplot2::ggplot(df, ggplot2::aes(.data$component, .data$share, fill = .data$resid)) +
+  role <- ifelse(tolower(names_) %in% c("residual", "dispersion"), "residual",
+                 ifelse(!is.null(highlight) & names_ %in% highlight, "benchmarker", "data"))
+  df <- data.frame(component = factor(names_, levels = names_), share = shares, role = role)
+  p <- ggplot2::ggplot(df, ggplot2::aes(.data$component, .data$share, fill = .data$role)) +
     ggplot2::geom_col(show.legend = FALSE) +
-    ggplot2::scale_fill_manual(values = c(`FALSE` = .beam_palette[1], `TRUE` = .beam_palette[7])) +
+    ggplot2::scale_fill_manual(values = .beam_source_colours) +
     ggplot2::ylim(0, 1) +
     ggplot2::labs(x = "component", y = "share of variance",
-                  title = title %||% "variance components") +
+                  title = title %||% "variance components", caption = annotation) +
     theme_beam() +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 20, hjust = 1))
   .sized(p, width = max(4, 1.1 * length(names_) + 1.5), height = 3.6)

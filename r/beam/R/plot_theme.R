@@ -27,6 +27,43 @@ theme_beam <- function(base_size = 11) {
   "#4477aa", "#ee6677", "#228833", "#ccbb44", "#66ccee", "#aa3377", "#bbbbbb"
 )
 
+# The variance-attribution colours, shared by the rank-sensitivity bars, the
+# variance-component highlight and the attribution progression: analyst choice
+# is red, the data (dataset) is blue, the benchmarker is green, the residual or
+# interaction is grey. Defined here so every plot that splits a ranking's
+# variance by source uses the same colours.
+.beam_source_colours <- c(
+  analyst = "#ee6677", data = "#4477aa", benchmarker = "#228833", residual = "#bbbbbb"
+)
+
+#' The beam plotting theme
+#'
+#' The clean ggplot2 theme every native beam plot uses, exported so a figure that
+#' composes beam panels with its own can match their look.
+#'
+#' @param base_size Base font size in points.
+#' @return A ggplot2 theme object.
+#' @seealso [beam_palette], [beam_plot].
+#' @export
+beam_theme <- function(base_size = 11) theme_beam(base_size)
+
+#' The beam categorical palette
+#'
+#' The Paul Tol bright, colour-blind-safe palette beam uses for categorical
+#' fills, exported so a figure can colour its own panels to match. With
+#' `roles = TRUE` it instead returns the named variance-attribution colours
+#' (analyst, data, benchmarker, residual) the sensitivity and attribution plots
+#' use.
+#'
+#' @param roles When `TRUE`, return the named source-attribution colours instead
+#'   of the categorical palette.
+#' @return A character vector of hex colours.
+#' @seealso [beam_theme].
+#' @export
+beam_palette <- function(roles = FALSE) {
+  if (roles) .beam_source_colours else .beam_palette
+}
+
 # a diverging green-to-red ramp for "good to bad" robustness encodings and a
 # sequential blue ramp for score magnitudes, returned as colour vectors for the
 # ggplot2 gradient scales

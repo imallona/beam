@@ -22,6 +22,10 @@
 #' @param show_lodo,show_smaa,show_aggregation Draw the leave-one-dataset-out
 #'   span, the SMAA acceptability bar, and the aggregation rank span when the run
 #'   carries them. Default `TRUE`.
+#' @param cliques Optional list of method-name groups from a Friedman-Nemenyi
+#'   test (for example `beam_critical_difference(...)$cliques` mapped to names).
+#'   Each multi-member group is drawn as an indigo bracket to the left of the
+#'   glyphs, joining the methods the test cannot separate.
 #' @param ... Reserved for future panels.
 #'
 #' @return Invisibly the output path when `path` is given, otherwise the
@@ -45,7 +49,7 @@ beam_funky_heatmap <- function(result, path = NULL, metric_groups = NULL,
                                title = NULL, worth = NULL, worth_ci = NULL,
                                worth_label = "model worth",
                                show_lodo = TRUE, show_smaa = TRUE,
-                               show_aggregation = TRUE, ...) {
+                               show_aggregation = TRUE, cliques = NULL, ...) {
   .require_beam()
   .need("patchwork")
   d <- .glyph_data(result, metric_groups)
@@ -65,6 +69,7 @@ beam_funky_heatmap <- function(result, path = NULL, metric_groups = NULL,
     lodo = .reorder_span(lodo, order),
     agg = .reorder_span(agg, order),
     smaa = if (is.null(smaa)) NULL else smaa[order, , drop = FALSE],
+    cliques = .clique_name_list(cliques),
     title = title
   )
   if (is.null(path)) return(fig)
@@ -110,10 +115,21 @@ beam_funky_table <- function(normalized, method_names, metric_names, composite,
     normalized = normalized[order, , drop = FALSE],
     composite = composite[order], ranks = ranks[order],
     worth = NULL, worth_ci = NULL, worth_label = "model worth",
-    lodo = NULL, agg = NULL, smaa = NULL, title = title
+    lodo = NULL, agg = NULL, smaa = NULL, cliques = NULL, title = title
   )
   if (is.null(path)) return(fig)
   .beam_save(fig, path)
+}
+
+# Cliques arrive as an R list of character vectors, a Python sequence of tuples,
+# or NULL. Return an R list of character vectors, keeping only the groups with
+# more than one member (a singleton draws no bracket).
+.clique_name_list <- function(cliques) {
+  if (is.null(cliques)) return(NULL)
+  if (inherits(cliques, "python.builtin.object")) cliques <- reticulate::py_to_r(cliques)
+  groups <- lapply(cliques, function(g) as.character(unlist(g)))
+  groups <- Filter(function(g) length(g) > 1, groups)
+  if (length(groups) == 0) NULL else groups
 }
 
 #' Bump chart of method ranks across columns
@@ -147,12 +163,13 @@ beam_rank_bump <- function(method_names, columns, ranks, divider_after = NULL,
 #' panels with data are drawn.
 #' @keywords internal
 .funky_figure <- function(methods, metrics, groups, normalized, composite, ranks,
-                          worth, worth_ci, worth_label, lodo, agg, smaa, title) {
+                          worth, worth_ci, worth_label, lodo, agg, smaa, title,
+                          cliques = NULL) {
   n <- length(methods)
   pos <- rev(seq_len(n))  # row 1 (best) sits at the top
   ylim <- c(0.4, n + 0.6)
 
-  panels <- list(.glyph_panel(methods, metrics, groups, normalized, pos, ylim))
+  panels <- list(.glyph_panel(methods, metrics, groups, normalized, pos, ylim, cliques))
   widths <- max(1.6, 0.75 * length(metrics))
 
   panels <- c(panels, list(.bar_panel(composite, pos, ylim, "overall\ncomposite")))
@@ -209,20 +226,34 @@ beam_rank_bump <- function(method_names, columns, ranks, divider_after = NULL,
     )
 }
 
-.glyph_panel <- function(methods, metrics, groups, normalized, pos, ylim) {
+.glyph_panel <- function(methods, metrics, groups, normalized, pos, ylim, cliques = NULL) {
   m <- length(metrics)
   long <- expand.grid(mi = seq_len(m), ri = seq_along(methods))
   long$score <- as.vector(t(normalized))
   long$group <- groups[long$mi]
   long$y <- pos[long$ri]
-  ggplot2::ggplot(long, ggplot2::aes(.data$mi, .data$y)) +
+  brackets <- .clique_brackets(cliques, methods, pos)
+  xmin <- if (is.null(brackets)) 0.5 else min(brackets$segments$x) - 0.25
+  p <- ggplot2::ggplot(long, ggplot2::aes(.data$mi, .data$y)) +
     ggplot2::geom_point(ggplot2::aes(size = .data$score, fill = .data$group),
                         shape = 21, colour = "#33333366", stroke = 0.3) +
     ggplot2::scale_size_area(max_size = 7, limits = c(0, 1), guide = "none") +
     ggplot2::scale_fill_manual(values = .group_colours(groups), name = NULL) +
     ggplot2::scale_x_continuous(breaks = seq_len(m), labels = metrics, position = "top") +
-    ggplot2::scale_y_continuous(breaks = pos, labels = methods, expand = c(0, 0)) +
-    ggplot2::coord_cartesian(xlim = c(0.5, m + 0.5), ylim = ylim) +
+    ggplot2::scale_y_continuous(breaks = pos, labels = methods, expand = c(0, 0))
+  if (!is.null(brackets)) {
+    p <- p +
+      ggplot2::geom_segment(data = brackets$segments, inherit.aes = FALSE,
+                            ggplot2::aes(x = .data$x, xend = .data$x,
+                                         y = .data$y, yend = .data$yend),
+                            colour = "#332288", linewidth = 0.8) +
+      ggplot2::geom_segment(data = brackets$ticks, inherit.aes = FALSE,
+                            ggplot2::aes(x = .data$x, xend = .data$xend,
+                                         y = .data$y, yend = .data$y),
+                            colour = "#332288", linewidth = 0.8)
+  }
+  p +
+    ggplot2::coord_cartesian(xlim = c(xmin, m + 0.5), ylim = ylim) +
     ggplot2::labs(x = NULL, y = NULL) +
     theme_beam(base_size = 10) +
     ggplot2::theme(
@@ -230,6 +261,27 @@ beam_rank_bump <- function(method_names, columns, ranks, divider_after = NULL,
       panel.grid = ggplot2::element_blank(),
       legend.position = "bottom"
     )
+}
+
+# Turn method-name cliques into the "[" bracket geometry drawn to the left of the
+# glyph grid: one vertical segment per clique joining its top and bottom rows,
+# with a short horizontal tick at each end. Successive brackets step further left.
+.clique_brackets <- function(cliques, methods, pos) {
+  if (is.null(cliques) || length(cliques) == 0) return(NULL)
+  segs <- list()
+  ticks <- list()
+  slot <- 0
+  for (g in cliques) {
+    ys <- pos[match(g, methods)]
+    ys <- ys[!is.na(ys)]
+    if (length(ys) < 2) next
+    x <- 0.30 - 0.42 * slot
+    segs[[length(segs) + 1]] <- data.frame(x = x, y = min(ys), yend = max(ys))
+    ticks[[length(ticks) + 1]] <- data.frame(x = x, xend = x + 0.16, y = c(min(ys), max(ys)))
+    slot <- slot + 1
+  }
+  if (length(segs) == 0) return(NULL)
+  list(segments = do.call(rbind, segs), ticks = do.call(rbind, ticks))
 }
 
 .bar_panel <- function(values, pos, ylim, xlab) {

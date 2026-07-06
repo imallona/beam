@@ -7,12 +7,17 @@ name: beam-heterogeneity
 #   pip install -e ".[dev]"
 # The same file is the recipe for an apptainer or singularity image when conda
 # solving is not available on the target host.
+#
+# If you also draw the rbeam plots from this env, keep reticulate at 1.40 or
+# newer: earlier reticulate cannot convert numpy 2.x arrays and recurses until
+# the R C stack overflows ("C stack usage ... is too close to the limit").
 channels:
   - conda-forge
 dependencies:
   - python>=3.12
   - pip
   - r-base>=4.3
+  - r-reticulate>=1.40
   - r-lme4>=1.1
   - r-jsonlite>=1.8
   - r-psychotree>=0.16

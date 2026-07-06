@@ -34,5 +34,33 @@
       call. = FALSE
     )
   }
+  .warn_reticulate_numpy()
   reticulate::import("beam")
+}
+
+# Guard against a known-bad pair: reticulate before 1.40 cannot convert numpy 2.x
+# arrays and recurses until the C stack overflows, which crashes every plot that
+# reads a score matrix. The check runs once per session and only warns, so a
+# working setup has no cost.
+.beam_state <- new.env(parent = emptyenv())
+
+.warn_reticulate_numpy <- function() {
+  if (isTRUE(.beam_state$pydeps_checked)) return(invisible())
+  .beam_state$pydeps_checked <- TRUE
+  if (utils::packageVersion("reticulate") >= "1.40") return(invisible())
+  numpy_new <- tryCatch(
+    reticulate::py_module_available("numpy") &&
+      numeric_version(reticulate::import("numpy")$`__version__`) >= "2",
+    error = function(e) FALSE
+  )
+  if (numpy_new) {
+    warning(
+      "reticulate ", utils::packageVersion("reticulate"), " with numpy 2.x ",
+      "crashes when converting arrays (C stack overflow), which breaks the beam ",
+      "plots. Upgrade reticulate to 1.40 or newer, or pin numpy below 2 in the ",
+      "Python environment.",
+      call. = FALSE
+    )
+  }
+  invisible()
 }
