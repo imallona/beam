@@ -20,7 +20,7 @@ This vignette runs the simulated scenarios. Four scenarios with documented groun
 - random: anti-correlated scores, so no method scores higher on both metrics. Which method ranks first depends entirely on the weights; SMAA confidence is spread across the Pareto frontier; the top rank is fragile under weight perturbation.
 - dominant: one method scores highest on every metric. It is rank 1 under any weighting; its SMAA confidence factor is 1; no single-criterion weight perturbation moves it off the top rank.
 - ties: two methods produce identical scores. They share a rank under any weighting.
-- odd dataset: one method ranks first on most datasets, another ranks first on one odd dataset. The cross-dataset aggregation rule declared on each metric card picks the method that ranks first overall.
+- odd dataset: one method ranks first on most datasets, another ranks first on one odd dataset. The cross-dataset aggregation rule declared on each [metric card](../../docs/explanations/cards-and-pipeline.qmd) picks the method that ranks first overall.
 
 ## Set-up
 
@@ -80,7 +80,7 @@ For each scenario the report prints:
 
 1. Description and ground truth from the generator.
 2. Pooled tool by metric scores.
-3. Ranks under SAW with equal weights using `run_from_registry`.
+3. Ranks under SAW with equal weights using [`run_from_registry`](../../docs/reference/run_from_registry.qmd).
 4. Leave-one-metric-out per-tool stability.
 5. SMAA rank acceptability index over 500 weight samples.
 6. Triantaphyllou-Sanchez weight perturbation: most fragile pair and the fragility flag on the top rank.

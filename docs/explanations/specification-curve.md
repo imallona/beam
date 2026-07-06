@@ -1,12 +1,12 @@
 # The specification curve
 
-A ranking depends on a few choices: which [weighting scheme](weighting-schemes.md), which [aggregation rule](aggregation-methods.md), and, when there is more than one dataset, which dataset you read. If you report one ranking from one set of choices, you cannot see whether a different choice would have changed it. The specification curve runs every combination of the choices and reports the ranking each one gives, so you can read how much they vary (Simonsohn, Simmons and Nelson 2020; Steegen, Tuerlinckx, Gelman and Vanpaemel 2016).
+A ranking depends on a few choices: which [weighting scheme](weighting-schemes.md), which [aggregation rule](aggregation-methods.md), and, when there is more than one dataset, which dataset to read. If only a ranking is reported from a single set of choices there is no possibility to know how other choices would have impacted the result. The specification curve runs every combination of the choices and reports the ranking each one gives, allowing to evaluate their variation (Simonsohn, Simmons and Nelson 2020; Steegen, Tuerlinckx, Gelman and Vanpaemel 2016).
 
-beam already runs the full grid in [`beam.mcda.rank_sensitivity`](rank-sensitivity.md): every combination of the weighting, the aggregation and the dataset. `rank_sensitivity` splits the rank variance into a share per factor, which says which choice moves the ranking. `beam.mcda.specification_curve` reads the same grid, lists the rankings, and counts how often the top method stays the same.
+beam already runs the full grid in [`beam.mcda.rank_sensitivity`](rank-sensitivity.md): every combination of the weighting, the aggregation and the dataset. `rank_sensitivity` splits the rank variance into a share per factor, which says which choice moves the ranking. [`beam.mcda.specification_curve`](../reference/specification_curve.qmd) reads the same grid, lists the rankings, and counts how often the top method stays the same.
 
-## What it reports
+## Outputs
 
-`specification_curve` takes a `RankSensitivityReport` and returns a `SpecificationCurveReport`. It does no new ranking; it post-processes the grid that `rank_sensitivity` already ran.
+`specification_curve` takes a `RankSensitivityReport` and returns a `SpecificationCurveReport`. It does not re-rank methods but, rather, post-processes the grid that `rank_sensitivity` already ran.
 
 - `specifications`: one record per combination, with the factor levels that define it, the full tool ordering it produces, and the top-ranked tool.
 - `most_frequent_top_fraction`: the fraction of combinations that rank the same tool first. Near 1 means the top is stable across the choices.
@@ -14,11 +14,11 @@ beam already runs the full grid in [`beam.mcda.rank_sensitivity`](rank-sensitivi
 - `n_distinct_top_tools`: how many tools rank first in at least one combination.
 - `curve_order`: the combinations sorted by the rank that the method ranking first most often takes, so a plot reads left to right from its best rank to its worst.
 
-## Choices only, or choices and data
+## Usage
 
-The grid has two factors for a tool-by-metric matrix (the weighting and the aggregation) and three for a tool-by-dataset-by-metric tensor (the dataset joins them). The two forms answer different questions.
+The `rank_sensitivity` grid has two factors for a tool-by-metric matrix (the weighting and the aggregation) and three for a tool-by-dataset-by-metric tensor (the aforementioned two plus the dataset). They can be used to answer different questions
 
-Run `rank_sensitivity` on the pooled matrix to get the analyst-choice multiverse: every weighting by every aggregation, on the ranking pooled across datasets. Run it on the tensor to add the dataset, which mixes the choice multiverse with the data heterogeneity. Pass whichever report you want to `specification_curve`.
+Running `rank_sensitivity` on the tool-by-metric matrix gets the analyst-choice possibilities: every weighting by every aggregation, on the ranking pooled across datasets. Running it on the tool-by-dataset-by-metric adds the data component, which might be interesting if they are heterogeneous.
 
 ```python
 from beam.mcda import rank_sensitivity, specification_curve, registry_context
@@ -39,13 +39,15 @@ curve = specification_curve(report)
 print(curve.most_frequent_top_fraction, curve.n_distinct_top_tools)
 ```
 
-## What it says on real data
+## On beam's examples
 
-On [Duo 2018](../../examples/duo2018/duo2018.qmd) over the Adjusted Rand Index, runtime and the Shannon entropy difference, the analyst-choice multiverse has 20 combinations: four weightings by five aggregations on the pooled matrix. Seurat ranks first in every one, so the top does not depend on the weighting or the aggregation. The full ordering repeats in only 15 percent of them, so the middle of the table reshuffles with the choice even though the top does not. Add the twelve datasets as a third factor and the grid grows to 240 combinations. Seurat now ranks first in 49 percent, and five tools rank first in at least one. The drop is the data, not the analyst's freedom. It is the same reading the variance decomposition gives as a large dataset share.
+On [Duo 2018](../../examples/duo2018/duo2018.qmd) over the Adjusted Rand Index, runtime and the Shannon entropy difference, the analyst-choice multiverse has 20 combinations: four weightings by five aggregations on the pooled matrix. Seurat ranks first in every one, so the top does not depend on the weighting or the aggregation. The full ordering repeats in only 15 percent of them, so the middle of the table reshuffles with the choice even though the top does not. 
 
-On the [M4 forecasting competition](../../examples/m4/m4.qmd) the pattern repeats. The 20-combination choice multiverse leaves Pawlikowski first in 90 percent. The 120-combination grid that adds the six frequency bands drops the top tool, Smyl, to 33 percent, with five tools reaching the top. The ranking is stable to how you weight and aggregate, and unstable to which frequency band you read.
+If adding the twelve datasets as a third factor, the grid grows to 240 combinations. Seurat now ranks first in 49 percent, and five tools rank first in at least one. Hence reflecting the data contribution beyond analysist's freedom. 
 
-The HTML report draws the specification curve for a tensor input, in the same section as the variance decomposition. The top panel plots the rank of the method that ranks first most often, across the combinations sorted from its best to its worst; the panel beneath marks which weighting, aggregation and dataset each combination used.
+On the [M4 forecasting competition](../../examples/m4/m4.qmd) the pattern is similar. The 20-combination choice multiverse leaves Pawlikowski first in 90 percent. The 120-combination grid that adds the six frequency bands drops the top tool, Smyl, to 33 percent, with five tools reaching the top. The ranking is stable to how weighting and aggregation are done, and unstable to the frequency bands (data).
+
+The HTML report plots the specification curve for a tensor input, in the same section as the variance decomposition. The top panel plots the rank of the method that ranks first most often, across the combinations sorted from its best to its worst; the panel beneath marks which weighting, aggregation and dataset each combination used.
 
 ## See also
 

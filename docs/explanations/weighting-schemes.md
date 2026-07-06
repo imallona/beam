@@ -1,28 +1,31 @@
 # Weighting schemes
 
-After every metric is [normalized](normalization-and-scales.md) to the unit interval, the multi-criteria decision analysis (MCDA) pipeline [combines the columns](aggregation-methods.md) into one score per tool. The weights decide how much each metric counts. The schemes split into two families. Objective schemes read the weights off the score matrix itself, so two analysts handed the same matrix get the same weights. The subjective scheme, AHP, asks the analyst for pairwise judgments instead, so the weights carry an explicit opinion about which metrics matter.
+After every metric is [normalized](normalization-and-scales.md) and scaled, the multi-criteria decision analysis (MCDA) pipeline [combines the columns](aggregation-methods.md) into one score per tool. The weights decide how much each metric counts. Weighting strategies belong to two families:
 
-## The objective schemes
+1. Objective schemes read the weights off the score matrix itself, so two analysts handed the same matrix get the same weights. 
+2. The subjective scheme AHP asks the analyst for pairwise judgments instead, so the weights carry an explicit opinion about which metrics matter.
 
-All objective schemes take the same normalized tool by metric matrix and return a non-negative weight vector that sums to 1. They differ in what they treat as informative.
+## Objective
+
+Objective schemes take the same normalized tool by metric matrix and return a non-negative weight vector that sums to 1. They differ in what they treat as informative.
 
 Equal weights give every metric the same share. This is the default when there is no reason to prefer one metric over another, and it is the baseline the other schemes are measured against. It ignores the data.
 
 Entropy weights, in the Shannon sense, give a metric more weight when its scores spread out across the tools and less weight when the tools score alike. A metric on which every tool scores the same cannot separate the tools, so it receives almost no weight. Entropy first turns each column into a probability mass, so the weights do not change if a single column is rescaled by a positive constant. It fits when the weights follow from the data and the result is unaffected by the units of any one metric.
 
-Standard deviation weights follow the same idea as entropy, that a metric that spreads the tools out should count more, but measure the spread directly with the sample standard deviation rather than through a probability mass. They assume the columns are already on a common scale, which they are after normalization. It suits a plain, readable measure of spread.
+Standard deviation weights follow the same idea as entropy, that a metric that spreads the tools out should count more, but measure the spread directly with the sample standard deviation. They assume the columns are already on a common scale, which they are after normalization. It suits a plain, readable measure of spread.
 
-CRITIC weights add a second idea on top of spread: conflict. CRITIC stands for CRiteria Importance Through Intercriteria Correlation. A metric receives weight when its scores spread out and when it disagrees with the other metrics. If two metrics rank the tools the same way, they carry the same information, and counting both at full weight would double count that information. CRITIC measures the disagreement as one minus the correlation between columns and multiplies it by the standard deviation. It fits when several metrics may be measuring the same underlying property and the redundant ones should be discounted.
+CRITIC weights add a second idea on top of spread: conflict. CRITIC stands for CRiteria Importance Through Intercriteria Correlation. A metric increases its weight when its scores spread out and when it disagrees with the other metrics. If two metrics rank the tools the same way, they carry the same information, and counting both at full weight would double count that information. CRITIC measures the disagreement as one minus the correlation between columns and multiplies it by the standard deviation. It aims to remove the contribution of redundant metrics that track the same underlying property and, hence, do not contribute extra information.
 
 MEREC weights use a different approach. MEREC stands for Method based on the Removal Effects of Criteria. It scores how much the overall ranking changes when each metric is removed. A metric whose removal barely moves the scores provides little information and gets a small weight. A metric whose removal shifts the scores a lot gets a large weight. The aggregate it uses is logarithmic, so it needs strictly positive scores. A column normalized with plain min-max can contain a hard zero, which MEREC cannot take the logarithm of. Pair it with a normalization that stays away from zero, such as the logistic z-score strategy. MEREC fits when a weight should reflect each metric's marginal effect on the result rather than its raw spread.
 
-## The subjective scheme: AHP
+## Subjective (AHP)
 
-AHP, the Analytic Hierarchy Process, does not read the score matrix. It asks the analyst to compare the metrics in pairs and state how many times more important one is than another, on Saaty's 1 to 9 scale. These judgments fill a square pairwise comparison matrix that must be reciprocal: if metric A is judged three times as important as B, then B is one third as important as A, and the diagonal is all ones. The weights are the principal eigenvector of this matrix, normalized to sum to 1.
+AHP, the Analytic Hierarchy Process, does not read the score matrix. It asks the analyst to compare the metrics in pairs and state how many times more important one is than another, on Saaty's 1 to 9 scale. These judgments (analyst choices) fill a square pairwise comparison matrix that must be reciprocal: if metric A is judged three times as important as B, then B is one third as important as A, and the diagonal is all ones. The weights are the principal eigenvector of this matrix, normalized to sum to 1.
 
-Because the judgments are made one pair at a time, they can contradict each other. If A is rated twice as important as B, and B twice as important as C, then consistency would put A four times as important as C, but the analyst might write something else. AHP measures this with a consistency ratio. A perfectly consistent matrix has a ratio of 0. Saaty's rule is that a ratio above 0.1 means the judgments are too inconsistent and should be revised. beam returns the consistency ratio next to the weights and warns, or raises on request, when it goes above 0.1.
+Because the judgments are made one pair at a time, they can contradict each other. If A is rated twice as important as B, and B twice as important as C, then consistency would put A four times as important as C, but the analyst might write something else. AHP measures this with a consistency ratio. A perfectly consistent matrix has a ratio of 0. Saaty's rule is that a ratio above 0.1 means the judgments are too inconsistent and should be revised. beam returns the consistency ratio next to the weights and warns, or raises an exception on request, when it goes above 0.1.
 
-AHP fits when the choice of weights is a stakeholder decision rather than a property of the data, for example when a benchmark must reflect that accuracy matters more than runtime by an agreed amount. Its cost is that someone has to supply and defend the pairwise judgments, and the consistency check is what keeps those judgments coherent.
+AHP fits when the choice of weights is a stakeholder decision rather than a property of the data, for example when a benchmark must reflect that accuracy matters more than runtime, or the way around. Its cost is that someone has to supply and defend the pairwise judgments, and the consistency check is what keeps those judgments coherent.
 
 ## Choosing a scheme
 

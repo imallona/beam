@@ -1,6 +1,6 @@
 # Normalization and measurement scales
 
-The multi-criteria decision analysis (MCDA) procedure rescales every metric to the unit interval before it weights and aggregates. The default is min-max scaling. This page explains where min-max goes wrong, why the choce depends on the [measurement scale](measurement-theory.md) of the metric, and how each metric card picks a normalization that fits.
+The multi-criteria decision analysis (MCDA) procedure rescales every metric to the unit interval before it [weights](weighting-schemes.md) and [aggregates](aggregation-methods.md). The default is min-max scaling. This page explains where min-max goes wrong, why the choce depends on the [measurement scale](measurement-theory.md) of the metric, and how each metric card picks a normalization that fits.
 
 ## Min-max
 
@@ -32,7 +32,7 @@ Each metric card declares `comparability.recommended_normalization`. The pipelin
 - `log_min_max` takes the logarithm first, then min-max. It keeps the multiplicative structure of a ratio metric, so a single slow method no longer compresses the others. Runtime and peak memory use it. It needs strictly positive values.
 - `rank` maps the position within the column to the unit interval. It drops the size of the gaps between methods but resists outliers and makes no scale assumption.
 - `zscore` standardizes the column and passes it through the logistic function, so the result stays in the open unit interval. The mean method maps to 0.5 and an outlier is compressed smoothly rather than setting the scale.
-- `baseline_relative` rescales against a declared chance score. A method no better than chance maps to 0 instead of the column midpoint. The Adjusted Rand Index uses it, with a chance baseline of 0. It is defined for higher-is-better metrics.
+- `baseline_relative` rescales against a declared chance score. A method no better than chance maps to 0 instead of the column midpoint. The Adjusted Rand Index uses it, with a [chance baseline](reference-levels.md) of 0. It is defined for higher-is-better metrics.
 - `target_relative` is for a metric whose ideal is a fixed value, not the highest or the lowest score. The calibration slope is the example: a value of 1 means the predicted risks match the target, below 1 means they are too extreme, above 1 means they are too moderate. The strategy takes the absolute deviation from the target and min-max scales it with flipped polarity, so the method nearest the target maps to 1 and the farthest to 0. It needs the card to declare `semantics.target`.
 
 ## Metrics whose ideal is a fixed point

@@ -1,6 +1,6 @@
 # Convergent and discriminant validity of a metric set
 
-Most benchmarks use different performance metrics to score the methods and, in some cases,  metrics are grouped depending on the meaning. The single-cell [scIB integration benchmark](../../examples/openproblems/openproblems.qmd) scores groups its metrics into biological conservation and batch correction. The grouping carries an assumption: the metrics in one group measure the same thing, and the metrics in different groups measure different things. `beam.mcda.metric_validity` tests that assumption against the scores, following Campbell and Fiske (1959).
+Most benchmarks use different performance metrics to score the methods and, in some cases,  metrics are grouped depending on the meaning. The single-cell [scIB integration benchmark](../../examples/openproblems/openproblems.qmd) scores groups its metrics into biological conservation and batch correction. The grouping carries an assumption: the metrics in one group measure the same thing, and the metrics in different groups measure different things. [`beam.mcda.metric_validity`](../reference/metric_validity.qmd) tests that assumption against the scores, following Campbell and Fiske (1959).
 
 ## Implementation
 

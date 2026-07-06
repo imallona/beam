@@ -17,9 +17,9 @@ format:
 
 This dataset also has a [generated standard report](../../docs/reports/m4.html), the self-contained HTML `beam.report` emits for any run. This vignette is the narrative walkthrough behind it.
 
-This vignette runs beam on the M4 forecasting competition (Makridakis, Spiliotis and Assimakopoulos 2020, [10.1016/j.ijforecast.2019.04.014](https://doi.org/10.1016/j.ijforecast.2019.04.014)), a large real benchmark from outside bioinformatics. M4 forecast 100,000 anonymized time series across six frequency bands (yearly, quarterly, monthly, weekly, daily, hourly). Each submitted method was scored by two error metrics, sMAPE and MASE, both lower is better. beam reads those two metrics from its registry as the cards `smape` and `mase`, treats the six frequency bands as the dataset axis, and runs the same pipeline as the bioinformatics examples.
+This vignette runs beam on the M4 forecasting competition (Makridakis, Spiliotis and Assimakopoulos 2020, [10.1016/j.ijforecast.2019.04.014](https://doi.org/10.1016/j.ijforecast.2019.04.014)), a large real benchmark from outside bioinformatics. M4 forecast 100,000 anonymized time series across six frequency bands (yearly, quarterly, monthly, weekly, daily, hourly). Each submitted method was scored by two error metrics, sMAPE and MASE, both lower is better. beam reads those two metrics from its registry as the [cards](../../docs/explanations/cards-and-pipeline.qmd) `smape` and `mase`, treats the six frequency bands as the dataset axis, and runs the same pipeline as the bioinformatics examples.
 
-Three things are shown on real data. The registry does not care about the domain: forecasting metrics carry polarity, scale and normalization the same way clustering metrics do. The method ranking depends heavily on the frequency band, which is why leave-one-dataset-out and the [critical-difference diagram](../../docs/explanations/comparing-methods-across-datasets.md) across frequencies matter here. And the choice of how to pool the bands changes which method ranks first, so the recommendation is partly a decision about pooling rather than a fact about the methods.
+Three things are shown on real data. The registry does not care about the domain: forecasting metrics carry polarity, scale and [normalization](../../docs/explanations/normalization-and-scales.md) the same way clustering metrics do. The method ranking depends heavily on the frequency band, which is why leave-one-dataset-out and the [critical-difference diagram](../../docs/explanations/comparing-methods-across-datasets.md) across frequencies matter here. And the choice of how to pool the bands changes which method ranks first, so the recommendation is partly a decision about pooling rather than a fact about the methods.
 
 ## Provenance of the bundled table
 
@@ -54,7 +54,7 @@ print("metrics:", m4.metric_ids)
 
 ## Read the metric semantics from the cards
 
-`properties_for` pulls the `smape` and `mase` cards. Both are lower is better ratio metrics. sMAPE is bounded in [0, 200] so its card recommends min-max normalization; MASE is an unbounded scaled error and also normalizes by min-max here. Both pool across datasets by arithmetic mean.
+[`properties_for`](../../docs/reference/properties_for.qmd) pulls the `smape` and `mase` cards. Both are lower is better ratio metrics. sMAPE is bounded in [0, 200] so its card recommends min-max normalization; MASE is an unbounded scaled error and also normalizes by min-max here. Both pool across datasets by arithmetic mean.
 
 ```{python}
 for p in properties_for(list(m4.metric_ids)):
@@ -64,7 +64,7 @@ for p in properties_for(list(m4.metric_ids)):
     )
 ```
 
-Before ranking, [`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks that the scores honour what those cards declare: every value inside the declared range, the baselines and targets in range, the noise floors positive. It reads the raw scores against the cards, so a unit mismatch (a metric on a percent scale against a fraction card, say) is caught here.
+Before ranking, [`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks that the scores honour what those cards declare: every value inside the declared range, the baselines and targets in range, the [noise floors](../../docs/explanations/reference-levels.md) positive. It reads the raw scores against the cards, so a unit mismatch (a metric on a percent scale against a fraction card, say) is caught here.
 
 ```{python}
 from beam.mcda import card_data_consistency, registry_context

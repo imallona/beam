@@ -1,6 +1,6 @@
 # Latent dimensionality of metrics
 
-Benchmarks often read a group of metrics as one criterion, but splits are possible. For instance, the [scIB single-cell batch integration benchmark](../../examples/openproblems/openproblems.qmd) score groups its metrics into biological conservation and batch correction and weights the two groups 0.6 and 0.4, so each group is read as a single composite scale. The [reliability](reliability.md) check asks how consistently a group's metrics agree, and reports Cronbach's alpha. Alpha reads a group as one reliable scale when it is high, but that reading rests on an assumption alpha cannot test: that the group is a single factor, one underlying quantity each metric measures with noise. `beam.mcda.metric_dimensionality` tests the assumption directly by counting the factors in the group.
+Benchmarks often read a group of metrics as one criterion, but splits are possible. For instance, the [scIB single-cell batch integration benchmark](../../examples/openproblems/openproblems.qmd) score groups its metrics into biological conservation and batch correction and weights the two groups 0.6 and 0.4, so each group is read as a single composite scale. The [reliability](reliability.md) check asks how consistently a group's metrics agree, and reports Cronbach's alpha. Alpha reads a group as one reliable scale when it is high, but that reading rests on an assumption alpha cannot test: that the group is a single factor, one underlying quantity each metric measures with noise. [`beam.mcda.metric_dimensionality`](../reference/metric_dimensionality.qmd) tests the assumption directly by counting the factors in the group.
 
 ## Implementation
 
@@ -29,6 +29,11 @@ The correlations are computed pairwise, over the observations each metric pair s
 ## On OpenProblem's batch integration.
 
 On the [OpenProblems batch integration scores](../../examples/openproblems/openproblems.qmd), with the same bio/batch grouping the validity and reliability checks use, the two groups split apart. The biological group, seven metrics with a high alpha of 0.85, carries two factors by parallel analysis: its first component explains 0.54 of the variance, but a second component stands clear of the chance level, so the high alpha is partly the size of the group rather than a single underlying quantity. The batch group, five metrics with a low alpha of 0.62, carries one factor: its metrics track a single dimension but weakly, which is why the alpha is low while the dimensionality is one. Reliability and dimensionality point in opposite directions on each group.
+
+## See also
+
+- [Reliability](reliability.md)
+- [Convergent and discriminant validity](convergent-discriminant-validity.md)
 
 ## References
 

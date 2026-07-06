@@ -2,7 +2,7 @@
 
 A metric card is a formalization and hence, to some extent, a contract. It declares the metric value range, a baseline of what obtainable by chance, an ideal target, and a noise floor. The [multi-criteria decision analysis (MCDA) pipeline](cards-and-pipeline.qmd) trusts each one: the range bounds the [normalization](normalization-and-scales.md), the baseline anchors `baseline_relative` scaling and the beats-chance check, the target drives `target_relative` scaling, and the [noise floor](reference-levels.md) sets which method differences are interpretable. If the score matrix contradicts a declared value, every later step loses usefulness.
 
-`beam.mcda.card_data_consistency` reads the raw scores against the card values, before any normalization, and reports where they disagree. It is the data-facing companion to the schema validation: `validate.py` checks that the requested aggregation is licit for the declared [scale type](measurement-theory.md), and this audit checks that the data honours the declared values.
+[`beam.mcda.card_data_consistency`](../reference/card_data_consistency.qmd) reads the raw scores against the card values, before any normalization, and reports where they disagree. It is the data-facing companion to the schema validation: `validate.py` checks that the requested aggregation is licit for the declared [scale type](measurement-theory.md), and this audit checks that the data honours the declared values.
 
 A recurring failure is a unit mismatch. A metric defined on the `[0, 1]` fraction scale is reported as a percentage, so the column runs to 100 against a card that declares the `[0, 1]` range. The column is still numeric and still interval, so it passes the schema validation and the scale-versus-method check. It then distorts the min-max normalization for that metric, which stretches its contribution to the composite, and the [weighting](weighting-schemes.md) that rests on it. The audit catches this on the raw scores: it reports the metric by name, counts how many tools fall outside the range, and gives the worst value, in one pass over every metric.
 
@@ -26,7 +26,7 @@ The `ok` flag is true when there are no violations. Notes do not clear it but ar
 
 ## Redundant checks
 
-`beam.mcda.normalize` also has a narrow guard: it raises when a column's minimum or maximum falls outside the declared bounds. That guard fires inside the ranking call, stops at the first offending column, names a column index rather than the metric, and checks only the range. `card_data_consistency` is the comprehensive standalone audit. It reads all metrics in one pass, names each one, grades the findings, and adds the baseline, target, noise-floor, and degeneracy checks the normalization guard does not make.
+[`beam.mcda.normalize`](../reference/normalize.qmd) also has a narrow guard: it raises when a column's minimum or maximum falls outside the declared bounds. That guard fires inside the ranking call, stops at the first offending column, names a column index rather than the metric, and checks only the range. `card_data_consistency` is the comprehensive standalone audit. It reads all metrics in one pass, names each one, grades the findings, and adds the baseline, target, noise-floor, and degeneracy checks the normalization guard does not make.
 
 ## Running
 

@@ -6,7 +6,7 @@ beam wraps pymcdm for these methods rather than reimplementing their algorithms.
 
 ## Inputs
 
-Every aggregation in beam takes the same two inputs and returns the same kind of output. The input is the normalized matrix, shape (n_tools, n_metrics), values in [0, 1], already oriented so higher is better. The weights are a non-negative vector of length n_metrics. The output is a preference score per tool where higher is better, so that `beam.mcda.rank` (1 = highest score) produces the ranking. 
+Every aggregation in beam takes the same two inputs and returns the same kind of output. The input is the normalized matrix, shape (n_tools, n_metrics), values in [0, 1], already oriented so higher is better. The weights are a non-negative vector of length n_metrics. The output is a preference score per tool where higher is better, so that [`beam.mcda.rank`](../reference/rank.qmd) (1 = highest score) produces the ranking. 
 
 ## SAW
 

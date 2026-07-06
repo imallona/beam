@@ -60,7 +60,7 @@ print("metrics:", ", ".join(g.metric_ids))
 
 ## Coverage: who was run where
 
-The matrix has gaps. SingleR and ScType were not run on the Azimuth and literature datasets. The March 2023 GPT-4 endpoint covers a subset. beam reads the gaps as `numpy.nan` and does not impute them.
+The matrix has gaps. SingleR and ScType were not run on the Azimuth and literature datasets. The March 2023 GPT-4 endpoint covers a subset. beam reads the gaps as `numpy.nan` and [does not impute them](../../docs/explanations/missing-data.md).
 
 ```{python}
 for i, m in enumerate(g.method_names):
@@ -100,7 +100,7 @@ print(f"complete block: {block.shape[0]} methods, {block.shape[1]} datasets, {bl
 
 ## Pull the metric cards
 
-`properties_for` reads the two annotation cards. Both are higher is better, bounded in [0, 1], and use min-max normalization with the arithmetic mean across datasets.
+[`properties_for`](../../docs/reference/properties_for.qmd) reads the two annotation cards. Both are higher is better, bounded in [0, 1], and use [min-max normalization](../../docs/explanations/normalization-and-scales.md) with the arithmetic mean across datasets.
 
 ```{python}
 props = properties_for(metrics)
@@ -147,7 +147,7 @@ for finding in audit.findings:
 
 ## Compare across weightings and aggregation methods
 
-Four weightings (equal, entropy, std, critic) crossed with five [aggregation methods](../../docs/explanations/aggregation-methods.md) give twenty runs. A method that holds its rank down a column is stable to these choices.
+Four [weightings](../../docs/explanations/weighting-schemes.md) (equal, entropy, std, critic) crossed with five [aggregation methods](../../docs/explanations/aggregation-methods.md) give twenty runs. A method that holds its rank down a column is stable to these choices.
 
 ```{python}
 from beam.mcda import run_from_registry
@@ -212,7 +212,7 @@ else:
 plot.smaa(run)
 ```
 
-`leave_one_metric_out` drops each metric in turn. With two metrics this ranks on each metric alone.
+[`leave_one_metric_out`](../../docs/reference/leave_one_metric_out.qmd) drops each metric in turn. With two metrics this ranks on each metric alone.
 
 ```{python}
 loo = run.leave_one_out
@@ -222,7 +222,7 @@ print(f"most influential metric: {metrics[loo.most_influential_metric]}")
 
 ## Above chance, and the noise floor
 
-`beats_random_baseline` reads the chance level the card declares. The full match rate has a declared chance level of 0, since a random label almost never matches the exact manual type. Every method scores above 0. `noise_floor_separation` would flag method pairs closer than a declared noise floor. The annotation cards declare no floor yet, so it reports as inactive.
+[`beats_random_baseline`](../../docs/reference/beats_random_baseline.qmd) reads the [chance level](../../docs/explanations/reference-levels.md) the card declares. The full match rate has a declared chance level of 0, since a random label almost never matches the exact manual type. Every method scores above 0. [`noise_floor_separation`](../../docs/reference/noise_floor_separation.qmd) would flag method pairs closer than a declared noise floor. The annotation cards declare no floor yet, so it reports as inactive.
 
 ```{python}
 br = run.random_baseline
@@ -269,7 +269,7 @@ for i in np.argsort(-ps.standing):
     print(f"  {head[i]:14s} {ps.standing[i]:.2f}")
 ```
 
-`pairwise_transitivity` reads the same relation and reports whether one order is [consistent with the pairwise majorities](../../docs/explanations/transitivity.md).
+[`pairwise_transitivity`](../../docs/reference/pairwise_transitivity.qmd) reads the same relation and reports whether one order is [consistent with the pairwise majorities](../../docs/explanations/transitivity.md).
 
 ```{python}
 from beam.mcda import pairwise_transitivity
@@ -636,7 +636,7 @@ The benchmarks agree that the top-ranked LLM outranks the classical tools, but t
 
 ### Quantitative cross-benchmark: variance on the shared classical methods
 
-The panel above is descriptive. GPTCelltype and DeepCellSeek both score the three classical tools per dataset on the same ontology-aware metric, so their scores can be pooled and the variance attributed. `source_variance_decomposition` fits `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)` in lme4 over the two benchmarks and the three shared methods. It separates the benchmark level effect, the method-by-benchmark interaction (whether the method order changes between benchmarks), the dataset nested in benchmark, and the residual. SOAR and AnnDictionary stay out of this fit: SOAR scores on a different metric and AnnDictionary has no classical methods. The fit needs the R toolchain.
+The panel above is descriptive. GPTCelltype and DeepCellSeek both score the three classical tools per dataset on the same ontology-aware metric, so their scores can be pooled and the variance attributed. [`source_variance_decomposition`](../../docs/reference/source_variance_decomposition.qmd) fits `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)` in lme4 over the two benchmarks and the three shared methods. It separates the benchmark level effect, the method-by-benchmark interaction (whether the method order changes between benchmarks), the dataset nested in benchmark, and the residual. SOAR and AnnDictionary stay out of this fit: SOAR scores on a different metric and AnnDictionary has no classical methods. The fit needs the R toolchain.
 
 ```{python}
 from beam.heterogeneity import source_variance_decomposition, r_available

@@ -17,7 +17,7 @@ format:
 
 This dataset also has a [generated standard report](../../docs/reports/duo2018.html), the self-contained HTML `beam.report` emits for any run. This vignette is the narrative walkthrough behind it.
 
-This vignette re-analyses the fourteen single-cell clustering methods benchmarked in Duo, Robinson and Soneson (2018) with the beam metric registry and the MCDA decision module. It loads the published method by dataset by metric tensor, pulls the metric cards, and pools each metric across the twelve datasets using the rule its card recommends. It then runs the MCDA pipeline and checks how stable the ranking is under different weightings, aggregation methods, and weight perturbations. It closes with a Demsar critical-difference diagram that asks whether the methods are separable on ARI at all.
+This vignette re-analyses the fourteen single-cell clustering methods benchmarked in Duo, Robinson and Soneson (2018) with the beam metric registry and the MCDA decision module. It loads the published method by dataset by metric tensor, pulls the [metric cards](../../docs/explanations/cards-and-pipeline.qmd), and pools each metric across the twelve datasets using the rule its card recommends. It then runs the MCDA pipeline and checks how stable the ranking is under different weightings, aggregation methods, and weight perturbations. It closes with a Demsar critical-difference diagram that asks whether the methods are separable on ARI at all.
 
 ## Set-up
 
@@ -43,7 +43,7 @@ from beam.mcda import (
 
 ## Load the tensor
 
-`load_duo2018` reads the bundled CSV into a frozen dataclass. The scores are a method by dataset by metric tensor with `numpy.nan` in the cells that were the literal string NA in the source. The loader does not impute or drop anything.
+[`load_duo2018`](../../docs/reference/load_duo2018.qmd) reads the bundled CSV into a frozen dataclass. The scores are a method by dataset by metric tensor with `numpy.nan` in the cells that were the literal string NA in the source. The loader does not impute or drop anything.
 
 ```{python}
 duo = load_duo2018()
@@ -67,7 +67,7 @@ analysis_metrics = ["ari", "runtime", "shannon_entropy_diff"]
 
 ## Pull the metric cards
 
-`properties_for` looks up the card for each metric and exposes the fields the pipeline consumes: polarity, scale type, declared range, and the recommended cross-dataset aggregation. ARI is higher is better; runtime and Shannon entropy difference are lower is better. Runtime is a ratio metric that spans orders of magnitude, so its card recommends the geometric mean across datasets (Smith 1988). ARI and Shannon entropy difference take the arithmetic mean.
+[`properties_for`](../../docs/reference/properties_for.qmd) looks up the card for each metric and exposes the fields the pipeline consumes: polarity, scale type, declared range, and the recommended cross-dataset aggregation. ARI is higher is better; runtime and Shannon entropy difference are lower is better. Runtime is a ratio metric that spans orders of magnitude, so its card recommends the geometric mean across datasets (Smith 1988). ARI and Shannon entropy difference take the arithmetic mean.
 
 ```{python}
 props = properties_for(analysis_metrics)
@@ -102,7 +102,7 @@ print("pooled matrix shape:", pooled.shape)
 print("pooled matrix all finite:", bool(np.isfinite(pooled).all()))
 ```
 
-`card_data_consistency` checks the pooled scores against what the cards declare: every value inside the declared range, the chance baseline and noise floor sane. It reads the raw scores, before normalization, so a card or data error (a value outside the declared range, a metric reported on the wrong scale) is named here.
+[`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks the pooled scores against what the cards declare: every value inside the declared range, the [chance baseline](../../docs/explanations/reference-levels.md) and noise floor sane. It reads the raw scores, before normalization, so a card or data error (a value outside the declared range, a metric reported on the wrong scale) is named here.
 
 ```{python}
 from beam.mcda import card_data_consistency, registry_context
@@ -120,7 +120,7 @@ for finding in audit.findings:
 
 ## One MCDA run, ontology-aware
 
-`run_from_registry` pulls polarity, declared bounds and the per-metric normalization strategy from the cards, validates the requested aggregation against the declared scale types, and runs the full pipeline. The default here is equal weights with simple additive weighting (SAW).
+[`run_from_registry`](../../docs/reference/run_from_registry.qmd) pulls polarity, declared bounds and the per-metric [normalization](../../docs/explanations/normalization-and-scales.md) strategy from the cards, validates the requested aggregation against the declared scale types, and runs the full pipeline. The default here is equal weights with simple additive weighting (SAW).
 
 ```{python}
 result = run_from_registry(pooled, analysis_metrics, weights="equal", method="saw")
@@ -206,7 +206,7 @@ plot.critical_difference(cd)
 
 ## Pairwise superiority on ARI
 
-The critical-difference diagram says which methods are separable, but not by how much or how often one method outperforms another. `pairwise_superiority` [compares the methods two at a time](../../docs/explanations/pairwise-superiority.md) across the datasets, with the ARI noise floor (0.01) as the equivalence band: a method counts as outperforming another on a dataset only when the difference clears that floor. The probability of superiority is the fraction of datasets on which one method outperforms the other, an effect size that does not depend on the pool.
+The critical-difference diagram says which methods are separable, but not by how much or how often one method outperforms another. [`pairwise_superiority`](../../docs/reference/pairwise_superiority.qmd) [compares the methods two at a time](../../docs/explanations/pairwise-superiority.md) across the datasets, with the ARI noise floor (0.01) as the equivalence band: a method counts as outperforming another on a dataset only when the difference clears that floor. The probability of superiority is the fraction of datasets on which one method outperforms the other, an effect size that does not depend on the pool.
 
 ```{python}
 from beam.mcda import pairwise_superiority
@@ -222,7 +222,7 @@ Most pairs are not distinguishable: across the twelve datasets the ARI differenc
 
 ## Pairwise transitivity on ARI
 
-The ranking is one order of the methods, but the pairwise majorities behind it need not agree with any single order. `pairwise_transitivity` reads the same pairwise relation and asks whether one order is [consistent with it](../../docs/explanations/transitivity.md): it reports the method preferred to every other one, the circular triads (a method outperforms a second, the second a third, the third the first), and whether the relation is transitive.
+The ranking is one order of the methods, but the pairwise majorities behind it need not agree with any single order. [`pairwise_transitivity`](../../docs/reference/pairwise_transitivity.qmd) reads the same pairwise relation and asks whether one order is [consistent with it](../../docs/explanations/transitivity.md): it reports the method preferred to every other one, the circular triads (a method outperforms a second, the second a third, the third the first), and whether the relation is transitive.
 
 ```{python}
 from beam.mcda import pairwise_transitivity
@@ -262,7 +262,7 @@ plot.bayesian_comparison(bayes)
 
 ## SMAA confidence
 
-`smaa` samples weight vectors from a Dirichlet over the three-metric simplex, runs the pipeline once per sample, and reports the confidence factor per method: the share of samples in which that method is top-ranked. A method with a confidence factor near 1 is top-ranked under almost any weighting.
+[`smaa`](../../docs/reference/smaa.qmd) samples weight vectors from a Dirichlet over the three-metric simplex, runs the pipeline once per sample, and reports the confidence factor per method: the share of samples in which that method is top-ranked. A method with a confidence factor near 1 is top-ranked under almost any weighting.
 
 ```{python}
 smaa_report = smaa(pooled, polarity, n_samples=2000, method="topsis", seed=0)
@@ -287,7 +287,7 @@ plt.show()
 
 ## Smallest weight perturbation
 
-`smallest_weight_perturbation` reports, under SAW, the smallest single-weight change that swaps any ranked-above pair. It also flags whether the top-ranked method is fragile, that is, whether some single weight can be moved by less than the fragility threshold (default 0.05) to push it off the top rank.
+[`smallest_weight_perturbation`](../../docs/reference/smallest_weight_perturbation.qmd) reports, under SAW, the smallest single-weight change that swaps any ranked-above pair. It also flags whether the top-ranked method is fragile, that is, whether some single weight can be moved by less than the fragility threshold (default 0.05) to push it off the top rank.
 
 ```{python}
 ts = smallest_weight_perturbation(pooled, polarity, weights="equal", method="saw")
@@ -465,7 +465,7 @@ print("blinding fingerprint in manifest:", blind_run.manifest["blinding"]["seal_
 
 ## Heterogeneity: where does the ARI variance live
 
-Leave-one-dataset-out asks whether the pooled ranking depends on any single dataset. A mixed-effects model asks a different question: how much of the score variation is a stable method effect and how much is the method-by-dataset interaction that a single ranking does not show. `beam.heterogeneity.mixed_effects` fits `score ~ method + (1 | dataset)` on one metric in R's lme4, with the method as a fixed effect and the dataset as a random intercept that absorbs how easy or hard each dataset is for every method alike. The fit needs the R toolchain, so the section below runs only when it is available.
+Leave-one-dataset-out asks whether the pooled ranking depends on any single dataset. A mixed-effects model asks a different question: how much of the score variation is a stable method effect and how much is the method-by-dataset interaction that a single ranking does not show. [`beam.heterogeneity.mixed_effects`](../../docs/reference/mixed_effects.qmd) fits `score ~ method + (1 | dataset)` on one metric in R's lme4, with the method as a fixed effect and the dataset as a random intercept that absorbs how easy or hard each dataset is for every method alike. The fit needs the R toolchain, so the section below runs only when it is available.
 
 ```{python}
 from beam.heterogeneity import mixed_effects_from_matrix, r_available

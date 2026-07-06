@@ -1,7 +1,7 @@
 # What moves the ranking
 
 A ranking can move for two reasons. One is the data: a method that ranks first on one dataset can trail on another. The other is the analyst's choices: which [weighting scheme](weighting-schemes.md) sets the weights, and which [aggregation rule](aggregation-methods.md) combines the scores.
-`beam.mcda.rank_sensitivity` measures both at once. The weighting, the aggregation, and the dataset are each a small set of options, so beam runs every combination instead of sampling. For each tool this gives a table of its rank over the full grid. An analysis of variance then splits the rank variance into a share for each factor and a share for their interactions. The shares sum to one.
+[`beam.mcda.rank_sensitivity`](../reference/rank_sensitivity.qmd) measures both at once. The weighting, the aggregation, and the dataset are each a small set of options, so beam runs every combination instead of sampling. For each tool this gives a table of its rank over the full grid. An analysis of variance then splits the rank variance into a share for each factor and a share for their interactions. The shares sum to one.
 
 ## The shares
 

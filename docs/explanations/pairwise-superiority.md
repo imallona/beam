@@ -1,6 +1,6 @@
 # Comparing two methods at a time
 
-The [critical-difference diagram](comparing-methods-across-datasets.md) says which methods differ beyond chance. It does not say by how much, or how often one method outperforms another. Its mean-rank post-hoc also depends on the whole pool: add or drop a method and two others can change from "different" to "the same" (Benavoli, Corani and Mangili 2016). `beam.mcda.pairwise_superiority` reports an effect size that does not depend on the pool.
+The [critical-difference diagram](comparing-methods-across-datasets.md) says which methods differ beyond chance. It does not say by how much, or how often one method outperforms another. Its mean-rank post-hoc also depends on the whole pool: add or drop a method and two others can change from "different" to "the same" (Benavoli, Corani and Mangili 2016). [`beam.mcda.pairwise_superiority`](../reference/pairwise_superiority.qmd) reports an effect size that does not depend on the pool.
 
 ## How it works
 

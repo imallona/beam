@@ -1,6 +1,6 @@
 # Comparing methods across datasets: Friedman and Nemenyi
 
-The [multi-criteria decision analysis (MCDA) aggregation](aggregation-methods.md) builds a metric composite to give a rank and consolidated score to each method. It does not say whether that ranking is real. If the methods are close and the influence of the datasets is large, the order at the top can be an artifact of which datasets happened to be included. Demsar (2006) gives the standard answer for this setting: rank the methods on each dataset, then test the ranks. beam implements it in `beam.mcda.critical_difference`.
+The [multi-criteria decision analysis (MCDA) aggregation](aggregation-methods.md) builds a metric composite to give a rank and consolidated score to each method. It does not say whether that ranking is real. If the methods are close and the influence of the datasets is large, the order at the top can be an artifact of which datasets happened to be included. Demsar (2006) gives the standard answer for this setting: rank the methods on each dataset, then test the ranks. beam implements it in [`beam.mcda.critical_difference`](../reference/critical_difference.qmd).
 
 ## Implementation
 
@@ -29,6 +29,13 @@ When the matrix has missing cells the Friedman ranks are no longer defined. The 
 ## Limitations
 
 The Nemenyi post-hoc compares every pair of methods and is conservative. When the question is whether one new method beats a fixed set of baselines, comparing to a single control with the Bonferroni-Dunn correction has more power, as Demsar notes. beam currently implements the all-pairs Nemenyi case.
+
+## See also
+
+- [Pairwise superiority](pairwise-superiority.md)
+- [Transitivity](transitivity.md)
+- [Bayesian comparison](bayesian-comparison.md)
+- [Skillings-Mack: coverage-aware Friedman](skillings-mack.md)
 
 ## References
 

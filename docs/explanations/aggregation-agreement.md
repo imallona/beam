@@ -1,8 +1,8 @@
 # Aggregation agreement: does the benchmark result depend on the aggregation method?
 
-beam offers [five aggregations](aggregation-methods.md): SAW, TOPSIS, VIKOR, PROMETHEE II and [COMET](comet.md). Each combines the per-metric scores into a composite under each aggregation method own assumptions, and the headline ranking commits to one of them  The question tat follows is whether that commitment changes the evaluation results. `beam.mcda.aggregation_agreement` addresses this by re-ranking the same (normalized) input metrics matrix under each aggregation, holding the weighting fixed. Then, the agreement of the ranks is reported.
+beam offers [five aggregations](aggregation-methods.md): SAW, TOPSIS, VIKOR, PROMETHEE II and [COMET](comet.md). Each combines the per-metric scores into a composite under each aggregation method own assumptions, and the headline ranking commits to one of them  The question tat follows is whether that commitment changes the evaluation results. [`beam.mcda.aggregation_agreement`](../reference/aggregation_agreement.qmd) addresses this by re-ranking the same (normalized) input metrics matrix under each aggregation, holding the weighting fixed. Then, the agreement of the ranks is reported.
 
-This can be read as a diagnostic of choice sensitivity, complementing beam's leave-one-metric-out and leave-one-dataset-out functions and weight variation via stochastic multicriteria acceptability analysis (SMAA). This aggregation agreement procedure evaluates the remaining degree of freedom to choose a final rank.
+This can be read as a diagnostic of [choice sensitivity](rank-sensitivity.md), complementing beam's leave-one-metric-out and leave-one-dataset-out functions and weight variation via stochastic multicriteria acceptability analysis (SMAA). This aggregation agreement procedure evaluates the remaining degree of freedom to choose a final rank.
 
 ## Method
 
@@ -20,7 +20,7 @@ The [Duo 2018 clustering benchmark](../../examples/duo2018/duo2018.qmd) is a wor
 
 ## How to use it
 
-Call `aggregation_agreement(scores, polarity)` with a tool by metric matrix and the per-metric polarity from `beam.cards.polarities_for`. Pass the normalization context from `beam.mcda.registry_context` so the comparison rests on the same normalized matrix as the headline ranking. The weighting is held fixed at whatever you pass; the default is equal weights.
+Call `aggregation_agreement(scores, polarity)` with a tool by metric matrix and the per-metric polarity from [`beam.cards.polarities_for`](../reference/polarities_for.qmd). Pass the normalization context from `beam.mcda.registry_context` so the comparison rests on the same normalized matrix as the headline ranking. The weighting is held fixed at whatever you pass; the default is equal weights.
 
 In case an aggregation method fails to run on the input then it is dropped from the report rather than failing the whole analysis. At least two methods must produce a ranking, otherwise there is nothing to compare. When every tool scores identically the orderings are all-ties, tau-b is undefined and the run fails.
 

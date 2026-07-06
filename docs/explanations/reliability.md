@@ -1,8 +1,8 @@
 # Internal-consistency reliability of a metric group
 
-A benchmark often treats a group of metrics as one criterion. The [scIB integration score](../../examples/openproblems/openproblems.qmd) groups its metrics into biological conservation and batch correction and weights the two groups 0.6 and 0.4, so each group is read as a single composite scale. The [convergent and discriminant validity](convergent-discriminant-validity.md) check asks whether that grouping is the right split. Reliability asks the next question: if a group is going to be read as one scale, how consistently do its metrics measure one thing? `beam.mcda.metric_reliability` answers it with standardized Cronbach's alpha, following Cronbach (1951).
+A benchmark often treats a group of metrics as one criterion. The [scIB integration score](../../examples/openproblems/openproblems.qmd) groups its metrics into biological conservation and batch correction and weights the two groups 0.6 and 0.4, so each group is read as a single (composite) scale. The [convergent and discriminant validity](convergent-discriminant-validity.md) check asks whether that grouping is the right split. Reliability asks the next question: if a group is going to be read as one scale, how consistently do its metrics measure one thing? [`beam.mcda.metric_reliability`](../reference/metric_reliability.qmd) answers it with standardized Cronbach's alpha, following Cronbach (1951).
 
-## Implementation
+## Rationale
 
 Each method-by-dataset cell is one observation, and the metrics are the variables. The function orients every metric so that higher means better, reading the polarity from the cards, then computes the Spearman rank correlation between every pair of metrics over the observations they share. This is the same orientation and correlation step the validity check uses, so the two diagnostics rest on the same numbers.
 
@@ -14,11 +14,9 @@ where `k` is the number of metrics in the group and `r_bar` is their mean inter-
 
 ## Interpretation
 
-Alpha runs up to 1. A common rule of thumb treats 0.7 as the point above which a group reads as one reliable scale, and `metric_reliability` flags any group below that cutoff. The cutoff is a convention, not a law, so the report carries `r_bar` and `k` next to each alpha rather than only the verdict.
+Alpha runs up to 1. A common rule of thumb treats 0.7 as the point above which a group reads as one reliable scale, and `metric_reliability` flags any group below that cutoff. The cutoff is somewhat arbitrary, so the report carries `r_bar` and `k` next to each alpha, so analysts make a decision.
 
-The two inputs matter separately. Alpha rises with the mean correlation and with the number of metrics, so a long group can reach a high alpha on modest agreement, and a short group needs stronger agreement to reach the same cutoff. When two groups differ in size, the mean inter-item correlation is the comparison to use, because it does not carry the size effect.
-
-## Alpha if a metric is dropped
+Alpha rises with the mean correlation and with the number of metrics, so a long group can reach a high alpha on modest agreement, and a short group needs stronger agreement to reach the same cutoff. When two groups differ in size, the mean inter-item correlation is the comparison to use, because it does not carry the size effect.
 
 For a group of three or more metrics, the report recomputes the group's alpha with each metric removed in turn. A metric whose removal raises the group's alpha agrees with its labelled construct less than the others do. It is the metric to reconsider first, whether to relabel it, drop it, or treat it as a separate criterion.
 
@@ -30,9 +28,9 @@ Alpha assumes the group is one reflective factor, a single underlying quantity t
 
 The result is descriptive of the methods and datasets in the input. A small benchmark gives a coarse estimate, and the grouping it scores is the analyst's, so the diagnostic informs that judgement.
 
-## On OpenProblems batch integration
+## On beam's examples: OpenProblems batch integration
 
-On the [OpenProblems batch integration scores](../../examples/openproblems/openproblems.qmd), with the same bio/batch grouping the validity check uses, the biological group reads as one reliable scale: alpha 0.85 over seven metrics, mean inter-item correlation 0.45. The batch group does not reach the cutoff: alpha 0.62 over five metrics, mean inter-item correlation 0.24, the one group flagged as low reliability. Dropping `pcr` is the only batch removal that raises the batch alpha by more than a rounding step, from 0.62 to 0.67, so `pcr` is the batch metric least consistent with the rest of its group. The reading pairs with the validity finding: the bio/batch axis is the observed split, and the biological side of it is a coherent scale while the batch side is a looser collection.
+On the [OpenProblems batch integration scores](../../examples/openproblems/openproblems.qmd), where there is an expertly-curated classification of metrics in bio/batch, the biological conservation group is reported to be reliable: alpha 0.85 over seven metrics, mean inter-item correlation 0.45. The batch correction metrics group does not reach the cutoff: alpha 0.62 over five metrics, mean inter-item correlation 0.24, the one group flagged as low reliability. Dropping `pcr` is the only batch removal that raises the batch alpha by more than a rounding step, from 0.62 to 0.67, so `pcr` is the batch metric least consistent with the rest of its group.
 
 ## References
 

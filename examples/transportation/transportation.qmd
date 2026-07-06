@@ -15,7 +15,7 @@ format:
 
 ## Goal
 
-The MCDA core in beam is not specific to bioinformatics. This vignette runs it on a made-up transportation example to illustrate three points that the bio scenarios state but do not show as sharply. The modes of transport play the role of the methods, and the terrains play the role of the datasets. Each mode is scored on a terrain by speed (km/h, higher is better), cost (per km, lower is better), and CO2 (g per km, lower is better). The numbers are illustrative, kept in a plausible range. The three metrics are bundled metric cards (`speed`, `cost`, `co2`), so this cross-domain example reads polarity and normalization from the same registry as the bioinformatics examples. Every example here goes through the cards, whether the metrics are biological or not.
+The MCDA core in beam is not specific to bioinformatics. This vignette runs it on a made-up transportation example to illustrate three points that the bio scenarios state but do not show as sharply. The modes of transport play the role of the methods, and the terrains play the role of the datasets. Each mode is scored on a terrain by speed (km/h, higher is better), cost (per km, lower is better), and CO2 (g per km, lower is better). The numbers are illustrative, kept in a plausible range. The three metrics are bundled [metric cards](../../docs/explanations/cards-and-pipeline.qmd) (`speed`, `cost`, `co2`), so this cross-domain example reads polarity and normalization from the same registry as the bioinformatics examples. Every example here goes through the cards, whether the metrics are biological or not.
 
 The first point is a method-by-dataset interaction. No mode is fastest on every terrain. A train is fastest on the flat road and the urban hop, a motorcycle on mud and uphill, a boat on open water, and a small plane on the long distance. A single global ranking over all terrains does not show this structure.
 
@@ -92,9 +92,9 @@ for t, terrain in enumerate(tb.terrain_names):
 
 ## Per-terrain MCDA with example-level NaN handling
 
-Because no mode runs on every terrain, the analysis is done one terrain at a time. On each terrain the infeasible modes are dropped (their cells are NaN) and the MCDA pipeline runs over the modes that actually run there. This is the example-level NaN handling: no imputation and no pooling across terrains, just the modes that were measured on the terrain in question. The helper `feasible_submatrix` drops the infeasible rows and returns a dense, NaN-free score matrix. `run_from_registry` then reads polarity and normalization from the `speed`, `cost` and `co2` cards.
+Because no mode runs on every terrain, the analysis is done one terrain at a time. On each terrain the infeasible modes are dropped (their cells are NaN) and the MCDA pipeline runs over the modes that actually run there. This is the example-level NaN handling: no imputation and no pooling across terrains, just the modes that were measured on the terrain in question. The helper `feasible_submatrix` drops the infeasible rows and returns a dense, NaN-free score matrix. [`run_from_registry`](../../docs/reference/run_from_registry.qmd) then reads polarity and normalization from the `speed`, `cost` and `co2` cards.
 
-The cards declare the normalization: speed and cost span orders of magnitude across modes, so they use `log_min_max`; CO2 has true zeros (walking, cycling), so it uses `rank`, which is defined when a column carries hard zeros.
+The cards declare the [normalization](../../docs/explanations/normalization-and-scales.md): speed and cost span orders of magnitude across modes, so they use `log_min_max`; CO2 has true zeros (walking, cycling), so it uses `rank`, which is defined when a column carries hard zeros.
 
 A first pass uses equal weights and SAW.
 
@@ -276,7 +276,7 @@ The confidence is split between the train (about 0.37) and the plane (about 0.35
 
 ## Weight perturbation on one terrain
 
-`smallest_weight_perturbation` reports, for every pair of modes where one is ranked above the other under SAW, the smallest single-weight change that swaps them. It runs in closed form for SAW. Here it runs on the long-distance terrain with equal weights.
+[`smallest_weight_perturbation`](../../docs/reference/smallest_weight_perturbation.qmd) reports, for every pair of modes where one is ranked above the other under SAW, the smallest single-weight change that swaps them. It runs in closed form for SAW. Here it runs on the long-distance terrain with equal weights.
 
 ```{python}
 ts = smallest_weight_perturbation(
@@ -461,7 +461,7 @@ print(f"{curve.n_specifications} specifications; {dom} first in "
 plot.specification_curve(curve)
 ```
 
-The per-method version of the rank-sensitivity split shows it one mode at a time. It separates a mode whose rank depends on the terrain from one that depends on the weighting or the aggregation. The span next to each bar is the difference between the mode's best and worst rank.
+The per-method version of the [rank-sensitivity](../../docs/explanations/rank-sensitivity.md) split shows it one mode at a time. It separates a mode whose rank depends on the terrain from one that depends on the weighting or the aggregation. The span next to each bar is the difference between the mode's best and worst rank.
 
 ```{python}
 plot.rank_sensitivity_by_tool(rs)

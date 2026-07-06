@@ -88,7 +88,7 @@ from beam.datasets import load_openproblems, load_openproblems_svg_features
 
 ## Batch integration: many metrics, the MCDA layer
 
-The batch integration task has 19 methods, 6 datasets and 13 scIB metrics, all read from the registry. Coverage is uneven: the `hvg_overlap` column and some method-by-dataset cells are sparse, surfaced as NaN. We drop the sparse `hvg_overlap` metric and keep the methods that are observed on at least one dataset for every remaining metric, so the cross-dataset pooling is defined.
+The batch integration task has 19 methods, 6 datasets and 13 scIB metrics, all read from the registry. [Coverage is uneven](../../docs/explanations/missing-data.md): the `hvg_overlap` column and some method-by-dataset cells are sparse, surfaced as NaN. We drop the sparse `hvg_overlap` metric and keep the methods that are observed on at least one dataset for every remaining metric, so the cross-dataset pooling is defined.
 
 ```{python}
 op = load_openproblems("batch_integration")
@@ -100,7 +100,7 @@ tensor = tensor[keep]
 print(f"{len(methods)} methods, {len(metrics)} metrics, {len(op.dataset_names)} datasets")
 ```
 
-[`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks the scores against what the 12 cards declare, before any normalization. The scIB metrics are scaled to [0, 1] on the platform, so the audit gives a clean bill here; it would name any metric whose values fell outside its declared range.
+[`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks the scores against what the 12 [cards](../../docs/explanations/cards-and-pipeline.qmd) declare, before any [normalization](../../docs/explanations/normalization-and-scales.md). The scIB metrics are scaled to [0, 1] on the platform, so the audit gives a clean bill here; it would name any metric whose values fell outside its declared range.
 
 ```{python}
 from beam.mcda import card_data_consistency, registry_context
@@ -117,7 +117,7 @@ for finding in audit.findings:
     print(" ", finding.severity, finding.message)
 ```
 
-beam reads each metric card for its polarity and normalization, pools the six datasets per metric, and runs the chosen aggregation. We use equal weights and TOPSIS.
+beam reads each metric card for its polarity and normalization, pools the six datasets per metric, and runs the chosen aggregation. We use [equal weights](../../docs/explanations/weighting-schemes.md) and [TOPSIS](../../docs/explanations/aggregation-methods.md).
 
 ```{python}
 scores = beam.Scores(
@@ -223,7 +223,7 @@ else:
 
 ### Do the metric groups measure different things?
 
-The scIB score weights two metric groups, biological conservation at 0.6 and batch correction at 0.4, on the premise that they measure different things. `beam.mcda.metric_validity` checks that premise against the scores (Campbell and Fiske 1959). It treats each method-by-dataset cell as one observation, orients every metric to higher-is-better from the cards, and correlates the metrics with Spearman rank correlation. Metrics in the same group should agree (convergent); metrics in different groups should agree less (discriminant). See [the validity explanation](../../docs/explanations/convergent-discriminant-validity.md).
+The scIB score weights two metric groups, biological conservation at 0.6 and batch correction at 0.4, on the premise that they measure different things. [`beam.mcda.metric_validity`](../../docs/reference/metric_validity.qmd) checks that premise against the scores (Campbell and Fiske 1959). It treats each method-by-dataset cell as one observation, orients every metric to higher-is-better from the cards, and correlates the metrics with Spearman rank correlation. Metrics in the same group should agree (convergent); metrics in different groups should agree less (discriminant). See [the validity explanation](../../docs/explanations/convergent-discriminant-validity.md).
 
 ```{python}
 from beam.cards import polarities_for
@@ -250,7 +250,7 @@ The grouping holds, but barely. Metrics in the same group agree a little more (0
 
 ### Does each group hold together as one scale?
 
-Validity asks whether the bio/batch split is the right axis. Reliability asks whether each side of that split reads as one scale. `beam.mcda.metric_reliability` reports standardized Cronbach's alpha per group from the same oriented Spearman correlations (Cronbach 1951). A group above the conventional 0.7 cutoff reads as one reliable scale; below it the group is a looser collection. See [the reliability explanation](../../docs/explanations/reliability.md).
+Validity asks whether the bio/batch split is the right axis. Reliability asks whether each side of that split reads as one scale. [`beam.mcda.metric_reliability`](../../docs/reference/metric_reliability.qmd) reports standardized Cronbach's alpha per group from the same oriented Spearman correlations (Cronbach 1951). A group above the conventional 0.7 cutoff reads as one reliable scale; below it the group is a looser collection. See [the reliability explanation](../../docs/explanations/reliability.md).
 
 ```{python}
 from beam.mcda import metric_reliability
@@ -279,7 +279,7 @@ The biological group holds together (alpha 0.85 over seven metrics), the batch g
 
 ### Is each group really one factor?
 
-A high alpha can mean one factor measured consistently, or several factors in a group long enough to average out to a high alpha. `beam.mcda.metric_dimensionality` separates the two by counting the factors in each group, with parallel analysis on the same oriented Spearman correlations (Horn 1965, Glorfeld 1995). See [the dimensionality explanation](../../docs/explanations/dimensionality.md).
+A high alpha can mean one factor measured consistently, or several factors in a group long enough to average out to a high alpha. [`beam.mcda.metric_dimensionality`](../../docs/reference/metric_dimensionality.qmd) separates the two by counting the factors in each group, with parallel analysis on the same oriented Spearman correlations (Horn 1965, Glorfeld 1995). See [the dimensionality explanation](../../docs/explanations/dimensionality.md).
 
 ```{python}
 from beam.mcda import metric_dimensionality
@@ -303,7 +303,7 @@ Dimensionality and reliability point in opposite directions here. The biological
 
 ## What moves the batch-integration ranking
 
-The OpenProblems leaderboard pools by the mean of the scaled scores; beam can pool any of several ways. [`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) asks how much that choice matters against the data. It runs every combination of weighting, aggregation and dataset, and splits the rank variance. COMET is left out of the aggregations here: it builds characteristic objects whose count grows fast with the number of criteria, so it is slow on a 12-metric task. The other four aggregations are quick.
+The OpenProblems leaderboard pools by the mean of the scaled scores; beam can pool any of several ways. [`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) asks how much that choice matters against the data. It runs every combination of weighting, aggregation and dataset, and splits the rank variance. [COMET](../../docs/explanations/comet.md) is left out of the aggregations here: it builds characteristic objects whose count grows fast with the number of criteria, so it is slow on a 12-metric task. The other four aggregations are quick.
 
 ```{python}
 from beam.mcda import rank_sensitivity
@@ -411,7 +411,7 @@ print("blinding fingerprint:", blind_run.manifest["blinding"]["seal_sha256"][:12
 
 ## Pairwise superiority on ARI
 
-`pairwise_superiority` [compares the methods two at a time](../../docs/explanations/pairwise-superiority.md) on ARI across the six datasets, with the ARI noise floor as the equivalence band. It reports how often one method outperforms another, the effect size next to the significance the mixed-effects intervals give.
+[`pairwise_superiority`](../../docs/reference/pairwise_superiority.qmd) [compares the methods two at a time](../../docs/explanations/pairwise-superiority.md) on ARI across the six datasets, with the ARI noise floor as the equivalence band. It reports how often one method outperforms another, the effect size next to the significance the mixed-effects intervals give.
 
 ```{python}
 from beam.mcda import pairwise_superiority
@@ -425,7 +425,7 @@ print(f"pairs the sign test cannot separate: {len(sup.equivalent_pairs)} of {len
 
 With six datasets the comparison is coarse: most pairs do not reach significance, matching the wide mixed-effects intervals and the leave-one-dataset-out spans above. The pairwise view says the same as the worth panel, as a pairwise record rather than an interval.
 
-`pairwise_transitivity` reads the same pairwise relation and reports whether one order is [consistent with it](../../docs/explanations/transitivity.md).
+[`pairwise_transitivity`](../../docs/reference/pairwise_transitivity.qmd) reads the same pairwise relation and reports whether one order is [consistent with it](../../docs/explanations/transitivity.md).
 
 ```{python}
 from beam.mcda import pairwise_transitivity

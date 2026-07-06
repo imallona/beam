@@ -192,6 +192,20 @@ quartodoc:
         - skillings_mack
         - coverage_aware_critical_difference
         - attribution_synthesis
+        - pairwise_transitivity
+        - bayesian_sign_comparison
+        - noise_floor_separation
+        - beats_random_baseline
+        - normalization_agreement
+        - dataset_concordance
+    - title: Diagnostics
+      desc: Card, reliability and validity checks.
+      package: beam.mcda
+      contents:
+        - card_data_consistency
+        - metric_reliability
+        - metric_validity
+        - metric_dimensionality
     - title: Heterogeneity
       desc: Mixed-effects, Bradley-Terry trees, Plackett-Luce.
       package: beam.heterogeneity
@@ -202,6 +216,7 @@ quartodoc:
         - source_variance_decomposition
         - paired_comparisons
         - rankings_from_matrix
+        - network_meta_analysis
     - title: Cards and registry
       package: beam.cards
       contents:

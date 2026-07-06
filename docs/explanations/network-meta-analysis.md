@@ -2,7 +2,7 @@
 
 When several benchmarks aim to evaluate methods for a given task and score an overlapping but not identical set of methods, no single benchmark compares every pair of methods directly. One benchmark covers methods A, B and C, another covers B, C and D, a third drops a method that the others keep. A network meta-analysis pools the direct and the indirect evidence into one coherent ranking. 
 
-Clinical research uses it to rank treatments that were never all tried head to head in one trial. `beam.heterogeneity.network_meta_analysis` does this for benchmark results, following the frequentist network meta-analysis of Rucker and Schwarzer as implemented in R's netmeta.
+Clinical research uses it to rank treatments that were never all tried head to head in one trial. [`beam.heterogeneity.network_meta_analysis`](../reference/network_meta_analysis.qmd) does this for benchmark results, following the frequentist network meta-analysis of Rucker and Schwarzer as implemented in R's netmeta.
 
 ## Rationale
 
@@ -16,7 +16,7 @@ Two scores evaluate the pooled ranking. The heterogeneity Q (the within-design p
 
 ## Related checks
 
-The network meta-analysis and the source-variance decomposition (see [the mixed-effects explanation](heterogeneity-mixed-effects.md)) answer complementary questions. The mixed-effects `source_variance_decomposition` puts a number on how much of the spread is the benchmark rather than the method (the method-by-benchmark variance share). The network meta-analysis pools the same evidence into a single ranking with a hierarchy of methods, and its inconsistency statistic is the disagreement read as a model lack-of-fit rather than as a variance component. A high method-by-benchmark variance share and a significant inconsistency Q are the same finding from two directions. The benchmarks disagree, and the pooled ranking is an average over that disagreement. [Attribution synthesis](attribution-synthesis.md) combines this with the analyst-choice and dataset axes.
+The network meta-analysis and the source-variance decomposition (see [the mixed-effects explanation](heterogeneity-mixed-effects.md)) answer complementary questions. The mixed-effects [`source_variance_decomposition`](../reference/source_variance_decomposition.qmd) puts a number on how much of the spread is the benchmark rather than the method (the method-by-benchmark variance share). The network meta-analysis pools the same evidence into a single ranking with a hierarchy of methods, and its inconsistency statistic is the disagreement read as a model lack-of-fit rather than as a variance component. A high method-by-benchmark variance share and a significant inconsistency Q are the same finding from two directions. The benchmarks disagree, and the pooled ranking is an average over that disagreement. [Attribution synthesis](attribution-synthesis.md) combines this with the analyst-choice and dataset axes.
 
 ## How to run and R dependency
 

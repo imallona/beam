@@ -1,14 +1,14 @@
 # STATO term proposals for gapped metrics
 
-The per-card coverage table in [ontology mappings](ontology-mappings.md) lists the metrics that carry no STATO term today. This document drafts the upstream proposals for the gaps beam cares about for the long run. They can be filed against the STATO issue tracker at https://github.com/ISA-tools/stato/issues rather than filled by a beam-private IRI. Each proposal gives a label, a definition, a likely parent class, and the beam card it comes from. The proposals ask STATO to assign the identifier; beam does not mint one.
+The per-card mappings table in [ontology mappings](ontology-mappings.md) lists the metrics that carry no STATO term today. This document drafts some additions. They can be filed against the STATO issue tracker at https://github.com/ISA-tools/stato/issues rather than filled by a beam-private IRI.
 
-These cover the Group 1 gaps only. The operational measurands (runtime, peak_memory) and the [transportation metrics](../../examples/transportation/transportation.qmd) (cost, speed, co2) are anchored by UO where a unit exists and are out of STATO scope, so they are not proposed here.
+Other measurands (runtime, peak_memory) and the [transportation metrics](../../examples/transportation/transportation.qmd) (cost, speed, co2) are out of STATO scope.
 
-## How to file one
+## How to file a proposal
 
 Open an issue on the STATO tracker with the proposed label, the definition, and the parent class named below. Attach the primary reference. When STATO assigns an IRI, write it into the matching card under `mappings.stato`, regenerate the OWL artefact with `python -m beam.owl.generate`, and update the coverage table in [ontology mappings](ontology-mappings.md).
 
-## Proposals
+## Proposals (as of July 2026)
 
 ### normalized mutual information (partition similarity)
 
@@ -58,7 +58,3 @@ Open an issue on the STATO tracker with the proposed label, the definition, and 
 - Parent: a measure of forecast error, a kind of summary statistic.
 - beam card: mase.
 - Reference: Hyndman and Koehler 2006, Another look at measures of forecast accuracy, International Journal of Forecasting 22:679-688, DOI [10.1016/j.ijforecast.2006.03.001](https://doi.org/10.1016/j.ijforecast.2006.03.001).
-
-## Low-priority gaps
-
-These scIB-specific scores are unlikely to earn a dedicated STATO term, but the gap is recorded for completeness: nclust_deviation, hvg_overlap, graph_connectivity, cell_cycle_conservation. Each stays anchored to its data-producing assay through OBI_0002631 on the card. A proposal would only make sense if a wider community adopts these scores beyond scIB.

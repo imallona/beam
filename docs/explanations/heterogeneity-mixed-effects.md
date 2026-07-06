@@ -1,6 +1,6 @@
 # Heterogeneity: the mixed-effects variance decomposition
 
-A pooled multi-criteria decision analysis (MCDA) ranking treats the datasets as interchangeable and reports one order of the methods. The heterogeneity question is whether that order is stable across datasets or an average over datasets that disagree. The mixed-effects model in `beam.heterogeneity.mixed_effects` answers it for one metric, following Eugster, Hothorn and Leisch (2008).
+A pooled [multi-criteria decision analysis (MCDA)](aggregation-methods.md) ranking treats the datasets as interchangeable and reports one order of the methods. The heterogeneity question is whether that order is stable across datasets or an average over datasets that disagree. The mixed-effects model in [`beam.heterogeneity.mixed_effects`](../reference/mixed_effects.qmd) answers it for one metric, following Eugster, Hothorn and Leisch (2008).
 
 ## Definition
 
@@ -30,7 +30,7 @@ The fit runs in R's lme4 through a subprocess, so it needs the R toolchain. Chec
 
 ## Relation to leave-one-dataset-out
 
-Both evaluate a pooled ranking along the dataset axis, and they answer different questions. Leave-one-dataset-out (`beam.mcda.leave_one_dataset_out`) re-ranks with each dataset removed and asks whether the recommendation depends on any single dataset. The mixed-effects model asks how much of the score variance is interaction at all. The first is a stability check on the composite; the second is a split of the raw metric. Read together, a stable leave-one-dataset-out result with a low interaction share is a ranking you can trust across the datasets at hand. The separate question of whether the methods are statistically separable on a metric is the [Friedman-Nemenyi check](comparing-methods-across-datasets.md).
+Both evaluate a pooled ranking along the dataset axis, and they answer different questions. Leave-one-dataset-out ([`beam.mcda.leave_one_dataset_out`](../reference/leave_one_dataset_out.qmd)) re-ranks with each dataset removed and asks whether the recommendation depends on any single dataset. The mixed-effects model asks how much of the score variance is interaction at all. The first is a stability check on the composite; the second is a split of the raw metric. Read together, a stable leave-one-dataset-out result with a low interaction share is a ranking you can trust across the datasets at hand. The separate question of whether the methods are statistically separable on a metric is the [Friedman-Nemenyi check](comparing-methods-across-datasets.md).
 
 The [Duo 2018 vignette](../../examples/duo2018/duo2018.qmd) works this through on the ARI scores.
 

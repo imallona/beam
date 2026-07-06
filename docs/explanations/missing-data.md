@@ -28,7 +28,7 @@ Once the dataset axis has been summarized, what remains is a tool by metric matr
 
 ## The critical-difference test
 
-The [Friedman test and its Nemenyi post-hoc](comparing-methods-across-datasets.md) rank the methods within each dataset, which is only defined over a complete column. beam refuses a tool by dataset table with missing cells rather than dropping or filling them, and suggests restricting the diagram to the block of methods and datasets where all of them ran. The missing-data generalization of the Friedman test is the [Skillings-Mack (1981) test](skillings-mack.md), available as `beam.mcda.skillings_mack`.
+The [Friedman test and its Nemenyi post-hoc](comparing-methods-across-datasets.md) rank the methods within each dataset, which is only defined over a complete column. beam refuses a tool by dataset table with missing cells rather than dropping or filling them, and suggests restricting the diagram to the block of methods and datasets where all of them ran. The missing-data generalization of the Friedman test is the [Skillings-Mack (1981) test](skillings-mack.md), available as [`beam.mcda.skillings_mack`](../reference/skillings_mack.qmd).
 
 ## What never happens
 
