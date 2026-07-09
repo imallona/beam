@@ -15,9 +15,9 @@ format:
 
 ## Goal
 
-Single-cell data-integration benchmarks reach different conclusions about which method to use. This vignette asks where the disagreement comes from: the methods, the datasets, or the benchmarker's own analysis choices (which metrics, how they are scaled, how they are weighted). It runs the meta-analysis on benchmarks that publish reusable per-method scores on a shared metric set, and shows that re-ranking them all with one consistent rule removes part of the disagreement. It does not remove all of it: the [network meta-analysis](../../docs/explanations/network-meta-analysis.md) later in the vignette finds a significant residual disagreement between the benchmarks even under the shared rule.
+Single-cell data-integration benchmarks reach different conclusions about which method to use. This vignette asks where the disagreement comes from: the methods, the datasets, or the benchmarker's own analysis choices (which metrics, how they are scaled, how they are weighted). It runs the meta-analysis on benchmarks that publish reusable per-method scores on a shared metric set, and shows that re-ranking them all with one consistent rule removes part of the disagreement.
 
-## The benchmarks, and why these
+## The benchmarks
 
 Five single-cell integration benchmarks are pooled here. Four publish reusable per-method scores on the shared scIB metric family (ARI, ASW, kBET, LISI); the fifth, BatchBench, scores on its own batch and cell-type entropy and enters on the within-benchmark rank scale.
 
@@ -34,7 +34,7 @@ Tyler is a preprint as of 2026-05-28 and covers three of the five methods and th
 
 The sixth source, Shen 2026, is not pooled with the first five. Its deep-learning methods overlap the classical five only on harmony and scanorama, too few to rank-harmonize, the same disjointness that excludes scIB-E. Rather than being dropped it enters the last section on a method-agnostic axis, dataset discrimination, which any benchmark can report whatever methods it ran.
 
-The five methods common to the first three benchmarks are combat, harmony, fastMNN, scanorama and LIGER. Benchmarks excluded: Tran's repository appeared empty until the scores were found in its supplement (a repository check is not sufficient); scIB-E (Genome Biology 2025) shares the scIB metrics but its methods are deep-learning ones (scVI, scANVI and loss-function variants) with no overlap with the classical five; the Communications Biology 2025 reference-informed evaluation covers one dataset with a bespoke RBET metric and overlaps only on combat and scanorama; sc_mixology uses off-family metrics; spatial and cross-species benchmarks use different methods. The full provenance, licences and the dataset crosswalk are in `src/beam/data/README.md`.
+The five methods common to the first three benchmarks are combat, harmony, fastMNN, scanorama and LIGER. The excluded benchmarks and the reasons, with provenance, licenses and the dataset crosswalk, are in `src/beam/data/README.md`.
 
 ```{python}
 %matplotlib inline
@@ -57,7 +57,7 @@ published = load_integration_published_ranks()
 print("records:", len(ib.rank), "| benchmarks:", sorted(set(ib.benchmark)))
 ```
 
-## The reported rankings disagree
+## The reported rankings
 
 Each benchmark reported its own ranking of the five methods, using its own metric set, [scaling](../../docs/explanations/normalization-and-scales.md) and [weighting](../../docs/explanations/weighting-schemes.md) (Tran's Table S7 final rank, scIB's 0.6 biological / 0.4 batch weighted overall, OpenProblems' mean of scaled scores).
 
@@ -91,7 +91,7 @@ print(f"mean cross-benchmark Spearman, beam consistent ranking: {np.mean(beam_rh
 print(f"reported: {np.mean(pub_rhos):+.2f}   beam: {np.mean(beam_rhos):+.2f}   change: {np.mean(beam_rhos) - np.mean(pub_rhos):+.2f}")
 ```
 
-Agreement rises from near zero to moderate. Much of the disagreement was in the benchmarker's analysis choices, not the methods: when the metrics, scaling and weighting are held fixed, the benchmarks line up much more closely.
+Agreement rises from near zero to moderate. Much of the disagreement was in the benchmarker's analysis choices, not the methods.
 
 ## Subway plot: reported ranks and the consensus
 
@@ -161,7 +161,7 @@ fig.tight_layout()
 plt.show()
 ```
 
-A method low and to the right mixes batches well while keeping the cell types separate. harmony sits high and to the right: it mixes batches well but blurs the cell types more than the others. A benchmark that weights biology equally then ranks it below fastMNN, which is what BatchBench does, and which is why the fifth source increases the disagreement measured below.
+A method low and to the right mixes batches well while keeping the cell types separate. harmony sits high and to the right: it mixes batches well but blurs the cell types more than the others. A benchmark that weights biology equally then ranks it below fastMNN, which is what BatchBench does.
 
 ## Benchmark share of the variance
 
@@ -211,7 +211,7 @@ else:
     print("Provision it with envs/heterogeneity.yml.")
 ```
 
-With BatchBench in the pool, harmony no longer ranks first on its own: it ties with liger at the top, fastMNN follows, and combat ranks last. The I-squared is high and the inconsistency Q is significant: the direct and the indirect evidence for the same method pairs do not line up, which is the network-model reading of the same finding the variance decomposition reports as a large method-by-benchmark share.
+With BatchBench in the pool, harmony no longer ranks first on its own: it ties with liger at the top, fastMNN follows, and combat ranks last. The I-squared is high and the inconsistency Q is significant: the direct and the indirect evidence for the same method pairs do not line up.
 
 ## Same data, two pipelines: the human pancreas
 
@@ -250,8 +250,6 @@ ax.legend(loc="upper right")
 fig.tight_layout()
 plt.show()
 ```
-
-## Per-benchmark fragility: which top method is closest to flipping
 
 Within each benchmark, the smallest single-weight change that swaps the top-ranked method measures how much the recommendation depends on the analyst's weighting. beam uses the Triantaphyllou-Sanchez closed-form weight delta on the mean-rank matrix; [SAW](../../docs/explanations/aggregation-methods.md) with equal weights is the baseline so the perturbation is interpretable as "how much weight off one metric is needed to flip the top".
 
@@ -391,10 +389,6 @@ display(plot.difficulty_concordance(scib_conc, title="scIB: do DL and classical 
 
 On scIB the two categories agree (about 0.90), as on OpenProblems and unlike Shen, even though the datasets and metrics are held fixed and only the method changes. The low Shen concordance is a property of annotation degradation, not of being a deep-learning method. Extracting these methods also lifts the deep-learning overlap: scVI, scANVI and scGen now join harmony and scanorama as methods shared with Shen, where before no deep-learning method was carried from scIB at all.
 
-## Two levels of agreement
-
-This vignette measures agreement between benchmarks. The [single-benchmark vignettes](../duo2018/duo2018.qmd) measure agreement between the datasets inside one benchmark, with `dataset_concordance`. The two read together: a method can be ordered consistently across the datasets of one benchmark yet ranked differently across benchmarks, which points at the analysis pipeline rather than the data. The network meta-analysis and the source-variance decomposition above are the across-benchmark counterparts of the within-benchmark concordance.
-
 ## Limits
 
-The published-rank chart and the within-five-methods Spearman comparison are computed on the first three benchmarks because Tyler does not publish an overall ranking (its paper is a methodological critique, not a recommendation). The variance decomposition pools all four sources. Numbers stay indicative, not precise: a Spearman over five methods is coarse, four benchmarks is still few for a sharp method-by-benchmark variance estimate, and the reported rankings are reconstructed (Tran's final rank directly, scIB's 0.6/0.4 overall and OpenProblems' mean score recomputed). For the pooled comparison the benchmarks also use mostly different datasets, so part of that disagreement is genuine data variability, not the benchmarker; the human pancreas section removes that confound on the one block where it can be removed. With those caveats, standardizing the decision making with beam removes part of the apparent disagreement between these benchmarks, but it does not close it: the network meta-analysis finds a significant residual inconsistency even under the shared rule. Harmonizing the analysis narrows the gap rather than erasing it.
+The published-rank chart and the within-five-methods Spearman comparison are computed on the first three benchmarks because Tyler does not publish an overall ranking (its paper is a methodological critique, not a recommendation). The variance decomposition pools all four sources. Numbers stay indicative, not precise: a Spearman over five methods is coarse, four benchmarks is still few for a sharp method-by-benchmark variance estimate, and the reported rankings are reconstructed (Tran's final rank directly, scIB's 0.6/0.4 overall and OpenProblems' mean score recomputed). For the pooled comparison the benchmarks also use mostly different datasets, so part of that disagreement is genuine data variability, not the benchmarker; the human pancreas section removes that confound on the one block where it can be removed. With those caveats, standardizing the decision making with beam removes part of the apparent disagreement between these benchmarks, but it does not close it: the network meta-analysis finds a significant residual inconsistency even under the shared rule.

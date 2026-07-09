@@ -26,62 +26,62 @@ website:
         text: Metric cards
       - text: How-to
         menu:
-          - href: docs/how-to/run-from-beam-yaml.md
-            text: Run from beam.yaml
-          - href: docs/how-to/use-beam-from-r.md
-            text: Use beam from R
+          - href: docs/how-to/install.md
+            text: Install beam
+          - href: docs/how-to/run.md
+            text: Run
           - href: docs/how-to/add-a-metric-card.md
             text: Add a new metric card
-          - href: docs/how-to/rerun-from-manifest.md
-            text: Rerun from a manifest
           - href: docs/how-to/run-heterogeneity-from-the-cli.md
             text: Run heterogeneity from the CLI
           - href: docs/how-to/blind-an-analysis.md
             text: Run a blind analysis
-          - href: docs/how-to/plot-a-beam-run.md
-            text: Plot a beam run
       - text: Explanations
         menu:
-          - href: docs/explanations/cards-and-pipeline.qmd
-            text: Cards and pipeline
           - href: docs/explanations/measurement-theory.md
             text: Measurement theory
+          - href: docs/explanations/cards-and-pipeline.qmd
+            text: Cards and pipeline
           - href: docs/explanations/normalization-and-scales.md
             text: Normalization and scales
-          - href: docs/explanations/aggregation-methods.md
-            text: Aggregation methods
-          - href: docs/explanations/choice-agreement.md
-            text: Choice agreement
-          - href: docs/explanations/rank-sensitivity.md
-            text: Rank sensitivity and the specification curve
-          - href: docs/explanations/analysis-blinding.md
-            text: Analysis blinding
           - href: docs/explanations/weighting-schemes.md
             text: Weighting schemes
-          - href: docs/explanations/critical-difference.md
-            text: Critical difference
-          - href: docs/explanations/dataset-concordance-and-discrimination.md
-            text: Dataset concordance and discrimination
-          - href: docs/explanations/attribution-synthesis.md
-            text: Attribution synthesis
-          - href: docs/explanations/pairwise-method-comparison.md
-            text: Pairwise method comparison
-          - href: docs/explanations/missing-data.md
-            text: Missing data
-          - href: docs/explanations/reference-levels.md
-            text: Reference levels
+          - href: docs/explanations/aggregation-methods.md
+            text: Aggregation methods
+          - text: "---"
           - href: docs/explanations/card-data-consistency.md
             text: Card and data consistency
+          - href: docs/explanations/reference-levels.md
+            text: Reference levels
+          - href: docs/explanations/missing-data.md
+            text: Missing data
           - href: docs/explanations/metric-set-diagnostics.md
             text: Metric-set diagnostics
-          - href: docs/explanations/method-by-dataset-heterogeneity.md
-            text: Method-by-dataset heterogeneity
+          - text: "---"
+          - href: docs/explanations/rank-sensitivity.md
+            text: Rank sensitivity and the specification curve
+          - href: docs/explanations/choice-agreement.md
+            text: Choice agreement
           - href: docs/explanations/funky-heatmaps-and-robustness.md
             text: Funky heatmaps
+          - href: docs/explanations/analysis-blinding.md
+            text: Analysis blinding
+          - text: "---"
+          - href: docs/explanations/critical-difference.md
+            text: Critical difference
+          - href: docs/explanations/pairwise-method-comparison.md
+            text: Pairwise method comparison
+          - href: docs/explanations/dataset-concordance-and-discrimination.md
+            text: Dataset concordance and discrimination
+          - href: docs/explanations/method-by-dataset-heterogeneity.md
+            text: Method-by-dataset heterogeneity
+          - href: docs/explanations/network-meta-analysis.md
+            text: Network meta-analysis
+          - href: docs/explanations/attribution-synthesis.md
+            text: Attribution synthesis
+          - text: "---"
           - href: docs/explanations/ontology-mappings.md
             text: Ontology mappings
-          - href: docs/explanations/openproblems-as-a-data-source.md
-            text: OpenProblems as a data source
       - text: Vignettes
         menu:
           - href: examples/duo2018/duo2018.qmd
@@ -109,7 +109,9 @@ metadata-files:
 
 format:
   html:
-    theme: cosmo
+    theme:
+      light: cosmo
+      dark: darkly
     toc: true
     toc-location: left
     code-copy: true

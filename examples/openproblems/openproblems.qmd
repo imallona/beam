@@ -13,17 +13,9 @@ format:
     fig-height: 3.5
 ---
 
-## Goal
-
-The batch integration task also has a [generated standard report](../../docs/reports/openproblems_batch_integration.html), the self-contained HTML `beam.report` emits for any run. This vignette is the narrative walkthrough behind it.
-
-This vignette runs beam on two tasks from OpenProblems in Single-Cell Analysis (openproblems.bio, Nature Biotechnology 2025), the continuous community benchmarking platform. OpenProblems scores every method on every dataset by every metric within a task and publishes the result as a method by dataset by metric tensor, so beam can ingest it directly. The two tasks are chosen for different reasons. The batch integration task is metric-rich (13 scIB metrics), so it runs the multi-criteria decision layer. The spatially variable genes task is dataset-rich (50 spatial datasets), so it is where the Bradley-Terry tree can find a feature split that the 12-dataset [Duo benchmark](../duo2018/duo2018.qmd) could not show. See [the OpenProblems explanation](../../docs/explanations/openproblems-as-a-data-source.md).
-
 ## Provenance of the bundled tables
 
 beam does not ship the raw single-cell data. It ships small derived long-format tables (`src/beam/data/openproblems_batch_integration.csv`, `openproblems_svg.csv`, `openproblems_svg_features.csv`), reduced once from the CC-BY-4.0 results JSON in the `openproblems-bio/website` repository at the pinned commit `76ce7f288da591b1b19c32cbfe8ce50bc3706ece`. The control and baseline methods were dropped at vendoring time. Provenance and license are recorded in `src/beam/data/README.md`. Cite the OpenProblems consortium (Nature Biotechnology 2025, DOI [10.1038/s41587-025-02694-w](https://doi.org/10.1038/s41587-025-02694-w)).
-
-The tables are reproducible from the published JSON. The steps below fetch the four result files for a task at the pinned commit and reduce them to the long table beam loads. They are shown for the record and are not run when this vignette renders, so the rendering needs no network access.
 
 ```bash
 SHA=76ce7f288da591b1b19c32cbfe8ce50bc3706ece
@@ -100,7 +92,7 @@ tensor = tensor[keep]
 print(f"{len(methods)} methods, {len(metrics)} metrics, {len(op.dataset_names)} datasets")
 ```
 
-[`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks the scores against what the 12 [cards](../../docs/explanations/cards-and-pipeline.qmd) declare, before any [normalization](../../docs/explanations/normalization-and-scales.md). The scIB metrics are scaled to [0, 1] on the platform, so the audit gives a clean bill here; it would name any metric whose values fell outside its declared range.
+[`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks the scores against what the 12 [cards](../../docs/explanations/cards-and-pipeline.qmd) declare, before any [normalization](../../docs/explanations/normalization-and-scales.md). The scIB metrics are scaled to [0, 1] on the platform, so the audit is clean here.
 
 ```{python}
 from beam.mcda import card_data_consistency, registry_context
@@ -117,7 +109,7 @@ for finding in audit.findings:
     print(" ", finding.severity, finding.message)
 ```
 
-beam reads each metric card for its polarity and normalization, pools the six datasets per metric, and runs the chosen aggregation. We use [equal weights](../../docs/explanations/weighting-schemes.md) and [TOPSIS](../../docs/explanations/aggregation-methods.md).
+We use [equal weights](../../docs/explanations/weighting-schemes.md) and [TOPSIS](../../docs/explanations/aggregation-methods.md).
 
 ```{python}
 scores = beam.Scores(
@@ -147,7 +139,7 @@ print("beam top method:", result.tool_names[beam_order[0]])
 print("mean-of-scores top method:", methods[mean_order[0]])
 ```
 
-The two rules disagree on the top-ranked method. This is the same point the [M4](../m4/m4.qmd) and Duo vignettes make: a benchmark recommendation is partly a decision about how the criteria are combined.
+The two rules disagree on the top-ranked method: a benchmark recommendation is partly a decision about how the criteria are combined.
 
 ```{python}
 from beam import plot
@@ -158,7 +150,7 @@ plot.ranking(result, ground_truth_tool=methods[mean_order[0]])
 
 ### Funky heatmap with rank robustness
 
-The [funky heatmap](../../docs/explanations/funky-heatmaps-and-robustness.md) shows a multi-metric benchmark with methods as rows sorted best first, metrics as circles sized by the score and coloured by group (here the scIB biological-conservation and batch-correction groups), and an overall bar. beam adds three panels: a worth panel with the ARI marginal mean and a 95 percent interval from the mixed-effects model (overlapping intervals mean two methods are not separable), the span of ranks each method takes across the leave-one-dataset-out runs, and the SMAA rank-acceptability bar (the share of random weightings that put a method at each rank). The row order and circle sizes depend on the normalization, which beam takes from the metric cards rather than defaulting to min-max.
+beam adds three panels to the [funky heatmap](../../docs/explanations/funky-heatmaps-and-robustness.md): a worth panel with the ARI marginal mean and its 95 percent mixed-effects interval (overlapping intervals mean two methods are not separable), the leave-one-dataset-out rank span, and the SMAA rank-acceptability bar. The row order and circle sizes depend on the normalization, which beam takes from the cards rather than min-max.
 
 ```{python}
 from beam.heterogeneity import mixed_effects_from_matrix, r_available
@@ -194,7 +186,7 @@ funky = funky_heatmap_from_run(
 funky
 ```
 
-With only six datasets the leave-one-dataset-out spans are wide: the top methods shift by several ranks when a single dataset is dropped, while the bottom methods stay put. The worth panel agrees: the ARI marginal-mean intervals of the top methods overlap, so they are not separable. The SMAA bar puts the top ranks on several methods rather than one. The top of this order is not settled.
+With only six datasets the leave-one-dataset-out spans are wide: the top methods shift by several ranks when a single dataset is dropped, while the bottom methods stay put. The worth panel agrees: the ARI marginal-mean intervals of the top methods overlap, so they are not separable. The SMAA bar puts the top ranks on several methods rather than one.
 
 ### Mixed-effects variance decomposition on ARI
 
@@ -275,7 +267,7 @@ for name, group, alpha_without in reliability.alpha_if_dropped:
         print(f"  drop {name:18s} alpha -> {alpha_without:.2f} ({gain})")
 ```
 
-The biological group holds together (alpha 0.85 over seven metrics), the batch group does not at the cutoff (alpha 0.62 over five). Dropping `pcr` is the only batch removal that raises the batch alpha, so it is the batch metric least consistent with the rest of its group. The reading pairs with the validity result: the bio/batch axis is the right split, and its biological side is a coherent scale while its batch side is not.
+The biological group holds together (alpha 0.85 over seven metrics), the batch group does not at the cutoff (alpha 0.62 over five). Dropping `pcr` is the only batch removal that raises the batch alpha, so it is the batch metric least consistent with the rest of its group. This is consistent with the validity result: the bio/batch split is robust, with bio a more coherent scale than batch.
 
 ### Metric dimensionality
 
@@ -301,9 +293,9 @@ print("read as one factor:", list(dimensionality.unidimensional_groups))
 
 Dimensionality and reliability point in opposite directions here. The biological group has the higher alpha but carries two factors, so its 0.85 is partly the size of the group rather than one quantity. The batch group has the lower alpha but is one factor, weakly tracked.
 
-## What moves the batch-integration ranking
+## Batch-integration rank sensitivity
 
-The OpenProblems leaderboard pools by the mean of the scaled scores; beam can pool any of several ways. [`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) asks how much that choice matters against the data. It runs every combination of weighting, aggregation and dataset, and splits the rank variance. [COMET](../../docs/explanations/aggregation-methods.md#comet) is left out of the aggregations here: it builds characteristic objects whose count grows fast with the number of criteria, so it is slow on a 12-metric task. The other four aggregations are quick.
+The OpenProblems leaderboard pools by the mean of the scaled scores; beam can pool any of several ways. [`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) asks how much that choice matters against the data. It runs every combination of weighting, aggregation and dataset, and splits the rank variance. [COMET](../../docs/explanations/aggregation-methods.md#comet) is left out of the aggregations here: it builds characteristic objects whose count grows fast with the number of criteria, so it is slow on a 12-metric task.
 
 ```{python}
 from beam.mcda import rank_sensitivity
@@ -328,9 +320,9 @@ print(f"  interactions: {rs.interaction_share:.3f}")
 print(f"  most influential factor: {rs.most_influential_factor}")
 ```
 
-The dataset is still the largest single factor, but here it is not the only one the way it is on M4. The aggregation choice and the dataset-by-choice interaction carry a share too. With 12 metrics that can disagree, how the metrics are combined changes the order more than it does on the two-metric M4 task. So on batch integration the ranking depends on which dataset and on how the metrics are pooled, which is the contrast with the OpenProblems mean-of-scores leaderboard the section above draws.
+The dataset is still the largest single factor, but here it is not the only one the way it is on M4. The aggregation choice and the dataset-by-choice interaction carry a share too. With 12 metrics that can disagree, how the metrics are combined changes the order more than it does on the two-metric M4 task.
 
-Those shares are averaged over the methods. Splitting them one method at a time shows which methods owe their rank movement to the dataset and which to the weighting or aggregation choice; the span beside each bar is that method's best-to-worst rank range.
+Splitting the shares one method at a time shows which owe their rank movement to the dataset and which to the weighting or aggregation; the span beside each bar is that method's best-to-worst rank range.
 
 ```{python}
 plot.rank_sensitivity_by_tool(rs)
@@ -384,8 +376,6 @@ for cell in conc.notable_cells[:5]:
 ```{python}
 plot.dataset_concordance(result)
 ```
-
-The companion view marks where each method places higher or lower than its own typical rank across the datasets, the method-by-dataset cells that drive any disagreement.
 
 ```{python}
 plot.dataset_struggle(result)
@@ -465,7 +455,7 @@ from collections import Counter
 print("technologies:", dict(Counter(categorical["technology"])))
 ```
 
-Before fitting any model, the mean correlation per method per assay technology already shows the structure: no method ranks highest on every assay. This figure needs no R.
+The mean correlation per method per assay technology already shows the structure: no method ranks highest on every assay.
 
 ```{python}
 import warnings
@@ -513,14 +503,14 @@ else:
     print("Provision it with envs/heterogeneity.yml.")
 ```
 
-Each leaf has its own ranking. The plot shows the number of datasets in each leaf and the method that ranks first there.
+The plot shows the number of datasets in each leaf and the method that ranks first there.
 
 ```{python}
 if bt is not None:
     display(plot.bradley_terry_leaves(bt))
 ```
 
-The pooled ranking has one method at the top, but the leaves disagree: which method ranks first depends on the spatial assay technology. A single ranking does not show this heterogeneity. The 50-dataset task shows it where the 12-dataset Duo benchmark could not. See [the Bradley-Terry explanation](../../docs/explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees).
+The pooled ranking has one method at the top, but the leaves disagree: which method ranks first depends on the spatial assay technology. A single ranking does not show this heterogeneity. See [the Bradley-Terry explanation](../../docs/explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees).
 
 ## Recommendation
 

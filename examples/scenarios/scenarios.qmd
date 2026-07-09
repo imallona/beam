@@ -15,8 +15,6 @@ format:
 
 ## Goal
 
-This vignette runs the simulated scenarios. Four scenarios with documented ground truth feed through the same MCDA report layout as the [Duo vignette](../duo2018/duo2018.qmd), to verify that the pipeline reports what each scenario was built to encode.
-
 - random: anti-correlated scores, so no method scores higher on both metrics. Which method ranks first depends entirely on the weights; SMAA confidence is spread across the Pareto frontier; the top rank is fragile under weight perturbation.
 - dominant: one method scores highest on every metric. It is rank 1 under any weighting; its SMAA confidence factor is 1; no single-criterion weight perturbation moves it off the top rank.
 - ties: two methods produce identical scores. They share a rank under any weighting.
@@ -46,15 +44,12 @@ from beam.scenarios import (
     normalization_failure_scenarios,
 )
 
-
 def polarity_for(scenario):
     return [p.polarity for p in properties_for(list(scenario.metric_ids))]
-
 
 def bounds_for(scenario):
     props = properties_for(list(scenario.metric_ids))
     return [(p.range_lower, p.range_upper) for p in props]
-
 
 def unguarded_minmax(scenario):
     """Force plain min-max on every column, the behaviour the card defaults improve on."""
@@ -65,7 +60,6 @@ def unguarded_minmax(scenario):
         bounds=bounds_for(scenario),
         metric_ids=list(scenario.metric_ids),
     )
-
 
 def print_section(label):
     print()
@@ -147,7 +141,7 @@ for s in all_scenarios():
 
 ## SMAA confidence factor per scenario
 
-Bar plot to check the share of weight samples in which each method is top-ranked, side by side across scenarios. The gold bar marks the method documented to rank first, and the green bars mark a documented tied pair. The random scenario has no single method expected to rank first, so all its bars are blue.
+The share of weight samples in which each method is top-ranked, side by side across scenarios. The gold bar marks the method documented to rank first, and the green bars mark a documented tied pair. The random scenario has no single method expected to rank first, so all its bars are blue.
 
 ```{python}
 scenarios = all_scenarios()
@@ -203,8 +197,6 @@ The glyph grid is small (five methods, two metrics). The aggregation panel and t
 
 ## Per-dataset ranks for the odd-dataset scenario
 
-Plot to check the contribution of the odd dataset to the pooled ranking.
-
 ```{python}
 odd = next(s for s in scenarios if s.kind == "odd_dataset")
 tensor = odd.scores_per_dataset
@@ -229,7 +221,7 @@ plot.rank_heatmap(
 )
 ```
 
-## Dataset concordance: which dataset is the odd one
+## Dataset concordance
 
 [`dataset_concordance`](../../docs/explanations/dataset-concordance-and-discrimination.md) ranks the methods within each dataset and reports the Kendall tau-b agreement between every pair, so it names the dataset that orders the methods unlike the rest. This scenario plants one such dataset, and the diagnostic recovers it without being told which one it is.
 
@@ -260,7 +252,7 @@ The struggle map shows the methods whose rank flips on the odd dataset, the cell
 plot.dataset_struggle(odd_run)
 ```
 
-## Normalization strategy matters
+## Normalization strategy
 
 Plain min-max scaling is a common default, and it is wrong for some metrics. Two scenarios make the failure concrete. In each one the top-ranked method under unguarded all-min_max differs from the one under the card defaults. See the explanation page on [normalization and scales](../../docs/explanations/normalization-and-scales.md) for the reasoning.
 
@@ -350,7 +342,7 @@ plot.critical_difference_band(cd)
 
 With only five datasets the critical difference is wide. Every method falls inside the shaded band, and the Friedman test does not reject at alpha 0.05, so the data cannot separate the methods even though the MCDA composite ranks m0 first. The recommendation holds under the stated weighting, but a claim that one method ranks higher across datasets would need more datasets to support it.
 
-[`pairwise_superiority`](../../docs/explanations/pairwise-method-comparison.md) reads the same data as an effect size: how often each method outperforms another across the five datasets. With so few datasets the sign test has almost no power, so the pairwise records are close and none reaches significance, the same conclusion the critical-difference band gives.
+[`pairwise_superiority`](../../docs/explanations/pairwise-method-comparison.md) reads the same data as an effect size: how often each method outperforms another across the five datasets. With so few datasets the sign test has almost no power, so the pairwise records are close and none reaches significance.
 
 ```{python}
 from beam.mcda import pairwise_superiority
@@ -375,7 +367,7 @@ The matrix below orders the methods by how many others they outperform. A transi
 plot.pairwise_majority(trans)
 ```
 
-[`bayesian_sign_comparison`](../../docs/explanations/pairwise-method-comparison.md#bayesian-sign-comparison) gives the posterior probability that one method is practically better than another, the probability-scale companion to the sign test. With five datasets it is mostly inconclusive at the 0.95 threshold, the same limit the sign test and the critical-difference band show.
+[`bayesian_sign_comparison`](../../docs/explanations/pairwise-method-comparison.md#bayesian-sign-comparison) gives the posterior probability that one method is practically better than another, the probability-scale companion to the sign test. With five datasets it is mostly inconclusive at the 0.95 threshold.
 
 ```{python}
 from beam.mcda import bayesian_sign_comparison
@@ -437,7 +429,7 @@ else:
     print("R with psychotree not available; skipping the Bradley-Terry tree.")
 ```
 
-This is the positive control for the diagnostics. The Duo, [M4](../m4/m4.qmd) and [transportation](../transportation/transportation.qmd) vignettes show the small-sample case where no split is found; the [OpenProblems spatial vignette](../openproblems/openproblems.qmd) shows a split on real data. Here the split is recovered from a known construction.
+This is the positive control: the split is recovered from a known construction, where the small-sample real benchmarks (Duo, [M4](../m4/m4.qmd), [transportation](../transportation/transportation.qmd)) find none and the [OpenProblems spatial vignette](../openproblems/openproblems.qmd) finds one on real data.
 
 ## Card consistency as a control
 
@@ -518,15 +510,3 @@ print("ranking identical after unblinding:",
       == dict(zip(restored.tool_names, restored.result.ranks)))
 print("blinding fingerprint:", blind_run.manifest["blinding"]["seal_sha256"][:12])
 ```
-
-## A cross-domain example: transportation
-
-The MCDA core is not specific to bioinformatics. A worked cross-domain example scores transport modes (the methods) across terrains (the datasets) on speed, cost, and CO2, with infeasible mode-terrain pairs left as NaN. It shows the method-by-dataset interaction (no mode is fastest on every terrain) and the partial-coverage problem (no mode runs on every terrain) more sharply than the bio scenarios do. It is documented in its own vignette so the content is not duplicated here: see the [transportation vignette](../transportation/transportation.qmd).
-
-## What is missing
-
-This vignette uses two metrics (ARI and runtime) and short tools lists for legibility. The next milestones widen it.
-
-1. Add cards for Shannon entropy difference and cluster-count deviation; rerun the canonical scenarios with four metrics so the SMAA simplex has higher dimension.
-2. Done: the Bradley-Terry tree and the mixed-effects model are demonstrated above on a synthetic multi-dataset interaction with a known regime feature; extend the canonical scenarios with more than one dataset so the odd-dataset scenario itself carries the split.
-3. Add a noise-floor field on the metric card and report whether the weight-perturbation flip would survive a noise-floor-sized change.

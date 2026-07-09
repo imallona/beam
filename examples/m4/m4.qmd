@@ -13,14 +13,6 @@ format:
     fig-height: 3.5
 ---
 
-## Goal
-
-This dataset also has a [generated standard report](../../docs/reports/m4.html), the self-contained HTML `beam.report` emits for any run. This vignette is the narrative walkthrough behind it.
-
-This vignette runs beam on the M4 forecasting competition (Makridakis, Spiliotis and Assimakopoulos 2020, [10.1016/j.ijforecast.2019.04.014](https://doi.org/10.1016/j.ijforecast.2019.04.014)), a large real benchmark from outside bioinformatics. M4 forecast 100,000 anonymized time series across six frequency bands (yearly, quarterly, monthly, weekly, daily, hourly). Each submitted method was scored by two error metrics, sMAPE and MASE, both lower is better. beam reads those two metrics from its registry as the [cards](../../docs/explanations/cards-and-pipeline.qmd) `smape` and `mase`, treats the six frequency bands as the datasets, and runs the same pipeline as the bioinformatics examples.
-
-Three things are shown on real data. The registry does not care about the domain: forecasting metrics carry polarity, scale and [normalization](../../docs/explanations/normalization-and-scales.md) the same way clustering metrics do. The method ranking depends heavily on the frequency band, which is why leave-one-dataset-out and the [critical-difference diagram](../../docs/explanations/critical-difference.md) across frequencies matter here. And the choice of how to pool the bands changes which method ranks first, so the recommendation is partly a decision about pooling rather than a fact about the methods.
-
 ## Provenance of the bundled table
 
 beam does not ship the 100,000 series. It ships a small derived table, `src/beam/data/M4_2018_by_frequency.csv`, computed once from the GPL-3 `M4comp2018` data, which carries the realized future values and the point forecasts of the top 25 methods. The reduction is recorded in `src/beam/data/reduce_m4.R` and was run as follows:
@@ -32,7 +24,7 @@ cd M4comp2018 && git lfs pull          # the data is stored via git-lfs
 Rscript reduce_m4.R                    # writes M4_2018_by_frequency.csv
 ```
 
-`reduce_m4.R` computes, for each of the top 25 methods and each frequency band, the mean sMAPE and mean MASE over the series in that band, using the M4 metric definitions (sMAPE with the symmetric denominator; MASE scaled by the in-sample seasonal naive error, with seasonal period 1 for yearly, weekly and daily, 4 for quarterly, 12 for monthly, 24 for hourly). The reduction reproduces the published competition figures: the method that ranked first (Smyl, the ES-RNN) computes to an overall sMAPE of 11.374 and MASE of 1.536, matching the M4 paper. The table is GPL-3, derived from GPL-3 data; cite Makridakis, Spiliotis and Assimakopoulos (2020, [10.1016/j.ijforecast.2019.04.014](https://doi.org/10.1016/j.ijforecast.2019.04.014)) when using it.
+`reduce_m4.R` computes the mean sMAPE and mean MASE per method per band, reproducing the published figures (Smyl's sMAPE 11.374, MASE 1.536). The table is GPL-3, derived from GPL-3 data; cite Makridakis, Spiliotis and Assimakopoulos (2020, [10.1016/j.ijforecast.2019.04.014](https://doi.org/10.1016/j.ijforecast.2019.04.014)) when using it.
 
 ## Load the table
 
@@ -64,7 +56,7 @@ for p in properties_for(list(m4.metric_ids)):
     )
 ```
 
-Before ranking, [`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks that the scores honour what those cards declare: every value inside the declared range, the baselines and targets in range, the [noise floors](../../docs/explanations/reference-levels.md) positive. It reads the raw scores against the cards, so a unit mismatch (a metric on a percent scale against a fraction card, say) is caught here.
+Before ranking, [`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks the scores against what those cards declare: every value inside the declared range, the baselines and targets in range, the [noise floors](../../docs/explanations/reference-levels.md) positive. It reads the raw scores against the cards, so a unit mismatch (a metric on a percent scale against a fraction card, say) is caught here.
 
 ```{python}
 from beam.mcda import card_data_consistency, registry_context
@@ -83,7 +75,7 @@ for finding in audit.findings:
 
 ## One MCDA run through the registry
 
-The tensor is dense (every top-25 method has a score on every band), so it goes straight into `beam.rank`. The headline run uses equal weights and SAW. The input is a method by band by metric tensor, so `beam.rank` pools the six bands per metric with each card's rule, then ranks. It also runs the default sensitivity analysis, including leave-one-dataset-out across the bands.
+The tensor is dense (every top-25 method has a score on every band), so it goes straight into `beam.rank`. The headline run uses equal weights and SAW. 
 
 ```{python}
 scores = beam.Scores(
@@ -100,7 +92,7 @@ for i in order[:5]:
     print(f"  {run.result.ranks[i]:>2d}  {m4.method_names[i]}")
 ```
 
-The method that ranks first here need not be the one that ranked first in the official competition. The official M4 ranking pools by OWA over all 100,000 series, so the monthly and yearly bands (48,000 and 23,000 series) dominate. beam treats each band as one dataset and weights the six equally, which lifts methods that do well on the small high-frequency bands. The top method depends on the pooling choice. The next sections examine that dependence rather than settling on one number.
+The method that ranks first here need not be the one that ranked first in the official competition. The official M4 ranking pools by OWA over all 100,000 series, so the monthly and yearly bands (48,000 and 23,000 series) dominate. beam treats each band as one dataset and weights the six equally, which lifts methods that do well on the small high-frequency bands.
 
 ## Ranking by frequency band
 
@@ -123,7 +115,7 @@ plot.rank_heatmap(
     row_names=m4.method_names,
     col_names=m4.frequency_names,
     row_label="forecasting method",
-    col_label="frequency band (dataset axis)",
+    col_label="frequency band",
     title="Per-band sMAPE rank (1 = lowest sMAPE on that band)",
 )
 ```
@@ -149,11 +141,11 @@ for i in order[:8]:
 plot.dataset_stability(run)
 ```
 
-The hourly band is the most influential. It has only a few hundred series and very different dynamics from the long yearly and quarterly series, so a method tuned for it moves a lot in the ranking when it is dropped. This is the forecasting version of the method-by-dataset interaction the other examples show.
+The hourly band is the most influential. It has only a few hundred series and very different dynamics from the long yearly and quarterly series, so a method tuned for it moves a lot in the ranking when it is dropped.
 
 ## Dataset concordance
 
-The pooled ranking averages over the six frequency bands. [`dataset_concordance`](../../docs/explanations/dataset-concordance-and-discrimination.md) ranks the methods within each band and compares every pair of per-band orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual bands; a low mean says it does not. It needs no replicates and assumes nothing about the bands being interchangeable.
+The pooled ranking averages over the six frequency bands. [`dataset_concordance`](../../docs/explanations/dataset-concordance-and-discrimination.md) ranks the methods within each band and compares every pair of per-band orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual bands; a low mean says it does not.
 
 ```{python}
 conc = run.dataset_concordance
@@ -169,13 +161,13 @@ for cell in conc.notable_cells[:5]:
           f"rank {cell.rank}, {side} than its mean {cell.mean_rank:.1f}")
 ```
 
-M4 is the contrast to [Duo](../duo2018/duo2018.qmd): the bands disagree more, which is the strong method-by-band interaction the rank-sensitivity section also reads. The agreement matrix shows the bands that pull together and the ones that stand apart.
+M4 is the contrast to [Duo](../duo2018/duo2018.qmd): the bands disagree more, which is the strong method-by-band interaction the rank-sensitivity section also reads.
 
 ```{python}
 plot.dataset_concordance(run)
 ```
 
-The companion view marks where each method places higher or lower than its own typical rank, showing which methods carry the band disagreement rather than which ranks best overall.
+A second plot marks where each method places higher or lower than its own typical rank, showing which methods carry the band disagreement.
 
 ```{python}
 plot.dataset_struggle(run)
@@ -264,7 +256,7 @@ print(f"  most influential factor: {rs.most_influential_factor}")
 plot.rank_sensitivity(rs)
 ```
 
-The band accounts for almost all the rank variance and the two choices almost none. The M4 order is a question of which frequency you score on, not how you weight or aggregate. The mixed-effects ICC above reaches the same number a different way: an exact factorial decomposition of the ranks rather than a random-effects model of the scores. The headline method ranks differently across bands, which is the variance the band share counts.
+The band accounts for almost all the rank variance and the two choices almost none. The M4 order is a question of which frequency you score on, not how you weight or aggregate. The mixed-effects ICC above reaches the same number a different way: an exact factorial decomposition of the ranks rather than a random-effects model of the scores.
 
 The shares above are pooled over the methods. The per-method version splits the same variance one method at a time. It separates a method whose rank depends on the band from one that depends on the weighting or the aggregation. The span next to each bar is the difference between the method's best and worst rank.
 
@@ -341,7 +333,7 @@ n_top = pair.a_outperforms if pair.a == top else pair.b_outperforms
 print(f"{top_method} outperforms {m4.method_names[runner]} on {n_top} of {pair.n_compared} bands")
 ```
 
-With only six bands the sign test has little power, so few pairs reach significance, and the method with the highest standing outperforms the others on some bands and not on others. This is the band dependence the variance decomposition measured, now as a pairwise record: no method outperforms the field across every frequency.
+With only six bands the sign test has little power, so few pairs reach significance, and the method with the highest standing outperforms the others on some bands and not on others. No method outperforms the field across every frequency.
 
 [`pairwise_transitivity`](../../docs/explanations/pairwise-method-comparison.md#transitivity) asks whether those pairwise majorities agree with a single order. With the ranking moving across the bands, they need not.
 
@@ -367,15 +359,6 @@ bayes = bayesian_sign_comparison(sup)
 decisive = sum(1 for p in bayes.per_pair if p.decision != "inconclusive")
 print(f"pairs with a decisive posterior at 0.95: {decisive} of {len(bayes.per_pair)}")
 plot.bayesian_comparison(bayes)
-```
-
-## Report
-
-`beam.report` writes the whole run to one self-contained HTML file: the ranking, the per-band sensitivity, a critical-difference diagram across the six bands (the input is a complete tensor), and a recommendation paragraph.
-
-```{python}
-beam.report(run, "m4_report.html", ground_truth_tool="Smyl")
-print("wrote m4_report.html")
 ```
 
 ## Recommendation

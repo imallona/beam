@@ -29,7 +29,7 @@ method_names <- unlist(g$method_names)
 metrics <- unlist(g$metric_ids)
 ```
 
-## The complete block
+## Complete cases
 
 The reference-based annotators were not run on every dataset. This vignette uses the five methods Hou and Ji compare directly, on the datasets where all five were run.
 
@@ -87,11 +87,11 @@ cat(sprintf("dataset %.2f, weighting %.2f, aggregation %.2f, interaction %.2f\n"
             rs$dataset_share, rs$weighting_share, rs$aggregation_share, rs$interaction_share))
 ```
 
-The dataset accounts for almost all of the rank variance; the weighting and the aggregation account for very little. Which tissue is annotated decides the per-dataset order far more than the scoring choice.
+The dataset accounts for almost all of the rank variance; the weighting and the aggregation account for very little. Which tissue is annotated sets the per-dataset order far more than the scoring choice.
 
 ## Dataset concordance
 
-[`dataset_concordance`](https://imallona.github.io/beam/docs/explanations/dataset-concordance-and-discrimination.html) ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not.
+[`dataset_concordance`](https://imallona.github.io/beam/docs/explanations/dataset-concordance-and-discrimination.html) ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean means the pooled ranking stands in for the individual datasets; a low mean means it does not.
 
 ```{r concordance, fig.height = 4}
 conc <- run$dataset_concordance
@@ -120,7 +120,7 @@ beam_plot(curve, "specification_curve")
 
 ## Blind analysis
 
-GPT-4 is the method under test here, so [blinding](https://imallona.github.io/beam/docs/explanations/analysis-blinding.html) matters: fixing the pipeline on hidden labels removes the chance to tune the weighting toward it. `beam_blind` hides the names; `beam_unblind` restores them. The ranking does not change.
+GPT-4 is the method under test here, so [blinding](https://imallona.github.io/beam/docs/explanations/analysis-blinding.html) fixes the pipeline on hidden labels before the weighting can be tuned toward it. `beam_blind` hides the names; `beam_unblind` restores them. The ranking does not change.
 
 ```{r blinding}
 blinded <- beam_blind(scores, seed = 0L)

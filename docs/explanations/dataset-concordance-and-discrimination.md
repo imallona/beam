@@ -4,11 +4,9 @@ A ranking pooling different metrics aims to answer, across all the datasets at o
 
 [`beam.mcda.dataset_concordance`](../reference/dataset_concordance.qmd) measures that agreement directly. It ranks the methods within each dataset separately, then compares every pair of per-dataset orderings with the Kendall tau-b rank correlation. The output is a dataset by dataset agreement matrix and a single mean-agreement summary. A high mean says the pooled ranking represents the individual datasets. A low one says it does not, and a single pooled number then obscures the heterogeneity.
 
-## Why not a power analysis
+Counting datasets, as a power analysis would, assumes they are interchangeable draws from a population. Benchmark datasets often are not: they differ in size, biology, confounders, and whether they are simulated (ground truth) or expert annotated (presumed truth), and a method can suit one and not another. This is the point Strobl and colleagues make against a single ranking over heterogeneous data.
 
-One way to frame the gap is to ask how many datasets a benchmark needs to settle the ranking. That question assumes the datasets are interchangeable draws from a population, so that counting them is meaningful. But, in many cases, benchmark datasets are not interchangeable, as they differ in size, biology, confounders, whether they are simulated (ground truth) or expert annotated (presumed truth), and a method can be suited to one and not another. This is the point Strobl and colleagues make against a single ranking over heterogeneous data.
-
-Hence, beam does not estimate the number of datasets, akin to a power analysis, and focuses on dataset-specific effects instead.
+So beam reports dataset-specific effects instead.
 
 ## Implementation
 
@@ -26,15 +24,13 @@ As a result, the report provides:
 
 The agreement matrix says how much the datasets disagree. The rank-deviation table says where the disagreement comes from. For each method it records, on each dataset, the method's rank minus its mean rank across datasets. A negative value means the method places higher than its average on that dataset; a positive value means it places lower. The cells far from zero are the method-by-dataset combinations that move the ordering.
 
-This is a within-method comparison.
+
 
 `beam.plot.dataset_concordance` draws the agreement matrix and `beam.plot.dataset_struggle` draws the rank-deviation table, so both views are available to a notebook or vignette.
 
-## How to read it on a worked example
-
 On the [Duo 2018 clustering benchmark](../../examples/duo2018/duo2018.qmd) (three metrics, equal weights, pooled across the twelve datasets) the mean tau-b is about 0.34, so the datasets share only a moderate ordering. The datasets group into a Koh pair, a Kumar, Sim and Trapnell cluster, and a Zhengmix cluster, which mirrors the way the source studies built the data. The rank-deviation table shows the disagreement concentrating in a few cells: SAFE places last on the harder simulated datasets while sitting mid-table on average, and ascend collapses on the Koh datasets. So the pooled ranking is a reasonable summary for the bulk of the methods, while a handful of method-dataset combinations carry most of the spread.
 
-The diagnostic sits next to the other ways beam evaluates multi-metric composite rankings. Leave-one-dataset-out asks whether the ranking depends on any single dataset. The [critical-difference](critical-difference.md) and [Skillings-Mack](critical-difference.md#skillings-mack-for-incomplete-blocks) tests ask whether the methods are separable on one metric. The [Bradley-Terry tree](method-by-dataset-heterogeneity.md#bradley-terry-trees) splits the datasets by their declared features. Dataset concordance reports the agreement structure among the datasets from the rankings alone, with no features required and no assumption that the datasets are exchangeable.
+The diagnostic sits next to the other ways beam evaluates multi-metric composite rankings. Leave-one-dataset-out asks whether the ranking depends on any single dataset. The [critical-difference](critical-difference.md) and [Skillings-Mack](critical-difference.md#skillings-mack-for-incomplete-blocks) tests ask whether the methods are separable on one metric. The [Bradley-Terry tree](method-by-dataset-heterogeneity.md#bradley-terry-trees) splits the datasets by their declared features.
 
 ## Dataset discrimination
 

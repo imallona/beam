@@ -1,6 +1,6 @@
 # Normalization and measurement scales
 
-The multi-criteria decision analysis (MCDA) procedure rescales every metric to the unit interval before it [weights](weighting-schemes.md) and [aggregates](aggregation-methods.md). The default is min-max scaling. This page explains where min-max goes wrong, why the choce depends on the [measurement scale](measurement-theory.md) of the metric, and how each metric card picks a normalization that fits.
+The multi-criteria decision analysis (MCDA) procedure rescales every metric to the unit interval before it [weights](weighting-schemes.md) and [aggregates](aggregation-methods.md). The default is min-max scaling, and whether it fits depends on the metric's [measurement scale](measurement-theory.md).
 
 ## Min-max
 
@@ -12,7 +12,7 @@ Min-max scaling maps the smallest value in a column to 0 and the largest to 1. I
 
 ## Measurement theory
 
-Stevens described four measurement scales. For benchmarking, we find two of them particularly relevant.
+Stevens described four measurement scales; two matter for benchmarking.
 
 - An interval scale has a meaningful zero only by convention, and equal differences are comparable but ratios are not. The Adjusted Rand Index and the silhouette coefficient are interval. An affine transform, of the form $a x + b$, keeps the meaning of an interval scale.
 
@@ -22,7 +22,7 @@ Min-max subtracts the minimum, so it is an affine transform with a nonzero offse
 
 ## On affines
 
-Each metric card lists the transforms allowed on it. Runtime and peak memory list `affine` among them. Strictly, a pure ratio scale allows only multiplication by a positive constant, not the full affine family, so one could argue `affine` overstates what is meaning-preserving on these cards. We keep `affine` on the cards for two reasons. It records that a unit change, such as seconds to milliseconds, is valid, and removing it would block anyone who picks min-max for a ratio metric on purpose. The card defaults to a normalization that keeps ratio structure, and the guard warns when min-max is used on a heavy-tailed column. The decision stays with the analyst.
+Runtime and peak memory list `affine` among their allowed transforms, though a pure ratio scale strictly allows only multiplication by a positive constant. It stays because it records that a unit change (seconds to milliseconds) is valid and does not block an analyst who picks min-max on purpose. The card defaults to a ratio-preserving normalization, and the guard warns when min-max is used on a heavy-tailed column.
 
 ## The six strategies
 
@@ -39,15 +39,15 @@ Each metric card declares `comparability.recommended_normalization`. The pipelin
 
 The first five strategies all assume one direction is better: higher for the Adjusted Rand Index, lower for runtime. Some metrics break that assumption. A calibration slope of 1 is ideal, and a slope of 0.5 is as wrong as a slope of 2 is in the other direction. These carry `polarity: target_value` with a declared `target`, and the only strategy that fits them is `target_relative`. The pipeline enforces the pairing in both directions: a `target_value` column must use `target_relative`, and `target_relative` refuses a column that declares a monotone polarity, because there is no preferred direction for it to orient by.
 
-The deviation-then-min-max form is the distance-to-a-reference normalization of the OECD composite-indicators handbook. It is relative to the observed method set, like plain min-max, so the same caution applies: the scale rests on the spread of the methods in the table, not on an absolute tolerance. A tolerance-based variant, dividing the deviation by an acceptable error declared on the card, is a later option once a metric needs it.
+The deviation-then-min-max form is the distance-to-a-reference normalization of the OECD composite-indicators handbook. It is relative to the observed method set, like plain min-max, so the same caution applies: the scale rests on the spread of the methods in the table, not on an absolute tolerance.
 
 ## Checks
 
-The pipeline runs a check after it picks the strategies. For any column that still uses min-max, it warns in two cases: when a declared bound is missing, so the scale rests on the data and is not stable across method sets, and when the column is heavy-tailed, so one outlier sets the rescale. The warnings are attached to the result and name `log_min_max` or `rank`. They do not block the run. The standalone [card and data consistency](card-data-consistency.md) audit makes the same checks over every metric in one pass.
+For any column that still uses min-max, the pipeline warns when a declared bound is missing (the scale rests on the data) or the column is heavy-tailed (one outlier sets the rescale). The warnings name `log_min_max` or `rank` and do not block the run. The standalone [card and data consistency](card-data-consistency.md) audit makes the same checks over every metric.
 
 ## Examples
 
-The `beam.scenarios` module ships two cases that make the failure concrete. In the heavy-tail case, plain min-max ranks a slower method first because a runtime outlier hides the speed ladder, while `log_min_max` ranks the fastest method first. In the chance-baseline case, plain min-max ranks a random-level method above one with a higher raw score, while `baseline_relative` puts back the correct order. Both are used as regression tests, so the contrast stays true as the code changes.
+The `beam.scenarios` module ships two cases. In the heavy-tail case, plain min-max ranks a slower method first because a runtime outlier hides the speed ladder, while `log_min_max` ranks the fastest method first. In the chance-baseline case, plain min-max ranks a random-level method above one with a higher raw score, while `baseline_relative` puts back the correct order.
 
 ## See also
 

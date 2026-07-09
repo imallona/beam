@@ -15,15 +15,13 @@ format:
 
 ## Goal
 
-This benchmark also has a [generated standard report](../../docs/reports/gptcelltype.html), the self-contained HTML `beam.report` emits for any run. This vignette is the narrative walkthrough behind it.
-
-Labeling cell types with a large language model is a current topic in single-cell RNA-seq. Hou and Ji (2024) scored GPT-4 and GPT-3.5 against three reference-based annotators (CellMarker2.0, SingleR, ScType). Each method labels the cell types of a dataset. The score is the agreement with a manual expert annotation. This vignette re-runs that benchmark through beam. It reports how stable the ranking is across the modeling choices, how much of the ranking variance comes from the dataset, and whether the ranking changes between normal and cancer tissue. GPT-4 ranks first. GPT-3.5 ranks at or below the three classical tools, so the difference is specific to GPT-4 and not to language models in general.
+Hou and Ji (2024) scored GPT-4 and GPT-3.5 against three reference-based annotators (CellMarker2.0, SingleR, ScType). Each method labels the cell types of a dataset. The score is the agreement with a manual expert annotation. This vignette re-runs that benchmark through beam. It reports how stable the ranking is across the modeling choices, how much of the ranking variance comes from the dataset, and whether the ranking changes between normal and cancer tissue. GPT-4 ranks first. GPT-3.5 ranks at or below the three classical tools, so the difference is specific to GPT-4 and not to language models in general.
 
 ## Provenance of the bundled tables
 
 beam does not ship the single-cell data or the model outputs. It ships two small derived tables (`src/beam/data/gptcelltype2024_agreement.csv`, `gptcelltype2024_features.csv`), reduced once from the compiled evaluation table in the reproduction repository `Winnie09/GPTCelltype_Paper` at a pinned commit. The article and its supplement are CC-BY-4.0; provenance and license are in `src/beam/data/README.md`. Cite Hou W, Ji Z. Assessing GPT-4 for cell type annotation in single-cell RNA-seq analysis. Nature Methods 2024, DOI [10.1038/s41592-024-02235-4](https://doi.org/10.1038/s41592-024-02235-4).
 
-The tables are reproducible from the published file. The step below fetches the compiled evaluation table at the pinned commit; the rendering does not run it and needs no network access.
+To reproduce, run:
 
 ```bash
 SHA=5944a41511aacd368b45448e256d9625849704df
@@ -31,7 +29,7 @@ curl -sf -o all.csv \
   "https://raw.githubusercontent.com/Winnie09/GPTCelltype_Paper/$SHA/anno/compiled/all.csv"
 ```
 
-`all.csv` has one row per annotated cell type. Each method has a `<method>_agreement` column with the ontology-aware score (1 full match, 0.5 partial match, 0 mismatch). The reduction melts those columns to long form, keeps the six methods, and writes the two bundled tables. The script is `src/beam/data/reduce_gptcelltype.py`. Run it with no arguments to fetch the pinned file, or pass a local path:
+`all.csv` has one row per annotated cell type. Each method has a `<method>_agreement` column with the ontology-aware score (1 full match, 0.5 partial match, 0 mismatch). The reduction script is `src/beam/data/reduce_gptcelltype.py`:
 
 ```bash
 python src/beam/data/reduce_gptcelltype.py        # fetches the pinned commit
@@ -58,7 +56,7 @@ print("datasets:", len(g.dataset_names))
 print("metrics:", ", ".join(g.metric_ids))
 ```
 
-## Coverage: who was run where
+## Coverage
 
 The matrix has gaps. SingleR and ScType were not run on the Azimuth and literature datasets. The March 2023 GPT-4 endpoint covers a subset. beam reads the gaps as `numpy.nan` and [does not impute them](../../docs/explanations/missing-data.md).
 
@@ -84,7 +82,7 @@ fig.tight_layout()
 plt.show()
 ```
 
-The main comparison uses the five methods Hou and Ji compare directly (the March 2023 GPT-4 endpoint set aside), on the datasets where all five were run. The partial-coverage section near the end runs beam's missing-data tools on the full set.
+The main comparison uses the five methods Hou and Ji compare directly (the March 2023 GPT-4 endpoint set aside), on the datasets where all five were run.
 
 ```{python}
 head = ["GPT-4", "GPT-3.5", "CellMarker2.0", "SingleR", "ScType"]
@@ -111,7 +109,7 @@ for p in props:
     )
 ```
 
-## One MCDA run on the complete block
+## One MCDA run on the complete cases
 
 beam pools the two metrics across the 36 datasets and ranks the five methods. The default is equal weights with simple additive weighting (SAW). `beam.rank` also runs the default sensitivity battery on the same normalized matrix.
 
@@ -191,7 +189,7 @@ print(f"mean pairwise Kendall tau-b across aggregations: {agg.mean_pairwise_tau:
 print(f"top method unanimous across aggregations: {agg.top_is_unanimous} ({head[agg.top_tool]})")
 ```
 
-## How stable is the top rank
+## Rank stability
 
 The SMAA analysis samples weight vectors and records how often each method takes each rank. The weight-perturbation check asks the smallest single-weight change that would flip the top method.
 
@@ -445,7 +443,7 @@ else:
 
 ## Bradley-Terry tree on tissue features
 
-A further question is whether the ranking reverses on particular kinds of data. A [Bradley-Terry tree](../../docs/explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees) turns each dataset into pairwise method comparisons and splits the datasets by their features, so each leaf gets its own ranking and a parameter-stability test decides where a split is real. The candidate features are the source, tissue, species, sample type (normal or cancer) and the number of cell types. One thing to check is whether the gap between GPT-4 and the other methods shrinks on cancer tissue, where canonical markers are less reliable. The fit needs the R toolchain.
+A further question is whether the ranking reverses on particular kinds of data. A [Bradley-Terry tree](../../docs/explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees) turns each dataset into pairwise method comparisons and splits the datasets by their features, so each leaf gets its own ranking and a parameter-stability test decides where a split is real. The candidate features are the source, tissue, species, sample type (normal or cancer) and the number of cell types. The fit needs the R toolchain.
 
 ```{python}
 from beam.heterogeneity import bradley_terry_tree, bttree_available
@@ -486,7 +484,7 @@ else:
 
 ## Reliability of the manual annotation
 
-The agreement metric is defined against the manual annotation, so beam uses it as the reference and cannot check it directly. One indirect check treats the five annotators as independent raters and looks for cell types where they agree on a broad lineage that differs from the manual label. Those cell types are candidates for a fine-grained mislabel or an ambiguous reference. Item response theory is the model-based version of this check, separating a hard cell type from a mislabeled one through item difficulty and discrimination; that module is not yet implemented, so this section uses the broad-lineage consensus the bundled table records.
+The agreement metric is defined against the manual annotation, so beam uses it as the reference and cannot check it directly. One indirect check treats the five annotators as independent raters and looks for cell types where they agree on a broad lineage that differs from the manual label. Those cell types are candidates for a fine-grained mislabel or an ambiguous reference.
 
 ```{python}
 import csv
@@ -520,9 +518,9 @@ for dataset, cell_type, manual, consensus, votes in candidates[:8]:
 
 Most of these are a granularity difference rather than an error: the manual label is a fine type (innate lymphoid cell, platelet, capillary) and the methods agree on its parent lineage (t/nk cell, megakaryocyte, endothelial cell). In those cells the agreement score counts the method as wrong even though it named a broader correct lineage.
 
-## Partial coverage: the full 54-dataset set
+## Partial coverage
 
-The complete block dropped the 18 datasets where SingleR and ScType were not run. beam can also rank on the full set without completing the matrix. [Available-case SAW](../../docs/explanations/missing-data.md) scores each method on the datasets where it was measured, with the weights renormalized over its support; the [Skillings-Mack test](../../docs/explanations/critical-difference.md#skillings-mack-for-incomplete-blocks) is the coverage-aware Friedman test for a matrix with gaps.
+The complete cases dropped the 18 datasets where SingleR and ScType were not run. beam can also rank on the full set without completing the matrix. [Available-case SAW](../../docs/explanations/missing-data.md) scores each method on the datasets where it was measured, with the weights renormalized over its support; the [Skillings-Mack test](../../docs/explanations/critical-difference.md#skillings-mack-for-incomplete-blocks) is the coverage-aware Friedman test for a matrix with gaps.
 
 ```{python}
 from beam.mcda import skillings_mack
@@ -546,20 +544,11 @@ sm = skillings_mack(sub[:, :, 0], higher_is_better=True, method_names=head)
 print(f"\nSkillings-Mack statistic: {sm.statistic:.1f}  p-value: {sm.p_value:.2e}")
 ```
 
-The [funky heatmap](../../docs/explanations/funky-heatmaps-and-robustness.md) shows the available-case run as a glyph table: the two metrics per method, the composite, and the rank-robustness panels, on all 54 datasets rather than the 36 of the complete block.
+The [funky heatmap](../../docs/explanations/funky-heatmaps-and-robustness.md) shows the available-case run as a glyph table: the two metrics per method, the composite, and the rank-robustness panels, on all 54 datasets rather than the 36 complete cases.
 
 ```{python}
 funky_heatmap_from_run(full_run, title="Cell type annotation: available-case ranking on 54 datasets")
 plt.show()
-```
-
-## The report
-
-`beam.report` writes the whole complete-block run to one self-contained HTML file: the ranking, the normalization diagnostics, every sensitivity output, the critical-difference diagram, and the recommendation paragraph. `ground_truth_tool` outlines GPT-4, the method the paper reports as ranking first, on the ranking figure.
-
-```{python}
-beam.report(run, "cell_type_annotation_report.html", ground_truth_tool="GPT-4")
-print("wrote cell_type_annotation_report.html")
 ```
 
 ## Cross-benchmark: LLM annotation benchmarks
@@ -636,7 +625,7 @@ The benchmarks agree that the top-ranked LLM outranks the classical tools, but t
 
 ### Quantitative cross-benchmark: variance on the shared classical methods
 
-The panel above is descriptive. GPTCelltype and DeepCellSeek both score the three classical tools per dataset on the same ontology-aware metric, so their scores can be pooled and the variance attributed. [`source_variance_decomposition`](../../docs/reference/source_variance_decomposition.qmd) fits `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)` in lme4 over the two benchmarks and the three shared methods. It separates the benchmark level effect, the method-by-benchmark interaction (whether the method order changes between benchmarks), the dataset nested in benchmark, and the residual. SOAR and AnnDictionary stay out of this fit: SOAR scores on a different metric and AnnDictionary has no classical methods. The fit needs the R toolchain.
+GPTCelltype and DeepCellSeek both score the three classical tools per dataset on the same ontology-aware metric, so their scores can be pooled and the variance attributed. [`source_variance_decomposition`](../../docs/reference/source_variance_decomposition.qmd) fits `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)` in lme4 over the two benchmarks and the three shared methods. It separates the benchmark level effect, the method-by-benchmark interaction (whether the method order changes between benchmarks), the dataset nested in benchmark, and the residual. SOAR and AnnDictionary stay out of this fit: SOAR scores on a different metric and AnnDictionary has no classical methods. The fit needs the R toolchain.
 
 ```{python}
 from beam.heterogeneity import source_variance_decomposition, r_available
@@ -699,5 +688,3 @@ The benchmark accounts for about a quarter of the score variance and the method-
 On the 36 datasets where all five methods were run, GPT-4 ranks first on the mean agreement and the full match rate pooled across datasets. It keeps that position across all twenty weighting-by-aggregation configurations. The SMAA draws and the weight-perturbation check report the top rank as not fragile. SingleR, a classical reference-based tool, ranks second, and GPT-3.5 ranks with the classical tools rather than with GPT-4.
 
 On the critical-difference diagram GPT-4 separates from the other four methods, which sit in overlapping cliques and are not separable on agreement at 36 datasets. The rank-sensitivity decomposition puts about 96 percent of the rank variance on the dataset and less than one percent on the weighting and the aggregation combined.
-
-A cross-benchmark version of this analysis, checking whether several LLM annotation benchmarks agree on the ranking, is not possible yet. The recent ones (DeepCellSeek, Single-Cell Omics Arena, AnnDictionary) publish their code and summary figures but not a reusable per-method per-dataset score table, so their numbers cannot be re-ranked under one rule.

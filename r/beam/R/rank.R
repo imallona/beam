@@ -19,7 +19,7 @@
 #' @param sensitivity Logical, default `TRUE`. Runs SMAA, leave-one-metric-out,
 #'   smallest-weight-perturbation, and (for tensor inputs) leave-one-dataset-out.
 #' @param missing One of `"error"`, `"available"`, `"worst"`, `"impute"`.
-#'   Default `"error"` refuses any NaN with a named error. `"available"` is
+#'   Default `"error"` rejects any NaN with a named error. `"available"` is
 #'   available-case SAW; `"worst"` treats a missing cell as the worst score;
 #'   `"impute"` is a discouraged mean-imputation opt-in. See the Python
 #'   docs/explanations/missing-data.md for the rationale.

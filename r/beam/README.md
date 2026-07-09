@@ -44,7 +44,7 @@ beam_report(result, "report.html")
 print(result$top_tool)
 ```
 
-## What runs where
+## Python and R split
 
 Every wrapper forwards arguments to a Python function and returns the Python object. Use `$` to access fields:
 

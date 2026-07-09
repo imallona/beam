@@ -1,12 +1,12 @@
 # Run a heterogeneity model from the command line
 
-Use this recipe when the [MCDA ranking](../explanations/aggregation-methods.md) pools several datasets and you want to know whether one method is really ahead or whether the order depends on which datasets are in the pool. The `beam heterogeneity` command fits one of the method-dataset heterogeneity models on a score file and writes the report as JSON.
+The `beam heterogeneity` command fits one of the method-dataset heterogeneity models on a score file and writes the report as JSON, for when the [MCDA ranking](../explanations/aggregation-methods.md) pools several datasets and the order may depend on which datasets are in the pool.
 
 These models wrap R, so the command needs the R toolchain. The conda recipe `envs/heterogeneity.yml` installs Python and R together with the packages each model uses. When a package is missing the command stops with a clear error naming it, so a script can branch on the exit code (0 on success, 2 on any error).
 
 ## The input
 
-The score file is long format: a header `tool,dataset,metric,score` and one row per measurement. The dataset column is what these models decompose, so a wide tool by metric file is rejected. When the file holds more than one metric, pick one with `--metric`.
+The score file is long format: a header `tool,dataset,metric,score` and one row per measurement. The dataset column is what these models decompose, so a wide tool by metric file is rejected. For a file with more than one metric, `--metric` selects one.
 
 ```
 beam heterogeneity scores.csv --model mixed-effects --metric ari --out report.json
@@ -43,6 +43,6 @@ ok: mixed-effects on ari, the between-dataset shift is 0.71 of the variance
 
 The JSON is the same report object the Python API returns, so a downstream script reads the variance components, the tree nodes and per-leaf worths, or the Plackett-Luce ranking without re-running the fit.
 
-## What it does not do
+## Limits
 
 The command fits the model and serializes the report. It does not draw the tree or render an HTML page; for the worth panel inside the funky heatmap, run the Python API and pass the worth into `funky_heatmap_from_run`. The cross-benchmark [`source_variance_decomposition`](../reference/source_variance_decomposition.qmd) model takes a different input shape (scores labelled by benchmark) and is not exposed here; call it from Python.

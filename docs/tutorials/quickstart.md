@@ -4,7 +4,7 @@ beam ranks the tools in a benchmark from a tool-by-metric table of scores. It re
 
 This tutorial goes from a small CSV to an HTML report, first in Python and then from the command line.
 
-## What you need
+## Requirements
 
 Install beam and work in an empty directory. beam is not on PyPI yet, so clone the repository and install from the checkout.
 
@@ -36,7 +36,7 @@ result = beam.rank(scores)
 beam.report(result, "report.html")
 ```
 
-[`beam.load_scores`](../reference/load_scores.qmd) reads the CSV and checks every metric id against the [registry](../reference/Registry.qmd). An unknown id raises `UnknownMetricError`, so a typo in a header fails early rather than ranking on the wrong column. [`beam.rank`](../reference/rank.qmd) normalizes each column per its card, applies [equal weights](../reference/equal_weights.qmd) and the [SAW aggregation](../reference/weighted_sum.qmd) by default, runs the default [sensitivity analysis](../explanations/funky-heatmaps-and-robustness.md), and builds a [run manifest](../how-to/rerun-from-manifest.md). [`beam.report`](../reference/report.qmd) writes one self-contained HTML file with the figures embedded, so report.html opens in a browser without any other files.
+[`beam.load_scores`](../reference/load_scores.qmd) reads the CSV and checks every metric id against the [registry](../reference/Registry.qmd). An unknown id raises `UnknownMetricError`, so a typo in a header fails early rather than ranking on the wrong column. [`beam.rank`](../reference/rank.qmd) normalizes each column per its card, applies [equal weights](../reference/equal_weights.qmd) and the [SAW aggregation](../reference/weighted_sum.qmd) by default, runs the default [sensitivity analysis](../explanations/funky-heatmaps-and-robustness.md), and builds a [run manifest](../how-to/run.md#reproduce-a-run). [`beam.report`](../reference/report.qmd) writes one self-contained HTML file with the figures embedded, so report.html opens in a browser without any other files.
 
 ## Step 3: read the RunResult
 
@@ -51,7 +51,7 @@ result.result.composite  # composite score per tool
 result.result.normalized # the normalized tool-by-metric matrix
 ```
 
-`result.result` is the MCDA result: it holds the ranks, the composite scores, the normalized matrix, the weighting vector and the method name. The sensitivity reports are on [`result.smaa`](../reference/smaa.qmd), [`result.leave_one_out`](../reference/leave_one_metric_out.qmd) and [`result.perturbation`](../reference/smallest_weight_perturbation.qmd); they are `None` when you pass `sensitivity=False`. `result.manifest` is a dictionary recording the input, the metrics, the parameters and the normalization. That record is what lets a reader reproduce the run.
+`result.result` is the MCDA result: it holds the ranks, the composite scores, the normalized matrix, the weighting vector and the method name. The sensitivity reports are on [`result.smaa`](../reference/smaa.qmd), [`result.leave_one_out`](../reference/leave_one_metric_out.qmd) and [`result.perturbation`](../reference/smallest_weight_perturbation.qmd); they are `None` when you pass `sensitivity=False`. `result.manifest` is a dictionary recording the input, the metrics, the parameters and the normalization.
 
 You can change the weighting and the aggregation through arguments. For example, [entropy weights](../reference/entropy_weights.qmd) with the [TOPSIS aggregation](../reference/topsis.qmd):
 
@@ -87,9 +87,9 @@ The CLI writes errors to stderr and exits 0 on success or 2 on a usage or valida
 beam validate scores.csv --metrics ari,nmi,runtime
 ```
 
-## Where to go next
+## Next steps
 
-To run a whole pipeline from one declarative file (so a reviewer reruns it with a single command), see the how-to: [Run a benchmark from a beam.yaml file](../how-to/run-from-beam-yaml.md).
+To run a whole pipeline from one declarative file (so a reviewer reruns it with a single command), see the how-to: [Run from a beam.yaml](../how-to/run.md#run-from-a-beam-yaml).
 
 For the concepts behind the steps above, see the explanations: [normalization and scales](../explanations/normalization-and-scales.md), [weighting schemes](../explanations/weighting-schemes.md) and [aggregation methods](../explanations/aggregation-methods.md).
 

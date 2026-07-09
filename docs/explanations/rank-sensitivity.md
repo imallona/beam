@@ -35,11 +35,11 @@ report = rank_sensitivity(
 print(report.dataset_share, report.weighting_share, report.aggregation_share)
 ```
 
-## What it says on real data
+## On real data
 
 On the [M4 forecasting benchmark](../../examples/m4/m4.qmd) the dataset accounts for about 0.96 of the rank variance. The weighting and aggregation choices carry under 0.01 each. The headline method ranks first on some frequencies and near last on others. The order is almost entirely a question of which frequency you evaluate on, not how you aggregate.
 
-On the [Duo 2018 clustering benchmark](../../examples/duo2018/duo2018.qmd) the dataset accounts for about 0.71, with a larger interaction term. The 0.71 is close to the dataset variance share an independent mixed-effects model finds on the same data, which is a cross-check: two different methods, the same reading.
+On the [Duo 2018 clustering benchmark](../../examples/duo2018/duo2018.qmd) the dataset accounts for about 0.71, with a larger interaction term. The 0.71 is close to the dataset variance share an independent mixed-effects model finds on the same data, a cross-check by a different method.
 
 ## Defaults and limits
 
@@ -70,7 +70,7 @@ print(curve.most_frequent_top_fraction, curve.n_distinct_top_tools)
 
 On [Duo 2018](../../examples/duo2018/duo2018.qmd) over the Adjusted Rand Index, runtime and the Shannon entropy difference, the analyst-choice grid has 20 combinations: four weightings by five aggregations on the pooled matrix. Seurat ranks first in every one, so the top does not depend on the weighting or the aggregation, but the full ordering repeats in only 15 percent, so the middle of the table reshuffles. Adding the twelve datasets as a third factor grows the grid to 240 combinations: Seurat now ranks first in 49 percent, and five tools rank first in at least one, which is the data contribution on top of the analyst's freedom. On the [M4 forecasting competition](../../examples/m4/m4.qmd) the 20-combination choice grid leaves Pawlikowski first in 90 percent, and the 120-combination grid that adds the six frequency bands drops the top tool, Smyl, to 33 percent with five tools reaching the top.
 
-The HTML report plots the specification curve for a tensor input, in the same section as the variance decomposition. The top panel plots the rank of the most-frequent top method across the combinations sorted from its best to its worst; the panel beneath marks which weighting, aggregation and dataset each used.
+The HTML report plots the curve next to the variance decomposition: the most-frequent top method's rank across the sorted combinations, and beneath it the weighting, aggregation and dataset of each.
 
 ## See also
 

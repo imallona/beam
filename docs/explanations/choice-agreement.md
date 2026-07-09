@@ -14,7 +14,7 @@ A high mean tau means the recommendation is stable under the aggregation choice.
 
 Call `aggregation_agreement(scores, polarity)` with a tool by metric matrix and the per-metric polarity from [`beam.cards.polarities_for`](../reference/polarities_for.qmd), and pass the normalization context from `beam.mcda.registry_context` so the comparison rests on the same normalized matrix as the headline ranking. An aggregation that fails on the input is dropped rather than failing the analysis; at least two must produce a ranking. When every tool scores identically the orderings are all-ties, tau-b is undefined and the run fails.
 
-The five aggregations encode different value judgements: TOPSIS rewards closeness to an ideal point, VIKOR seeks a compromise solution, PROMETHEE II nets pairwise outranking flows. A disagreement among them is a disagreement about what a composite metric should do. The consensus ranking is a convenience summary.
+The five aggregations encode different value judgements: TOPSIS rewards closeness to an ideal point, VIKOR seeks a compromise solution, PROMETHEE II nets pairwise outranking flows. A disagreement among them is a disagreement about what a composite metric should do.
 
 ## Normalization agreement
 
@@ -24,7 +24,7 @@ One difference from aggregation agreement: the objective [weights](weighting-sch
 
 On the same Duo 2018 matrix under equal weights, the card-recommended normalization and the four uniform strategies agree at a mean pairwise tau-b of 0.64, and Seurat is again the unanimous top. The recommended normalization agrees with `min_max` at tau-b 0.79 but with `rank` at only 0.36, because the rank normalization drops the gap sizes that the other strategies keep, so the ordering in the middle of the table moves.
 
-Call `normalization_agreement(scores, polarity)` with `recommended=RegistryContext.normalization` and the same `bounds`, `baselines` and `targets` the headline ranking used. A candidate that cannot run is dropped: `log_min_max` needs strictly positive values, and a `target_value` metric admits only `target_relative`, so the uniform strategies all drop on a matrix that contains one. `beam.plot.normalization_agreement(run)` draws the tau-b heatmap and `beam.plot.normalization_effect(run)` a bump chart of each tool's rank across the strategies; the funky heatmap gains a normalization rank-span panel with `show_normalization_consensus=True`. When the strategies disagree, report the disagreement and the reason the card recommends what it does, covered in [Normalization and scales](normalization-and-scales.md).
+Call `normalization_agreement(scores, polarity)` with `recommended=RegistryContext.normalization` and the same `bounds`, `baselines` and `targets` the headline ranking used. A candidate that cannot run is dropped: `log_min_max` needs strictly positive values, and a `target_value` metric admits only `target_relative`, so the uniform strategies all drop on a matrix that contains one. `beam.plot.normalization_agreement(run)` draws the tau-b heatmap and `beam.plot.normalization_effect(run)` a bump chart of each tool's rank across the strategies; the funky heatmap gains a normalization rank-span panel with `show_normalization_consensus=True`. [Normalization and scales](normalization-and-scales.md) covers why the card recommends what it does.
 
 ## References
 

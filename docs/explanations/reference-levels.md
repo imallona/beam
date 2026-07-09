@@ -1,12 +1,12 @@
 # Reference levels: chance baseline and noise floor
 
-A ranking always produces an order, even when the scores behind it are at chance level. beam reads two per-metric reference levels from the metric cards and reports where the order rests on differences that are not interpretable. Both checks read the raw scores, before any [normalization](normalization-and-scales.md) or [weighting](weighting-schemes.md). They evaluate the ranking without changing it.
+A ranking always produces an order, even when the scores behind it are at chance level. beam reads two per-metric reference levels from the metric cards and reports where the order rests on differences that are not interpretable. Both read the raw scores, before any [normalization](normalization-and-scales.md) or [weighting](weighting-schemes.md), and do not change the ranking.
 
 ## Chance baseline
 
 `semantics.score_of_random_baseline` is the score a random method reaches on a metric, in native units. The Adjusted Rand Index (ARI) declares 0, because it is corrected for chance. [`beam.mcda.beats_random_baseline`](../reference/beats_random_baseline.qmd) counts, per metric, how many tools score better than that level. The direction follows the polarity: a `higher_is_better` metric beats chance above the baseline, a `lower_is_better` metric below it. A `target_value` metric has no chance level and is skipped.
 
-The report names the tools that beat chance on no metric that declares a baseline. On the evidence given, those tools are not distinguishable from a random method, whatever their rank in the table. A NaN score counts as unobserved, not as a failure to beat chance, so a tool with no observed score on any baselined metric is left out of that list.
+The report names the tools that beat chance on no metric with a declared baseline: not distinguishable from a random method, whatever their rank. A NaN score counts as unobserved, so a tool with no observed score on any baselined metric is left out of that list.
 
 ## Noise floor
 
@@ -16,7 +16,7 @@ The report names the tools that beat chance on no metric that declares a baselin
 
 ## Usage
 
-Both checks read a raw score against a declared reference value, and both inform the same caution as the [smallest-weight-perturbation analysis](rank-sensitivity.md). The perturbation analysis already finds the smallest weight change that flips the top pair. The noise floor adds the prior question: are the top tools far enough apart to rank at all? The chance baseline adds another: do they beat a random method in the first place? A flip that is fragile under weights, between two tools that are within the noise floor and barely above chance, is not interpretable.
+Both add to the [smallest-weight-perturbation analysis](rank-sensitivity.md), which finds the smallest weight change that flips the top pair. The noise floor asks whether the top tools are far enough apart to rank at all, the chance baseline whether they beat a random method. A flip that is fragile under weights, between two tools within the noise floor and barely above chance, is not interpretable.
 
 Both fields are optional and additive. Set `semantics.score_of_random_baseline` only where a metric has a defined chance level (corrected-for-chance metrics such as ARI, or a balanced-class accuracy at 1 over the number of classes). Set `comparability.noise_floor` when existing. If neither are defined on the metric card beam does not report reference-levels-related diagnostics.
 

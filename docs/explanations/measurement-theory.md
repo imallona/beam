@@ -1,6 +1,6 @@
 # Measurement theory in beam
 
-This page explains two fields every metric card must declare: `scale_type` and `polarity`.
+Every metric card declares two fields: `scale_type` and `polarity`.
 
 ## Stevens scales
 
@@ -15,7 +15,7 @@ A benchmark performance metric has a scale type. The Adjusted Rand Index (ARI) i
 
 ## Relevance in benchmarking
 
-When a benchmark reports many metrics for many methods, the next question is usually "which method ranks first, given my preferences over these metrics?". [Multi-criteria decision analysis](aggregation-methods.md) treats every metric as an axis and combines them into one ranking. Not every aggregation is allowed on every scale:
+[Multi-criteria decision analysis](aggregation-methods.md) combines the metrics into one ranking, and not every aggregation is allowed on every scale:
 
 - Arithmetic mean: allowed on interval and ratio scales; meaningless on ordinal or nominal.
 - Geometric mean: allowed only on ratio scales, and only for positive values.
@@ -24,7 +24,7 @@ When a benchmark reports many metrics for many methods, the next question is usu
 
 If a metric card hides its scale, beam cannot tell whether the chosen aggregation step is meaningful. Velleman and Wilkinson (1993) argue against treating Stevens scales as a rigid taxonomy in statistical practice. They are right that real metrics sit in fuzzy zones. beam takes a practical line: every card declares its scale type and a free-text `scale_rationale` where the author can explain corner cases. The polarity field (`higher_is_better`, `lower_is_better`, `target_value`) tells beam how to orient normalization and ranking.
 
-## Reading
+## References
 
 - Stevens, S. S. (1946). On the theory of scales of measurement. Science, 103(2684), 677-680. DOI [10.1126/science.103.2684.677](https://doi.org/10.1126/science.103.2684.677).
 - Velleman, P. F., and Wilkinson, L. (1993). Nominal, ordinal, interval, and ratio typologies are misleading. The American Statistician, 47(1), 65-72. DOI [10.1080/00031305.1993.10475938](https://doi.org/10.1080/00031305.1993.10475938).

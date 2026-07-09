@@ -49,7 +49,7 @@ The dataset intercept takes about 0.71 of the ARI variance, so most of the sprea
 
 ## Dataset concordance on ARI
 
-The variance decomposition gives one number for the interaction. [`beam_dataset_concordance`](https://imallona.github.io/beam/docs/explanations/dataset-concordance-and-discrimination.html) shows its structure feature-free: it ranks the methods within each dataset on ARI and compares every pair of per-dataset orderings with Kendall tau-b, reporting which datasets order the methods alike and which stands apart.
+The variance decomposition gives one number for the interaction. [`beam_dataset_concordance`](https://imallona.github.io/beam/docs/explanations/dataset-concordance-and-discrimination.html) shows its structure feature-free, ranking the methods within each dataset on ARI and comparing every pair of per-dataset orderings with Kendall tau-b, reporting which datasets order the methods alike and which stand apart.
 
 ```{r concordance, fig.height = 5}
 conc <- beam_dataset_concordance(
@@ -64,7 +64,7 @@ cat("least typical dataset:",
 beam_plot(conc, "dataset_concordance")
 ```
 
-The datasets fall into families that order the methods alike, the same structure the Bradley-Terry tree next reads from declared features rather than from the rankings.
+The datasets fall into families that order the methods alike.
 
 ## Bradley-Terry tree on dataset features
 
@@ -104,7 +104,7 @@ ggplot2::ggplot(worth, ggplot2::aes(stats::reorder(method, worth), worth)) +
   ggplot2::theme_minimal(base_size = 11)
 ```
 
-On Duo the three models agree on the leaders, the expected reading when one global ranking holds.
+On Duo the three models agree on the leaders.
 
 ## More datasets: cell type annotation
 

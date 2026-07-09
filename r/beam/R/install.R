@@ -69,7 +69,7 @@ install_beam_heterogeneity_deps <- function(pkgs = c(
 #' beam Python package version
 #'
 #' Returns the version string of the Python beam package the R wrappers
-#' currently bind to. Useful for diagnostics.
+#' currently bind to.
 #'
 #' @return A character version string.
 #'

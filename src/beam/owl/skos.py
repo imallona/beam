@@ -11,7 +11,7 @@ and the normalizations that are special cases of an affine transform).
 The enum values are read from the JSON Schema, so a value that no card uses yet
 still gets a concept. The definitions are hand-written here from
 docs/explanations/measurement-theory.md and normalization-and-scales.md; the
-generator refuses to run if the schema gains an enum value with no definition.
+generator stops if the schema gains an enum value with no definition.
 
 Run from the repo root with the dev extras installed:
 

@@ -2,11 +2,11 @@
 
 Each metric card is one YAML file under `src/beam/metrics/<id>/v1.yaml`. The card carries the metadata the pipeline needs to normalize, weight and aggregate the metric correctly: [polarity](../explanations/measurement-theory.md) (higher or lower better), scale type, range, allowed transformations, a [recommended normalization](../explanations/normalization-and-scales.md), and the [ontology mappings](../explanations/ontology-mappings.md) (STATO, UO, OBI, HuggingFace evaluate) where an external term exists.
 
-This recipe walks through adding a card for a new metric called `recall_at_k`.
+
 
 ## 1. Pick the id and the version
 
-The id is a short lowercase string that becomes the column name in score CSVs. The version is a simple `v1`, `v2` and so on. Make a folder:
+The id is a short lowercase string that becomes the column name in score CSVs. The version is a simple `v1`, `v2` and so on:
 
 ```
 mkdir -p src/beam/metrics/recall_at_k
@@ -14,7 +14,7 @@ mkdir -p src/beam/metrics/recall_at_k
 
 ## 2. Write `v1.yaml`
 
-Use an existing card as a template. The seed card `accuracy/v1.yaml` is a short example for a classification metric. Copy and edit:
+The seed card `accuracy/v1.yaml` is a short template for a classification metric:
 
 ```yaml
 id: recall_at_k
@@ -74,7 +74,7 @@ The schema check runs against every card in the registry. A missing required fie
 
 ## 4. Optionally add a STATO or UO mapping
 
-If your metric has a term in the Statistics Ontology, the Units of Measurement Ontology, the Ontology for Biomedical Investigations, or the HuggingFace evaluate catalogue, add the full IRI under `mappings`. The helper script `scripts/ols_query.py` searches OLS for candidate IRIs; use `scripts/ols_verify.py` to confirm a candidate is the right term and is not obsolete. Do not invent IRIs.
+A metric with a term in the Statistics Ontology, the Units of Measurement Ontology, the Ontology for Biomedical Investigations, or the HuggingFace evaluate catalogue takes the full IRI under `mappings`. `scripts/ols_query.py` searches OLS for candidate IRIs, and `scripts/ols_verify.py` confirms a candidate is the right term and not obsolete. IRIs are not invented.
 
 The cards-and-pipeline page lists which fields the pipeline reads and which are reserved for documentation. See [../explanations/cards-and-pipeline.qmd](../explanations/cards-and-pipeline.qmd).
 
@@ -88,4 +88,4 @@ This rewrites `docs/beam.owl.ttl` from the cards plus the schema. The new card n
 
 ## 6. Add a unit test for the metric (optional)
 
-If your card declares one or more `implementations`, write a small example under `tests/` that confirms the implementation produces the expected output on a documented input.
+A card that declares `implementations` warrants a small example under `tests/` confirming the implementation produces the expected output on a documented input.

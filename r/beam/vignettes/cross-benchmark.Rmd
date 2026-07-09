@@ -96,7 +96,7 @@ for (b in bench) {
 
 ## A fifth source: BatchBench
 
-BatchBench scores the methods with two entropy metrics instead of the scIB family: batch entropy, where a higher value means the batches are better mixed, and cell-type entropy, where a higher value means the cell types are more blurred, so a lower value is better for biology. Ruben Chazarra-Gil provided the scores by personal communication. The two metrics show the batch-mixing against biology tradeoff directly.
+BatchBench scores the methods with two entropy metrics instead of the scIB family: batch entropy, where a higher value means the batches are better mixed, and cell-type entropy, where a higher value means the cell types are more blurred, so a lower value is better for biology. Ruben Chazarra-Gil provided the scores by personal communication. The two entropy metrics record batch mixing and biological conservation.
 
 ```{r tradeoff, fig.height = 4.5}
 bb <- datasets$load_batchbench()
@@ -133,9 +133,9 @@ cat(sprintf("I-squared %.2f; inconsistency Q = %.1f on %.0f df, p = %.1e\n",
 
 Each method's pooled mean-rank difference from the combat reference is shown with its 95 percent interval; an interval left of the zero line outranks the reference. The P-score is the probability the method outranks a random competitor.
 
-With BatchBench in the pool, harmony no longer leads on its own: it ties with liger at the top, fastMNN follows, and combat trails. The high I-squared and the significant inconsistency Q say the direct and the indirect evidence do not line up, the network reading of the residual disagreement.
+With BatchBench in the pool, harmony no longer leads on its own: it ties with liger at the top, fastMNN follows, and combat trails. The high I-squared and the significant inconsistency Q say the direct and the indirect evidence do not line up.
 
-## How much of the variance is the benchmark
+## Benchmark share of the variance
 
 A cross-source [variance decomposition](https://imallona.github.io/beam/docs/explanations/attribution-synthesis.html) puts a number on the split: the method-by-benchmark component is the disagreement attributable to the benchmark rather than the method. The chunk fits it with the four scIB-family sources and again with BatchBench added, so the effect of the fifth source is visible. It needs R's lme4.
 
@@ -152,7 +152,7 @@ cat(sprintf("method-by-benchmark variance share: %.2f without BatchBench, %.2f w
             share(sv4), share(sv5)))
 ```
 
-Adding BatchBench raises the method-by-benchmark share. Its two entropy metrics weight biological conservation and batch mixing equally, and that stance disagrees with the scIB-family benchmarks about harmony, so more of the spread now sits in the benchmark rather than the method. Part of the rise also comes from BatchBench ranking four methods rather than five, the same scale difference Tyler has, so read it as a clear direction more than an exact number. The fits are singular (with so few benchmarks one or more variance components are estimated at zero), which lme4 reports but which does not stop the share from being computed; it is one more reason to read the value as a direction.
+Adding BatchBench raises the method-by-benchmark share. Its two entropy metrics weight biological conservation and batch mixing equally, and that stance disagrees with the scIB-family benchmarks about harmony, so more of the spread now sits in the benchmark rather than the method. Part of the rise also comes from BatchBench ranking four methods rather than five, so read it as a clear direction more than an exact number. The fits are singular (with so few benchmarks one or more variance components are estimated at zero), which lme4 reports but does not stop the share from being computed.
 
 ## Same data, two pipelines: the human pancreas
 
@@ -275,8 +275,8 @@ cat(sprintf("scIB DL vs classical concordance (identical data): %+.2f\n",
 
 On scIB the two categories agree (about 0.90), as on OpenProblems and unlike Shen, with the datasets and metrics held fixed, so the low Shen concordance is a property of annotation degradation rather than of being a deep-learning method. See `?beam_dataset_discrimination`, `?beam_difficulty_concordance`.
 
-## Reading
+## Summary
 
-This vignette measures agreement between benchmarks. The single-benchmark vignettes measure agreement between the datasets inside one benchmark, with `beam_dataset_concordance`. A method ordered consistently across the datasets of one benchmark yet ranked differently across benchmarks points at the analysis pipeline rather than the data; the network meta-analysis and source-variance decomposition here are the across-benchmark counterparts of that within-benchmark concordance.
+This vignette measures agreement between benchmarks. The single-benchmark vignettes measure agreement between the datasets inside one benchmark, with `beam_dataset_concordance`. A method ordered consistently across the datasets of one benchmark yet ranked differently across benchmarks points at the analysis pipeline rather than the data.
 
-Standardizing the decision making with beam removes part of the apparent disagreement between these benchmarks, but it does not close it: the network meta-analysis finds a significant residual inconsistency even under the shared rule. BatchBench makes the point sharper. It scores biology and batch mixing with equal weight, disagrees with the scIB-family benchmarks about harmony, and so raises the share of the spread that sits in the benchmarker's choices rather than the methods. Harmonizing the analysis narrows the gap rather than erasing it. See `?beam_network_meta_analysis`, `?beam_source_variance_decomposition`.
+Standardizing the decision making with beam removes part of the apparent disagreement between these benchmarks, but it does not close it: the network meta-analysis finds a significant residual inconsistency even under the shared rule. BatchBench makes the point sharper. It scores biology and batch mixing with equal weight, disagrees with the scIB-family benchmarks about harmony, and so raises the share of the spread that sits in the benchmarker's choices rather than the methods. Harmonizing the analysis narrows the gap but does not erase it. See `?beam_network_meta_analysis`, `?beam_source_variance_decomposition`.

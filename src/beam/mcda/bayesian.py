@@ -5,7 +5,7 @@ methods differ. The pairwise superiority report (``beam.mcda.pairwise_superiorit
 reports by how much, as outperformance counts, an effect size and a sign test.
 Both are frequentist: they answer with a p-value, which is the chance of the
 observed split if the two methods scored the same, not the chance that one method
-scores higher. A reader who wants to choose a method wants the second quantity.
+scores higher. Choosing between two methods needs the second quantity.
 
 ``bayesian_sign_comparison`` supplies it. It reads the same per-pair
 outperformance counts ``pairwise_superiority`` already produced and treats them as

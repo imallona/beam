@@ -13,7 +13,7 @@ says the pooled recommendation stands in for the individual datasets. A low one
 says it does not, and a single pooled number then hides heterogeneity the reader
 should see.
 
-The companion view is the rank-deviation table. For each method it records the
+A second output is the rank-deviation table. For each method it records the
 datasets where the method places higher or lower than its own typical rank.
 These cells are where the dataset disagreement comes from. They name the
 method-by-dataset combinations that move the ordering, with no claim about which

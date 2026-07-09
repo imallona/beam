@@ -26,7 +26,7 @@ _MAX_NAMED_CELLS = 5
 class IncompleteMatrixError(ValueError):
     """Raised when an MCDA step is given a matrix with missing cells.
 
-    A subclass of ``ValueError``. beam refuses to impute a missing score or to
+    A subclass of ``ValueError``. beam does not impute a missing score and does not
     rank tools measured on different metric subsets, so a NaN in the tool by
     metric matrix stops the pipeline. Summarize a tool over the datasets where
     it was observed with ``beam.mcda.reduce_tensor``, analyze the feasible

@@ -13,12 +13,6 @@ format:
     fig-height: 3.5
 ---
 
-## Goal
-
-This dataset also has a [generated standard report](../../docs/reports/duo2018.html), the self-contained HTML `beam.report` emits for any run. This vignette is the narrative walkthrough behind it.
-
-This vignette re-analyses the fourteen single-cell clustering methods benchmarked in Duo, Robinson and Soneson (2018) with the beam metric registry and the [MCDA](../../docs/explanations/aggregation-methods.md) decision module. It loads the published method by dataset by metric tensor, pulls the [metric cards](../../docs/explanations/cards-and-pipeline.qmd), and pools each metric across the twelve datasets using the rule its card recommends. It then runs the MCDA pipeline and checks how stable the ranking is under different weightings, aggregation methods, and weight perturbations. It closes with a Demsar critical-difference diagram that asks whether the methods are separable on ARI at all.
-
 ## Set-up
 
 The five [aggregation methods](../../docs/explanations/aggregation-methods.md) used below (SAW, TOPSIS, VIKOR, PROMETHEE II, [COMET](../../docs/explanations/aggregation-methods.md#comet)) are wrapped from pymcdm. beam normalizes by metric card, then calls pymcdm on the normalized matrix and keeps the higher-is-better convention. The [weighting schemes](../../docs/explanations/weighting-schemes.md) are beam's own, since pymcdm's reject the zeros beam's normalization produces.
@@ -82,9 +76,9 @@ for p in props:
 
 ## Pool across the twelve datasets
 
-The MCDA pipeline works on a method by metric matrix, so the twelve datasets have to be pooled into one value per metric first. For each metric this code applies the rule the card declares, using a NaN-aware reduction so the five missing cells do not skew a method's pooled score. ARI and Shannon entropy difference use a NaN-aware arithmetic mean; runtime uses a NaN-aware geometric mean (the mean of the logs, then exponentiated, over the observed datasets only).
+beam needs one value per metric, so the datasets are pooled first, keeping NaN awareness: the arithmetic mean of ARI and Shannon entropy difference, the geometric mean of runtime.
 
-The NaN handling is in the example, not in the core pipeline. `beam.mcda.aggregate_across_datasets` is not NaN-aware by design; pushing coverage-aware pooling into the core normalization, weighting and aggregation is future work tied to the heterogeneity module. At the example level, a method's pooled score is the average over the datasets where it was actually measured. The five gaps fall on SAFE (two datasets) and ascend (three datasets); every other method is observed on all twelve.
+A method's pooled score is the average over the datasets where it was measured. The five gaps fall on SAFE (two datasets) and ascend (three datasets); every other method is observed on all twelve.
 
 ```{python}
 def pool_metric(metric_id, rule):
@@ -134,7 +128,7 @@ for i in order:
 
 ## Compare across weightings and aggregation methods
 
-Four weightings (equal, entropy, std, critic) crossed with four aggregation methods (saw, topsis, vikor, promethee_ii) give sixteen runs. A method whose rank stays the same down a column is stable to these choices; a method whose rank moves is sensitive to them.
+Four weightings (equal, entropy, std, critic) crossed with four aggregation methods (saw, topsis, vikor, promethee_ii) give sixteen runs. A method whose rank stays the same down a column is stable to these choices.
 
 ```{python}
 weightings = ["equal", "entropy", "std", "critic"]
@@ -175,7 +169,7 @@ print("  " + ", ".join(sorted(top_per_combo)))
 
 The MCDA composite gives one ranking, but it does not say whether the methods are separable. The Demsar (2006) [Friedman test](../../docs/explanations/critical-difference.md) ranks the methods on each dataset and asks whether the average ranks differ more than chance. The Nemenyi post-hoc gives the critical difference: two methods whose average ranks differ by less than it are not distinguishable from this data.
 
-This runs on ARI alone, on the block of methods observed on all twelve datasets. SAFE and ascend have missing ARI cells, so they are dropped here to keep the block complete; the remaining twelve methods are observed on all twelve datasets.
+This runs only on ARI, on the complete observations across the twelve datasets. SAFE and ascend have missing ARI cells, so they are ignored. The rest are complete.
 
 ```{python}
 ari = duo.tensor(("ari",))[:, :, 0]
@@ -218,7 +212,7 @@ print(f"highest standing: {top_method} ({sup.standing[sup.order[0]]:.2f})")
 print(f"method pairs the sign test cannot separate: {len(sup.equivalent_pairs)} of {len(sup.per_pair)}")
 ```
 
-Most pairs are not distinguishable: across the twelve datasets the ARI differences are often inside the 0.01 floor, so neither method outperforms the other decisively. This is the critical-difference reading stated as an effect size. Beyond the method with the highest standing, the rest are largely interchangeable on ARI at this dataset count.
+Most pairs are not distinguishable: across the twelve datasets the ARI differences are often inside the 0.01 floor, so neither method outperforms the other decisively. Beyond the method with the highest standing, the rest are largely interchangeable on ARI at this dataset count.
 
 ## Pairwise transitivity on ARI
 
@@ -303,7 +297,7 @@ if ts.most_fragile_pair is not None:
     )
 ```
 
-## End to end with beam.rank and beam.report
+## End to end with beam.rank
 
 The sections above call the pipeline primitives one by one. The same analysis runs in three lines through the top-level API. `beam.rank` takes the method by dataset by metric tensor, pools it across datasets per each card's rule (nan-aware), runs the MCDA pipeline, and runs the default sensitivity analysis on the same normalization context: SMAA, leave-one-metric-out, the smallest-weight perturbation, and, because the input is a tensor, leave-one-dataset-out.
 
@@ -356,13 +350,6 @@ funky_heatmap_from_run(
     show_aggregation_consensus=True,
     title="Duo 2018: scores and rank robustness",
 )
-```
-
-`beam.report` writes the whole run to one self-contained HTML file: the ranking, the normalization diagnostics, every sensitivity output including the leave-one-dataset-out figure above, the critical-difference diagram, and the recommendation paragraph. `ground_truth_tool` outlines the method documented to rank first on the ranking figure.
-
-```{python}
-beam.report(run, "duo2018_report.html", ground_truth_tool="Seurat")
-print("wrote duo2018_report.html")
 ```
 
 ## Dataset concordance

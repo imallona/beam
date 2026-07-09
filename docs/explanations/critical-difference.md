@@ -12,11 +12,11 @@ The Friedman test does not say which methods differ from which. For that, beam r
 
 The Nemenyi critical difference is $q \sqrt{k (k + 1) / (6 N)}$, where $k$ is the number of methods, $N$ the number of datasets, and $q$ the Studentized range value for $k$ at the chosen alpha, divided by the square root of two. beam computes $q$ exactly with scipy, so it is correct for any number of methods, not only the small tables printed in the paper. As a check, for five methods at alpha 0.05 the $q$ term is 2.728, the value in Demsar's Table 5.
 
-The formula shows the two ways to earn power: more datasets shrink the critical difference, and fewer methods shrink it. With many methods and few datasets the critical difference is large, and most pairs come out unseparable.
+More datasets shrink the critical difference, and fewer methods shrink it; with many methods and few datasets it is large, and most pairs come out unseparable.
 
 ## Cliques
 
-A critical-difference diagram draws the methods along a rank axis and connects the ones that are not significantly different. beam returns these groups as cliques: maximal runs of methods, consecutive in rank order, whose first and last average ranks lie within the critical difference. A method that shares no clique with another is significantly separated from it. The cliques are the data behind the diagram; the vignette draws the bars.
+A critical-difference diagram draws the methods along a rank axis and connects the ones that are not significantly different. beam returns these groups as cliques: maximal runs of methods, consecutive in rank order, whose first and last average ranks lie within the critical difference. A method that shares no clique with another is significantly separated from it.
 
 ## How to use it
 
@@ -30,7 +30,7 @@ When the matrix has missing cells the Friedman ranks are no longer defined. The 
 
 Real benchmarks rarely give a complete matrix: methods time out, error on an input, or were not run on every dataset. beam's [missing-data policy](missing-data.md) does not fill those gaps by imputation, so `critical_difference` reduces the matrix to its complete observations, and on a wide table with many partial methods there may be none. The Skillings-Mack (1981) test fills the gap with a Friedman-type statistic that does not need a complete matrix, in [`beam.mcda.skillings_mack`](../reference/skillings_mack.qmd) and under the alias [`beam.mcda.coverage_aware_critical_difference`](../reference/coverage_aware_critical_difference.qmd).
 
-It answers the same global question, whether the methods are separable across the datasets, on the same tool by dataset matrix with NaN allowed. It gives no pairwise comparisons. The Nemenyi critical difference assumes every pair is ranked on every dataset with equal block sizes; with incomplete blocks the per-method average rank no longer shares a denominator, so beam returns the global test only and leaves pairwise statements to a `critical_difference` run on the complete block.
+It answers the same global question, whether the methods are separable across the datasets, on the same tool by dataset matrix with NaN allowed. It gives no pairwise comparisons. The Nemenyi critical difference assumes every pair is ranked on every dataset with equal block sizes; with incomplete blocks the per-method average rank no longer shares a denominator, so beam returns the global test only and leaves pairwise statements to a `critical_difference` run on the complete cases.
 
 Within each block (column) $j$ the methods present are ranked from 1 (lowest score) to $k_j$ (highest score), with average ranks for ties. The within-block rank for method $i$ is centred and standardized by the block size:
 
@@ -60,8 +60,8 @@ On a complete matrix Skillings-Mack collapses to the Friedman $\chi^2$: every bl
 
 Two ways to use the pair:
 
-- Restrict the matrix to the complete block of methods and datasets where every method ran, and call `critical_difference`. This gives a global test and the Nemenyi cliques but drops every dataset where any method failed to run. It fits when the complete block is large enough.
-- Keep every observed score and call `skillings_mack` on the partial matrix. This gives a global test only, with no pairwise cliques. It fits when restricting to the complete block drops most of the data.
+- Restrict the matrix to the complete cases, the methods and datasets where every method ran, and call `critical_difference`. This gives a global test and the Nemenyi cliques but drops every dataset where any method failed to run. It fits when the complete cases are enough.
+- Keep every observed score and call `skillings_mack` on the partial matrix. This gives a global test only, with no pairwise cliques. It fits when restricting to the complete cases drops most of the data.
 
 ## Limitations
 

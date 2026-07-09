@@ -5,8 +5,7 @@ integration score, for example, groups its metrics into biological conservation
 and batch correction and weights the two groups 0.6 and 0.4, so each group acts
 as a single composite scale. ``beam.mcda.metric_validity`` asks whether that
 grouping is valid (do same-group metrics agree and different-group metrics
-differ). Reliability asks the companion question: if the group is going to be
-read as one scale, how consistently do its metrics measure one thing?
+differ). Reliability asks how consistently the group's metrics measure one thing when it is read as one scale.
 
 Cronbach (1951) alpha is the standard internal-consistency coefficient. This
 module reports the standardized form, which depends only on the number of

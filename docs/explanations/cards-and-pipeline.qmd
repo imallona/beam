@@ -4,34 +4,6 @@ A metric card declares fields covering identity, kind, inputs, output, semantics
 
 For why the normalization strategy depends on the [measurement scale](measurement-theory.md) of the metric, and where plain min-max scaling fails, see the page on [normalization and scales](normalization-and-scales.md).
 
-## Data flow
-
-```{mermaid}
-flowchart LR
-    A[metric cards<br/>YAML] -->|polarity| B[properties_for]
-    A -->|scale_type<br/>allowed_transformations| V[validate_for_aggregation]
-    A -->|range_lower<br/>range_upper| BO[bounded normalization]
-    A -->|recommended_normalization<br/>score_of_random_baseline| NS[per-metric strategy]
-    A -->|recommended_aggregation<br/>_across_datasets| CD[aggregate_across_datasets]
-    A -.->|meaningful_zero<br/>uncertainty_model| X((not yet<br/>enforced))
-    B --> RR[run_from_registry]
-    V --> RR
-    BO --> RR
-    NS --> RR
-    S[score matrix<br/>tool x metric] --> RR
-    W{weights<br/>name or array} --> RR
-    M{method<br/>saw or topsis} --> RR
-    RR --> N[normalize<br/>per-metric strategy]
-    N -->|0 to 1 matrix<br/>higher = better| AGG[saw or topsis]
-    WT[weight vector] --> AGG
-    AGG --> R[rank]
-    R --> RES[Result]
-    T[tool x dataset matrix<br/>per metric] --> CD
-    CD -->|per-tool vector| S
-```
-
-Solid edges mark fields read by the current pipeline. Dashed edges describe declared fields, but not yet used.
-
 ## Fields read
 
 - `polarity`: passed to `normalize`, which inverts columns marked `lower_is_better` and rescales each column to [0, 1]. The output matrix is oriented so higher values mean better performance for every column.

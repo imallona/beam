@@ -142,6 +142,6 @@ cat(sprintf("mean agreement across datasets (Kendall tau-b): %.2f\n",
 beam_plot(conc, "dataset_concordance")
 ```
 
-## Reading
+## Summary
 
-Reliability and dimensionality dissociate on this data. The biological group has the higher alpha (0.85) but carries two factors by parallel analysis, so its alpha is partly the size of the group rather than one underlying quantity. The batch group has the lower alpha (0.61) but is a single factor its metrics track only weakly. See `?beam_metric_validity`, `?beam_metric_reliability`, `?beam_metric_dimensionality`.
+The biological group has the higher alpha (0.85) but splits into two factors under parallel analysis, so the alpha partly reflects the group's size, not one underlying quantity. The batch group has the lower alpha (0.61) and a single factor that its metrics track only weakly. See `?beam_metric_validity`, `?beam_metric_reliability`, `?beam_metric_dimensionality`.

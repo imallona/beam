@@ -10,8 +10,8 @@ The metric cards are mapped to STATO, UO, OBI and HuggingFace evaluate where ava
 ## Where to start
 
 - [Quick start](docs/tutorials/quickstart.md). From a CSV to a ranking and an HTML report.
-- [How to run from beam.yaml](docs/how-to/run-from-beam-yaml.md). The declarative beam specification.
-- [How to use beam from R](docs/how-to/use-beam-from-r.md). The R interface (reticulate-backed; same metric cards and pipeline).
+- [How to run from beam.yaml](docs/how-to/run.md#run-from-a-beam-yaml). The declarative beam specification.
+- [Install](docs/how-to/install.md) and [run](docs/how-to/run.md) in Python, R, or the CLI.
 - [Cards and pipeline](docs/explanations/cards-and-pipeline.qmd). What a metric card encodes and how it is processed.
 - [Critical difference](docs/explanations/critical-difference.md). Whether the methods are separable across datasets (Friedman, Nemenyi, Skillings-Mack).
 

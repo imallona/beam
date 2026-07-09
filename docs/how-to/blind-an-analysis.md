@@ -1,6 +1,6 @@
 # Run a blind analysis
 
-Hide the method names while you fix the analysis pipeline, then restore them. This is the blind analysis practice from particle physics and clinical trials: choose the weighting, the aggregation and the metric set without knowing which method is which, so the choices cannot be tuned toward a preferred result. See the explanation in [docs/explanations/analysis-blinding.md](../explanations/analysis-blinding.md) for the reasoning and the references.
+A blind analysis hides the method names while the pipeline is fixed, then restores them, as in particle physics and clinical trials: the weighting, aggregation and metric set are chosen without knowing which method is which, so the choices cannot be tuned toward a preferred result. See the explanation in [docs/explanations/analysis-blinding.md](../explanations/analysis-blinding.md) for the reasoning and the references.
 
 ## From Python
 
@@ -24,7 +24,7 @@ final = beam.unblind(result, seal)
 print(final.top_tool)
 ```
 
-The run [manifest](rerun-from-manifest.md) on a blinded run records the seal fingerprint:
+The run [manifest](run.md#reproduce-a-run) on a blinded run records the seal fingerprint:
 
 ```python
 result.manifest["blinding"]   # {"blinded": True, "seal_sha256": "..."}
@@ -56,6 +56,6 @@ final <- beam_unblind(result, blinded$seal)
 print(final$top_tool)
 ```
 
-## What blinding does and does not do
+## Guarantees and limits
 
-The ranking is the same whether or not the labels were hidden, because beam ranks on the score values and unblinding only renames the rows. Blinding does not change the result. It fixes the pipeline before the result is known, and it leaves a record (the seal fingerprint in the manifest) that the configuration predates the unblinding. It cannot stop someone from reading the source file; it supports a pre-registration claim rather than enforcing one.
+The ranking is the same whether or not the labels were hidden, because beam ranks on the score values and unblinding only renames the rows. It fixes the pipeline before the result is known, and it leaves a record (the seal fingerprint in the manifest) that the configuration predates the unblinding. It cannot stop someone from reading the source file; it supports a pre-registration claim rather than enforcing one.

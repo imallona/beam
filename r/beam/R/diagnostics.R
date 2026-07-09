@@ -3,7 +3,7 @@
 #' Runs [beam_metric_validity], [beam_metric_reliability] and
 #' [beam_metric_dimensionality] on one set of inputs and returns the three
 #' reports together. The three rest on the same oriented Spearman correlations,
-#' so this reads a grouping from every angle without repeating the call.
+#' so one call runs all three.
 #' Validity is skipped (returned as `NULL`) when the grouping has a single
 #' construct, since convergent and discriminant evidence need at least two.
 #' Forwards to the Python `beam.mcda.metric_diagnostics`.
