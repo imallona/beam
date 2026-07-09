@@ -165,7 +165,7 @@ A method low and to the right mixes batches well while keeping the cell types se
 
 ## Benchmark share of the variance
 
-A cross-benchmark [variance decomposition](../../docs/explanations/method-by-dataset-heterogeneity.md) puts a number on the split. The model is `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)`, where the method-by-benchmark component is the disagreement attributable to the benchmark rather than the method. The chunk fits it twice, with the four scIB-family sources and again with BatchBench added, so the effect of the fifth source is visible. The fit needs R's lme4, so the chunk runs only when it is available.
+A cross-benchmark [variance decomposition](../../docs/explanations/attribution-synthesis.md) puts a number on the split. The model is `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)`, where the method-by-benchmark component is the disagreement attributable to the benchmark rather than the method. The chunk fits it twice, with the four scIB-family sources and again with BatchBench added, so the effect of the fifth source is visible. The fit needs R's lme4, so the chunk runs only when it is available.
 
 ```{python}
 from beam.heterogeneity import r_available, source_variance_decomposition
