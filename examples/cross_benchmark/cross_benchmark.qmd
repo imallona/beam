@@ -1,5 +1,5 @@
 ---
-title: "Cross-benchmark meta-analysis: do single-cell integration benchmarks disagree about the methods, the data, or the benchmarker?"
+title: "Cross-benchmark meta-analysis"
 author: "Izaskun Mallona"
 date: today
 format:
@@ -135,7 +135,7 @@ for b in BENCH:
     display(fig)
 ```
 
-## A fifth source with a different lens: BatchBench
+## A fifth source: BatchBench
 
 BatchBench scores the methods with two entropy metrics rather than the scIB family: batch entropy, where a higher value means the batches are better mixed, and cell-type entropy, where a higher value means the cell types are more blurred, so a lower value is better for biology. Ruben Chazarra-Gil provided the scores by personal communication. The two metrics show the batch-mixing against biology tradeoff directly.
 
@@ -163,9 +163,9 @@ plt.show()
 
 A method low and to the right mixes batches well while keeping the cell types separate. harmony sits high and to the right: it mixes batches well but blurs the cell types more than the others. A benchmark that weights biology equally then ranks it below fastMNN, which is what BatchBench does, and which is why the fifth source increases the disagreement measured below.
 
-## How much of the variance is the benchmark
+## Benchmark share of the variance
 
-A cross-benchmark [variance decomposition](../../docs/explanations/heterogeneity-mixed-effects.md) puts a number on the split. The model is `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)`, where the method-by-benchmark component is the disagreement attributable to the benchmark rather than the method. The chunk fits it twice, with the four scIB-family sources and again with BatchBench added, so the effect of the fifth source is visible. The fit needs R's lme4, so the chunk runs only when it is available.
+A cross-benchmark [variance decomposition](../../docs/explanations/attribution-synthesis.md) puts a number on the split. The model is `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)`, where the method-by-benchmark component is the disagreement attributable to the benchmark rather than the method. The chunk fits it twice, with the four scIB-family sources and again with BatchBench added, so the effect of the fifth source is visible. The fit needs R's lme4, so the chunk runs only when it is available.
 
 ```{python}
 from beam.heterogeneity import r_available, source_variance_decomposition
@@ -211,7 +211,7 @@ else:
     print("Provision it with envs/heterogeneity.yml.")
 ```
 
-With BatchBench in the pool, harmony no longer ranks first on its own: it ties with liger at the top, fastMNN follows, and combat ranks last. The I-squared is high and the inconsistency Q is significant: the direct and the indirect evidence for the same method pairs do not line up, which is the network-model reading of the same finding the variance decomposition reports as a large method-by-benchmark share. The pooled ranking is an average over benchmarks that disagree, and the inconsistency statistic quantifies it.
+With BatchBench in the pool, harmony no longer ranks first on its own: it ties with liger at the top, fastMNN follows, and combat ranks last. The I-squared is high and the inconsistency Q is significant: the direct and the indirect evidence for the same method pairs do not line up, which is the network-model reading of the same finding the variance decomposition reports as a large method-by-benchmark share.
 
 ## Same data, two pipelines: the human pancreas
 
@@ -253,7 +253,7 @@ plt.show()
 
 ## Per-benchmark fragility: which top method is closest to flipping
 
-Within each benchmark, the smallest single-weight change that swaps the top-ranked method tells the reader how much the recommendation depends on the analyst's weighting. beam uses the Triantaphyllou-Sanchez closed-form weight delta on the mean-rank matrix; [SAW](../../docs/explanations/aggregation-methods.md) with equal weights is the baseline so the perturbation is interpretable as "how much weight off one metric is needed to flip the top".
+Within each benchmark, the smallest single-weight change that swaps the top-ranked method measures how much the recommendation depends on the analyst's weighting. beam uses the Triantaphyllou-Sanchez closed-form weight delta on the mean-rank matrix; [SAW](../../docs/explanations/aggregation-methods.md) with equal weights is the baseline so the perturbation is interpretable as "how much weight off one metric is needed to flip the top".
 
 ```{python}
 from beam.mcda import smallest_weight_perturbation
@@ -280,7 +280,7 @@ OpenProblems is the most fragile of the three: a 0.11 absolute change to the ASW
 
 ## Specification curve per benchmark
 
-The fragility delta is one number per benchmark. The specification curve lists the whole multiverse of analyst choices: every weighting by every aggregation on the mean-rank matrix. [`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) runs the grid and [`specification_curve`](../../docs/explanations/specification-curve.md) reports how often the top method holds. The benchmarks differ here too: on Tran and scIB the top method holds across all 20 combinations, while on OpenProblems it does not.
+The fragility delta is one number per benchmark. The specification curve lists the whole multiverse of analyst choices: every weighting by every aggregation on the mean-rank matrix. [`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) runs the grid and [`specification_curve`](../../docs/explanations/rank-sensitivity.md#the-specification-curve) reports how often the top method holds. The benchmarks differ here too: on Tran and scIB the top method holds across all 20 combinations, while on OpenProblems it does not.
 
 ```{python}
 from beam.mcda import rank_sensitivity, specification_curve
@@ -327,11 +327,11 @@ print("order, unblinded: ", order_unblinded)
 print("same order after unblinding:", order_named == order_unblinded)
 ```
 
-## A sixth source with disjoint methods: dataset discrimination
+## A sixth source: dataset discrimination
 
-Every analysis above compares method orders, so it needs shared methods. Shen, He and Guan (2026, [10.1371/journal.pcbi.1014008](https://doi.org/10.1371/journal.pcbi.1014008)) score ten methods, five semi-supervised (scANVI, scGEN, STACAS, scDREAMER, ItClust) and five unsupervised (Seurat, scVI, Harmony, scanorama, scCRAFT), on six datasets, each under annotation scenarios that degrade label supervision from full to none. Only harmony and scanorama overlap the classical five, too few to rank-harmonize. A property defined per dataset is still available: how much each dataset separates the methods it scores. Any benchmark can report it for every dataset, whatever methods it ran. See the data README for provenance and the [dataset-discrimination explanation](../../docs/explanations/dataset-discrimination.md).
+Every analysis above compares method orders, so it needs shared methods. Shen, He and Guan (2026, [10.1371/journal.pcbi.1014008](https://doi.org/10.1371/journal.pcbi.1014008)) score ten methods, five semi-supervised (scANVI, scGEN, STACAS, scDREAMER, ItClust) and five unsupervised (Seurat, scVI, Harmony, scanorama, scCRAFT), on six datasets, each under annotation scenarios that degrade label supervision from full to none. Only harmony and scanorama overlap the classical five, too few to rank-harmonize. A property defined per dataset is still available: how much each dataset separates the methods it scores. Any benchmark can report it for every dataset, whatever methods it ran. See the data README for provenance and the [dataset discrimination explanation](../../docs/explanations/dataset-concordance-and-discrimination.md#dataset-discrimination).
 
-[`dataset_discrimination`](../../docs/reference/dataset_discrimination.qmd) computes it from the scores. beam treats each (dataset, scenario) pair as one unit and reports two values per unit: the spread of the pooled method scores, the effect size, and Kendall's W over the unit's method-by-metric matrix, the consistency of the order across metrics. It complements [`dataset_concordance`](../../docs/explanations/dataset-concordance.md): concordance asks whether datasets agree on the order, discrimination asks whether a dataset separates the methods at all.
+[`dataset_discrimination`](../../docs/reference/dataset_discrimination.qmd) computes it from the scores. beam treats each (dataset, scenario) pair as one unit and reports two values per unit: the spread of the pooled method scores, the effect size, and Kendall's W over the unit's method-by-metric matrix, the consistency of the order across metrics. It complements [`dataset_concordance`](../../docs/explanations/dataset-concordance-and-discrimination.md): concordance asks whether datasets agree on the order, discrimination asks whether a dataset separates the methods at all.
 
 ```{python}
 from beam.datasets import load_openproblems, load_semisupervised_integration
@@ -348,7 +348,7 @@ display(plot.dataset_discrimination(disc, top=15))
 
 The strongest discriminators are the corrupted-label scenarios (`randomly_wrong_70` and the heavily missing ones): wrong labels separate the methods that use them from the unsupervised ones. The weakest are the mild perturbations, where the methods score alike and the unit cannot rank them. On the high-spread units the colour is dark, so the metrics agree on the order there.
 
-### Are hard datasets as hard for deep learning as for classical methods?
+### Difficulty concordance: classical versus deep learning
 
 Splitting the methods into two categories, classical and deep learning, separates two kinds of hardness. [`difficulty_concordance`](../../docs/reference/difficulty_concordance.qmd) correlates the per-category difficulty profiles across the datasets. A high concordance places the hardness in the data; a low one places it in the kind of method.
 
@@ -389,7 +389,7 @@ print("methods now shared with Shen:", shared)
 display(plot.difficulty_concordance(scib_conc, title="scIB: do DL and classical find the same datasets hard?"))
 ```
 
-On scIB the two categories agree (about 0.90), as on OpenProblems and unlike Shen, even though the datasets and metrics are held fixed and only the method changes. The low Shen concordance is therefore a property of annotation degradation, not of being a deep-learning method. Extracting these methods also lifts the deep-learning overlap: scVI, scANVI and scGen now join harmony and scanorama as methods shared with Shen, where before no deep-learning method was carried from scIB at all.
+On scIB the two categories agree (about 0.90), as on OpenProblems and unlike Shen, even though the datasets and metrics are held fixed and only the method changes. The low Shen concordance is a property of annotation degradation, not of being a deep-learning method. Extracting these methods also lifts the deep-learning overlap: scVI, scANVI and scGen now join harmony and scanorama as methods shared with Shen, where before no deep-learning method was carried from scIB at all.
 
 ## Two levels of agreement
 

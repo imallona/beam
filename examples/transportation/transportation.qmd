@@ -25,7 +25,7 @@ The third point is a crossover among the slower modes. Trail running is slower t
 
 ## Set-up
 
-The five [aggregation methods](../../docs/explanations/aggregation-methods.md) used below (SAW, TOPSIS, VIKOR, PROMETHEE II, [COMET](../../docs/explanations/comet.md)) are wrapped from pymcdm. beam normalizes the scores, then calls pymcdm on the normalized matrix and keeps the higher-is-better convention. The [weighting schemes](../../docs/explanations/weighting-schemes.md) are beam's own.
+The five [aggregation methods](../../docs/explanations/aggregation-methods.md) used below (SAW, TOPSIS, VIKOR, PROMETHEE II, [COMET](../../docs/explanations/aggregation-methods.md#comet)) are wrapped from pymcdm. beam normalizes the scores, then calls pymcdm on the normalized matrix and keeps the higher-is-better convention. The [weighting schemes](../../docs/explanations/weighting-schemes.md) are beam's own.
 
 ```{python}
 %matplotlib inline
@@ -227,7 +227,7 @@ Across both comparisons, the choice of weighting changes which mode ranks first 
 
 ## A critical-difference diagram on a common block
 
-A Demsar [critical-difference diagram](../../docs/explanations/comparing-methods-across-datasets.md) needs a complete tool by dataset table with no missing cells. Because no mode runs on every terrain, the diagram is restricted to a block of modes and the terrains where all of them run. The four ground modes (foot, running, bicycle, motorcycle) are feasible on five common terrains (flat road, mud, uphill, long distance, urban hop); open water is excluded because no ground mode runs there. The helper `common_feasible_block` returns that block and its common terrains. The diagram is built on speed, the metric whose per-terrain ground truth is marked above.
+A Demsar [critical-difference diagram](../../docs/explanations/critical-difference.md) needs a complete tool by dataset table with no missing cells. Because no mode runs on every terrain, the diagram is restricted to a block of modes and the terrains where all of them run. The four ground modes (foot, running, bicycle, motorcycle) are feasible on five common terrains (flat road, mud, uphill, long distance, urban hop); open water is excluded because no ground mode runs there. The helper `common_feasible_block` returns that block and its common terrains. The diagram is built on speed, the metric whose per-terrain ground truth is marked above.
 
 ```{python}
 block_modes = ("foot", "running", "bicycle", "motorcycle")
@@ -299,7 +299,7 @@ print(f"top rank is fragile: {ts.top_rank_is_fragile}")
 
 The most fragile pair is the one that the smallest single-weight nudge can reorder. Here a change of about five thousandths to the speed weight is enough to swap the kayak and the plane, while the equal-weight top rank itself is not fragile under any single-weight change of that size. The pairing tells a user which two modes sit closest together under the current weighting, so a small revision to preferences would reorder them first.
 
-## Leave one dataset out: how much the pooled order leans on one terrain
+## Leave one dataset out
 
 The sections above keep the analysis per terrain because no mode runs on every terrain. On a complete block, where a set of modes does run on every terrain in the block, a pooled ranking is well defined, and the next question is how much that pooled ranking leans on any single terrain. Leave-one-dataset-out answers it: pool the block, rank it, then drop one terrain, pool the rest, and re-rank. The water modes show this sharply. The kayak, the motorboat and the small plane all run on two terrains, open water and the long distance, so they form a complete two-terrain block.
 
@@ -355,7 +355,7 @@ plt.show()
 
 Pooled over both terrains the plane ranks first, because its 750 km/h on the long leg pulls its mean speed far above the others. Drop the long distance and rank on open water alone, and the motorboat ranks first instead: it is the fastest mode on the water, where the plane is slow. Drop open water and the long-distance order stands, plane first. The plane's first place is not a property of water travel; it is an artifact of including the long leg in the pool. The kayak ranks last in every run under speed-heavy weights. Leave-one-dataset-out turns that into a number: the plane and the motorboat each hold their rank in only half the runs, so the pooled recommendation between them depends entirely on whether the long-distance terrain is in the pool. This is the same caution the per-terrain sections raise, now stated as a stability measure on a complete block.
 
-[`pairwise_transitivity`](../../docs/explanations/transitivity.md) reads both complete blocks from the pairwise side, on speed. The four land modes have a fixed speed order, so their pairwise majorities are transitive and give one consistent order, motorcycle down to foot. The water modes have no cycle either, but the plane and the boat tie. The plane is faster on the long distance and the boat on open water, so over the two terrains each outperforms the other once, and neither is the pairwise-majority first choice. The kayak is outperformed by both. The tie is the pairwise reading of the half-and-half stability above.
+[`pairwise_transitivity`](../../docs/explanations/pairwise-method-comparison.md#transitivity) reads both complete blocks from the pairwise side, on speed. The four land modes have a fixed speed order, so their pairwise majorities are transitive and give one consistent order, motorcycle down to foot. The water modes have no cycle either, but the plane and the boat tie. The plane is faster on the long distance and the boat on open water, so over the two terrains each outperforms the other once, and neither is the pairwise-majority first choice. The kayak is outperformed by both. The tie is the pairwise reading of the half-and-half stability above.
 
 ```{python}
 from beam.mcda import pairwise_superiority, pairwise_transitivity
@@ -404,7 +404,7 @@ fig.tight_layout()
 plt.show()
 ```
 
-[`bayesian_sign_comparison`](../../docs/explanations/bayesian-comparison.md) reads the water block on the probability scale. With two terrains the counts are tiny, so the posterior stays close to the prior and no pair reaches a decisive label. The plane and the boat each score higher on one terrain, so the posterior splits between them.
+[`bayesian_sign_comparison`](../../docs/explanations/pairwise-method-comparison.md#bayesian-sign-comparison) reads the water block on the probability scale. With two terrains the counts are tiny, so the posterior stays close to the prior and no pair reaches a decisive label. The plane and the boat each score higher on one terrain, so the posterior splits between them.
 
 ```{python}
 from beam.mcda import bayesian_sign_comparison
@@ -433,7 +433,7 @@ water_run = beam.rank(water, weights="equal", method="saw")
 funky_heatmap_from_run(water_run, title="Transport water block: scores and rank robustness")
 ```
 
-[`specification_curve`](../../docs/explanations/specification-curve.md) lists the rankings the water block produces under every weighting, aggregation and terrain. The two terrains order the modes differently, so the top mode does not hold across the grid: it is the same instability the leave-one-dataset-out section reports, read as a list of rankings.
+[`specification_curve`](../../docs/explanations/rank-sensitivity.md#the-specification-curve) lists the rankings the water block produces under every weighting, aggregation and terrain. The two terrains order the modes differently, so the top mode does not hold across the grid: it is the same instability the leave-one-dataset-out section reports, read as a list of rankings.
 
 ```{python}
 from beam.mcda import rank_sensitivity, specification_curve
@@ -484,7 +484,7 @@ print("blinding fingerprint:", blind_run.manifest["blinding"]["seal_sha256"][:12
 
 ## Dataset concordance: land agrees, water reverses
 
-[`dataset_concordance`](../../docs/explanations/dataset-concordance.md) ranks the modes within each terrain and reports the Kendall tau-b agreement between every pair of terrains. It reads on any complete block. The four ground modes share five land terrains, so they form one complete block; the water modes share two. The two blocks sit at opposite ends of the agreement scale.
+[`dataset_concordance`](../../docs/explanations/dataset-concordance-and-discrimination.md) ranks the modes within each terrain and reports the Kendall tau-b agreement between every pair of terrains. It reads on any complete block. The four ground modes share five land terrains, so they form one complete block; the water modes share two. The two blocks sit at opposite ends of the agreement scale.
 
 ```{python}
 land_mode_idx = [tb.mode_names.index(m) for m in block_modes]
@@ -521,7 +521,7 @@ A single concordance over every mode and terrain at once is not well defined, fo
 
 ## Heterogeneity: the interaction is large
 
-The [mixed-effects model](../../docs/explanations/heterogeneity-mixed-effects.md) puts a number on what the per-terrain sections show. Fit on speed, with the mode as a fixed effect and the terrain as a random intercept, it splits the speed variance into a between-terrain shift and the rest. The fit needs R's lme4, so the chunk runs only when it is available.
+The [mixed-effects model](../../docs/explanations/method-by-dataset-heterogeneity.md) puts a number on what the per-terrain sections show. Fit on speed, with the mode as a fixed effect and the terrain as a random intercept, it splits the speed variance into a between-terrain shift and the rest. The fit needs R's lme4, so the chunk runs only when it is available.
 
 ```{python}
 from beam.heterogeneity import mixed_effects_from_matrix, r_available
@@ -538,10 +538,10 @@ else:
     print("R with lme4 not available; skipping the mixed-effects fit.")
 ```
 
-The contrast with the other examples is clear. On M4 the band intercept takes most of the variance, so the bands differ mostly in difficulty. Here the terrain intercept takes very little: almost all of the speed variance is the mode-by-terrain interaction, because the fast mode on one terrain is the slow mode on another. That is why a single pooled speed ranking is misleading even where it can be computed. A [Bradley-Terry tree](../../docs/explanations/heterogeneity-bradley-terry.md) on the six terrains has too few datasets to find a stable split, the same small-sample limit the [Duo](../duo2018/duo2018.qmd) and [M4](../m4/m4.qmd) examples hit; the [OpenProblems spatial task](../openproblems/openproblems.qmd) is where a split appears.
+The contrast with the other examples is clear. On M4 the band intercept takes most of the variance, so the bands differ mostly in difficulty. Here the terrain intercept takes very little: almost all of the speed variance is the mode-by-terrain interaction, because the fast mode on one terrain is the slow mode on another. That is why a single pooled speed ranking is misleading even where it can be computed. A [Bradley-Terry tree](../../docs/explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees) on the six terrains has too few datasets to find a stable split, the same small-sample limit the [Duo](../duo2018/duo2018.qmd) and [M4](../m4/m4.qmd) examples hit; the [OpenProblems spatial task](../openproblems/openproblems.qmd) is where a split appears.
 
 ## Why per-terrain is the informative output
 
 This example was built so that no mode runs on every terrain and no mode is fastest on every terrain it does run on. Both facts push the analysis to be per-terrain. Partial coverage means a pooled ranking over all modes is not even well defined, since different modes are measured on different terrains. The method-by-dataset interaction means that even where a pooled ranking is computable, it reports a single order that is wrong on at least some terrains: the fast modes rank first on their own terrains and rank lower on others.
 
-This matches method-by-dataset interaction in bioinformatics benchmarks. A clustering method that ranks first on one tissue can rank last on another, and a method that needs a feature one dataset lacks is simply not applicable there, which is the same role the NaN cells play here. The transportation numbers are made up, but the structure of the problem is the same. Report per dataset and mark which method ranks first on each. Then use the cross-dataset tests (the critical-difference diagram, SMAA, weight perturbation) to say how much of the apparent ordering survives a change of conditions or of preferences.
+This matches method-by-dataset interaction in bioinformatics benchmarks. A clustering method that ranks first on one tissue can rank last on another, and a method that needs a feature one dataset lacks is simply not applicable there, which is the same role the NaN cells play here. The transportation numbers are made up, but the structure of the problem is the same. The informative output is per dataset: which method ranks first on each. The cross-dataset tests (the critical-difference diagram, SMAA, weight perturbation) then say how much of the apparent ordering survives a change of conditions or of preferences.

@@ -17,11 +17,11 @@ format:
 
 This dataset also has a [generated standard report](../../docs/reports/duo2018.html), the self-contained HTML `beam.report` emits for any run. This vignette is the narrative walkthrough behind it.
 
-This vignette re-analyses the fourteen single-cell clustering methods benchmarked in Duo, Robinson and Soneson (2018) with the beam metric registry and the MCDA decision module. It loads the published method by dataset by metric tensor, pulls the [metric cards](../../docs/explanations/cards-and-pipeline.qmd), and pools each metric across the twelve datasets using the rule its card recommends. It then runs the MCDA pipeline and checks how stable the ranking is under different weightings, aggregation methods, and weight perturbations. It closes with a Demsar critical-difference diagram that asks whether the methods are separable on ARI at all.
+This vignette re-analyses the fourteen single-cell clustering methods benchmarked in Duo, Robinson and Soneson (2018) with the beam metric registry and the [MCDA](../../docs/explanations/aggregation-methods.md) decision module. It loads the published method by dataset by metric tensor, pulls the [metric cards](../../docs/explanations/cards-and-pipeline.qmd), and pools each metric across the twelve datasets using the rule its card recommends. It then runs the MCDA pipeline and checks how stable the ranking is under different weightings, aggregation methods, and weight perturbations. It closes with a Demsar critical-difference diagram that asks whether the methods are separable on ARI at all.
 
 ## Set-up
 
-The five [aggregation methods](../../docs/explanations/aggregation-methods.md) used below (SAW, TOPSIS, VIKOR, PROMETHEE II, [COMET](../../docs/explanations/comet.md)) are wrapped from pymcdm. beam normalizes by metric card, then calls pymcdm on the normalized matrix and keeps the higher-is-better convention. The [weighting schemes](../../docs/explanations/weighting-schemes.md) are beam's own, since pymcdm's reject the zeros beam's normalization produces.
+The five [aggregation methods](../../docs/explanations/aggregation-methods.md) used below (SAW, TOPSIS, VIKOR, PROMETHEE II, [COMET](../../docs/explanations/aggregation-methods.md#comet)) are wrapped from pymcdm. beam normalizes by metric card, then calls pymcdm on the normalized matrix and keeps the higher-is-better convention. The [weighting schemes](../../docs/explanations/weighting-schemes.md) are beam's own, since pymcdm's reject the zeros beam's normalization produces.
 
 ```{python}
 %matplotlib inline
@@ -173,7 +173,7 @@ print("  " + ", ".join(sorted(top_per_combo)))
 
 ## Critical-difference diagram on ARI
 
-The MCDA composite gives one ranking, but it does not say whether the methods are separable. The Demsar (2006) [Friedman test](../../docs/explanations/comparing-methods-across-datasets.md) ranks the methods on each dataset and asks whether the average ranks differ more than chance. The Nemenyi post-hoc gives the critical difference: two methods whose average ranks differ by less than it are not distinguishable from this data.
+The MCDA composite gives one ranking, but it does not say whether the methods are separable. The Demsar (2006) [Friedman test](../../docs/explanations/critical-difference.md) ranks the methods on each dataset and asks whether the average ranks differ more than chance. The Nemenyi post-hoc gives the critical difference: two methods whose average ranks differ by less than it are not distinguishable from this data.
 
 This runs on ARI alone, on the block of methods observed on all twelve datasets. SAFE and ascend have missing ARI cells, so they are dropped here to keep the block complete; the remaining twelve methods are observed on all twelve datasets.
 
@@ -206,7 +206,7 @@ plot.critical_difference(cd)
 
 ## Pairwise superiority on ARI
 
-The critical-difference diagram says which methods are separable, but not by how much or how often one method outperforms another. [`pairwise_superiority`](../../docs/reference/pairwise_superiority.qmd) [compares the methods two at a time](../../docs/explanations/pairwise-superiority.md) across the datasets, with the ARI noise floor (0.01) as the equivalence band: a method counts as outperforming another on a dataset only when the difference clears that floor. The probability of superiority is the fraction of datasets on which one method outperforms the other, an effect size that does not depend on the pool.
+The critical-difference diagram says which methods are separable, but not by how much or how often one method outperforms another. [`pairwise_superiority`](../../docs/reference/pairwise_superiority.qmd) [compares the methods two at a time](../../docs/explanations/pairwise-method-comparison.md) across the datasets, with the ARI noise floor (0.01) as the equivalence band: a method counts as outperforming another on a dataset only when the difference clears that floor. The probability of superiority is the fraction of datasets on which one method outperforms the other, an effect size that does not depend on the pool.
 
 ```{python}
 from beam.mcda import pairwise_superiority
@@ -218,11 +218,11 @@ print(f"highest standing: {top_method} ({sup.standing[sup.order[0]]:.2f})")
 print(f"method pairs the sign test cannot separate: {len(sup.equivalent_pairs)} of {len(sup.per_pair)}")
 ```
 
-Most pairs are not distinguishable: across the twelve datasets the ARI differences are often inside the 0.01 floor, so neither method outperforms the other decisively. This is the critical-difference reading stated as an effect size, and it agrees with it. Beyond the method with the highest standing, the rest are largely interchangeable on ARI at this dataset count.
+Most pairs are not distinguishable: across the twelve datasets the ARI differences are often inside the 0.01 floor, so neither method outperforms the other decisively. This is the critical-difference reading stated as an effect size. Beyond the method with the highest standing, the rest are largely interchangeable on ARI at this dataset count.
 
 ## Pairwise transitivity on ARI
 
-The ranking is one order of the methods, but the pairwise majorities behind it need not agree with any single order. [`pairwise_transitivity`](../../docs/reference/pairwise_transitivity.qmd) reads the same pairwise relation and asks whether one order is [consistent with it](../../docs/explanations/transitivity.md): it reports the method preferred to every other one, the circular triads (a method outperforms a second, the second a third, the third the first), and whether the relation is transitive.
+The ranking is one order of the methods, but the pairwise majorities behind it need not agree with any single order. [`pairwise_transitivity`](../../docs/reference/pairwise_transitivity.qmd) reads the same pairwise relation and asks whether one order is [consistent with it](../../docs/explanations/pairwise-method-comparison.md#transitivity): it reports the method preferred to every other one, the circular triads (a method outperforms a second, the second a third, the third the first), and whether the relation is transitive.
 
 ```{python}
 from beam.mcda import pairwise_transitivity
@@ -241,7 +241,7 @@ plot.pairwise_majority(trans)
 
 ## Bayesian comparison on ARI
 
-The tests above report a p-value: the chance of the observed split if two methods scored the same. A reader choosing a method wants the probability that one method scores higher, given the data. [`bayesian_sign_comparison`](../../docs/explanations/bayesian-comparison.md) reads the same pairwise relation and reports, for each pair, the posterior probability that one method is practically better, that the two are practically equivalent within the floor, and that the other is practically better.
+The tests above report a p-value: the chance of the observed split if two methods scored the same. [`bayesian_sign_comparison`](../../docs/explanations/pairwise-method-comparison.md#bayesian-sign-comparison) reads the same pairwise relation and reports, for each pair, the posterior probability that one method is practically better, that the two are practically equivalent within the floor, and that the other is practically better.
 
 ```{python}
 from beam.mcda import bayesian_sign_comparison
@@ -365,9 +365,9 @@ beam.report(run, "duo2018_report.html", ground_truth_tool="Seurat")
 print("wrote duo2018_report.html")
 ```
 
-## Dataset concordance: do the datasets agree on the order?
+## Dataset concordance
 
-The pooled ranking averages over the twelve datasets. [`dataset_concordance`](../../docs/explanations/dataset-concordance.md) ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not, and the per-dataset orderings diverge. The diagnostic needs no replicates and assumes nothing about the datasets being interchangeable, so it measures the heterogeneity rather than asking how many datasets would be enough.
+The pooled ranking averages over the twelve datasets. [`dataset_concordance`](../../docs/explanations/dataset-concordance-and-discrimination.md) ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not, and the per-dataset orderings diverge. The diagnostic needs no replicates and assumes nothing about the datasets being interchangeable, so it measures the heterogeneity rather than asking how many datasets would be enough.
 
 ```{python}
 conc = run.dataset_concordance
@@ -395,9 +395,9 @@ The companion view locates where the disagreement comes from. Each cell is a met
 plot.dataset_struggle(run)
 ```
 
-## Specification curve: every choice at once
+## Specification curve
 
-[`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) runs every combination of the weighting, the aggregation and the dataset, and splits the rank variance between them. [`specification_curve`](../../docs/explanations/specification-curve.md) reads the same grid and lists the rankings, then reports how often the top method holds. The choice-only grid (weighting by aggregation, on the pooled matrix) and the choice-plus-data grid (the dataset joins it) answer different questions: the first asks whether the recommendation survives the modeling choices, the second whether it survives a change of dataset.
+[`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) runs every combination of the weighting, the aggregation and the dataset, and splits the rank variance between them. [`specification_curve`](../../docs/explanations/rank-sensitivity.md#the-specification-curve) reads the same grid and lists the rankings, then reports how often the top method holds. The choice-only grid (weighting by aggregation, on the pooled matrix) and the choice-plus-data grid (the dataset joins it) answer different questions: the first asks whether the recommendation survives the modeling choices, the second whether it survives a change of dataset.
 
 ```{python}
 from beam.mcda import rank_sensitivity, specification_curve
@@ -442,7 +442,7 @@ The pooled grid keeps Seurat first in every weighting-by-aggregation combination
 plot.specification_curve(curve)
 ```
 
-## Blind analysis: fix the pipeline before seeing the names
+## Blind analysis
 
 A benchmarker who can see which method is which while choosing the weighting and the metric set has room to tune the choices toward a method they expect to rank first. [`beam.blind`](../../docs/explanations/analysis-blinding.md) masks the method names and shuffles the rows under a seed, so the pipeline is fixed on opaque labels; `beam.unblind` restores the names afterward. The ranking does not change, because beam ranks on the score values and unblinding only renames the rows. What blinding adds is a record: the seal fingerprint goes into the run manifest.
 
@@ -463,7 +463,7 @@ print("top method after unblinding:", restored.top_tool)
 print("blinding fingerprint in manifest:", blind_run.manifest["blinding"]["seal_sha256"][:12])
 ```
 
-## Heterogeneity: where does the ARI variance live
+## Mixed-effects variance decomposition
 
 Leave-one-dataset-out asks whether the pooled ranking depends on any single dataset. A mixed-effects model asks a different question: how much of the score variation is a stable method effect and how much is the method-by-dataset interaction that a single ranking does not show. [`beam.heterogeneity.mixed_effects`](../../docs/reference/mixed_effects.qmd) fits `score ~ method + (1 | dataset)` on one metric in R's lme4, with the method as a fixed effect and the dataset as a random intercept that absorbs how easy or hard each dataset is for every method alike. The fit needs the R toolchain, so the section below runs only when it is available.
 
@@ -495,9 +495,9 @@ if me is not None:
     display(plot.model_effects(me, xlabel="ARI marginal mean over datasets (higher ranks first)"))
 ```
 
-The dataset intercept takes about 0.71 of the ARI variance, so most of the spread is datasets being uniformly easy or hard rather than methods reordering. SC3 and Seurat have the highest marginal means and are not separable from each other given the standard errors, which matches the critical-difference reading above. The residual share, the upper bound on the method-by-dataset interaction at one run per cell, concentrates on the two lowest-scoring methods (RaceID2 and FlowSOM) on a few simulated and four-group datasets, not on a reshuffling of the higher-scoring methods. See [the mixed-effects explanation](../../docs/explanations/heterogeneity-mixed-effects.md).
+The dataset intercept takes about 0.71 of the ARI variance, so most of the spread is datasets being uniformly easy or hard rather than methods reordering. SC3 and Seurat have the highest marginal means and are not separable from each other given the standard errors, which matches the critical-difference reading above. The residual share, the upper bound on the method-by-dataset interaction at one run per cell, concentrates on the two lowest-scoring methods (RaceID2 and FlowSOM) on a few simulated and four-group datasets, not on a reshuffling of the higher-scoring methods. See [the mixed-effects explanation](../../docs/explanations/method-by-dataset-heterogeneity.md).
 
-## Heterogeneity: does a dataset feature reverse the ranking
+## Bradley-Terry tree on dataset features
 
 The variance decomposition says how much interaction there is. The Bradley-Terry tree asks which dataset feature drives it. For one metric, each dataset becomes a set of pairwise method comparisons (the higher ARI is the preferred method), and `psychotree::bttree` splits the datasets by their features, so each leaf gets its own Bradley-Terry ranking and a parameter-stability test decides where a split is real. The dataset features (number of cells, number of true clusters, real vs simulated, family) ship next to the benchmark. The fit needs the R toolchain, so the section runs only when psychotree is available.
 
@@ -526,9 +526,9 @@ else:
     print("Provision it with envs/heterogeneity.yml (conda or mamba).")
 ```
 
-On these 12 datasets the parameter-stability test finds no split, so the tree reduces to a single Bradley-Terry ranking led by SC3, the same order the net pairwise preferences and the marginal means give. A dozen datasets is too few for the test to separate a feature-dependent regime from sampling noise, which is also why the critical-difference diagram and the variance decomposition both report a stable global ranking here. The tree is more informative on a benchmark with many datasets carrying real feature variation; the [OpenProblems spatially_variable_genes vignette](../openproblems/openproblems.qmd) is where a split appears. See [the Bradley-Terry explanation](../../docs/explanations/heterogeneity-bradley-terry.md).
+On these 12 datasets the parameter-stability test finds no split, so the tree reduces to a single Bradley-Terry ranking led by SC3, the same order the net pairwise preferences and the marginal means give. A dozen datasets is too few for the test to separate a feature-dependent regime from sampling noise, which is also why the critical-difference diagram and the variance decomposition both report a stable global ranking here. The tree is more informative on a benchmark with many datasets carrying real feature variation; the [OpenProblems spatially_variable_genes vignette](../openproblems/openproblems.qmd) is where a split appears. See [the Bradley-Terry explanation](../../docs/explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees).
 
-## What moves the ranking: the data or the choice
+## Rank sensitivity: data or analyst choice
 
 The sections above measure three things separately: leave-one-dataset-out (does the pooled order depend on one dataset), the weighting-by-aggregation grid (does the order depend on the modeling choice), and the mixed-effects ICC (how much score variance is the dataset). `rank_sensitivity` puts all three on one scale. It ranks the methods on each dataset, under every weighting and aggregation, and splits each method's rank variance into the dataset, the weighting, the aggregation and their interactions.
 
@@ -558,7 +558,7 @@ print(f"  most influential factor: {rs.most_influential_factor}")
 plot.rank_sensitivity(rs)
 ```
 
-The dataset carries the most, close to the 0.71 the mixed-effects ICC put on the ARI variance, reached here by an exact factorial decomposition of the ranks rather than a random-effects model of the scores. Two methods, the same reading. This is not in tension with the stable leave-one-dataset-out result above: that asks whether the pooled order survives dropping one dataset, and it does, because pooling averages over the per-dataset disagreement. The dataset share measures that disagreement directly, by ranking on each dataset on its own. The pooled order is stable; the per-dataset orders are not, and a single pooled ranking does not show that disagreement. The weighting filled the partial cells with the lowest score (`missing="worst"`), a stated choice the share is read against.
+The dataset carries the most, close to the 0.71 the mixed-effects ICC put on the ARI variance, reached here by an exact factorial decomposition of the ranks rather than a random-effects model of the scores. This is not in tension with the stable leave-one-dataset-out result above: that asks whether the pooled order survives dropping one dataset, and it does, because pooling averages over the per-dataset disagreement. The dataset share measures that disagreement directly, by ranking on each dataset on its own. The weighting filled the partial cells with the lowest score (`missing="worst"`), a stated choice the share is read against.
 
 The shares above are pooled over the methods. The per-method version splits the same variance one method at a time. It separates a method whose rank depends on the dataset from one that depends on the weighting or the aggregation. The span next to each bar is the difference between the method's best and worst rank, read alongside its shares.
 

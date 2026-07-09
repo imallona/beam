@@ -26,5 +26,5 @@ The chance baseline is exact only where a metric has a well-defined chance level
 
 ## See also
 
-- [Pairwise superiority](pairwise-superiority.md)
-- [Bayesian comparison](bayesian-comparison.md)
+- [Pairwise superiority](pairwise-method-comparison.md)
+- [Bayesian comparison](pairwise-method-comparison.md#bayesian-sign-comparison)

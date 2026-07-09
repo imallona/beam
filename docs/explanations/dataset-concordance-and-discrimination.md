@@ -1,4 +1,4 @@
-# Dataset concordance
+# Dataset concordance and discrimination
 
 A ranking pooling different metrics aims to answer, across all the datasets at once, which method performs best on average. It cannot say whether the datasets agree on that order.
 
@@ -34,7 +34,24 @@ This is a within-method comparison.
 
 On the [Duo 2018 clustering benchmark](../../examples/duo2018/duo2018.qmd) (three metrics, equal weights, pooled across the twelve datasets) the mean tau-b is about 0.34, so the datasets share only a moderate ordering. The datasets group into a Koh pair, a Kumar, Sim and Trapnell cluster, and a Zhengmix cluster, which mirrors the way the source studies built the data. The rank-deviation table shows the disagreement concentrating in a few cells: SAFE places last on the harder simulated datasets while sitting mid-table on average, and ascend collapses on the Koh datasets. So the pooled ranking is a reasonable summary for the bulk of the methods, while a handful of method-dataset combinations carry most of the spread.
 
-The diagnostic sits next to the other ways beam evaluates multi-metric composite rankings. Leave-one-dataset-out asks whether the ranking depends on any single dataset. The [critical-difference](comparing-methods-across-datasets.md) and [Skillings-Mack](skillings-mack.md) tests ask whether the methods are separable on one metric. The [Bradley-Terry tree](heterogeneity-bradley-terry.md) splits the datasets by their declared features. Dataset concordance reports the agreement structure among the datasets from the rankings alone, with no features required and no assumption that the datasets are exchangeable.
+The diagnostic sits next to the other ways beam evaluates multi-metric composite rankings. Leave-one-dataset-out asks whether the ranking depends on any single dataset. The [critical-difference](critical-difference.md) and [Skillings-Mack](critical-difference.md#skillings-mack-for-incomplete-blocks) tests ask whether the methods are separable on one metric. The [Bradley-Terry tree](method-by-dataset-heterogeneity.md#bradley-terry-trees) splits the datasets by their declared features. Dataset concordance reports the agreement structure among the datasets from the rankings alone, with no features required and no assumption that the datasets are exchangeable.
+
+## Dataset discrimination
+
+Concordance needs shared methods: it compares method orders across datasets. A property defined per dataset needs no shared methods, and every benchmark can report it: how much a dataset separates the methods it scores. [`beam.mcda.dataset_discrimination`](../reference/dataset_discrimination.qmd) computes it. A dataset on which the methods score about the same cannot rank them; one on which they differ can. This is the per-dataset form of the metric-level idea in the [weighting code](weighting-schemes.md), where a metric on which methods do not differ has no discrimination.
+
+beam computes two values per dataset.
+
+- Spread, the effect size. Each metric is oriented to higher-is-better and min-max scaled across the benchmark's cells, so metrics are comparable and a dataset on which every method scores near the maximum keeps a small spread. The metrics are pooled to one score per method, and the spread is the standard deviation across methods.
+- Concordance, the consistency. Kendall's W over the dataset's method-by-metric matrix, with its Friedman p value. A high W means the metrics order the methods the same way; a low W means they do not, so a single ranking on that dataset is unstable.
+
+A dataset with high spread and high W separates the methods, and its metrics agree on the order. The scaling is per benchmark, so spreads are comparable within a benchmark and only roughly across benchmarks. A method or metric not observed on a dataset stays NaN and is handled available-case, never imputed: spread uses the observed methods, and Kendall's W uses the complete method-by-metric block, reported only when at least `min_methods` methods and two metrics remain.
+
+### Hard datasets
+
+A dataset can be hard because the biology is complex, in which case every method struggles, or because it puts some methods at a disadvantage, for example label quality for semi-supervised methods that would not affect fully unsupervised ones. [`beam.mcda.difficulty_concordance`](../reference/difficulty_concordance.qmd) separates the two. It splits the methods into groups, measures each dataset's difficulty for each group as the group's mean pooled score, and correlates the per-group difficulty profiles across datasets with Spearman. High concordance means the hardness comes from the data; low concordance means it comes from the kind of method.
+
+On the [OpenProblems batch-integration task](../../examples/openproblems/openproblems.qmd) the deep-learning and classical methods agree (Spearman about 0.89). On the Shen 2026 benchmark, whose scenarios degrade annotation quality, they agree weakly (about 0.32), and the hard cases are harder for the label-using deep-learning methods.
 
 ## References
 

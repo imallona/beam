@@ -14,9 +14,9 @@ beam heterogeneity scores.csv --model mixed-effects --metric ari --out report.js
 
 ## The three models
 
-[`mixed-effects`](../reference/mixed_effects.qmd) fits `score ~ method + (1 | dataset)` in lme4 and splits the [score variation into a method effect](../explanations/heterogeneity-mixed-effects.md), a between-dataset shift, and the residual. The report carries the variance components, the dataset ICC (the share of variation that is the dataset rather than the method), and the per-method marginal means. A high ICC means most of the spread is between datasets, so a single pooled ranking hides much of the structure.
+[`mixed-effects`](../reference/mixed_effects.qmd) fits `score ~ method + (1 | dataset)` in lme4 and splits the [score variation into a method effect](../explanations/method-by-dataset-heterogeneity.md), a between-dataset shift, and the residual. The report carries the variance components, the dataset ICC (the share of variation that is the dataset rather than the method), and the per-method marginal means. A high ICC means most of the spread is between datasets, so a single pooled ranking hides much of the structure.
 
-[`bradley-terry-tree`](../reference/bradley_terry_tree.qmd) fits a [Bradley-Terry tree](../explanations/heterogeneity-bradley-terry.md) in psychotree. It splits the datasets by their features so each leaf has its own method ranking, and flags the leaves where the pooled top method does not hold. It needs a dataset features file, passed with `--features`:
+[`bradley-terry-tree`](../reference/bradley_terry_tree.qmd) fits a [Bradley-Terry tree](../explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees) in psychotree. It splits the datasets by their features so each leaf has its own method ranking, and flags the leaves where the pooled top method does not hold. It needs a dataset features file, passed with `--features`:
 
 ```
 beam heterogeneity scores.csv --model bradley-terry-tree --metric ari \
@@ -31,7 +31,7 @@ d1,531,9,real
 d2,3994,3,sim
 ```
 
-[`plackett-luce`](../reference/plackett_luce.qmd) fits a Plackett-Luce model in PlackettLuce on the per-dataset rankings of the methods, and reports the worth per method with quasi-standard errors. It is the [full-ranking generalization](../explanations/full-rankings-and-bounded-metrics.md) of the Bradley-Terry model and needs no features.
+[`plackett-luce`](../reference/plackett_luce.qmd) fits a Plackett-Luce model in PlackettLuce on the per-dataset rankings of the methods, and reports the worth per method with quasi-standard errors. It is the [full-ranking generalization](../explanations/method-by-dataset-heterogeneity.md#plackett-luce-full-rankings) of the Bradley-Terry model and needs no features.
 
 ## The output
 

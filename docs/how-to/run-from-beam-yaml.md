@@ -53,13 +53,13 @@ sensitivity turns the sensitivity analysis on or off by its presence. Include th
 
 outputs is optional and each entry is optional. report writes the self-contained HTML report. manifest writes manifest.json, the run record. scores_normalized writes the normalized tool-by-metric matrix as a CSV.
 
-## The reproducible artifact
+## Keep the run reproducible
 
-Keep beam.yaml and the written manifest.json together with the scores file. manifest.json records the input and its hash, the metrics, the parameters and the normalization that beam read from the cards. A reviewer with the same scores file reruns the ranking with one command. The manifest lets them confirm they got the same inputs and parameters you did.
+Keep beam.yaml and the written manifest.json together with the scores file. The manifest records the input and its hash, the metrics, the parameters and the normalization beam read from the cards, so a rerun can be checked against it. See [Rerun from a manifest](rerun-from-manifest.md).
 
 ## Pinning a card version
 
-Each metric entry may pin a [card](../explanations/cards-and-pipeline.qmd) version, which is the artifact a reviewer needs to reproduce a ranking exactly:
+Each metric entry may pin a [card](../explanations/cards-and-pipeline.qmd) version, so a rerun uses the exact card the ranking was built on:
 
 ```yaml
 metrics:

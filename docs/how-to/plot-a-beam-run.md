@@ -2,7 +2,7 @@
 
 `beam.plot` returns matplotlib figures you can show in a notebook, drop into a Quarto vignette, or write to a file. Every function returns a `matplotlib.figure.Figure`, so you can adjust it before saving. The figure code is shared with the [HTML report](../reference/report.qmd), so a plot you draw here is the same one the report embeds.
 
-This recipe shows the three groups of plots and how to save them.
+This recipe covers the plot families and how to save them.
 
 ## Get a run
 
@@ -58,7 +58,7 @@ plot.critical_difference(report)    # canonical Friedman-Nemenyi clique-bar diag
 plot.critical_difference_band(report)  # the shaded-band alternative
 ```
 
-The [critical-difference plot](../explanations/comparing-methods-across-datasets.md) is the canonical Demsar diagram: each tool at its average rank, with a blue bar joining each clique the Nemenyi test cannot separate.
+The [critical-difference plot](../explanations/critical-difference.md) is the canonical Demsar diagram: each tool at its average rank, with a blue bar joining each clique the Nemenyi test cannot separate.
 
 ## Grids, heterogeneity, and building blocks
 

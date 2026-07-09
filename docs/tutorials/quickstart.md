@@ -2,7 +2,7 @@
 
 beam ranks the tools in a benchmark from a tool-by-metric table of scores. It reads the metric meaning (polarity, scale, normalization) from [metric cards](../explanations/cards-and-pipeline.qmd), [normalizes](../explanations/normalization-and-scales.md) the scores, [combines them into one composite score](../explanations/aggregation-methods.md) per tool, and reports a ranking with a sensitivity analysis.
 
-This tutorial goes from a small CSV to an HTML report, first in Python and then from the command line. Copy each block as you go and run it.
+This tutorial goes from a small CSV to an HTML report, first in Python and then from the command line.
 
 ## What you need
 
@@ -26,7 +26,7 @@ sc3,0.74,0.71,310.5
 monocle,0.69,0.66,88.0
 ```
 
-## Step 2: rank and report in five lines
+## Step 2: rank and report
 
 ```python
 import beam
@@ -93,4 +93,4 @@ To run a whole pipeline from one declarative file (so a reviewer reruns it with 
 
 For the concepts behind the steps above, see the explanations: [normalization and scales](../explanations/normalization-and-scales.md), [weighting schemes](../explanations/weighting-schemes.md) and [aggregation methods](../explanations/aggregation-methods.md).
 
-When each metric is calculated on more than one dataset, `beam.rank` also reports whether the datasets agree on the order, with [dataset concordance](../explanations/dataset-concordance.md). The bundled vignettes ([Duo](../../examples/duo2018/duo2018.qmd), [M4](../../examples/m4/m4.qmd), [OpenProblems](../../examples/openproblems/openproblems.qmd), [transportation](../../examples/transportation/transportation.qmd)) show it on real and illustrative data.
+When each metric is calculated on more than one dataset, `beam.rank` also reports whether the datasets agree on the order, with [dataset concordance](../explanations/dataset-concordance-and-discrimination.md). The bundled vignettes ([Duo](../../examples/duo2018/duo2018.qmd), [M4](../../examples/m4/m4.qmd), [OpenProblems](../../examples/openproblems/openproblems.qmd), [transportation](../../examples/transportation/transportation.qmd)) show it on real and illustrative data.

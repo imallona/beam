@@ -51,7 +51,7 @@ The `beam.scenarios` module ships two cases that make the failure concrete. In t
 
 ## See also
 
-- [Normalization agreement](normalization-agreement.md)
+- [Choice agreement](choice-agreement.md#normalization-agreement)
 - [Weighting schemes](weighting-schemes.md)
 - [Aggregation methods](aggregation-methods.md)
 

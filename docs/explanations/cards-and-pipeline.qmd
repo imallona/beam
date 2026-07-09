@@ -1,4 +1,4 @@
-# What the multi-criteria decision analysis (MCDA) pipeline reads from the metric cards
+# Metric cards and the MCDA pipeline
 
 A metric card declares fields covering identity, kind, inputs, output, semantics, comparability, implementations, examples, and provenance.
 

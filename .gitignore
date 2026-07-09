@@ -76,3 +76,6 @@ r/beam/vignettes/*.html
 
 # Generated example reports (built in CI by scripts/generate_example_reports.py)
 docs/reports/*.html
+
+/.quarto/
+**/*.quarto_ipynb

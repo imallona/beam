@@ -15,7 +15,7 @@ Entropy weights, in the Shannon sense, give a metric more weight when its scores
 
 Standard deviation weights follow the same idea as entropy, that a metric that spreads the tools out should count more, but measure the spread directly with the sample standard deviation. They assume the columns are already on a common scale, which they are after normalization. It suits a plain, readable measure of spread.
 
-CRITIC weights add a second idea on top of spread: conflict. CRITIC stands for CRiteria Importance Through Intercriteria Correlation. A metric increases its weight when its scores spread out and when it disagrees with the other metrics. If two metrics rank the tools the same way, they carry the same information, and counting both at full weight would double count that information. CRITIC measures the disagreement as one minus the correlation between columns and multiplies it by the standard deviation. It aims to remove the contribution of redundant metrics that track the same underlying property and, hence, do not contribute extra information.
+CRITIC weights add a second idea on top of spread: conflict. CRITIC stands for CRiteria Importance Through Intercriteria Correlation. A metric increases its weight when its scores spread out and when it disagrees with the other metrics. If two metrics rank the tools the same way, they carry the same information, and counting both at full weight would double count that information. CRITIC measures the disagreement as one minus the correlation between columns and multiplies it by the standard deviation. This downweights redundant metrics that track the same underlying property.
 
 MEREC weights use a different approach. MEREC stands for Method based on the Removal Effects of Criteria. It scores how much the overall ranking changes when each metric is removed. A metric whose removal barely moves the scores provides little information and gets a small weight. A metric whose removal shifts the scores a lot gets a large weight. The aggregate it uses is logarithmic, so it needs strictly positive scores. A column normalized with plain min-max can contain a hard zero, which MEREC cannot take the logarithm of. Pair it with a normalization that stays away from zero, such as the logistic z-score strategy. MEREC fits when a weight should reflect each metric's marginal effect on the result rather than its raw spread.
 
@@ -34,7 +34,7 @@ Equal weights are the default baseline. An objective scheme fits when the data s
 ## See also
 
 - [Rank sensitivity](rank-sensitivity.md)
-- [Specification curve](specification-curve.md)
+- [Specification curve](rank-sensitivity.md#the-specification-curve)
 
 ## References
 

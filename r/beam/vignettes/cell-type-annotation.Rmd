@@ -46,7 +46,7 @@ cat(sprintf("complete block: %d methods, %d datasets, %d metrics\n",
 
 ## One ranking, end to end
 
-`beam_rank` pools the two metrics across the datasets, runs the MCDA pipeline, and runs the default sensitivity analysis on the same normalization context.
+`beam_rank` pools the two metrics across the datasets, runs the [MCDA pipeline](https://imallona.github.io/beam/docs/explanations/aggregation-methods.html), and runs the default sensitivity analysis on the same normalization context.
 
 ```{r rank}
 scores <- beam$Scores(
@@ -71,9 +71,9 @@ GPT-4 ranks first. SingleR, a classical tool, ranks second, and GPT-3.5 ranks th
 plot(run)
 ```
 
-## What moves the ranking: the dataset or the choice?
+## Rank sensitivity: dataset or analyst choice
 
-`beam_rank_sensitivity` splits the ranking's variance between the data and the analyst's choices, by ranking the methods on each dataset under every weighting and aggregation.
+[`beam_rank_sensitivity`](https://imallona.github.io/beam/docs/explanations/rank-sensitivity.html) splits the ranking's variance between the data and the analyst's choices, by ranking the methods on each dataset under every weighting and aggregation.
 
 ```{r rank-sensitivity}
 ctx <- mcda$registry_context(as.list(metrics), "saw")
@@ -89,9 +89,9 @@ cat(sprintf("dataset %.2f, weighting %.2f, aggregation %.2f, interaction %.2f\n"
 
 The dataset accounts for almost all of the rank variance; the weighting and the aggregation account for very little. Which tissue is annotated decides the per-dataset order far more than the scoring choice.
 
-## Dataset concordance: do the datasets agree on the order?
+## Dataset concordance
 
-`dataset_concordance` ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not.
+[`dataset_concordance`](https://imallona.github.io/beam/docs/explanations/dataset-concordance-and-discrimination.html) ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not.
 
 ```{r concordance, fig.height = 4}
 conc <- run$dataset_concordance
@@ -104,7 +104,7 @@ beam_plot(run, "dataset_struggle")
 
 ## Specification curve
 
-`beam_specification_curve` lists the rankings the grid produces and reports how often the top method holds.
+[`beam_specification_curve`](https://imallona.github.io/beam/docs/explanations/rank-sensitivity.html#the-specification-curve) lists the rankings the grid produces and reports how often the top method holds.
 
 ```{r specification-curve}
 curve <- beam_specification_curve(rs)
@@ -120,7 +120,7 @@ beam_plot(curve, "specification_curve")
 
 ## Blind analysis
 
-GPT-4 is the method under test here, so blinding matters: fixing the pipeline on hidden labels removes the chance to tune the weighting toward it. `beam_blind` hides the names; `beam_unblind` restores them. The ranking does not change.
+GPT-4 is the method under test here, so [blinding](https://imallona.github.io/beam/docs/explanations/analysis-blinding.html) matters: fixing the pipeline on hidden labels removes the chance to tune the weighting toward it. `beam_blind` hides the names; `beam_unblind` restores them. The ranking does not change.
 
 ```{r blinding}
 blinded <- beam_blind(scores, seed = 0L)
@@ -132,9 +132,9 @@ cat("blinding fingerprint:",
     substr(blind_run$manifest[["blinding"]][["seal_sha256"]], 1, 12), "\n")
 ```
 
-## Are the methods separable on agreement?
+## Critical difference on agreement
 
-`beam_critical_difference` runs the Friedman test and the Nemenyi post-hoc on the agreement scores across the complete-block datasets.
+[`beam_critical_difference`](https://imallona.github.io/beam/docs/explanations/critical-difference.html) runs the Friedman test and the Nemenyi post-hoc on the agreement scores across the complete-block datasets.
 
 ```{r cd}
 agreement <- block[, , 1]
