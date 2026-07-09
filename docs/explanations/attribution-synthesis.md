@@ -1,8 +1,8 @@
 # Attribution synthesis
 
-A benchmark ranking is affected by three major factors. The analyst's choices, including the [weighting](weighting-schemes.md) and the [aggregation rule](aggregation-methods.md). The datasets: a method that ranks first on one dataset trails on another. The benchmarker also does two benchmarks of the same task, each with its own pipeline and methods and datasets, rank shared methods differently. beam already measures these one at a time. [`rank_sensitivity`](rank-sensitivity.md) splits a ranking between the choices and the dataset. [`source_variance_decomposition`](heterogeneity-mixed-effects.md) splits a method's standing between the benchmark and the method. The two use different scales, so they cannot be compared directly.
+A benchmark ranking is affected by three factors. The analyst's choices, the [weighting](weighting-schemes.md) and the [aggregation rule](aggregation-methods.md). The datasets: a method that ranks first on one dataset trails on another. And the benchmarker: two benchmarks of the same task, each with its own pipeline, methods and datasets, rank the shared methods differently. beam already measures these one at a time. [`rank_sensitivity`](rank-sensitivity.md) splits a ranking between the choices and the dataset. [`source_variance_decomposition`](method-by-dataset-heterogeneity.md) splits a method's standing between the benchmark and the method. The two use different scales, so they cannot be compared directly.
 
-[`attribution_synthesis`](../reference/attribution_synthesis.qmd) puts them on one scale. For each setting it gives three independent axis, for analyst choice, dataset and benchmarker, that sum to one. Compared across settings, from one benchmark to a contrast where the datasets are held fixed, the axes show how the source of the movement changes as the dataset contribution is removed.
+[`attribution_synthesis`](../reference/attribution_synthesis.qmd) puts them on one scale. For each setting it gives three independent axes, for analyst choice, dataset and benchmarker, that sum to one. Compared across settings, from one benchmark to a contrast where the datasets are held fixed, the axes show how the source of the movement changes as the dataset contribution is removed.
 
 ## Approach
 
@@ -18,5 +18,5 @@ The axes are descriptive, without confidence intervals, and limited by data avai
 
 ## See also
 
-- [Mixed-effects model](heterogeneity-mixed-effects.md)
-- [Specification curve](specification-curve.md)
+- [Mixed-effects model](method-by-dataset-heterogeneity.md)
+- [Specification curve](rank-sensitivity.md#the-specification-curve)

@@ -82,7 +82,7 @@ beam_run("beam.yaml")
 - [Documentation site](https://imallona.github.io/beam/): vignettes, how-tos, explanations, and the Python API reference.
 - Ontology release: `docs/beam.owl.ttl` (OWL) and `docs/beam.skos.ttl` (SKOS), regenerated from the cards on each release.
 
-## Licence
+## License
 
 - Code: GPL-3.0-or-later (`LICENSE`).
 - Metric cards under `src/beam/metrics/`: CC-BY-4.0 (`src/beam/metrics/LICENSE.md`).

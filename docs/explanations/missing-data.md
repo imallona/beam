@@ -2,7 +2,7 @@
 
 Benchmark tables have gaps. A method crashes on one dataset, times out on another, does not accept a given input shape, or was never run for one metric. These gaps are normal. beam has to decide what a gap means before it ranks. By default, beam does not impute (but could impute on user request).
 
-This page explains how beam treats missing cells and why it refuses to choose for you.
+This page explains how beam treats missing cells and why it leaves the imputation choice to you.
 
 The problem with imputation is what to use as a filler for NAs: the column mean, a zero, the midpoint of the scale... Each one of these imputes a value the method never generated, and the imputed value changes the ranking. Filling a missing accuracy with the mean shifts a method's score toward the average; filling it with zero treats a crash as the worst possible result; filling it with the midpoint improves a method's apparent score despite not running. None of these is wrong per se. Which one is right depends on the benchmark, so beam will not pick one without asking the user. A missing value often indicates inability to run, so treating it as the worst outcome is reasonable.
 
@@ -20,7 +20,7 @@ Once the dataset axis has been summarized, what remains is a tool by metric matr
 
 `error` refuses any missing cell and names the alternatives. This is the default because a recommendation must not rest on a choice you did not make.
 
-`available` is available-case ranking with simple additive weighting. Each tool is scored on the metrics it was measured on, with the weights renormalized over that tool's observed metrics. A method measured on accuracy and runtime but not memory is scored on accuracy and runtime. The composites then rest on different metric sets across tools, so the result carries a warning. Only SAW supports this, because its composite is a sum you can take over a subset of metrics. [TOPSIS, VIKOR, PROMETHEE II](aggregation-methods.md) and [COMET](comet.md) cannot: they each need every tool placed on every criterion to define an ideal point, a pairwise comparison, or a fuzzy membership. The objective [weight schemes](weighting-schemes.md) (entropy, standard deviation, CRITIC, MEREC) measure the spread of a metric across the tools, which needs a complete column. So under `available` these methods and weightings refuse and point you to a policy that completes the matrix or to a per-subset analysis.
+`available` is available-case ranking with simple additive weighting. Each tool is scored on the metrics it was measured on, with the weights renormalized over that tool's observed metrics. A method measured on accuracy and runtime but not memory is scored on accuracy and runtime. The composites then rest on different metric sets across tools, so the result carries a warning. Only SAW supports this, because its composite is a sum you can take over a subset of metrics. [TOPSIS, VIKOR, PROMETHEE II](aggregation-methods.md) and [COMET](aggregation-methods.md#comet) cannot: they each need every tool placed on every criterion to define an ideal point, a pairwise comparison, or a fuzzy membership. The objective [weight schemes](weighting-schemes.md) (entropy, standard deviation, CRITIC, MEREC) measure the spread of a metric across the tools, which needs a complete column. So under `available` these methods and weightings refuse and point you to a policy that completes the matrix or to a per-subset analysis.
 
 `worst` is the explicit decision that a missing cell means the method did not run and should count as the worst outcome. After normalization each gap is set to 0, the worst score on the higher-is-better scale, the matrix is complete, and every method runs. Many benchmarkers prefer this: a tool that fails to run ranks lower than one that runs and scores poorly. It is a statement about the benchmark, not a guess at an unknown value, and beam records it in a warning.
 
@@ -28,11 +28,11 @@ Once the dataset axis has been summarized, what remains is a tool by metric matr
 
 ## The critical-difference test
 
-The [Friedman test and its Nemenyi post-hoc](comparing-methods-across-datasets.md) rank the methods within each dataset, which is only defined over a complete column. beam refuses a tool by dataset table with missing cells rather than dropping or filling them, and suggests restricting the diagram to the block of methods and datasets where all of them ran. The missing-data generalization of the Friedman test is the [Skillings-Mack (1981) test](skillings-mack.md), available as [`beam.mcda.skillings_mack`](../reference/skillings_mack.qmd).
+The [Friedman test and its Nemenyi post-hoc](critical-difference.md) rank the methods within each dataset, which is only defined over a complete column. beam refuses a tool by dataset table with missing cells rather than dropping or filling them, and suggests restricting the diagram to the block of methods and datasets where all of them ran. The missing-data generalization of the Friedman test is the [Skillings-Mack (1981) test](critical-difference.md#skillings-mack-for-incomplete-blocks), available as [`beam.mcda.skillings_mack`](../reference/skillings_mack.qmd).
 
-## What never happens
+## No silent filling
 
-beam does not fill by default and much less without a warning. A missing value is *only imputed under the explicit `worst` and `impute` policies*, both of which the user chooses by name and both of which warn. Everywhere else, a missing cell is summarized around (the dataset axis), carried through untouched (normalization), or refused with a warning.
+beam never fills a gap by default, and never without a warning. A missing value is imputed only under the explicit `worst` and `impute` policies, both of which the user chooses by name and both of which warn. Everywhere else, a missing cell is summarized around (the dataset axis), carried through untouched (normalization), or refused with a warning.
 
 ## See also
 

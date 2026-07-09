@@ -18,7 +18,7 @@ knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>",
                       dpi = 140, out.width = "100%", fig.width = 7, fig.height = 4.5)
 ```
 
-A single global ranking hides the more useful question: how much of the score variation is a stable method effect, and how much is the method-by-dataset interaction. beam answers it with three models that fit natively in R, so each section needs its own modelling package (`lme4`, `psychotree`, `PlackettLuce`) and runs only when that package is installed. The benchmark scores come from the Python `beam` core through reticulate; install it once with `install_beam_python()`. The data is the Duo 2018 ARI matrix: 14 clustering methods by 12 datasets.
+A single global ranking reports one order; it does not say how much of the score variation is a stable method effect and how much is the method-by-dataset interaction. beam answers that with [three models](https://imallona.github.io/beam/docs/explanations/method-by-dataset-heterogeneity.html) that fit natively in R, so each section needs its own modelling package (`lme4`, `psychotree`, `PlackettLuce`) and runs only when that package is installed. The benchmark scores come from the Python `beam` core through reticulate; install it once with `install_beam_python()`. The data is the Duo 2018 ARI matrix: 14 clustering methods by 12 datasets.
 
 ```{r libs}
 library(rbeam)
@@ -32,7 +32,7 @@ ari <- duo$tensor(list("ari"))[, , 1]
 
 ## Mixed-effects variance decomposition
 
-`beam_mixed_effects` fits `score ~ method + (1 | dataset)` in lme4. The dataset random intercept absorbs how easy or hard each dataset is for every method alike, and the dataset intraclass correlation is the share of variance that is the dataset rather than the method.
+[`beam_mixed_effects`](https://imallona.github.io/beam/docs/explanations/method-by-dataset-heterogeneity.html) fits `score ~ method + (1 | dataset)` in lme4. The dataset random intercept absorbs how easy or hard each dataset is for every method alike, and the dataset intraclass correlation is the share of variance that is the dataset rather than the method.
 
 ```{r mixed-effects, eval = have_lme4, fig.height = 4.5}
 me <- beam_mixed_effects(ari, method_names, dataset_names)
@@ -49,7 +49,7 @@ The dataset intercept takes about 0.71 of the ARI variance, so most of the sprea
 
 ## Dataset concordance on ARI
 
-The variance decomposition gives one number for the interaction. `beam_dataset_concordance` shows its structure feature-free: it ranks the methods within each dataset on ARI and compares every pair of per-dataset orderings with Kendall tau-b, reporting which datasets order the methods alike and which stands apart.
+The variance decomposition gives one number for the interaction. [`beam_dataset_concordance`](https://imallona.github.io/beam/docs/explanations/dataset-concordance-and-discrimination.html) shows its structure feature-free: it ranks the methods within each dataset on ARI and compares every pair of per-dataset orderings with Kendall tau-b, reporting which datasets order the methods alike and which stands apart.
 
 ```{r concordance, fig.height = 5}
 conc <- beam_dataset_concordance(
@@ -68,7 +68,7 @@ The datasets fall into families that order the methods alike, the same structure
 
 ## Bradley-Terry tree on dataset features
 
-The variance decomposition says how much interaction there is; the Bradley-Terry tree asks which dataset feature drives it. For each dataset the methods are compared pairwise (higher ARI wins), and `psychotree::bttree` splits the datasets by their features so each leaf gets its own Bradley-Terry ranking.
+The variance decomposition says how much interaction there is; the [Bradley-Terry tree](https://imallona.github.io/beam/docs/explanations/method-by-dataset-heterogeneity.html#bradley-terry-trees) asks which dataset feature drives it. For each dataset the methods are compared pairwise (higher ARI wins), and `psychotree::bttree` splits the datasets by their features so each leaf gets its own Bradley-Terry ranking.
 
 ```{r bt-fit, eval = have_psychotree, include = FALSE}
 # Fit in a hidden chunk: the per-leaf standard-error step uses a sandwich vcov
@@ -92,7 +92,7 @@ On these twelve datasets the parameter-stability test finds no split, so the tre
 
 ## Plackett-Luce on per-dataset rankings
 
-`beam_plackett_luce` reads each dataset as a full ranking of the methods and fits a Plackett-Luce model, the generalisation of Bradley-Terry from pairwise wins to full orderings. The worths sum to one.
+[`beam_plackett_luce`](https://imallona.github.io/beam/docs/explanations/method-by-dataset-heterogeneity.html#plackett-luce-full-rankings) reads each dataset as a full ranking of the methods and fits a Plackett-Luce model, the generalisation of Bradley-Terry from pairwise wins to full orderings. The worths sum to one.
 
 ```{r pl, eval = have_pl, fig.height = 4}
 pl <- beam_plackett_luce(ari, method_names)
@@ -140,7 +140,7 @@ Even at 36 datasets the parameter-stability test finds no split, so the tree red
 
 ## Specification curve and blind analysis
 
-The heterogeneity models read the per-dataset variation directly. The MCDA-side specification curve reads the same benchmark from the choice side: every weighting, aggregation and dataset, with how often the top method holds. Here it runs on the Duo ARI, runtime and Shannon entropy difference.
+The heterogeneity models read the per-dataset variation directly. The MCDA-side [specification curve](https://imallona.github.io/beam/docs/explanations/rank-sensitivity.html#the-specification-curve) reads the same benchmark from the choice side: every weighting, aggregation and dataset, with how often the top method holds. Here it runs on the Duo ARI, runtime and Shannon entropy difference.
 
 ```{r spec-curve}
 mcda <- reticulate::import("beam.mcda")
@@ -162,7 +162,7 @@ cat(sprintf("specification curve: %s ranks first in %.0f%% of %d combinations, %
 beam_plot(curve, "specification_curve")
 ```
 
-Blinding fixes the analysis before the method names are seen, which applies to the heterogeneity models above as much as to the ranking. `beam_blind` hides the names; `beam_unblind` restores them; the result does not change.
+[Blinding](https://imallona.github.io/beam/docs/explanations/analysis-blinding.html) fixes the analysis before the method names are seen, which applies to the heterogeneity models above as much as to the ranking. `beam_blind` hides the names; `beam_unblind` restores them; the result does not change.
 
 ```{r blind}
 beam <- reticulate::import("beam")

@@ -15,7 +15,7 @@ knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>",
                       dpi = 140, out.width = "100%", fig.width = 7, fig.height = 4.5)
 ```
 
-beam ranks methods from a tool by metric score matrix with multi-criteria decision analysis, then qualifies the ranking with sensitivity and statistical checks. This vignette runs the pipeline on the Duo, Robinson and Soneson (2018) single-cell clustering benchmark bundled with the package: 14 methods, 12 datasets, and the three well-populated metrics ARI (higher is better), runtime and Shannon entropy difference (lower is better). The R functions forward to the Python `beam` core through reticulate; install it once with `install_beam_python()`.
+beam ranks methods from a tool by metric score matrix with [multi-criteria decision analysis](https://imallona.github.io/beam/docs/explanations/aggregation-methods.html), then qualifies the ranking with sensitivity and statistical checks. This vignette runs the pipeline on the Duo, Robinson and Soneson (2018) single-cell clustering benchmark bundled with the package: 14 methods, 12 datasets, and the three well-populated metrics ARI (higher is better), runtime and Shannon entropy difference (lower is better). The R functions forward to the Python `beam` core through reticulate; install it once with `install_beam_python()`.
 
 ```{r libs}
 library(rbeam)
@@ -46,13 +46,13 @@ run <- beam_rank(scores, weights = "equal", method = "saw", seed = 0L)
 cat("top-ranked under equal weights / SAW:", run$top_tool, "\n")
 ```
 
-The funky heatmap shows the run as a glyph table: methods as rows, metrics as circles sized by the card-resolved normalized score, a composite bar, and the rank-robustness columns (leave-one-dataset-out stability and SMAA rank certainty). It is drawn natively in R with the funkyheatmap package.
+The [funky heatmap](https://imallona.github.io/beam/docs/explanations/funky-heatmaps-and-robustness.html) shows the run as a glyph table: methods as rows, metrics as circles sized by the card-resolved normalized score, a composite bar, and the rank-robustness columns (leave-one-dataset-out stability and SMAA rank certainty). It is drawn natively in R with the funkyheatmap package.
 
 ```{r funky, fig.width = 8, fig.height = 7.5}
 plot(run, metric_groups = c("accuracy", "cost", "accuracy"))
 ```
 
-## SMAA: does the top method hold across weightings?
+## SMAA across weightings
 
 SMAA samples weight vectors and reports, per method, the share of weightings that rank it first.
 
@@ -60,7 +60,7 @@ SMAA samples weight vectors and reports, per method, the share of weightings tha
 beam_plot(run, "smaa")
 ```
 
-## Leave-one-dataset-out: does the order depend on one dataset?
+## Leave-one-dataset-out stability
 
 For each dataset dropped, the rest are pooled and re-ranked. The per-method stability is the share of those runs in which the method keeps its base rank.
 
@@ -99,9 +99,9 @@ cat("the top two tools are within the noise floor:",
     run$noise_floor$top_pair_indistinguishable, "\n")
 ```
 
-## Do the scores honour the cards?
+## Card and data consistency
 
-`beam_card_data_consistency` reads the raw scores against what each card declares (range, chance baseline, noise floor), before normalization. A value outside its declared range, or a metric on the wrong scale, is named here rather than distorting the ranking silently. The normalization context comes from the registry.
+[`beam_card_data_consistency`](https://imallona.github.io/beam/docs/explanations/card-data-consistency.html) reads the raw scores against what each card declares (range, chance baseline, noise floor), before normalization. A value outside its declared range, or a metric on the wrong scale, is named here rather than distorting the ranking silently. The normalization context comes from the registry.
 
 ```{r card-consistency}
 mcda <- reticulate::import("beam.mcda")
@@ -114,9 +114,9 @@ audit <- beam_card_data_consistency(
 cat("pooled scores consistent with the cards:", audit$ok, "\n")
 ```
 
-## What moves the ranking: the dataset or the choice?
+## Rank sensitivity: dataset or analyst choice
 
-`beam_rank_sensitivity` splits the ranking's variance between the data and the analyst's choices. It ranks the methods on each dataset, under every weighting and aggregation, and attributes each method's rank variance to the dataset, the weighting, the aggregation and their interactions. The shares sum to one.
+[`beam_rank_sensitivity`](https://imallona.github.io/beam/docs/explanations/rank-sensitivity.html) splits the ranking's variance between the data and the analyst's choices. It ranks the methods on each dataset, under every weighting and aggregation, and attributes each method's rank variance to the dataset, the weighting, the aggregation and their interactions. The shares sum to one.
 
 ```{r rank-sensitivity}
 rs <- beam_rank_sensitivity(
@@ -138,9 +138,9 @@ The shares above are pooled over the methods. The `rank_sensitivity_by_tool` plo
 beam_plot(rs, "rank_sensitivity_by_tool")
 ```
 
-## Dataset concordance: do the datasets agree on the order?
+## Dataset concordance
 
-`beam_rank` also reports how the datasets agree among themselves. `dataset_concordance` ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not. The standalone wrapper is `beam_dataset_concordance(tensor, polarity)`.
+`beam_rank` also reports how the datasets agree among themselves. [`dataset_concordance`](https://imallona.github.io/beam/docs/explanations/dataset-concordance-and-discrimination.html) ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not. The standalone wrapper is `beam_dataset_concordance(tensor, polarity)`.
 
 ```{r concordance}
 conc <- run$dataset_concordance
@@ -158,7 +158,7 @@ beam_plot(run, "dataset_struggle")
 
 ## Specification curve
 
-`beam_specification_curve` reads the same grid as a list of rankings and reports how often the top method holds. It takes the report from `beam_rank_sensitivity`.
+[`beam_specification_curve`](https://imallona.github.io/beam/docs/explanations/rank-sensitivity.html#the-specification-curve) reads the same grid as a list of rankings and reports how often the top method holds. It takes the report from `beam_rank_sensitivity`.
 
 ```{r specification-curve}
 curve <- beam_specification_curve(rs)
@@ -176,7 +176,7 @@ The top line is the rank of the most-frequent top method across the sorted grid;
 
 ## Blind analysis
 
-A blind analysis fixes the weighting, the aggregation and the metric set before the method names are revealed. `beam_blind` hides the names and shuffles the rows; `beam_unblind` restores them. The ranking does not change, and the seal fingerprint is recorded in the manifest.
+A [blind analysis](https://imallona.github.io/beam/docs/explanations/analysis-blinding.html) fixes the weighting, the aggregation and the metric set before the method names are revealed. `beam_blind` hides the names and shuffles the rows; `beam_unblind` restores them. The ranking does not change, and the seal fingerprint is recorded in the manifest.
 
 ```{r blinding}
 blinded <- beam_blind(scores, seed = 0L)
@@ -188,9 +188,9 @@ cat("blinding fingerprint:",
     substr(blind_run$manifest[["blinding"]][["seal_sha256"]], 1, 12), "\n")
 ```
 
-## Are the methods separable? Critical difference
+## Critical difference on ARI
 
-The composite gives one ranking but does not say whether the methods differ beyond chance. `beam_critical_difference` runs the Friedman test and the Nemenyi post-hoc on the ARI block of methods observed on every dataset. Two methods whose average ranks lie within the critical difference are not separable.
+The composite gives one ranking but does not say whether the methods differ beyond chance. [`beam_critical_difference`](https://imallona.github.io/beam/docs/explanations/critical-difference.html) runs the Friedman test and the Nemenyi post-hoc on the ARI block of methods observed on every dataset. Two methods whose average ranks lie within the critical difference are not separable.
 
 ```{r cd, fig.width = 7, fig.height = 3.6}
 ari <- duo$tensor(list("ari"))[, , 1]
@@ -203,7 +203,7 @@ cat(sprintf("Friedman p = %.1e, Nemenyi CD = %.2f\n",
 beam_plot(cd, "critical_difference")
 ```
 
-When the matrix has gaps, `beam_skillings_mack` is the coverage-aware version of the same test, run on the full ARI matrix.
+When the matrix has gaps, [`beam_skillings_mack`](https://imallona.github.io/beam/docs/explanations/critical-difference.html#skillings-mack-for-incomplete-blocks) is the coverage-aware version of the same test, run on the full ARI matrix.
 
 ```{r skillings-mack}
 sm <- beam_skillings_mack(ari, higher_is_better = TRUE, method_names = method_names)
@@ -211,9 +211,9 @@ cat(sprintf("Skillings-Mack chi-squared = %.2f on %d df, p = %.1e\n",
             sm$statistic, as.integer(sm$df), sm$p_value))
 ```
 
-## How often does one method outperform another?
+## Pairwise superiority on ARI
 
-The critical-difference test says which methods are separable, not by how much or how often. `beam_pairwise_superiority` compares the methods two at a time across the datasets, with the ARI noise floor as the equivalence band: a method counts as outperforming another on a dataset only when the difference clears that floor. The probability of superiority is the fraction of datasets on which one method outperforms the other.
+The critical-difference test says which methods are separable, not by how much or how often. [`beam_pairwise_superiority`](https://imallona.github.io/beam/docs/explanations/pairwise-method-comparison.html) compares the methods two at a time across the datasets, with the ARI noise floor as the equivalence band: a method counts as outperforming another on a dataset only when the difference clears that floor. The probability of superiority is the fraction of datasets on which one method outperforms the other.
 
 ```{r pairwise}
 ari_floor <- cards$properties_for(list("ari"))[[1]]$noise_floor
@@ -226,11 +226,11 @@ cat("pairs the sign test cannot separate:",
     length(sup$equivalent_pairs), "of", length(sup$per_pair), "\n")
 ```
 
-Most pairs are not distinguishable: across the twelve datasets the ARI differences are often inside the floor, so neither method outperforms the other decisively. This is the critical-difference reading as an effect size, and it agrees with it.
+Most pairs are not distinguishable: across the twelve datasets the ARI differences are often inside the floor, so neither method outperforms the other decisively. This is the critical-difference reading as an effect size.
 
-## Do the pairwise majorities agree with one order?
+## Pairwise transitivity
 
-`beam_pairwise_transitivity` reads the same pairwise relation and asks whether one order is consistent with it: the method preferred to every other one, the circular triads, and whether the relation is transitive.
+[`beam_pairwise_transitivity`](https://imallona.github.io/beam/docs/explanations/pairwise-method-comparison.html#transitivity) reads the same pairwise relation and asks whether one order is consistent with it: the method preferred to every other one, the circular triads, and whether the relation is transitive.
 
 ```{r transitivity}
 trans <- beam_pairwise_transitivity(sup)
@@ -240,9 +240,9 @@ cat("transitive:", trans$is_transitive,
     "; circular triads:", trans$n_circular_triads, "of", trans$n_triads, "\n")
 ```
 
-## How sure are we that one method is better?
+## Bayesian sign comparison
 
-The tests above report a p-value. `beam_bayesian_sign_comparison` reads the same pairwise relation on the probability scale. For each pair it gives the posterior probability that one method is practically better, that the two are practically equivalent within the floor, or that the other is practically better (Benavoli et al. 2017). Plot it with `beam_plot(bayes, "bayesian_comparison")`.
+The tests above report a p-value. [`beam_bayesian_sign_comparison`](https://imallona.github.io/beam/docs/explanations/pairwise-method-comparison.html#bayesian-sign-comparison) reads the same pairwise relation on the probability scale. For each pair it gives the posterior probability that one method is practically better, that the two are practically equivalent within the floor, or that the other is practically better (Benavoli et al. 2017). Plot it with `beam_plot(bayes, "bayesian_comparison")`.
 
 ```{r bayesian, fig.height = 5}
 bayes <- beam_bayesian_sign_comparison(sup)

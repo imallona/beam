@@ -50,54 +50,32 @@ website:
             text: Normalization and scales
           - href: docs/explanations/aggregation-methods.md
             text: Aggregation methods
-          - href: docs/explanations/aggregation-agreement.md
-            text: Aggregation agreement
-          - href: docs/explanations/normalization-agreement.md
-            text: Normalization agreement
+          - href: docs/explanations/choice-agreement.md
+            text: Choice agreement
           - href: docs/explanations/rank-sensitivity.md
-            text: What moves the ranking
-          - href: docs/explanations/specification-curve.md
-            text: Specification curve
+            text: Rank sensitivity and the specification curve
           - href: docs/explanations/analysis-blinding.md
             text: Analysis blinding
           - href: docs/explanations/weighting-schemes.md
             text: Weighting schemes
-          - href: docs/explanations/comparing-methods-across-datasets.md
-            text: Comparing methods across datasets
-          - href: docs/explanations/dataset-concordance.md
-            text: Dataset concordance
-          - href: docs/explanations/dataset-discrimination.md
-            text: Dataset discrimination
+          - href: docs/explanations/critical-difference.md
+            text: Critical difference
+          - href: docs/explanations/dataset-concordance-and-discrimination.md
+            text: Dataset concordance and discrimination
           - href: docs/explanations/attribution-synthesis.md
             text: Attribution synthesis
-          - href: docs/explanations/skillings-mack.md
-            text: Skillings-Mack
-          - href: docs/explanations/pairwise-superiority.md
-            text: Pairwise superiority
-          - href: docs/explanations/transitivity.md
-            text: Pairwise transitivity
-          - href: docs/explanations/bayesian-comparison.md
-            text: Bayesian comparison
+          - href: docs/explanations/pairwise-method-comparison.md
+            text: Pairwise method comparison
           - href: docs/explanations/missing-data.md
             text: Missing data
           - href: docs/explanations/reference-levels.md
             text: Reference levels
           - href: docs/explanations/card-data-consistency.md
             text: Card and data consistency
-          - href: docs/explanations/convergent-discriminant-validity.md
-            text: Metric validity
-          - href: docs/explanations/reliability.md
-            text: Metric reliability
-          - href: docs/explanations/dimensionality.md
-            text: Metric dimensionality
-          - href: docs/explanations/heterogeneity-mixed-effects.md
-            text: Mixed-effects heterogeneity
-          - href: docs/explanations/heterogeneity-bradley-terry.md
-            text: Bradley-Terry trees
-          - href: docs/explanations/full-rankings-and-bounded-metrics.md
-            text: Plackett-Luce and bounded metrics
-          - href: docs/explanations/comet.md
-            text: COMET
+          - href: docs/explanations/metric-set-diagnostics.md
+            text: Metric-set diagnostics
+          - href: docs/explanations/method-by-dataset-heterogeneity.md
+            text: Method-by-dataset heterogeneity
           - href: docs/explanations/funky-heatmaps-and-robustness.md
             text: Funky heatmaps
           - href: docs/explanations/ontology-mappings.md

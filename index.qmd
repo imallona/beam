@@ -3,17 +3,17 @@ title: "beam"
 subtitle: "Benchmark Evaluation and Metrics"
 ---
 
-beam is a metric formalization layer for method comparisons and benchmarks in bioinformatics and beyond. It standardizes performance metrics in metric cards with measurement-theory grounded metadata. It also provides multi-criteria decision making features, and evaluates the driving forces of method-dataset heterogeneity.
+beam is a metric formalization layer for method comparisons and benchmarks in bioinformatics. It records each performance metric in a [metric card](docs/explanations/cards-and-pipeline.qmd) with [measurement-theory](docs/explanations/measurement-theory.md) grounded metadata, ranks methods with [multi-criteria decision analysis](docs/explanations/aggregation-methods.md), and decomposes [method-dataset heterogeneity](docs/explanations/method-by-dataset-heterogeneity.md).
 
 The metric cards are mapped to STATO, UO, OBI and HuggingFace evaluate where available. The OWL is available at [docs/beam.owl.ttl](docs/beam.owl.ttl) and regenerated from the cards on each release.
 
 ## Where to start
 
-- [Quick start](docs/tutorials/quickstart.md). The five-line path from a CSV to an metrics evaluation HTML report.
+- [Quick start](docs/tutorials/quickstart.md). From a CSV to a ranking and an HTML report.
 - [How to run from beam.yaml](docs/how-to/run-from-beam-yaml.md). The declarative beam specification.
 - [How to use beam from R](docs/how-to/use-beam-from-r.md). The R interface (reticulate-backed; same metric cards and pipeline).
-- [Cards and pipeline](docs/explanations/cards-and-pipeline.qmd). What a metric card encodes and how is it processed.
-- [Comparing methods across datasets](docs/explanations/comparing-methods-across-datasets.md). Diagnostics on method-dataset performance variability.
+- [Cards and pipeline](docs/explanations/cards-and-pipeline.qmd). What a metric card encodes and how it is processed.
+- [Comparing methods across datasets](docs/explanations/critical-difference.md). Diagnostics on method-dataset performance variability.
 
 ## Worked vignettes
 

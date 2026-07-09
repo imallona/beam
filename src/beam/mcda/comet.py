@@ -120,7 +120,7 @@ def comet(
     The expert function is the weighted sum of a characteristic object's
     coordinates, a deterministic stand-in for the human pairwise judgement
     that COMET assumes. See the module docstring and
-    docs/explanations/comet.md.
+    docs/explanations/aggregation-methods.md.
 
     References
     ----------

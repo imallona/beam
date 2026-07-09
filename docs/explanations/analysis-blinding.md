@@ -2,7 +2,7 @@
 
 If a benchmarker can see which method is which while choosing the [weighting](weighting-schemes.md), the [aggregation](aggregation-methods.md) and the metric set, those choices can shift toward a preferred method. This can happen via unconscious biases and without intent. Different choices give different rankings, and it is easy to settle on the one that fits an expected result (Gelman and Loken 2013; Simmons, Nelson and Simonsohn 2011). One way to avoid it is blind analysis: run the analysis on methods whose labels are hidden, then reveal the labels (MacCoun and Perlmutter 2015; Klein and Roodman 2005).
 
-`beam.blind` applies this to a score table. It replaces the tool names with opaque labels and shuffles the rows under a seed, so neither the names nor the order carry the methods' identity. The analyst runs the full beam pipeline on the blinded scores, fixes the configuration, then calls `beam.unblind` with the seal to restore the true names.
+`beam.blind` applies this to a score table. It replaces the tool names with opaque labels and shuffles the rows under a seed, so neither the names nor the order carry the methods' identity. The analyst runs the full beam pipeline on the blinded scores, fixes the configuration, then calls `beam.unblind` with the seal to restore the true names. Unblinding only renames the rows and does not re-rank the methods.
 
 ```python
 import beam
@@ -27,11 +27,7 @@ beam is controlled by users and not the way around. To add an extra layer of aud
 "blinding": {"blinded": true, "seal_sha256": "6ee805357098..."}
 ```
 
-The seal file, kept separately, records that the configuration was fixed before the labels were revealed. A reviewer who has the manifest and the seal can confirm the analysis ran on scores blinded under that seal. This mechanisms suits preregistration well, but does not enforce it.
-
-## Why the blinding does not affect results
-
-Unblinding only renames the rows and does not re-rank methods.
+The seal file, kept separately, records that the configuration was fixed before the labels were revealed. A reviewer who has the manifest and the seal can confirm the analysis ran on scores blinded under that seal. This mechanism suits preregistration well, but does not enforce it.
 
 ## Usage
 
@@ -43,7 +39,7 @@ beam unblind result.json --seal seal.json --out result.unblinded.json
 
 ## See also
 
-- [Specification curve](specification-curve.md)
+- [Specification curve](rank-sensitivity.md#the-specification-curve)
 - [Rank sensitivity](rank-sensitivity.md)
 
 ## References
