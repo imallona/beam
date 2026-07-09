@@ -2,8 +2,10 @@
 
 beam offers five aggregations (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET), each
 resting on different assumptions about how per-metric scores combine into one
-composite. The headline ranking uses one of them. This module checks whether another aggregation would order the tools the same way. It re-ranks the same normalized matrix under each aggregation, holding the
-weighting fixed, and reports how closely the resulting orderings agree.
+composite. The headline ranking uses one of them. This module checks
+whether another aggregation would order the tools the same way. It re-ranks
+the same normalized matrix under each aggregation, holding the weighting
+fixed, and reports how closely the resulting orderings agree.
 
 The agreement is measured with the Kendall tau-b rank-correlation coefficient,
 which handles the tied ranks that competition ranking produces. A high mean

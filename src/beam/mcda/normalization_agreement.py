@@ -7,8 +7,9 @@ rank normalization drops the size of the gaps between methods, ``log_min_max``
 stops one slow method from compressing a runtime column, and ``zscore``
 squashes outliers smoothly. A different strategy can change the order.
 
-Like ``aggregation_agreement``, this module checks whether a different normalization would order the tools the same way. It re-ranks the
-same matrix under several normalizations, holding the weighting and the
+Like ``aggregation_agreement``, this module checks whether a different
+normalization would order the tools the same way. It re-ranks the same
+matrix under several normalizations, holding the weighting and the
 aggregation fixed, and reports how closely the resulting orderings agree.
 
 The agreement is measured with the Kendall tau-b rank-correlation coefficient,
