@@ -2,8 +2,6 @@
 
 Each metric card is one YAML file under `src/beam/metrics/<id>/v1.yaml`. The card carries the metadata the pipeline needs to normalize, weight and aggregate the metric correctly: [polarity](../explanations/measurement-theory.md) (higher or lower better), scale type, range, allowed transformations, a [recommended normalization](../explanations/normalization-and-scales.md), and the [ontology mappings](../explanations/ontology-mappings.md) (STATO, UO, OBI, HuggingFace evaluate) where an external term exists.
 
-
-
 ## 1. Pick the id and the version
 
 The id is a short lowercase string that becomes the column name in score CSVs. The version is a simple `v1`, `v2` and so on:
@@ -14,53 +12,72 @@ mkdir -p src/beam/metrics/recall_at_k
 
 ## 2. Write `v1.yaml`
 
-The seed card `accuracy/v1.yaml` is a short template for a classification metric:
+A card for a retrieval metric, with the required fields only. `accuracy/v1.yaml` shows the optional ones:
 
 ```yaml
 id: recall_at_k
 version: v1
 name: Recall at k
-description: >
+description: |
   Fraction of the relevant items that appear in the top k of a ranked
   retrieval list, averaged over queries.
 citations:
-- text: Manning, Raghavan and Schuetze. Introduction to Information Retrieval.
-    Cambridge University Press 2008.
-  isbn: 9780521865715
-metric_kind: classification
-measurand: retrieval recall
-task: information retrieval
-input_dtype: ranking
-output_shape: scalar
-scale_type: ratio
-polarity: higher_is_better
-range:
-  lower: 0
-  upper: 1
-  closed_lower: true
-  closed_upper: true
-allowed_transformations:
-- affine
-- log
+  - text: Manning, Raghavan and Schuetze. Introduction to Information Retrieval. Cambridge University Press 2008.
+metric_kind: derived
+measurand: fraction of relevant items retrieved in the top k
+task:
+  - information_retrieval
+requires_ground_truth: true
+ground_truth:
+  description: relevant items per query
+  shape: set
+  dtype: item_id
+inputs:
+  - role: ranked_items
+    shape: vector
+    dtype: item_id
+  - role: relevant_items
+    shape: set
+    dtype: item_id
+output:
+  shape: scalar
+  dtype: float
 semantics:
-  score_of_random_baseline: 0
+  scale_type: ratio
+  range:
+    lower: 0
+    upper: 1
+    lower_inclusive: true
+    upper_inclusive: true
+  polarity: higher_is_better
+  monotonic: true
+  meaningful_zero: true
+  allowed_transformations:
+    - affine
+    - rank
 comparability:
-  recommended_normalization: min_max
+  comparable_within:
+    - same_dataset
   recommended_aggregation_across_datasets: arithmetic_mean
+  recommended_normalization: min_max
 implementations:
-- name: scikit-learn
-  version: ">=1.3"
-  package: scikit-learn
-  function: sklearn.metrics.top_k_accuracy_score
-  language: python
-  license: BSD-3-Clause
-  url: https://scikit-learn.org/stable/modules/generated/sklearn.metrics.top_k_accuracy_score.html
-mappings:
-  huggingface_evaluate: https://github.com/huggingface/evaluate/tree/main/metrics/recall
+  - name: torchmetrics
+    language: python
+    package: torchmetrics
+    function: torchmetrics.retrieval.RetrievalRecall
+    license: Apache-2.0
+examples:
+  - description: one of two relevant items in the top 2
+    inputs:
+      ranked_items: [a, b, c, d]
+      relevant_items: [a, d]
+      k: 2
+    expected_output: 0.5
+    tolerance: 1.0e-12
 provenance:
   author: Your Name
   contact: you@example.org
-  created: 2026-05-28
+  created: "2026-05-28"
   license: CC-BY-4.0
 ```
 

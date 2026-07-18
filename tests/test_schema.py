@@ -19,6 +19,7 @@ import yaml
 
 SCHEMA_PATH = Path(str(resources.files("beam").joinpath("schema", "metric_card.schema.json")))
 METRICS_DIR = Path(str(resources.files("beam").joinpath("metrics")))
+CARD_HOWTO = Path(__file__).parent.parent / "docs" / "how-to" / "add-a-metric-card.md"
 
 
 def _load_schema() -> dict:
@@ -62,6 +63,12 @@ def test_card_validates(card_path: Path, validator: jsonschema.Draft202012Valida
             f"{'.'.join(map(str, e.path)) or '<root>'}: {e.message}" for e in errors
         )
         pytest.fail(f"{card_path.parent.name}/{card_path.name} failed validation: {formatted}")
+
+
+def test_howto_example_card_validates(validator: jsonschema.Draft202012Validator) -> None:
+    yaml_block = CARD_HOWTO.read_text().split("```yaml\n", 1)[1].split("```", 1)[0]
+    errors = [e.message for e in validator.iter_errors(yaml.safe_load(yaml_block))]
+    assert not errors, errors
 
 
 @pytest.mark.parametrize(

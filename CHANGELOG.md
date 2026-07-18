@@ -10,6 +10,8 @@ All notable changes to beam will be documented in this file. The format follows 
 
 ### Fixed
 
+- The how-to example metric card validates against the schema.
+
 - `beam.mcda.attribution_synthesis` and `AttributionReport`: put the analyst-choice, data and benchmarker shares of a ranking on one rank-variance budget across settings, from one benchmark to a same-data contrast. Adds the plots `beam.plot.metric_correlation`, `metric_reliability_dropped`, `metric_dimensionality_scree`, `network_forest` and `attribution_progression`, and a `host` argument on the composite-panel builders so panels compose into one figure; docs/explanations/attribution-synthesis.md.
 
 - `beam.mcda.dataset_discrimination` and `beam.mcda.difficulty_concordance` (with R wrappers `beam_dataset_discrimination`, `beam_difficulty_concordance` and matching plots): measure how strongly each dataset separates the methods it scores and whether method families find the same datasets hard, the method-agnostic cross-benchmark axis for benchmarks whose methods do not overlap. Adds `beam.datasets.load_semisupervised_integration` over the bundled Shen 2026 scores; docs/explanations/dataset-discrimination.md.
