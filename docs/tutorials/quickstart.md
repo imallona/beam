@@ -89,7 +89,7 @@ beam validate scores.csv --metrics ari,nmi,runtime
 
 ## Next steps
 
-To run a whole pipeline from one declarative file (so a reviewer reruns it with a single command), see the how-to: [Run from a beam.yaml](../how-to/run.md#run-from-a-beam-yaml).
+To run a whole pipeline from one declarative file (so a reviewer reruns it with a single command), see the how-to: [Run from a beam.yaml](../how-to/run.md#run-from-a-beam.yaml).
 
 For the concepts behind the steps above, see the explanations: [normalization and scales](../explanations/normalization-and-scales.md), [weighting schemes](../explanations/weighting-schemes.md) and [aggregation methods](../explanations/aggregation-methods.md).
 
