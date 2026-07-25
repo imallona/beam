@@ -75,7 +75,7 @@ To save the run record to a file and add the manifest:
 beam rank scores.csv --report report.html --out result.json --manifest manifest.json
 ```
 
-The run record on `--out` captures the input path and hash, the parameters and the ranking. You can re-render the report later from that record alone:
+The run record on `--out` captures the input path and hash, the parameters and the ranking. `beam report` reads the scores again from the recorded path and reruns with the recorded parameters:
 
 ```
 beam report result.json --out report.html
