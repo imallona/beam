@@ -9,7 +9,7 @@ help:
 	@echo "  lint         Run ruff check"
 	@echo "  fmt          Run ruff format"
 	@echo "  vignettes    Render the Quarto vignettes under examples/"
-	@echo "  docs         Render the full Quarto site (vignettes + explanations + ADRs)"
+	@echo "  docs         Render the full Quarto site (vignettes + explanations)"
 	@echo "  clean        Remove build artefacts, caches, and rendered docs"
 
 install:

@@ -48,6 +48,26 @@ beam:cell_cycle_conservation a owl:NamedIndividual,
     rdfs:comment "Biological-conservation score from the scIB single-cell integration benchmark. It measures how much of the cell-cycle signal, the variance explained by S and G2M scores, survives integration, rescaled to [0, 1] where higher is better." ;
     rdfs:seeAlso obo:OBI_0002631 .
 
+beam:cell_type_annotation_agreement a owl:NamedIndividual,
+        beam:Metric ;
+    rdfs:label "Cell type annotation agreement" ;
+    rdfs:comment """Ontology-aware agreement between a method's cell type annotation and the manual
+expert annotation, averaged over the annotated cell types of a dataset. Each
+cell type scores 1 for a full match, 0.5 for a partial match (correct broad
+lineage, wrong fine type), and 0 for a mismatch, following the scoring of Hou
+and Ji (2024). The reported value is the mean of these per-cell-type scores, in
+the unit interval, higher meaning closer agreement with the manual annotation.""" .
+
+beam:cell_type_annotation_full_match_rate a owl:NamedIndividual,
+        beam:Metric ;
+    rdfs:label "Cell type annotation full match rate" ;
+    rdfs:comment """Fraction of a dataset's annotated cell types for which a method's annotation is
+a full match to the manual expert annotation, using the ontology-aware scoring
+of Hou and Ji (2024). It is the strict companion to cell_type_annotation_agreement:
+partial matches count toward the agreement mean but not toward this rate, so a
+method that often lands the broad lineage without the fine type scores well on
+agreement and poorly here.""" .
+
 beam:clisi a owl:NamedIndividual,
         beam:Metric ;
     rdfs:label "Cell-type LISI (cLISI)" ;

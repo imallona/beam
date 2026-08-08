@@ -28,6 +28,8 @@ Every metric card under `src/beam/metrics/<id>/v1.yaml` carries an optional `map
 | asw_label | not in stato | not in uo | OBI_0002631 | not in hf |
 | calibration_slope | STATO_0000687 | not in uo | not in obi | not in hf |
 | cell_cycle_conservation | not in stato | not in uo | OBI_0002631 | not in hf |
+| cell_type_annotation_agreement | not in stato | not in uo | not in obi | not in hf |
+| cell_type_annotation_full_match_rate | not in stato | not in uo | not in obi | not in hf |
 | clisi | not in stato | not in uo | OBI_0002631 | not in hf |
 | co2 | not in stato | UO_0000021 | not in obi | not in hf |
 | correlation | STATO_0000201 | not in uo | not in obi | metrics/spearmanr |
@@ -50,7 +52,7 @@ Every metric card under `src/beam/metrics/<id>/v1.yaml` carries an optional `map
 | smape | not in stato | not in uo | not in obi | metrics/smape |
 | speed | not in stato | UO_0010008 | not in obi | not in hf |
 
-Summary as of 2026-05-28: STATO covers 6 of 27 cards (ari, accuracy, f1_score, isolated_label_f1, calibration_slope, correlation). UO covers 4 of 27 (runtime, peak_memory, speed, co2). OBI covers 11 of 27 (the scIB family with OBI_0002631 plus pcr with OBI_0200104). HuggingFace evaluate covers 5 of 27 (accuracy, f1_score, smape, mase, correlation).
+Summary: STATO covers 6 of 29 cards (ari, accuracy, f1_score, isolated_label_f1, calibration_slope, correlation). UO covers 4 of 29 (runtime, peak_memory, speed, co2). OBI covers 11 of 29 (the scIB family with OBI_0002631 plus pcr with OBI_0200104). HuggingFace evaluate covers 5 of 29 (accuracy, f1_score, smape, mase, correlation).
 
 ## How the OWL is regenerated
 

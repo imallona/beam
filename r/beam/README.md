@@ -78,4 +78,4 @@ GPL (>= 3), matching the Python package.
 
 ## Citation
 
-See the top-level repository `CITATION.cff`. Cite Mallona, Robinson and Soneson (2025) for the omnibenchmark ecosystem context.
+See the top-level repository `CITATION.cff`.
