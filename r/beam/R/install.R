@@ -8,9 +8,8 @@
 #'   [reticulate::py_install]. Default `"auto"`.
 #' @param envname Name of the reticulate environment to install into. Default
 #'   `NULL` uses the active environment.
-#' @param version Version specifier passed to pip (e.g. `"beam>=0.1.3"`).
-#'   Default installs the latest from PyPI; once the Python package is on PyPI,
-#'   this resolves to a stable release.
+#' @param version Requirement passed to pip. Default installs the main branch
+#'   from GitHub; beam is not on PyPI.
 #' @param ... Additional arguments forwarded to [reticulate::py_install].
 #'
 #' @return Invisibly `TRUE` on success.
@@ -21,7 +20,7 @@
 #' @export
 install_beam_python <- function(method = c("auto", "virtualenv", "conda"),
                                  envname = NULL,
-                                 version = "beam",
+                                 version = "git+https://github.com/imallona/beam.git",
                                  ...) {
   method <- match.arg(method)
   reticulate::py_install(
@@ -38,12 +37,12 @@ install_beam_python <- function(method = c("auto", "virtualenv", "conda"),
 #'
 #' The heterogeneity diagnostics (`beam_bradley_terry_tree`,
 #' `beam_mixed_effects`, `beam_plackett_luce`,
-#' `beam_source_variance_decomposition`) are fit by CRAN packages declared as
+#' `beam_source_variance_decomposition`, `beam_network_meta_analysis`) are fit by CRAN packages declared as
 #' Suggests, so `install.packages("rbeam")` does not pull them in. Run this once
 #' to install the ones you are missing.
 #'
 #' @param pkgs Character vector of package names to install. Default covers all
-#'   four diagnostics.
+#'   five diagnostics.
 #' @param ... Additional arguments forwarded to [utils::install.packages].
 #'
 #' @return Invisibly the names of the packages that were installed.
@@ -54,7 +53,8 @@ install_beam_python <- function(method = c("auto", "virtualenv", "conda"),
 #' @export
 install_beam_heterogeneity_deps <- function(pkgs = c(
                                               "lme4", "glmmTMB", "psychotree",
-                                              "partykit", "PlackettLuce", "qvcalc"
+                                              "psychotools", "partykit", "PlackettLuce",
+                                              "qvcalc", "meta", "netmeta"
                                             ),
                                             ...) {
   missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]

@@ -26,7 +26,7 @@ rbeam::install_beam_python()
 
 ## Heterogeneity models
 
-The R-backed models (mixed-effects, Bradley-Terry, Plackett-Luce, glmmTMB) need their own R packages, installed either from R:
+The R-backed models (mixed-effects, Bradley-Terry trees, Plackett-Luce, variance decomposition, network meta-analysis) need their own R packages, installed either from R:
 
 ```r
 install_beam_heterogeneity_deps()

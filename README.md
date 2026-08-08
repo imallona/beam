@@ -14,7 +14,7 @@ source .venv/bin/activate
 pip install -e ".[dev,docs]"
 ```
 
-`[docs]` pulls in Jupyter and matplotlib so Quarto can execute the Python code chunks in the vignettes. `[io]` pulls in pandas for the CSV adapter. `[dev]` covers the test suite.
+`[docs]` pulls in Jupyter so Quarto can execute the Python code chunks in the vignettes. `[io]` pulls in pandas for the CSV adapter. `[dev]` covers the test suite.
 
 R package:
 
