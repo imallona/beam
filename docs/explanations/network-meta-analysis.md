@@ -1,28 +1,28 @@
 # Cross-benchmark network meta-analysis
 
-When several benchmarks score an overlapping but not identical set of methods for a task, no single benchmark compares every pair directly. A network meta-analysis pools the direct and indirect evidence into one coherent ranking. 
+When several benchmarks score overlapping sets of methods, no benchmark compares every pair directly. A network meta-analysis pools the direct and indirect evidence into one ranking. [`beam.heterogeneity.network_meta_analysis`](../reference/network_meta_analysis.qmd) follows the frequentist network meta-analysis of Rucker and Schwarzer in R's netmeta.
 
-Clinical research uses it to rank treatments that were never all tried head to head in one trial. [`beam.heterogeneity.network_meta_analysis`](../reference/network_meta_analysis.qmd) does this for benchmark results, following the frequentist network meta-analysis of Rucker and Schwarzer as implemented in R's netmeta.
+## Method
 
-## Rationale
+The treatments are the methods and the studies are the (benchmark, dataset) pairs. In a study each method has a mean rank over the metrics and a standard deviation across them. `meta::pairwise` computes the study-level contrasts and `netmeta` pools them into an effect per method relative to a reference, a P-score per method, and heterogeneity and inconsistency statistics.
 
-The treatments are the methods. The studies are the (benchmark, dataset) blocks. Within a study, each method has a mean rank over the metrics, and a standard deviation across those metrics. `meta::pairwise` turns the arm-level means into study-level contrasts, and `netmeta` pools them. The output is a treatment effect for each method relative to a reference, a P-score for each method, and the heterogeneity and inconsistency statistics.
+The P-score is the share of the other methods a method outperforms, averaged over the ranking uncertainty, in 0 to 1. A higher P-score is a better rank.
 
-The P-score is the ranking. It is the share of competing methods a method outperforms, averaged over the ranking uncertainty, in 0 to 1. Because a benchmark rank of 1 is best, beam treats small values as desirable, so a higher P-score indicates a higher-ranked method.
+Benchmarks publish one score per method, dataset and metric, without replicates. The standard deviation across the metrics of a study is used as the within-arm spread. This treats the metrics as repeated measures of one quantity, which they are not, so the pooled ranking is descriptive. An arm with fewer than two metrics is dropped, and netmeta keeps the studies with two or more arms.
 
-Benchmarks publish one score per method per dataset per metric, with no replicate runs, so there is no sampling standard error in the usual sense. This wrapper takes the variability across the metrics within a (benchmark, dataset) block as the within-arm spread. That treats the metrics as repeated readings of the same quantity, which they are not exactly: the Adjusted Rand Index (ARI), average silhouette width (ASW), k-nearest-neighbour batch-effect test (kBET) and local inverse Simpson index (LISI) measure related but distinct aspects of integration quality. The pooled ranking is a descriptive summary of the evidence as published, not an inference back to a population of runs. An arm resting on fewer than two metrics has no estimable standard deviation and is dropped, and netmeta then keeps only the studies that still have two or more arms.
+The heterogeneity Q (within designs) measures how much studies of the same design disagree. The inconsistency Q (between designs) measures whether direct and indirect evidence for the same comparison agree. beam reports both where the design allows, with tau-squared and I-squared.
 
-Two scores evaluate the pooled ranking. The heterogeneity Q (the within-design part) measures how much the studies of the same design disagree beyond chance. The inconsistency Q (the between-design part) measures whether the direct and the indirect evidence for the same comparison agree. A large inconsistency Q is the formal version of "the benchmarks contradict each other". beam reports both parts where the design structure supports the split, along with tau-squared and I-squared.
+## Usage
 
-## Related checks
+`network_meta_analysis(treatment, study, mean, sd, n)` takes five parallel sequences, one entry per study arm. `IntegrationBenchmarks.network_arms()` builds them from the bundled integration benchmarks. The report has the effect of each treatment against the reference with its confidence interval, the P-scores, the ranking, and the heterogeneity and inconsistency statistics.
 
-The network meta-analysis and the source-variance decomposition (see [the mixed-effects explanation](method-by-dataset-heterogeneity.md)) answer complementary questions. The mixed-effects [`source_variance_decomposition`](../reference/source_variance_decomposition.qmd) puts a number on how much of the spread is the benchmark rather than the method (the method-by-benchmark variance share). The network meta-analysis pools the same evidence into a single ranking with a hierarchy of methods, and its inconsistency statistic is the disagreement read as a model lack-of-fit rather than as a variance component. [Attribution synthesis](attribution-synthesis.md) combines this with the analyst-choice and dataset dimensions.
+The fit needs R with netmeta; `netmeta_available()` checks it, and the conda environment [envs/heterogeneity.yml](https://github.com/imallona/beam/blob/main/envs/heterogeneity.yml) has it.
 
-## Running it
+## See also
 
-Call `network_meta_analysis(treatment, study, mean, sd, n)` with five parallel sequences, one entry per study arm. `IntegrationBenchmarks.network_arms()` builds them from the harmonized cross-benchmark set (study = benchmark and dataset, treatment = method, mean and sd and count over the metrics). The report carries the per-treatment effect against the reference with its confidence interval, the P-scores, the ranking, and the heterogeneity and inconsistency statistics.
-
-The fit runs in R's netmeta through a subprocess, so it needs the R toolchain. Check `netmeta_available()` first; the conda environment [envs/heterogeneity.yml](https://github.com/imallona/beam/blob/main/envs/heterogeneity.yml) provides it. The [cross-benchmark vignette](../../examples/cross_benchmark/cross_benchmark.qmd) works this through on the four single-cell integration benchmarks.
+- [`source_variance_decomposition`](../reference/source_variance_decomposition.qmd) and the [mixed-effects models](method-by-dataset-heterogeneity.md)
+- [Attribution synthesis](attribution-synthesis.md)
+- [Cross-benchmark vignette](../../examples/cross_benchmark/cross_benchmark.qmd)
 
 ## References
 

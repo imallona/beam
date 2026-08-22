@@ -12,42 +12,35 @@ Min-max scaling maps the smallest value in a column to 0 and the largest to 1. I
 
 ## Measurement theory
 
-Stevens described four measurement scales; two matter for benchmarking.
+Two of Stevens' four measurement scales matter for benchmarking.
 
-- An interval scale has a meaningful zero only by convention, and equal differences are comparable but ratios are not. The Adjusted Rand Index and the silhouette coefficient are interval. An affine transform, of the form $a x + b$, keeps the meaning of an interval scale.
+- An interval scale has a zero by convention; differences are comparable and ratios are not. The Adjusted Rand Index and the silhouette coefficient are interval. An affine transform, $a x + b$, keeps its meaning.
+- A ratio scale has a true zero and ratios are meaningful. Runtime and peak memory are ratio. Only multiplication by a positive constant keeps its meaning.
 
-- A ratio scale has a true zero and ratios are meaningful: twice as long is twice as long. Runtime and peak memory are ratio. Only a similarity transform, multiplication by a positive constant, keeps the meaning of a ratio scale. Adding a constant moves the zero and breaks it.
+Min-max subtracts the minimum, an affine transform with an offset, so on a ratio metric it moves the true zero. For averages across datasets, only the geometric mean is meaningful for ratio data (Smith 1988).
 
-Min-max subtracts the minimum, so it is an affine transform with a nonzero offset. On an interval metric that is fine. On a ratio metric it moves the true zero, which is the formal reason min-max can mislead on runtime and memory. Smith (1988) makes the matching point for averaging across datasets: only the geometric mean is meaningful for ratio data.
-
-## On affines
-
-Runtime and peak memory list `affine` among their allowed transforms, though a pure ratio scale strictly allows only multiplication by a positive constant. It stays because it records that a unit change (seconds to milliseconds) is valid and does not block an analyst who picks min-max on purpose. The card defaults to a ratio-preserving normalization, and the guard warns when min-max is used on a heavy-tailed column.
+Runtime and peak memory list `affine` among their allowed transforms: a change of unit is valid, and min-max stays available. Their cards default to a ratio-preserving normalization.
 
 ## The six strategies
 
-Each metric card declares `comparability.recommended_normalization`. The pipeline reads it and rescales that column accordingly.
+Each metric card declares `comparability.recommended_normalization`, which the pipeline applies to that column.
 
-- `min_max` is the default. Use it for bounded metrics whose declared range is the natural scale, such as normalized mutual information (NMI) in 0 to 1.
+- `min_max` is the default, for bounded metrics whose declared range is the scale, such as normalized mutual information (NMI) in 0 to 1.
 - `log_min_max` takes the logarithm first, then min-max. It keeps the multiplicative structure of a ratio metric, so a single slow method no longer compresses the others. Runtime and peak memory use it. It needs strictly positive values.
-- `rank` maps the position within the column to the unit interval. It drops the size of the gaps between methods but resists outliers and makes no scale assumption.
+- `rank` maps the position in the column to the unit interval. It drops the size of the gaps, resists outliers and makes no scale assumption.
 - `zscore` standardizes the column and passes it through the logistic function, so the result stays in the open unit interval. The mean method maps to 0.5 and an outlier is compressed smoothly rather than setting the scale.
-- `baseline_relative` rescales against a declared chance score. A method no better than chance maps to 0 instead of the column midpoint. The Adjusted Rand Index uses it, with a [chance baseline](reference-levels.md) of 0. It is defined for higher-is-better metrics.
-- `target_relative` is for a metric whose ideal is a fixed value, not the highest or the lowest score. The calibration slope is the example: a value of 1 means the predicted risks match the target, below 1 means they are too extreme, above 1 means they are too moderate. The strategy takes the absolute deviation from the target and min-max scales it with flipped polarity, so the method nearest the target maps to 1 and the farthest to 0. It needs the card to declare `semantics.target`.
+- `baseline_relative` rescales against a declared chance score, so a method at chance maps to 0. The Adjusted Rand Index uses it, with a [chance baseline](reference-levels.md) of 0. It is defined for higher-is-better metrics.
+- `target_relative` is for a metric whose ideal is a fixed value, such as a calibration slope of 1. It min-max scales the absolute deviation from `semantics.target` with flipped polarity: the method nearest the target maps to 1 and the farthest to 0.
 
-## Metrics whose ideal is a fixed point
-
-The first five strategies all assume one direction is better: higher for the Adjusted Rand Index, lower for runtime. Some metrics break that assumption. A calibration slope of 1 is ideal, and a slope of 0.5 is as wrong as a slope of 2 is in the other direction. These carry `polarity: target_value` with a declared `target`, and the only strategy that fits them is `target_relative`. The pipeline enforces the pairing in both directions: a `target_value` column must use `target_relative`, and `target_relative` refuses a column that declares a monotone polarity, because there is no preferred direction for it to orient by.
-
-The deviation-then-min-max form is the distance-to-a-reference normalization of the OECD composite-indicators handbook. It is relative to the observed method set, like plain min-max, so the same caution applies: the scale rests on the spread of the methods in the table, not on an absolute tolerance.
+A `polarity: target_value` column must use `target_relative`, and `target_relative` refuses a monotone polarity. Like min-max, it is relative to the methods in the table. It is the distance-to-a-reference normalization of the OECD handbook.
 
 ## Checks
 
-For any column that still uses min-max, the pipeline warns when a declared bound is missing (the scale rests on the data) or the column is heavy-tailed (one outlier sets the rescale). The warnings name `log_min_max` or `rank` and do not block the run. The standalone [card and data consistency](card-data-consistency.md) audit makes the same checks over every metric.
+For a min-max column the pipeline warns when a declared bound is missing or the column is heavy-tailed, and names `log_min_max` or `rank`. The run continues. The [card and data consistency](card-data-consistency.md) audit makes the same checks over every metric.
 
 ## Examples
 
-The `beam.scenarios` module ships two cases. In the heavy-tail case, plain min-max ranks a slower method first because a runtime outlier hides the speed ladder, while `log_min_max` ranks the fastest method first. In the chance-baseline case, plain min-max ranks a random-level method above one with a higher raw score, while `baseline_relative` puts back the correct order.
+`beam.scenarios` has two cases. With a runtime outlier, min-max ranks a slower method first and `log_min_max` the fastest. With a method at chance, min-max ranks it above one with a higher raw score and `baseline_relative` does not.
 
 ## See also
 

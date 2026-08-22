@@ -25,6 +25,7 @@ All notable changes to beam will be documented in this file. The format follows 
 
 ### Changed
 
+- Explanation pages are shorter.
 - rbeam draws every plot natively with ggplot2 and patchwork, replacing the matplotlib figures it drew through reticulate.
 - The funky heatmap keeps its leave-one-dataset-out span, aggregation span and SMAA acceptability bar on one aligned row axis.
 - Each plot sizes to its content, so a small chart no longer stretches to the width of a wide one.

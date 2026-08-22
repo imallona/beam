@@ -1,59 +1,51 @@
 # Metric-set diagnostics: validity, reliability, and dimensionality
 
-A benchmark often treats a group of metrics as one criterion. The single-cell [scIB integration benchmark](../../examples/openproblems/openproblems.qmd) splits its metrics into biological conservation and batch correction, and weights the two groups 0.6 and 0.4, so each is read as a single composite scale. That grouping is an assumption, and beam has three checks on it, all built from the same oriented correlation between the metrics:
+A benchmark often treats a group of metrics as one criterion. The [scIB integration benchmark](../../examples/openproblems/openproblems.qmd) splits its metrics into biological conservation and batch correction and weights the groups 0.6 and 0.4. beam has three checks on such a grouping, all from one correlation matrix between the metrics.
 
-- validity: are same-group metrics more alike than different-group metrics, so the split is the right one?
-- reliability: does a group hold together consistently enough to read as one scale?
-- dimensionality: is a group really one underlying factor, or several?
+## Correlation
 
-## The shared correlation
+Each method-by-dataset cell is an observation and the metrics are the variables. Every metric is oriented so that higher is better, with the polarity from the cards. The Spearman correlation is computed for every pair of metrics over the observations they share; a pair with none is NaN.
 
-Each method-by-dataset cell is one observation, and the metrics are the variables. The function orients every metric so that higher means better, reading the polarity from the cards and negating a lower-is-better metric. It then takes the Spearman rank correlation between every pair of metrics over the observations they share. A rank correlation finds association regardless of the metric scale. Pairs with no shared observations are left as NaN.
-
-The grouping itself is a label per metric, passed in as an argument. It is a domain judgement, so beam does not read it from the cards. In the scIB case the labels are biological conservation and batch correction.
+The grouping is a label per metric, passed as an argument. beam does not read it from the cards.
 
 ## Validity
 
-[`beam.mcda.metric_validity`](../reference/metric_validity.qmd) follows Campbell and Fiske (1959). Correlations within a group are the convergent evidence: metrics that claim to measure one construct should agree. Correlations between groups are the discriminant evidence: metrics that claim to measure different constructs should agree less. `discriminant_ok` is true when the mean within-group correlation is higher than the mean between-group correlation, which is when treating the groups as separate criteria in the [weighting](weighting-schemes.md) has support in the data.
+[`beam.mcda.metric_validity`](../reference/metric_validity.qmd) follows Campbell and Fiske (1959). Correlations within a group are the convergent evidence and correlations between groups the discriminant evidence. `discriminant_ok` is true when the mean within-group correlation is higher than the mean between-group correlation.
 
-beam reports two kinds of metric discrimination problems or properties:
+The report lists:
 
-- A redundant pair is two metrics in the same group whose correlation is at or above a threshold (0.9 by default). They order the methods almost identically, so carrying both adds little and double-counts one construct. One is a candidate to drop.
-- A crossloading metric correlates more, on average, with another group than with its own. It behaves more like a different construct than the one its label claims. This is the per-metric form of a discriminant-validity failure, and it points at a metric that is mislabelled or genuinely ambiguous.
+- Redundant pairs: two metrics in the same group with a correlation of at least 0.9 (default).
+- Crossloading metrics: a metric that correlates more, on average, with another group than with its own.
 
-On the [OpenProblems batch integration scores](../../examples/openproblems/openproblems.qmd), the bio/batch grouping is supported but weak: mean within-group correlation 0.38 against mean between-group correlation 0.30. The biological metrics agree more among themselves (0.45) than the batch metrics do (0.24), and `graph_connectivity`, a batch metric, correlates more with the biological group than with its own.
+On the [OpenProblems batch integration scores](../../examples/openproblems/openproblems.qmd) the mean within-group correlation is 0.38 and the mean between-group correlation 0.30; 0.45 among the biological metrics and 0.24 among the batch metrics.
 
 ## Reliability
 
-[`beam.mcda.metric_reliability`](../reference/metric_reliability.qmd) reports standardized Cronbach's alpha per group, following Cronbach (1951):
+[`beam.mcda.metric_reliability`](../reference/metric_reliability.qmd) reports standardized Cronbach's alpha per group (Cronbach 1951):
 
     alpha = k * r_bar / (1 + (k - 1) * r_bar)
 
-where `k` is the number of metrics in the group and `r_bar` is their mean inter-item correlation. The standardized form, built from correlations rather than from raw covariances, is appropriate here because the metrics are on different scales. It is the rank-based analogue of classical alpha.
+with `k` the number of metrics in the group and `r_bar` their mean inter-item correlation. The standardized form uses correlations, as the metrics have different scales.
 
-Alpha runs up to 1. A common rule of thumb treats 0.7 as the point above which a group reads as one reliable scale, and `metric_reliability` flags any group below that cutoff. The cutoff is somewhat arbitrary, so the report carries `r_bar` and `k` next to each alpha.
+Groups with alpha below 0.7 are flagged. Alpha increases with `k`, so the report gives `r_bar` and `k` with each alpha; `r_bar` compares groups of different size.
 
-Alpha rises with the mean correlation and with the number of metrics, so a long group can reach a high alpha on modest agreement, and a short group needs stronger agreement to reach the same cutoff. When two groups differ in size, the mean inter-item correlation is the comparison to use, because it does not carry the size effect.
+For a group of three or more metrics the report gives alpha with each metric removed. A metric whose removal raises alpha agrees less with the rest of its group.
 
-For a group of three or more metrics, the report recomputes the group's alpha with each metric removed in turn. A metric whose removal raises the group's alpha agrees with its labelled construct less than the others do. It is the metric to reconsider first, whether to relabel it, drop it, or treat it as a separate criterion. A metric in a group of two has no alpha-if-dropped entry, because dropping one leaves a single metric and alpha is undefined for one item.
+Alpha is not a validity check.
 
-Alpha is not a validity check. A group can be reliable and still measure the wrong thing.
-
-On the OpenProblems scores, where there is an expertly-curated classification of metrics in bio/batch, the biological conservation group is reliable: alpha 0.85 over seven metrics, mean inter-item correlation 0.45. The batch correction group does not reach the cutoff: alpha 0.62 over five metrics, mean inter-item correlation 0.24. Dropping `pcr` is the only batch removal that raises the batch alpha by more than a rounding step, from 0.62 to 0.67, so `pcr` is the batch metric least consistent with the rest of its group.
+On the OpenProblems scores the biological group has alpha 0.85 over seven metrics and the batch group 0.62 over five. Removing `pcr` raises the batch alpha to 0.67.
 
 ## Dimensionality
 
-Alpha reads a group as one scale when it is high, but that rests on an assumption alpha cannot test: that the group is a single factor, one underlying quantity each metric measures with noise. [`beam.mcda.metric_dimensionality`](../reference/metric_dimensionality.qmd) tests it directly by counting the factors.
+Alpha assumes the group is one factor. [`beam.mcda.metric_dimensionality`](../reference/metric_dimensionality.qmd) counts the factors.
 
-For each group the function takes the eigenvalues of the within-group correlation matrix. This is principal component analysis on the correlation matrix. A correlation matrix of `k` metrics has `k` eigenvalues that sum to `k`. One large eigenvalue with the rest small means a single factor underlies the group. Several eigenvalues of similar size mean several factors. The report carries, per group, the eigenvalues in descending order, the share of variance the first component explains (the first eigenvalue divided by `k`), and two counts of how many factors the group holds.
+For each group it takes the eigenvalues of the within-group correlation matrix, which sum to `k`. The report has the eigenvalues, the share of variance of the first component, and two counts of factors.
 
-The Kaiser (1960) rule keeps every component whose eigenvalue is above one, the variance of a single standardized metric. It is the quick rule and tends to keep more components than the data supports, because in a finite sample the later eigenvalues sit above one by chance alone. Parallel analysis (Horn 1965) corrects for that. It draws many random matrices of the same size, with no real association between the columns, and reads off the eigenvalues they produce by chance at each rank. A component is kept when its observed eigenvalue is larger than the random level at that rank. `metric_dimensionality` uses the 95th percentile of the random eigenvalues, following Glorfeld (1995), which holds the false-retention rate down where Horn's original mean rule lets noise through. Parallel analysis is the count the report uses for its verdict: a group is reported as unidimensional when parallel analysis keeps only one component. The random draws have a fixed seed for reproducibility.
+The Kaiser (1960) rule keeps the components with an eigenvalue above one and tends to keep too many. Parallel analysis (Horn 1965) keeps a component when its eigenvalue exceeds the 95th percentile (Glorfeld 1995) of the eigenvalues of random matrices of the same size, drawn with a fixed seed. A group is unidimensional when parallel analysis keeps one component.
 
-Dimensionality and reliability answer different questions and can disagree. A long group can reach a high alpha while holding more than one factor, and a short group can sit at a low alpha while holding a single factor its metrics track only weakly. The case this check exists to surface is a high alpha on a group that turns out to carry two factors. The group is internally consistent enough to pass as one scale, but it is not one thing, and the 0.6/0.4 weighting that treats it as a single criterion is then a coarser modelling choice than the alpha alone suggests.
+A group with too few observations for its size is not scored, and a group with a pair of metrics without enough shared observations is undefined. The correlations are pairwise, so a late eigenvalue can be slightly negative.
 
-Counting factors is not naming them: parallel analysis says how many dimensions a group has, not what they are. Reading the eigenvectors, or splitting and relabelling the group, is left to the user. The count is descriptive of the methods and datasets in the input: a small benchmark gives a coarse estimate, and a few observations relative to the number of metrics make the eigenvalues unstable, so the function declines to score a group when the input has too few observations for its size. The correlations are computed pairwise, so the within-group matrix need not be positive semidefinite and a late eigenvalue can come out slightly negative; the function reports the eigenvalues as they are. When a within-group pair has too few shared observations to correlate, the group cannot be decomposed, and the report lists it as undefined rather than guessing.
-
-On the OpenProblems scores, with the same bio/batch grouping, the two groups come apart. The biological group has seven metrics and a high alpha of 0.85, but parallel analysis finds two factors: the first component explains 0.54 of the variance and a second component still stands clear of the chance level, so part of that alpha is the size of the group rather than one underlying quantity. The batch group has five metrics and a low alpha of 0.62, yet it reads as a single factor whose metrics track one dimension weakly.
+On the OpenProblems scores parallel analysis keeps two components for the biological group (the first explains 0.54 of the variance) and one for the batch group.
 
 ## References
 

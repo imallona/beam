@@ -1,29 +1,27 @@
 # Funky heatmaps and robustness
 
-The funky heatmap is the glyph table that dynbenchmark/dynverse, OpenProblems and other benchmarking platforms use to summarize a multi-metric benchmark at a glance. Methods are the rows, sorted best first. Metrics are the columns. Each cell is a circle whose radius grows with the score, with its colour marking the metric group, and a final overall column carries the aggregate.
+The funky heatmap is the glyph table used by dynbenchmark/dynverse and OpenProblems. Methods are the rows, sorted best first, and metrics are the columns. Each cell is a circle whose radius grows with the score and whose colour marks the metric group. A last column has the aggregate.
 
-Read on its own the table can pass for a settled ranking, but the order is not fixed. The circle sizes and the row order both depend on the [normalization](normalization-and-scales.md), which is usually min-max, and changing it moves the circles and can reorder the rows. beam reads the normalization from the metric cards instead of fixing min-max, and it adds panels next to the grid that show how far the order would hold under a different analysis.
+Circle sizes and row order depend on the [normalization](normalization-and-scales.md), usually min-max. beam takes the normalization from the metric cards and adds panels beside the grid.
 
-## The glyph grid and its overlays
+## Panels
 
-`beam.reporting.funky_heatmap` draws the glyph grid and the optional robustness panels beside it; `beam.reporting.funky_heatmap_from_run` builds the whole figure from a `beam.rank` `RunResult`. Each panel is fed by one beam primitive and probes the order in a different way.
+`beam.reporting.funky_heatmap` draws the grid and the optional panels; `beam.reporting.funky_heatmap_from_run` builds the figure from a `beam.rank` `RunResult`.
 
-Leave-one-dataset-out rank span. For each method it draws the span of ranks the method takes as each dataset is dropped in turn, with the pooled rank marked. The values are `rank_low`, `rank_high` and `rank_stability` from [`beam.mcda.leave_one_dataset_out`](../reference/leave_one_dataset_out.qmd). A single point means the rank holds whatever dataset is dropped; a wide span means the order depends on which datasets are in the pool.
+Leave-one-dataset-out rank span. The span of ranks of each method as each dataset is dropped in turn, with the pooled rank marked: `rank_low`, `rank_high` and `rank_stability` from [`beam.mcda.leave_one_dataset_out`](../reference/leave_one_dataset_out.qmd).
 
-Aggregation-consensus rank span. Holding the [weighting](weighting-schemes.md) fixed, it draws the span of ranks a method takes across the [five aggregations](aggregation-methods.md): SAW, TOPSIS, VIKOR, PROMETHEE II and [COMET](aggregation-methods.md#comet). The values are `consensus_low` and `consensus_high`, the `rank_low` and `rank_high` of [`beam.mcda.aggregation_agreement`](../reference/aggregation_agreement.qmd), which also reports the Kendall tau-b agreement behind the span (see [Aggregation agreement](choice-agreement.md)). A wide span means the aggregation rule, not the methods, is setting the order.
+Aggregation-consensus rank span. The span of ranks of each method across the [five aggregations](aggregation-methods.md) under one [weighting](weighting-schemes.md): `rank_low` and `rank_high` from [`beam.mcda.aggregation_agreement`](../reference/aggregation_agreement.qmd). See [Aggregation agreement](choice-agreement.md).
 
-SMAA rank-acceptability bar. Stochastic multicriteria acceptability analysis samples random weightings; for each method the stacked bar shows the share that place it at rank 1, rank 2, and so on. The values are `smaa_acceptability` from [`beam.mcda.smaa`](../reference/smaa.qmd). It is the full rank distribution under weight uncertainty rather than a single confidence number.
+SMAA rank-acceptability bar. The share of random weightings that place each method at rank 1, rank 2, and so on: `smaa_acceptability` from [`beam.mcda.smaa`](../reference/smaa.qmd).
 
-Worth panel. It draws the latent strength per method as points with horizontal confidence intervals, `worth` and `worth_ci`, from [Plackett-Luce](method-by-dataset-heterogeneity.md#plackett-luce-full-rankings) with reference-free quasi-standard-errors, Bradley-Terry, or the [mixed-effects](method-by-dataset-heterogeneity.md) marginal means. Two adjacent intervals that overlap mark methods the aggregate bar cannot tell apart.
+Worth panel. The latent strength per method with confidence intervals, `worth` and `worth_ci`, from [Plackett-Luce](method-by-dataset-heterogeneity.md#plackett-luce-full-rankings) with quasi-standard-errors, Bradley-Terry, or the [mixed-effects](method-by-dataset-heterogeneity.md) marginal means.
 
-Critical-difference cliques. Brackets group the rows the Friedman-Nemenyi test cannot separate, the `cliques` from [`beam.mcda.critical_difference`](../reference/critical_difference.qmd). A bracket over the top rows says those methods are not distinguishable from the data at hand.
+Critical-difference cliques. Brackets over the rows the Friedman-Nemenyi test does not separate: `cliques` from [`beam.mcda.critical_difference`](../reference/critical_difference.qmd).
 
-Between them the panels ask whether the row order would survive dropping a dataset, choosing a different aggregation, resampling the weights, or accounting for model uncertainty.
+## Usage
 
-## How to use it
+`funky_heatmap_from_run(run)` takes the leave-one-dataset-out span, the aggregation consensus and the SMAA panel from the run. The worth intervals and the cliques are passed in, because the worth comes from the R-backed heterogeneity models.
 
-Call `funky_heatmap_from_run(run)` on a `RunResult`. The leave-one-dataset-out span, the aggregation consensus and the SMAA panel come from the run. The worth intervals and the cliques have to be passed in, since the worth comes from the R-backed heterogeneity models rather than from the run itself.
+`beam.report` embeds the figure with the panels a run supplies without R; `funky_heatmap=False` drops it.
 
-`beam.report` embeds it by default in the "Robustness at a glance" section, with the panels a run can supply without the R toolchain; pass `funky_heatmap=False` to drop it.
-
-The [OpenProblems](../../examples/openproblems/openproblems.qmd) and [Duo 2018](../../examples/duo2018/duo2018.qmd) vignettes show the two extremes side by side. OpenProblems batch integration has a fragile top: wide leave-one-dataset-out spans and overlapping worth intervals among the leaders. Duo 2018 is stable: the top method holds rank one across every leave-one-dataset-out run, the spans are narrow, and the worth intervals separate.
+The [OpenProblems](../../examples/openproblems/openproblems.qmd) and [Duo 2018](../../examples/duo2018/duo2018.qmd) vignettes show the figure on data.

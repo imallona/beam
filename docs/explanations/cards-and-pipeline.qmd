@@ -1,24 +1,22 @@
 # Metric cards and the MCDA pipeline
 
-A metric card declares fields covering identity, kind, inputs, output, semantics, comparability, implementations, examples, and provenance.
-
-For why the normalization strategy depends on the [measurement scale](measurement-theory.md) of the metric, and where plain min-max scaling fails, see the page on [normalization and scales](normalization-and-scales.md).
+A metric card declares fields for identity, kind, inputs, output, semantics, comparability, implementations, examples, and provenance. See [measurement theory](measurement-theory.md) and [normalization and scales](normalization-and-scales.md) for the scale types and the normalization strategies.
 
 ## Fields read
 
-- `polarity`: passed to `normalize`, which inverts columns marked `lower_is_better` and rescales each column to [0, 1]. The output matrix is oriented so higher values mean better performance for every column.
-- `range_lower`, `range_upper`: when both bounds are declared on a card, [`run_from_registry`](../reference/run_from_registry.qmd) passes them to `normalize`. The min-max and baseline-relative strategies use the theoretical range rather than the empirical extrema, so two benchmarks that use the same metric on different score subsets produce comparable rescaled values. Observations outside the declared range raise, whatever the strategy.
-- `comparability.recommended_normalization`: `run_from_registry` reads this per metric and rescales that column with the named strategy, defaulting to `min_max`. The options are `min_max`, `log_min_max`, `rank`, `zscore`, and `baseline_relative`. The choice depends on the measurement scale of the metric; see the page on [normalization and scales](normalization-and-scales.md). Runtime and peak memory use `log_min_max`; the Adjusted Rand Index uses `baseline_relative`.
-- `semantics.score_of_random_baseline`: the chance-level value of a metric, read by the `baseline_relative` strategy so a method no better than chance maps to 0 rather than the column midpoint.
-- `scale_type`: `validate_for_aggregation` refuses SAW or TOPSIS on columns whose declared scale type is `nominal` or `ordinal`. Only `interval` and `ratio` columns pass.
-- `allowed_transformations`: `validate_for_aggregation` checks that the card permits the transform the chosen strategy applies. Min-max and baseline-relative need `affine` or `min_max`; `log_min_max` needs `log`; `rank` needs `rank`; `zscore` needs `z_score` or `affine`. This replaces the earlier blanket check for `affine`, so a ratio metric normalized by `log_min_max` is validated against `log` rather than against `affine`.
-- `comparability.recommended_aggregation_across_datasets`: `aggregate_across_datasets` reads this when reducing a tool by dataset matrix to a tool vector for one metric. Ratio metrics whose values span orders of magnitude (runtime, peak memory) declare `geometric_mean` per Smith 1988 ([10.1145/63039.63043](https://doi.org/10.1145/63039.63043)); bounded interval and ratio metrics declare `arithmetic_mean`.
+- `polarity`: `normalize` inverts `lower_is_better` columns and rescales each column to [0, 1], higher is better.
+- `range_lower`, `range_upper`: when both are declared, [`run_from_registry`](../reference/run_from_registry.qmd) passes them to `normalize`, and min-max and baseline-relative use them instead of the observed extrema. A value outside the declared range raises.
+- `comparability.recommended_normalization`: the strategy for the column, by default `min_max`. The options are `min_max`, `log_min_max`, `rank`, `zscore`, `baseline_relative` and `target_relative`.
+- `semantics.score_of_random_baseline`: the chance-level value, used by `baseline_relative`.
+- `semantics.target`: the ideal value, used by `target_relative`.
+- `scale_type`: `validate_for_aggregation` refuses `nominal` and `ordinal` columns for every aggregation.
+- `allowed_transformations`: `validate_for_aggregation` checks that the card allows the transform of the strategy. Min-max, baseline-relative and target-relative need `affine` or `min_max`; `log_min_max` needs `log`; `rank` needs `rank`; `zscore` needs `z_score` or `affine`.
+- `comparability.recommended_aggregation_across_datasets`: `aggregate_across_datasets` uses it to reduce a tool by dataset matrix to one value per tool. Runtime and peak memory declare `geometric_mean` (Smith 1988, [10.1145/63039.63043](https://doi.org/10.1145/63039.63043)); bounded metrics declare `arithmetic_mean`.
 
-`run_from_registry` also runs a guard after it picks the strategies. For any column still using min-max, it warns when a declared bound is missing (the scale rests on the data and shifts when the method set changes) and when the column is heavy-tailed (one outlier dominates the rescale). The warnings are attached to the `Result` and do not block the run.
+For a min-max column `run_from_registry` warns when a declared bound is missing or the column is heavy-tailed. The warnings are in the `Result` and the run continues.
 
 ## Fields declared but not enforced
 
-- `meaningful_zero`: declared on every card; no current reader.
-- `uncertainty_model`: declared on derived metrics; the pipeline does not propagate uncertainty through aggregation.
-- `monotonic`: declared on every card; no current reader.
-- `comparability.comparable_within` and free-form `aggregation_rules` notes: documentation to be read by humans.
+- `meaningful_zero` and `monotonic`: no reader.
+- `uncertainty_model`: uncertainty is not propagated through aggregation.
+- `comparability.comparable_within` and `aggregation_rules`: notes for readers.

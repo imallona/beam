@@ -14,7 +14,7 @@ On a same-data contrast, where two or more pipelines score the methods on the sa
 
 ## Limitations
 
-The axes are descriptive, without confidence intervals, and limited by data availability (different benchmarks, shared datasets, shared methods).
+The shares are descriptive, without confidence intervals, and limited by data availability (different benchmarks, shared datasets, shared methods).
 
 ## See also
 
