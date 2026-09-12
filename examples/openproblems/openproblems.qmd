@@ -1,5 +1,5 @@
 ---
-title: "OpenProblems: MCDA and heterogeneity on a real single-cell benchmark"
+title: "OpenProblems: batch integration and spatially variable genes"
 author: "Izaskun Mallona"
 date: today
 format:
@@ -15,7 +15,7 @@ format:
 
 ## Provenance of the bundled tables
 
-beam does not ship the raw single-cell data. It ships small derived long-format tables (`src/beam/data/openproblems_batch_integration.csv`, `openproblems_svg.csv`, `openproblems_svg_features.csv`), reduced once from the CC-BY-4.0 results JSON in the `openproblems-bio/website` repository at the pinned commit `76ce7f288da591b1b19c32cbfe8ce50bc3706ece`. The control and baseline methods were dropped at vendoring time. Provenance and license are recorded in `src/beam/data/README.md`. Cite the OpenProblems consortium (Nature Biotechnology 2025, DOI [10.1038/s41587-025-02694-w](https://doi.org/10.1038/s41587-025-02694-w)).
+The raw single-cell data are not bundled. `src/beam/data/openproblems_batch_integration.csv`, `openproblems_svg.csv` and `openproblems_svg_features.csv` are reduced from the CC-BY-4.0 results JSON of the `openproblems-bio/website` repository at commit `76ce7f288da591b1b19c32cbfe8ce50bc3706ece`, without the control and baseline methods. See `src/beam/data/README.md`. Reference: OpenProblems consortium (Nature Biotechnology 2025, DOI [10.1038/s41587-025-02694-w](https://doi.org/10.1038/s41587-025-02694-w)).
 
 ```bash
 SHA=76ce7f288da591b1b19c32cbfe8ce50bc3706ece
@@ -66,7 +66,7 @@ def svg_features():
             w.writerow([d, technology, organism, condition])
 ```
 
-The metric directions and the reference DOIs on the metric cards come from each task's `metric_info.json` (every metric here has `maximize` true, so all are higher is better).
+The metric directions and reference DOIs on the cards come from the `metric_info.json` of each task. Every metric here is higher is better.
 
 ```{python}
 %matplotlib inline
@@ -78,9 +78,9 @@ import beam
 from beam.datasets import load_openproblems, load_openproblems_svg_features
 ```
 
-## Batch integration: many metrics, the MCDA layer
+## Batch integration
 
-The batch integration task has 19 methods, 6 datasets and 13 scIB metrics, all read from the registry. [Coverage is uneven](../../docs/explanations/missing-data.md): the `hvg_overlap` column and some method-by-dataset cells are sparse, surfaced as NaN. We drop the sparse `hvg_overlap` metric and keep the methods that are observed on at least one dataset for every remaining metric, so the cross-dataset pooling is defined.
+The task has 19 methods, 6 datasets and 13 scIB metrics. [Coverage is uneven](../../docs/explanations/missing-data.md). The sparse `hvg_overlap` metric is dropped, and the methods with at least one dataset for every other metric are kept.
 
 ```{python}
 op = load_openproblems("batch_integration")
@@ -92,7 +92,7 @@ tensor = tensor[keep]
 print(f"{len(methods)} methods, {len(metrics)} metrics, {len(op.dataset_names)} datasets")
 ```
 
-[`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks the scores against what the 12 [cards](../../docs/explanations/cards-and-pipeline.qmd) declare, before any [normalization](../../docs/explanations/normalization-and-scales.md). The scIB metrics are scaled to [0, 1] on the platform, so the audit is clean here.
+[`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks the scores against the 12 [cards](../../docs/explanations/cards-and-pipeline.qmd) before [normalization](../../docs/explanations/normalization-and-scales.md).
 
 ```{python}
 from beam.mcda import card_data_consistency, registry_context
@@ -109,7 +109,7 @@ for finding in audit.findings:
     print(" ", finding.severity, finding.message)
 ```
 
-We use [equal weights](../../docs/explanations/weighting-schemes.md) and [TOPSIS](../../docs/explanations/aggregation-methods.md).
+The run uses [equal weights](../../docs/explanations/weighting-schemes.md) and [TOPSIS](../../docs/explanations/aggregation-methods.md).
 
 ```{python}
 scores = beam.Scores(
@@ -126,7 +126,7 @@ for i in beam_order[:5]:
     print(f"  {result.tool_names[i]}")
 ```
 
-OpenProblems builds its own leaderboard from the mean of the per-metric scaled scores. Pooling the raw scores the same way gives a different order, so the aggregation rule decides the top method, not the data alone.
+The OpenProblems leaderboard is the mean of the per-metric scaled scores. The same rule on the raw scores:
 
 ```{python}
 mean_score = np.nanmean(np.nanmean(tensor, axis=1), axis=1)
@@ -139,8 +139,6 @@ print("beam top method:", result.tool_names[beam_order[0]])
 print("mean-of-scores top method:", methods[mean_order[0]])
 ```
 
-The two rules disagree on the top-ranked method: a benchmark recommendation is partly a decision about how the criteria are combined.
-
 ```{python}
 from beam import plot
 
@@ -148,9 +146,9 @@ from beam import plot
 plot.ranking(result, ground_truth_tool=methods[mean_order[0]])
 ```
 
-### Funky heatmap with rank robustness
+### Funky heatmap
 
-beam adds three panels to the [funky heatmap](../../docs/explanations/funky-heatmaps-and-robustness.md): a worth panel with the ARI marginal mean and its 95 percent mixed-effects interval (overlapping intervals mean two methods are not separable), the leave-one-dataset-out rank span, and the SMAA rank-acceptability bar. The row order and circle sizes depend on the normalization, which beam takes from the cards rather than min-max.
+The [funky heatmap](../../docs/explanations/funky-heatmaps-and-robustness.md) with three panels: the ARI marginal mean with its 95 percent mixed-effects interval, the leave-one-dataset-out rank span, and the SMAA rank-acceptability bar.
 
 ```{python}
 from beam.heterogeneity import mixed_effects_from_matrix, r_available
@@ -186,11 +184,9 @@ funky = funky_heatmap_from_run(
 funky
 ```
 
-With only six datasets the leave-one-dataset-out spans are wide: the top methods shift by several ranks when a single dataset is dropped, while the bottom methods stay put. The worth panel agrees: the ARI marginal-mean intervals of the top methods overlap, so they are not separable. The SMAA bar puts the top ranks on several methods rather than one.
+### Mixed-effects on ARI
 
-### Mixed-effects variance decomposition on ARI
-
-A [mixed-effects model](../../docs/explanations/method-by-dataset-heterogeneity.md) on one metric splits the score variation into a stable method effect and the method-by-dataset interaction. We run it on ARI. The fit needs R's lme4, so the chunk runs only when it is available.
+A [mixed-effects model](../../docs/explanations/method-by-dataset-heterogeneity.md) splits the ARI variance into a dataset effect and a residual. It needs R's lme4.
 
 ```{python}
 from beam.heterogeneity import mixed_effects_from_matrix, r_available
@@ -215,7 +211,7 @@ else:
 
 ### Metric validity
 
-The scIB score weights two metric groups, biological conservation at 0.6 and batch correction at 0.4, on the premise that they measure different things. [`beam.mcda.metric_validity`](../../docs/reference/metric_validity.qmd) checks that premise against the scores (Campbell and Fiske 1959). It treats each method-by-dataset cell as one observation, orients every metric to higher-is-better from the cards, and correlates the metrics with Spearman rank correlation. Metrics in the same group should agree (convergent); metrics in different groups should agree less (discriminant). See [the validity explanation](../../docs/explanations/metric-set-diagnostics.md).
+The scIB score weights biological conservation at 0.6 and batch correction at 0.4. [`beam.mcda.metric_validity`](../../docs/reference/metric_validity.qmd) correlates the metrics with Spearman over the method-by-dataset cells, oriented to higher-is-better (Campbell and Fiske 1959). See [the validity explanation](../../docs/explanations/metric-set-diagnostics.md).
 
 ```{python}
 from beam.cards import polarities_for
@@ -238,11 +234,11 @@ for name, group, within, between, nearest in validity.crossloading_metrics:
     print(f"  {name:20s} {group:6s} within {within:.2f} vs between {between:.2f}, leans {nearest}")
 ```
 
-The grouping holds, but barely. Metrics in the same group agree a little more (0.38 on average) than metrics in different groups (0.30). The biological metrics agree more with each other (0.45) than the batch metrics do (0.24). Three batch metrics, `graph_connectivity` most of all, agree more with the biological group than with their own. So the two groups overlap on this data, and the 0.6 / 0.4 weighting treats them as more separate than the scores show.
+The mean correlation is 0.38 within groups and 0.30 between groups; 0.45 among the biological metrics and 0.24 among the batch metrics.
 
 ### Metric reliability
 
-Validity asks whether the bio/batch split is the right axis. Reliability asks whether each side of that split reads as one scale. [`beam.mcda.metric_reliability`](../../docs/reference/metric_reliability.qmd) reports standardized Cronbach's alpha per group from the same oriented Spearman correlations (Cronbach 1951). A group above the conventional 0.7 cutoff reads as one reliable scale; below it the group is a looser collection. See [the reliability explanation](../../docs/explanations/metric-set-diagnostics.md#reliability).
+[`beam.mcda.metric_reliability`](../../docs/reference/metric_reliability.qmd) reports standardized Cronbach's alpha per group from the same correlations (Cronbach 1951), with 0.7 as the usual cutoff. See [the reliability explanation](../../docs/explanations/metric-set-diagnostics.md#reliability).
 
 ```{python}
 from beam.mcda import metric_reliability
@@ -267,11 +263,11 @@ for name, group, alpha_without in reliability.alpha_if_dropped:
         print(f"  drop {name:18s} alpha -> {alpha_without:.2f} ({gain})")
 ```
 
-The biological group holds together (alpha 0.85 over seven metrics), the batch group does not at the cutoff (alpha 0.62 over five). Dropping `pcr` is the only batch removal that raises the batch alpha, so it is the batch metric least consistent with the rest of its group. This is consistent with the validity result: the bio/batch split is robust, with bio a more coherent scale than batch.
+Alpha is 0.85 for the seven biological metrics and 0.62 for the five batch metrics. Removing `pcr` raises the batch alpha to 0.67.
 
 ### Metric dimensionality
 
-A high alpha can mean one factor measured consistently, or several factors in a group long enough to average out to a high alpha. [`beam.mcda.metric_dimensionality`](../../docs/reference/metric_dimensionality.qmd) separates the two by counting the factors in each group, with parallel analysis on the same oriented Spearman correlations (Horn 1965, Glorfeld 1995). See [the dimensionality explanation](../../docs/explanations/metric-set-diagnostics.md#dimensionality).
+[`beam.mcda.metric_dimensionality`](../../docs/reference/metric_dimensionality.qmd) counts the factors in each group with parallel analysis on the same correlations (Horn 1965, Glorfeld 1995). See [the dimensionality explanation](../../docs/explanations/metric-set-diagnostics.md#dimensionality).
 
 ```{python}
 from beam.mcda import metric_dimensionality
@@ -291,11 +287,11 @@ print()
 print("read as one factor:", list(dimensionality.unidimensional_groups))
 ```
 
-Dimensionality and reliability point in opposite directions here. The biological group has the higher alpha but carries two factors, so its 0.85 is partly the size of the group rather than one quantity. The batch group has the lower alpha but is one factor, weakly tracked.
+Parallel analysis keeps two factors for the biological group and one for the batch group.
 
-## Batch-integration rank sensitivity
+## Rank sensitivity
 
-The OpenProblems leaderboard pools by the mean of the scaled scores; beam can pool any of several ways. [`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) asks how much that choice matters against the data. It runs every combination of weighting, aggregation and dataset, and splits the rank variance. [COMET](../../docs/explanations/aggregation-methods.md#comet) is left out of the aggregations here: it builds characteristic objects whose count grows fast with the number of criteria, so it is slow on a 12-metric task.
+[`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) ranks under every combination of weighting, aggregation and dataset and splits the rank variance. [COMET](../../docs/explanations/aggregation-methods.md#comet) is left out: it is slow with 12 metrics.
 
 ```{python}
 from beam.mcda import rank_sensitivity
@@ -320,15 +316,13 @@ print(f"  interactions: {rs.interaction_share:.3f}")
 print(f"  most influential factor: {rs.most_influential_factor}")
 ```
 
-The dataset is still the largest single factor, but here it is not the only one the way it is on M4. The aggregation choice and the dataset-by-choice interaction carry a share too. With 12 metrics that can disagree, how the metrics are combined changes the order more than it does on the two-metric M4 task.
-
-Splitting the shares one method at a time shows which owe their rank movement to the dataset and which to the weighting or aggregation; the span beside each bar is that method's best-to-worst rank range.
+The same shares per method, with the difference between the best and worst rank of each method:
 
 ```{python}
 plot.rank_sensitivity_by_tool(rs)
 ```
 
-[`specification_curve`](../../docs/explanations/rank-sensitivity.md#the-specification-curve) reads the same grid as a list of rankings. Because the aggregation carries a real share here, the choice-only multiverse is less unanimous than on M4: the top method does not hold in every weighting-by-aggregation combination.
+[`specification_curve`](../../docs/explanations/rank-sensitivity.md#the-specification-curve) lists the rankings of the same grid.
 
 ```{python}
 from beam.mcda import specification_curve
@@ -357,7 +351,7 @@ plot.specification_curve(curve)
 
 ## Dataset concordance
 
-Pooling averages over the six batch-integration datasets. [`dataset_concordance`](../../docs/explanations/dataset-concordance-and-discrimination.md) re-ranks the methods within each dataset on its own and correlates every pair of those orderings with Kendall tau-b. A high mean means the pooled order represents the datasets; a low mean means it papers over their disagreement. No replicates are needed and the datasets need not be exchangeable.
+[`dataset_concordance`](../../docs/explanations/dataset-concordance-and-discrimination.md) ranks the methods within each dataset and compares every pair of orderings with Kendall tau-b.
 
 ```{python}
 conc = result.dataset_concordance
@@ -383,7 +377,7 @@ plot.dataset_struggle(result)
 
 ## Blind analysis
 
-A [blind analysis](../../docs/explanations/analysis-blinding.md) fixes the weighting, the aggregation and the metric set before the method names are revealed. `beam.blind` masks the names and shuffles the rows; `beam.unblind` restores them. The order does not change, and the seal fingerprint goes into the manifest.
+A [blind analysis](../../docs/explanations/analysis-blinding.md) fixes the weighting, the aggregation and the metric set before the method names are known. `beam.blind` masks the names and shuffles the rows; `beam.unblind` restores them. The seal fingerprint is recorded in the manifest.
 
 ```{python}
 from beam import blind, unblind
@@ -401,7 +395,7 @@ print("blinding fingerprint:", blind_run.manifest["blinding"]["seal_sha256"][:12
 
 ## Pairwise superiority on ARI
 
-[`pairwise_superiority`](../../docs/reference/pairwise_superiority.qmd) [compares the methods two at a time](../../docs/explanations/pairwise-method-comparison.md) on ARI across the six datasets, with the ARI noise floor as the equivalence band. It reports how often one method outperforms another, the effect size next to the significance the mixed-effects intervals give.
+[`pairwise_superiority`](../../docs/reference/pairwise_superiority.qmd) [compares the methods two at a time](../../docs/explanations/pairwise-method-comparison.md) on ARI across the six datasets, with the ARI noise floor as the equivalence band.
 
 ```{python}
 from beam.mcda import pairwise_superiority
@@ -413,9 +407,9 @@ print(f"highest standing: {methods[sup.order[0]]} ({sup.standing[sup.order[0]]:.
 print(f"pairs the sign test cannot separate: {len(sup.equivalent_pairs)} of {len(sup.per_pair)}")
 ```
 
-With six datasets the comparison is coarse: most pairs do not reach significance, matching the wide mixed-effects intervals and the leave-one-dataset-out spans above.
+With six datasets the sign test has little power.
 
-[`pairwise_transitivity`](../../docs/reference/pairwise_transitivity.qmd) reads the same pairwise relation and reports whether one order is [consistent with it](../../docs/explanations/pairwise-method-comparison.md#transitivity).
+[`pairwise_transitivity`](../../docs/reference/pairwise_transitivity.qmd) tests whether the pairwise majorities [agree with one order](../../docs/explanations/pairwise-method-comparison.md#transitivity).
 
 ```{python}
 from beam.mcda import pairwise_transitivity
@@ -424,13 +418,13 @@ trans = pairwise_transitivity(sup)
 print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_triads} of {trans.n_triads}")
 ```
 
-The matrix below orders the methods by how many others they outperform. A transitive relation fills the upper triangle; a red cell below the diagonal marks a method that outperforms one ranked above it, which only happens inside a cycle.
+The matrix orders the methods by how many others they outperform. A red cell below the diagonal is a method that outperforms one ranked above it.
 
 ```{python}
 plot.pairwise_majority(trans)
 ```
 
-On the probability scale, [`bayesian_sign_comparison`](../../docs/explanations/pairwise-method-comparison.md#bayesian-sign-comparison) gives for each pair the posterior probability that one method is practically better. With six datasets most pairs stay inconclusive at the 0.95 threshold.
+[`bayesian_sign_comparison`](../../docs/explanations/pairwise-method-comparison.md#bayesian-sign-comparison) gives, for each pair, the posterior probability that one method is practically better.
 
 ```{python}
 from beam.mcda import bayesian_sign_comparison
@@ -441,9 +435,9 @@ print(f"pairs with a decisive posterior at 0.95: {decisive} of {len(bayes.per_pa
 plot.bayesian_comparison(bayes)
 ```
 
-## Spatially variable genes: many datasets, the Bradley-Terry tree
+## Spatially variable genes
 
-The spatially variable genes task has 14 methods, 50 spatial datasets and one correlation metric (higher is better). The 50 datasets carry real feature variation: the spatial assay technology, the organism, and a cancer or non-cancer condition, all parsed from the dataset id. This is the input the Bradley-Terry tree needs.
+The task has 14 methods, 50 spatial datasets and one correlation metric, higher is better. The dataset features are the spatial assay technology, the organism, and a cancer or non-cancer condition, parsed from the dataset id.
 
 ```{python}
 svg = load_openproblems("spatially_variable_genes")
@@ -455,7 +449,7 @@ from collections import Counter
 print("technologies:", dict(Counter(categorical["technology"])))
 ```
 
-The mean correlation per method per assay technology already shows the structure: no method ranks highest on every assay.
+Mean correlation per method and assay technology:
 
 ```{python}
 import warnings
@@ -480,7 +474,7 @@ plot.score_heatmap(
 )
 ```
 
-The tree turns each dataset into pairwise method comparisons on the correlation score, then splits the datasets by their features so each leaf has its own ranking, putting a statistical test behind the pattern the heatmap shows. The fit needs R's psychotree.
+The [Bradley-Terry tree](../../docs/explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees) turns each dataset into pairwise method comparisons and splits the datasets by their features, with a ranking per leaf. It needs R's psychotree.
 
 ```{python}
 from beam.heterogeneity import bradley_terry_tree, bttree_available
@@ -503,15 +497,13 @@ else:
     print("Provision it with envs/heterogeneity.yml.")
 ```
 
-The plot shows the number of datasets in each leaf and the method that ranks first there.
+Number of datasets and top method per leaf:
 
 ```{python}
 if bt is not None:
     display(plot.bradley_terry_leaves(bt))
 ```
 
-The pooled ranking has one method at the top, but the leaves disagree: which method ranks first depends on the spatial assay technology. A single ranking does not show this heterogeneity. See [the Bradley-Terry explanation](../../docs/explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees).
+## Summary
 
-## Recommendation
-
-On batch integration, beam re-derives the per-metric normalization from the cards and runs MCDA with sensitivity, which can place a different method first than the platform's mean-of-scores leaderboard. On spatially variable genes, the Bradley-Terry tree shows there is no single method that ranks first across assays. A benchmark recommendation depends on how the criteria are combined and on which datasets it is read over.
+On batch integration, the ranking with card-declared normalization and TOPSIS is compared with the mean of scores, and the biological and batch metric groups correlate at 0.30. On spatially variable genes, the Bradley-Terry tree gives a ranking per group of datasets.

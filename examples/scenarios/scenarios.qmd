@@ -13,16 +13,16 @@ format:
     fig-height: 3.5
 ---
 
-## Goal
+## Scenarios
 
-- random: anti-correlated scores, so no method scores higher on both metrics. Which method ranks first depends entirely on the weights; SMAA confidence is spread across the Pareto frontier; the top rank is fragile under weight perturbation.
-- dominant: one method scores highest on every metric. It is rank 1 under any weighting; its SMAA confidence factor is 1; no single-criterion weight perturbation moves it off the top rank.
-- ties: two methods produce identical scores. They share a rank under any weighting.
-- odd dataset: one method ranks first on most datasets, another ranks first on one odd dataset. The cross-dataset aggregation rule declared on each [metric card](../../docs/explanations/cards-and-pipeline.qmd) picks the method that ranks first overall.
+- random: anti-correlated scores, so no method scores higher on both metrics. The top method depends on the weights.
+- dominant: one method scores highest on every metric and is rank 1 under any weighting.
+- ties: two methods have identical scores and share a rank under any weighting.
+- odd dataset: one method ranks first on most datasets and another on one odd dataset. The cross-dataset rule on each [metric card](../../docs/explanations/cards-and-pipeline.qmd) sets the overall order.
 
 ## Set-up
 
-The [aggregation methods](../../docs/explanations/aggregation-methods.md) used below are wrapped from pymcdm. beam normalizes by metric card, then calls pymcdm on the normalized matrix and keeps the higher-is-better convention. The [weighting schemes](../../docs/explanations/weighting-schemes.md) are beam's own.
+The [aggregation methods](../../docs/explanations/aggregation-methods.md) come from pymcdm, called on the matrix beam normalizes by metric card. The [weighting schemes](../../docs/explanations/weighting-schemes.md) are beam's own.
 
 ```{python}
 %matplotlib inline
@@ -68,16 +68,16 @@ def print_section(label):
     print("=" * 64)
 ```
 
-## Per-scenario reports
+## Reports per scenario
 
-For each scenario the report prints:
+For each scenario:
 
 1. Description and ground truth from the generator.
 2. Pooled tool by metric scores.
 3. Ranks under SAW with equal weights using [`run_from_registry`](../../docs/reference/run_from_registry.qmd).
 4. Leave-one-metric-out per-tool stability.
-5. SMAA rank acceptability index over 500 weight samples.
-6. Triantaphyllou-Sanchez weight perturbation: most fragile pair and the fragility flag on the top rank.
+5. SMAA rank acceptability over 500 weight samples.
+6. Triantaphyllou-Sanchez weight perturbation: the most fragile pair and whether the top rank is fragile.
 
 ```{python}
 for s in all_scenarios():
@@ -139,9 +139,9 @@ for s in all_scenarios():
     print(f"  top rank is fragile (threshold 0.05): {ts.top_rank_is_fragile}")
 ```
 
-## SMAA confidence factor per scenario
+## SMAA per scenario
 
-The share of weight samples in which each method is top-ranked, side by side across scenarios. The gold bar marks the method documented to rank first, and the green bars mark a documented tied pair. The random scenario has no single method expected to rank first, so all its bars are blue.
+Share of weight samples in which each method is top-ranked. Gold is the method built to rank first and green a tied pair built as such.
 
 ```{python}
 scenarios = all_scenarios()
@@ -178,9 +178,9 @@ fig.tight_layout()
 plt.show()
 ```
 
-## Funky heatmap with rank robustness
+## Funky heatmap
 
-The [funky heatmap](../../docs/explanations/funky-heatmaps-and-robustness.md) shows a scenario as a glyph table with robustness panels next to the order. The canonical scenarios are single-dataset, so there is no leave-one-dataset-out span here; the panels shown are the rank span across the five aggregations and the SMAA rank-acceptability bar. In the random scenario the two metrics conflict, so the order changes when the aggregation or the weighting changes.
+The [funky heatmap](../../docs/explanations/funky-heatmaps-and-robustness.md) of the random scenario, with the rank span across the five aggregations and the SMAA rank-acceptability bar. The scenarios have one dataset, so there is no leave-one-dataset-out span.
 
 ```{python}
 import beam
@@ -193,9 +193,7 @@ from beam.reporting import funky_heatmap_from_run
 funky_heatmap_from_run(funky_run, title="Random scenario: scores and rank robustness")
 ```
 
-The glyph grid is small (five methods, two metrics). The aggregation panel and the SMAA bar show methods changing rank across the aggregations and across the sampled weightings, so the row order is not firm.
-
-## Per-dataset ranks for the odd-dataset scenario
+## Ranks per dataset in the odd-dataset scenario
 
 ```{python}
 odd = next(s for s in scenarios if s.kind == "odd_dataset")
@@ -223,7 +221,7 @@ plot.rank_heatmap(
 
 ## Dataset concordance
 
-[`dataset_concordance`](../../docs/explanations/dataset-concordance-and-discrimination.md) ranks the methods within each dataset and reports the Kendall tau-b agreement between every pair, so it names the dataset that orders the methods unlike the rest. This scenario plants one such dataset, and the diagnostic recovers it without being told which one it is.
+[`dataset_concordance`](../../docs/explanations/dataset-concordance-and-discrimination.md) ranks the methods within each dataset and reports the Kendall tau-b agreement between every pair, and the dataset that agrees least with the rest.
 
 ```{python}
 odd_scores = beam.Scores(
@@ -246,7 +244,7 @@ print("mutually consistent groups:",
 plot.dataset_concordance(odd_run)
 ```
 
-The struggle map shows the methods whose rank flips on the odd dataset, the cells that pull the agreement down.
+Rank of each method per dataset minus its mean rank:
 
 ```{python}
 plot.dataset_struggle(odd_run)
@@ -254,7 +252,7 @@ plot.dataset_struggle(odd_run)
 
 ## Normalization strategy
 
-Plain min-max scaling is a common default, and it is wrong for some metrics. Two scenarios make the failure concrete. In each one the top-ranked method under unguarded all-min_max differs from the one under the card defaults. See the explanation page on [normalization and scales](../../docs/explanations/normalization-and-scales.md) for the reasoning.
+In two scenarios the top method under min-max for every metric differs from the one under the card defaults. See [normalization and scales](../../docs/explanations/normalization-and-scales.md).
 
 ```{python}
 for s in normalization_failure_scenarios():
@@ -283,7 +281,7 @@ for s in normalization_failure_scenarios():
             print(f"  - {w}")
 ```
 
-The outlier-runtime scenario shows how a single slow method compresses the runtime column under min-max. The plot shows the normalized runtime under min-max next to the same column under the card default log_min_max.
+Normalized runtime under min-max and under the card default log_min_max, in the scenario with one slow method:
 
 ```{python}
 outlier = next(s for s in normalization_failure_scenarios() if s.kind == "minmax_heavy_tail")
@@ -316,11 +314,11 @@ fig.tight_layout()
 plt.show()
 ```
 
-The dashed line is the actual runtime in seconds. Under min-max the four fast methods (m0 to m3) sit at almost the same height, so their speed differences vanish and a tiny ARI difference decides the order. Under log_min_max the bars follow the true ordering, so the fastest method ranks first.
+The dashed line is the runtime in seconds. Under min-max the four fast methods (m0 to m3) have almost the same value.
 
-## Separability across datasets
+## Critical difference
 
-The MCDA composite gives one ranking, but it does not say whether the differences hold across the datasets. The Demsar (2006) Friedman test and Nemenyi post-hoc answer that. Here they run on the odd-dataset scenario, using the per-dataset ARI as the tool by dataset matrix. See the explanation page on [comparing methods across datasets](../../docs/explanations/critical-difference.md) for the reasoning.
+The Demsar (2006) Friedman test and Nemenyi post-hoc on the ARI per dataset of the odd-dataset scenario. See [critical difference](../../docs/explanations/critical-difference.md).
 
 ```{python}
 odd = next(s for s in scenarios if s.kind == "odd_dataset")
@@ -340,9 +338,9 @@ print("cliques (not significantly different):", groups or "none")
 plot.critical_difference_band(cd)
 ```
 
-With only five datasets the critical difference is wide. Every method falls inside the shaded band, and the Friedman test does not reject at alpha 0.05, so the data cannot separate the methods even though the MCDA composite ranks m0 first. The recommendation holds under the stated weighting, but a claim that one method ranks higher across datasets would need more datasets to support it.
+With five datasets the Friedman test does not reject at alpha 0.05.
 
-[`pairwise_superiority`](../../docs/explanations/pairwise-method-comparison.md) reads the same data as an effect size: how often each method outperforms another across the five datasets. With so few datasets the sign test has almost no power, so the pairwise records are close and none reaches significance.
+[`pairwise_superiority`](../../docs/explanations/pairwise-method-comparison.md) counts how often each method outperforms another across the five datasets.
 
 ```{python}
 from beam.mcda import pairwise_superiority
@@ -352,7 +350,7 @@ print(f"highest standing: {odd.method_names[sup.order[0]]} ({sup.standing[sup.or
 print(f"pairs the sign test cannot separate: {len(sup.equivalent_pairs)} of {len(sup.per_pair)}")
 ```
 
-[`pairwise_transitivity`](../../docs/explanations/pairwise-method-comparison.md#transitivity) checks whether those pairwise majorities agree with one order.
+[`pairwise_transitivity`](../../docs/explanations/pairwise-method-comparison.md#transitivity) tests whether the pairwise majorities agree with one order.
 
 ```{python}
 from beam.mcda import pairwise_transitivity
@@ -361,13 +359,13 @@ trans = pairwise_transitivity(sup)
 print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_triads} of {trans.n_triads}")
 ```
 
-The matrix below orders the methods by how many others they outperform. A transitive relation fills the upper triangle; a red cell below the diagonal marks a method that outperforms one ranked above it, which only happens inside a cycle.
+The matrix orders the methods by how many others they outperform. A red cell below the diagonal is a method that outperforms one ranked above it.
 
 ```{python}
 plot.pairwise_majority(trans)
 ```
 
-[`bayesian_sign_comparison`](../../docs/explanations/pairwise-method-comparison.md#bayesian-sign-comparison) gives the posterior probability that one method is practically better than another, the probability-scale companion to the sign test. With five datasets it is mostly inconclusive at the 0.95 threshold.
+[`bayesian_sign_comparison`](../../docs/explanations/pairwise-method-comparison.md#bayesian-sign-comparison) gives the posterior probability that one method is practically better than another.
 
 ```{python}
 from beam.mcda import bayesian_sign_comparison
@@ -378,9 +376,9 @@ print(f"pairs with a decisive posterior at 0.95: {decisive} of {len(bayes.per_pa
 plot.bayesian_comparison(bayes)
 ```
 
-## Heterogeneity diagnostics on a synthetic interaction
+## Heterogeneity on a synthetic interaction
 
-The canonical scenarios above are single-dataset (a method by metric matrix), so they cover the MCDA layer but not the heterogeneity layer, which needs more than one dataset. To show the heterogeneity diagnostics with a known ground truth, here is a small synthetic method by dataset by metric case built to contain a feature-driven ranking reversal: method A ranks first on the "easy" datasets and method C on the "hard" ones, with method B in the middle. The datasets carry a `regime` feature that marks which group they belong to.
+A synthetic method by dataset by metric case with a ranking reversal: method A ranks first on the "easy" datasets and method C on the "hard" ones, with method B in between. The `regime` feature marks the group of each dataset.
 
 ```{python}
 rng = np.random.default_rng(0)
@@ -393,7 +391,7 @@ for j in range(8):
     het[:, j] = np.clip(np.array(means) + rng.normal(0, 0.05, 3), 0, 1)
 ```
 
-A [mixed-effects model](../../docs/explanations/method-by-dataset-heterogeneity.md) on this metric reports a small dataset intercept and a large residual. With one observation per cell the residual is the method-by-dataset interaction confounded with noise, and here it is the largest share because the methods reorder between the two regimes rather than the datasets differing in difficulty. The fits need the R toolchain, so the chunks run only when it is available.
+A [mixed-effects model](../../docs/explanations/method-by-dataset-heterogeneity.md) on this metric. With one observation per cell the residual is the method-by-dataset interaction plus noise. It needs R.
 
 ```{python}
 from beam.heterogeneity import (
@@ -411,7 +409,7 @@ else:
     print("R with lme4 not available; skipping the mixed-effects fit.")
 ```
 
-The [Bradley-Terry tree](../../docs/explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees) finds the feature behind the interaction. Unlike the small real benchmarks, this synthetic case has enough datasets and a clean signal, so the parameter-stability test splits the datasets on `regime` and gives each leaf a different method ranking first, recovering exactly the reversal built into the construction.
+The [Bradley-Terry tree](../../docs/explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees) splits the datasets on `regime`, with a different top method per leaf.
 
 ```{python}
 if bttree_available():
@@ -429,11 +427,9 @@ else:
     print("R with psychotree not available; skipping the Bradley-Terry tree.")
 ```
 
-This is the positive control: the split is recovered from a known construction, where the small-sample real benchmarks (Duo, [M4](../m4/m4.qmd), [transportation](../transportation/transportation.qmd)) find none and the [OpenProblems spatial vignette](../openproblems/openproblems.qmd) finds one on real data.
+## Card consistency
 
-## Card consistency as a control
-
-[`card_data_consistency`](../../docs/explanations/card-data-consistency.md) reads the raw scores against what each card declares. The canonical scenarios are built within range, so they pass. To check the audit catches a real fault, inject an impossible ARI of 1.5 (the card declares the range as [-1, 1]): the audit flags it by name, before any normalization.
+[`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks the raw scores against the cards. An ARI of 1.5, outside the declared range of [-1, 1], is flagged:
 
 ```{python}
 from beam.mcda import card_data_consistency
@@ -455,9 +451,9 @@ for finding in flagged.violations:
     print(" ", finding.severity, finding.message)
 ```
 
-## Rank sensitivity with a single dataset
+## Rank sensitivity with one dataset
 
-The canonical scenarios are single-dataset, so [`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) runs in its two-factor mode: it varies the weighting and the aggregation, and the dataset factor is absent. The constructed scenarios give it a known answer to recover. In the dominant scenario one method scores highest on every metric, so it is rank 1 in every combination and its rank variance is zero, whatever the weighting or aggregation. In the random scenario the two metrics trade off, so the order depends on the choice.
+With one dataset [`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) has two factors, the weighting and the aggregation. In the dominant scenario one method is rank 1 in every combination and has no rank variance. In the random scenario the order depends on both.
 
 ```{python}
 from beam.mcda import rank_sensitivity, specification_curve
@@ -476,9 +472,9 @@ for name in ["dominant", "random"]:
           f"{curve.n_distinct_top_tools} method(s) reach the top")
 ```
 
-The dominant scenario's top method has a rank span of zero and is rank 1 in every combination, as built: with a single dataset and a method that scores highest everywhere, no modeling choice can move it, so [`specification_curve`](../../docs/explanations/rank-sensitivity.md#the-specification-curve) reports it first in 100 percent of the specifications and only one method reaching the top. In the random scenario the top method's rank moves with the choice, the most-frequent-top fraction drops below 100 percent, and more than one method reaches the top, because the two metrics trade off and there is no dataset factor to carry the variance.
+[`specification_curve`](../../docs/explanations/rank-sensitivity.md#the-specification-curve) reports the dominant method first in every combination.
 
-The per-method split shows this directly. In the dominant scenario the top method has no rank variance to split, so it is drawn empty with a "rank fixed" note. In the random scenario the methods carry weighting and aggregation shares.
+The shares per method; a method with a fixed rank has none.
 
 ```{python}
 for name in ["dominant", "random"]:
@@ -488,7 +484,7 @@ for name in ["dominant", "random"]:
     display(plot.rank_sensitivity_by_tool(rs, title=f"{name}: what moves each method's rank"))
 ```
 
-A [blind analysis](../../docs/explanations/analysis-blinding.md) fixes the weighting and the aggregation before the method names are known. `beam.blind` masks the names; `beam.unblind` restores them. The order is unchanged.
+A [blind analysis](../../docs/explanations/analysis-blinding.md) fixes the weighting and the aggregation before the method names are known. `beam.blind` masks the names; `beam.unblind` restores them.
 
 ```{python}
 from beam import blind, unblind

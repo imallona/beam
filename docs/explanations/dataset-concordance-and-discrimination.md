@@ -4,7 +4,7 @@ A ranking pooling different metrics aims to answer, across all the datasets at o
 
 [`beam.mcda.dataset_concordance`](../reference/dataset_concordance.qmd) measures that agreement directly. It ranks the methods within each dataset separately, then compares every pair of per-dataset orderings with the Kendall tau-b rank correlation. The output is a dataset by dataset agreement matrix and a single mean-agreement summary. A high mean says the pooled ranking represents the individual datasets. A low one says it does not, and a single pooled number then obscures the heterogeneity.
 
-Benchmark datasets differ in size, biology, confounders, and whether they are simulated (ground truth) or expert annotated (presumed truth), and a method can suit one and not another (Strobl and colleagues 2024).
+Benchmark datasets differ in size, biology, confounders, and whether they are simulated (ground truth) or expert annotated (presumed truth), and a method can suit one and not another (Strobl and Leisch 2024).
 
 ## Implementation
 
@@ -44,4 +44,4 @@ A dataset can be hard for every method, or for some kinds of method only. [`beam
 ## References
 
 - Kendall, M. G. (1938). A new measure of rank correlation. Biometrika 30(1-2), 81-93. https://doi.org/10.1093/biomet/30.1-2.81
-- Strobl, C., Wickelmaier, F., Zeileis, A., and colleagues. Against the "one method fits all data sets" philosophy for comparison studies in methodological research. Biometrical Journal (2024). https://doi.org/10.1002/bimj.202200104
+- Strobl, C., Leisch, F. Against the "one method fits all data sets" philosophy for comparison studies in methodological research. Biometrical Journal (2024). https://doi.org/10.1002/bimj.202200104

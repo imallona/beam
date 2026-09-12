@@ -15,7 +15,7 @@ knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>",
                       dpi = 140, out.width = "100%", fig.width = 7, fig.height = 4.5)
 ```
 
-This vignette re-analyses the cell type annotation benchmark of Hou and Ji (2024, Nature Methods, DOI [10.1038/s41592-024-02235-4](https://doi.org/10.1038/s41592-024-02235-4)), which scores GPT-4 and GPT-3.5 against three reference-based annotators (CellMarker2.0, SingleR, ScType) on how well each labels the cell types of a dataset, judged against a manual annotation. The two metrics are the mean agreement score and the full match rate, both higher is better. The R functions forward to the Python `beam` core through reticulate; install it once with `install_beam_python()`.
+The cell type annotation benchmark of Hou and Ji (2024, Nature Methods, DOI [10.1038/s41592-024-02235-4](https://doi.org/10.1038/s41592-024-02235-4)) scores GPT-4 and GPT-3.5 against three reference-based annotators (CellMarker2.0, SingleR, ScType) by agreement with a manual annotation. The two metrics are the mean agreement score and the full match rate, both higher is better. The R functions call the Python `beam` package through reticulate; `install_beam_python()` installs it.
 
 ```{r libs}
 library(rbeam)
@@ -31,7 +31,7 @@ metrics <- unlist(g$metric_ids)
 
 ## Complete cases
 
-The reference-based annotators were not run on every dataset. This vignette uses the five methods Hou and Ji compare directly, on the datasets where all five were run.
+The five methods of Hou and Ji, on the datasets where all five were run.
 
 ```{r block}
 head_methods <- c("GPT-4", "GPT-3.5", "CellMarker2.0", "SingleR", "ScType")
@@ -44,9 +44,9 @@ cat(sprintf("complete block: %d methods, %d datasets, %d metrics\n",
             dim(block)[1], dim(block)[2], dim(block)[3]))
 ```
 
-## One ranking, end to end
+## Ranking
 
-`beam_rank` pools the two metrics across the datasets, runs the [MCDA pipeline](https://imallona.github.io/beam/docs/explanations/aggregation-methods.html), and runs the default sensitivity analysis on the same normalization context.
+`beam_rank` pools the two metrics across the datasets, [ranks](https://imallona.github.io/beam/docs/explanations/aggregation-methods.html), and runs the sensitivity analysis.
 
 ```{r rank}
 scores <- beam$Scores(
@@ -65,15 +65,15 @@ for (i in ord) {
 }
 ```
 
-GPT-4 ranks first. SingleR, a classical tool, ranks second, and GPT-3.5 ranks third, so the difference is specific to GPT-4 rather than to language models in general.
+GPT-4 ranks first.
 
 ```{r funky, fig.height = 4.5}
 plot(run)
 ```
 
-## Rank sensitivity: dataset or analyst choice
+## Rank sensitivity
 
-[`beam_rank_sensitivity`](https://imallona.github.io/beam/docs/explanations/rank-sensitivity.html) splits the ranking's variance between the data and the analyst's choices, by ranking the methods on each dataset under every weighting and aggregation.
+[`beam_rank_sensitivity`](https://imallona.github.io/beam/docs/explanations/rank-sensitivity.html) ranks the methods on each dataset under every weighting and aggregation and splits the rank variance.
 
 ```{r rank-sensitivity}
 ctx <- mcda$registry_context(as.list(metrics), "saw")
@@ -87,11 +87,9 @@ cat(sprintf("dataset %.2f, weighting %.2f, aggregation %.2f, interaction %.2f\n"
             rs$dataset_share, rs$weighting_share, rs$aggregation_share, rs$interaction_share))
 ```
 
-The dataset accounts for almost all of the rank variance; the weighting and the aggregation account for very little. Which tissue is annotated sets the per-dataset order far more than the scoring choice.
-
 ## Dataset concordance
 
-[`dataset_concordance`](https://imallona.github.io/beam/docs/explanations/dataset-concordance-and-discrimination.html) ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean means the pooled ranking stands in for the individual datasets; a low mean means it does not.
+[`dataset_concordance`](https://imallona.github.io/beam/docs/explanations/dataset-concordance-and-discrimination.html) ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b.
 
 ```{r concordance, fig.height = 4}
 conc <- run$dataset_concordance
@@ -104,7 +102,7 @@ beam_plot(run, "dataset_struggle")
 
 ## Specification curve
 
-[`beam_specification_curve`](https://imallona.github.io/beam/docs/explanations/rank-sensitivity.html#the-specification-curve) lists the rankings the grid produces and reports how often the top method holds.
+[`beam_specification_curve`](https://imallona.github.io/beam/docs/explanations/rank-sensitivity.html#the-specification-curve) lists the rankings of the grid and how often the top method is the same.
 
 ```{r specification-curve}
 curve <- beam_specification_curve(rs)
@@ -120,7 +118,7 @@ beam_plot(curve, "specification_curve")
 
 ## Blind analysis
 
-GPT-4 is the method under test here, so [blinding](https://imallona.github.io/beam/docs/explanations/analysis-blinding.html) fixes the pipeline on hidden labels before the weighting can be tuned toward it. `beam_blind` hides the names; `beam_unblind` restores them. The ranking does not change.
+[Blinding](https://imallona.github.io/beam/docs/explanations/analysis-blinding.html) fixes the pipeline before the method names are known. `beam_blind` hides the names; `beam_unblind` restores them.
 
 ```{r blinding}
 blinded <- beam_blind(scores, seed = 0L)
@@ -134,7 +132,7 @@ cat("blinding fingerprint:",
 
 ## Critical difference on agreement
 
-[`beam_critical_difference`](https://imallona.github.io/beam/docs/explanations/critical-difference.html) runs the Friedman test and the Nemenyi post-hoc on the agreement scores across the complete-block datasets.
+[`beam_critical_difference`](https://imallona.github.io/beam/docs/explanations/critical-difference.html) runs the Friedman test and the Nemenyi post-hoc on the agreement scores of the complete cases.
 
 ```{r cd}
 agreement <- block[, , 1]
@@ -144,4 +142,4 @@ cat(sprintf("Friedman p = %.1e, Nemenyi CD = %.2f\n",
 beam_plot(cd, "critical_difference")
 ```
 
-GPT-4 separates from the other four methods, which sit in overlapping cliques and are not separable on agreement at this dataset count. See `?beam_rank`, `?beam_rank_sensitivity`, `?beam_critical_difference` for the function documentation, and the heterogeneity vignette for the mixed-effects and Bradley-Terry views on the same benchmark.
+GPT-4 and CellMarker2.0 are each separate from the other methods; SingleR, ScType and GPT-3.5 are in one clique. See `?beam_rank`, `?beam_rank_sensitivity`, `?beam_critical_difference`.

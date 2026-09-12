@@ -13,13 +13,11 @@ format:
     fig-height: 3.5
 ---
 
-## Goal
+## Data
 
-Hou and Ji (2024) scored GPT-4 and GPT-3.5 against three reference-based annotators (CellMarker2.0, SingleR, ScType). Each method labels the cell types of a dataset. The score is the agreement with a manual expert annotation. This vignette re-runs that benchmark through beam. It reports how stable the ranking is across the modeling choices, how much of the ranking variance comes from the dataset, and whether the ranking changes between normal and cancer tissue. GPT-4 ranks first. GPT-3.5 ranks at or below the three classical tools, so the difference is specific to GPT-4 and not to language models in general.
+Hou and Ji (2024) scored GPT-4 and GPT-3.5 against three reference-based annotators (CellMarker2.0, SingleR, ScType). Each method labels the cell types of a dataset, and the score is the agreement with a manual expert annotation.
 
-## Provenance of the bundled tables
-
-beam does not ship the single-cell data or the model outputs. It ships two small derived tables (`src/beam/data/gptcelltype2024_agreement.csv`, `gptcelltype2024_features.csv`), reduced once from the compiled evaluation table in the reproduction repository `Winnie09/GPTCelltype_Paper` at a pinned commit. The article and its supplement are CC-BY-4.0; provenance and license are in `src/beam/data/README.md`. Cite Hou W, Ji Z. Assessing GPT-4 for cell type annotation in single-cell RNA-seq analysis. Nature Methods 2024, DOI [10.1038/s41592-024-02235-4](https://doi.org/10.1038/s41592-024-02235-4).
+The single-cell data and the model outputs are not bundled. `src/beam/data/gptcelltype2024_agreement.csv` and `gptcelltype2024_features.csv` are reduced from the evaluation table of the repository `Winnie09/GPTCelltype_Paper` at a pinned commit (CC-BY-4.0, see `src/beam/data/README.md`). Reference: Hou W, Ji Z. Assessing GPT-4 for cell type annotation in single-cell RNA-seq analysis. Nature Methods 2024, DOI [10.1038/s41592-024-02235-4](https://doi.org/10.1038/s41592-024-02235-4).
 
 To reproduce, run:
 
@@ -29,16 +27,16 @@ curl -sf -o all.csv \
   "https://raw.githubusercontent.com/Winnie09/GPTCelltype_Paper/$SHA/anno/compiled/all.csv"
 ```
 
-`all.csv` has one row per annotated cell type. Each method has a `<method>_agreement` column with the ontology-aware score (1 full match, 0.5 partial match, 0 mismatch). The reduction script is `src/beam/data/reduce_gptcelltype.py`:
+`all.csv` has one row per annotated cell type and a `<method>_agreement` column per method (1 full match, 0.5 partial match, 0 mismatch). The reduction script is `src/beam/data/reduce_gptcelltype.py`:
 
 ```bash
 python src/beam/data/reduce_gptcelltype.py        # fetches the pinned commit
 python src/beam/data/reduce_gptcelltype.py all.csv  # or reduces a local copy
 ```
 
-## Load the tensor
+## Tensor
 
-`load_gptcelltype` reads the bundled tables into a frozen dataclass. beam treats each (source, tissue) pair as one dataset and each annotated cell type as one observation. The two metrics are the mean agreement score and the full match rate, both higher is better.
+`load_gptcelltype` reads the bundled tables. Each (source, tissue) pair is a dataset and each annotated cell type an observation. The two metrics are the mean agreement score and the full match rate, both higher is better.
 
 ```{python}
 %matplotlib inline
@@ -58,7 +56,7 @@ print("metrics:", ", ".join(g.metric_ids))
 
 ## Coverage
 
-The matrix has gaps. SingleR and ScType were not run on the Azimuth and literature datasets. The March 2023 GPT-4 endpoint covers a subset. beam reads the gaps as `numpy.nan` and [does not impute them](../../docs/explanations/missing-data.md).
+SingleR and ScType were not run on the Azimuth and literature datasets, and the March 2023 GPT-4 endpoint has a subset. Missing cells are `numpy.nan` and [are not imputed](../../docs/explanations/missing-data.md).
 
 ```{python}
 for i, m in enumerate(g.method_names):
@@ -82,7 +80,7 @@ fig.tight_layout()
 plt.show()
 ```
 
-The main comparison uses the five methods Hou and Ji compare directly (the March 2023 GPT-4 endpoint set aside), on the datasets where all five were run.
+The main comparison uses the five methods of Hou and Ji, without the March 2023 GPT-4 endpoint, on the datasets where all five were run.
 
 ```{python}
 head = ["GPT-4", "GPT-3.5", "CellMarker2.0", "SingleR", "ScType"]
@@ -96,9 +94,9 @@ block_datasets = [d for d, keep in zip(g.dataset_names, complete) if keep]
 print(f"complete block: {block.shape[0]} methods, {block.shape[1]} datasets, {block.shape[2]} metrics")
 ```
 
-## Pull the metric cards
+## Metric cards
 
-[`properties_for`](../../docs/reference/properties_for.qmd) reads the two annotation cards. Both are higher is better, bounded in [0, 1], and use [min-max normalization](../../docs/explanations/normalization-and-scales.md) with the arithmetic mean across datasets.
+[`properties_for`](../../docs/reference/properties_for.qmd) reads the two annotation cards. Both are higher is better, bounded in [0, 1], with [min-max normalization](../../docs/explanations/normalization-and-scales.md) and the arithmetic mean across datasets.
 
 ```{python}
 props = properties_for(metrics)
@@ -109,9 +107,9 @@ for p in props:
     )
 ```
 
-## One MCDA run on the complete cases
+## Ranking on the complete cases
 
-beam pools the two metrics across the 36 datasets and ranks the five methods. The default is equal weights with simple additive weighting (SAW). `beam.rank` also runs the default sensitivity battery on the same normalized matrix.
+The two metrics are pooled across the 36 datasets and the five methods ranked with equal weights and simple additive weighting (SAW).
 
 ```{python}
 block_scores = beam.Scores(
@@ -130,11 +128,11 @@ for i in order:
     print(f"{head[i]:14s} {run.result.composite[i]:.3f}      {run.result.ranks[i]}")
 ```
 
-GPT-4 ranks first. SingleR, a classical tool, ranks second, and GPT-3.5 ranks third.
+GPT-4 ranks first.
 
-## The card audit
+## Card consistency
 
-[`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks the pooled scores against the cards before any normalization: every value inside the declared [0, 1] range, every baseline and floor sane. A unit or scale error would be named here.
+[`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks the pooled scores against the cards before normalization.
 
 ```{python}
 audit = run.card_consistency
@@ -143,9 +141,9 @@ for finding in audit.findings:
     print(" ", finding.severity, finding.message)
 ```
 
-## Compare across weightings and aggregation methods
+## Weightings and aggregation methods
 
-Four [weightings](../../docs/explanations/weighting-schemes.md) (equal, entropy, std, critic) crossed with five [aggregation methods](../../docs/explanations/aggregation-methods.md) give twenty runs. A method that holds its rank down a column is stable to these choices.
+Four [weightings](../../docs/explanations/weighting-schemes.md) (equal, entropy, std, critic) by five [aggregation methods](../../docs/explanations/aggregation-methods.md) give twenty runs.
 
 ```{python}
 from beam.mcda import run_from_registry
@@ -179,7 +177,7 @@ top_per_combo = {head[int(np.argmin(row))] for row in ranks_grid}
 print("methods top-ranked in at least one of the 20 configurations:", ", ".join(sorted(top_per_combo)))
 ```
 
-[`aggregation_agreement`](../../docs/explanations/choice-agreement.md) measures that: the Kendall tau-b agreement of the rankings the five aggregations give at equal weights, and whether they agree on the top method.
+[`aggregation_agreement`](../../docs/explanations/choice-agreement.md) gives the Kendall tau-b agreement of the rankings of the five aggregations at equal weights.
 
 ```{python}
 from beam.mcda import aggregation_agreement
@@ -191,7 +189,7 @@ print(f"top method unanimous across aggregations: {agg.top_is_unanimous} ({head[
 
 ## Rank stability
 
-The SMAA analysis samples weight vectors and records how often each method takes each rank. The weight-perturbation check asks the smallest single-weight change that would flip the top method.
+SMAA samples weight vectors and records how often each method has each rank. The weight perturbation is the smallest single-weight change that displaces the top method.
 
 ```{python}
 smaa = run.smaa
@@ -210,7 +208,7 @@ else:
 plot.smaa(run)
 ```
 
-[`leave_one_metric_out`](../../docs/reference/leave_one_metric_out.qmd) drops each metric in turn. With two metrics this ranks on each metric alone.
+[`leave_one_metric_out`](../../docs/reference/leave_one_metric_out.qmd) drops each metric in turn.
 
 ```{python}
 loo = run.leave_one_out
@@ -218,9 +216,9 @@ print(f"top method rank stability under leave-one-metric-out: {loo.rank_stabilit
 print(f"most influential metric: {metrics[loo.most_influential_metric]}")
 ```
 
-## Above chance, and the noise floor
+## Chance baseline and noise floor
 
-[`beats_random_baseline`](../../docs/reference/beats_random_baseline.qmd) reads the [chance level](../../docs/explanations/reference-levels.md) the card declares. The full match rate has a declared chance level of 0, since a random label almost never matches the exact manual type. Every method scores above 0. [`noise_floor_separation`](../../docs/reference/noise_floor_separation.qmd) would flag method pairs closer than a declared noise floor. The annotation cards declare no floor yet, so it reports as inactive.
+[`beats_random_baseline`](../../docs/reference/beats_random_baseline.qmd) uses the [chance level](../../docs/explanations/reference-levels.md) on the card, 0 for the full match rate. [`noise_floor_separation`](../../docs/reference/noise_floor_separation.qmd) is inactive, as the annotation cards declare no noise floor.
 
 ```{python}
 br = run.random_baseline
@@ -236,7 +234,7 @@ print("noise-floor check active:", nf.active, "(no floor declared on the annotat
 
 ## Critical difference on agreement
 
-A Demsar [critical-difference diagram](../../docs/explanations/critical-difference.md) ranks the methods on each of the 36 datasets and asks, with a Friedman test and a Nemenyi post-hoc, whether the differences are larger than sampling noise.
+A [critical-difference diagram](../../docs/explanations/critical-difference.md) ranks the methods on each of the 36 datasets, with a Friedman test and a Nemenyi post-hoc.
 
 ```{python}
 from beam.mcda import critical_difference
@@ -256,7 +254,7 @@ for clique in cd.cliques:
 plot.critical_difference(cd)
 ```
 
-[`pairwise_superiority`](../../docs/explanations/pairwise-method-comparison.md) is the effect-size companion: for each method pair, the share of the 36 datasets where one method scores higher, the readable version of the significance the diagram gives.
+[`pairwise_superiority`](../../docs/explanations/pairwise-method-comparison.md) gives, for each pair, the share of the 36 datasets where one method scores higher.
 
 ```{python}
 from beam.mcda import pairwise_superiority
@@ -267,7 +265,7 @@ for i in np.argsort(-ps.standing):
     print(f"  {head[i]:14s} {ps.standing[i]:.2f}")
 ```
 
-[`pairwise_transitivity`](../../docs/reference/pairwise_transitivity.qmd) reads the same relation and reports whether one order is [consistent with the pairwise majorities](../../docs/explanations/pairwise-method-comparison.md#transitivity).
+[`pairwise_transitivity`](../../docs/reference/pairwise_transitivity.qmd) tests whether one order [agrees with the pairwise majorities](../../docs/explanations/pairwise-method-comparison.md#transitivity).
 
 ```{python}
 from beam.mcda import pairwise_transitivity
@@ -276,13 +274,13 @@ trans = pairwise_transitivity(ps)
 print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_triads} of {trans.n_triads}")
 ```
 
-The matrix below orders the methods by how many others they outperform. A transitive relation fills the upper triangle; a red cell below the diagonal marks a method that outperforms one ranked above it, which only happens inside a cycle.
+The matrix orders the methods by how many others they outperform. A red cell below the diagonal is a method that outperforms one ranked above it.
 
 ```{python}
 plot.pairwise_majority(trans)
 ```
 
-[`bayesian_sign_comparison`](../../docs/explanations/pairwise-method-comparison.md#bayesian-sign-comparison) reports, for each pair, the posterior probability that one method is practically better than another. With 36 datasets the posterior is sharper, so more pairs reach a decisive label than on the smaller benchmarks.
+[`bayesian_sign_comparison`](../../docs/explanations/pairwise-method-comparison.md#bayesian-sign-comparison) gives, for each pair, the posterior probability that one method is practically better.
 
 ```{python}
 from beam.mcda import bayesian_sign_comparison
@@ -293,9 +291,9 @@ print(f"pairs with a decisive posterior at 0.95: {decisive} of {len(bayes.per_pa
 plot.bayesian_comparison(bayes)
 ```
 
-## Rank sensitivity: data or analyst choice
+## Rank sensitivity
 
-The sections above each measured part of whether the ranking holds under a different analysis. [`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) combines them: it ranks the methods on each dataset, under every weighting and aggregation, and splits each method's rank variance into the dataset, the weighting, the aggregation and their interactions.
+[`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) ranks the methods on each dataset under every weighting and aggregation and splits the rank variance of each method into the dataset, the weighting, the aggregation and their interactions.
 
 ```{python}
 from beam.mcda import rank_sensitivity
@@ -323,9 +321,7 @@ print(f"  most influential factor: {rs.most_influential_factor}")
 plot.rank_sensitivity(rs)
 ```
 
-The dataset accounts for almost all of the rank variance. The weighting and the aggregation account for less than one percent combined. Leave-one-dataset-out reports whether the pooled order changes when one dataset is dropped.
-
-The figures so far pool the shares over all methods. The per-method breakdown attributes each method's rank spread on its own, telling apart a method that moves with the dataset from one that moves with the analyst's choice. The bar span is the method's best minus worst rank.
+The same shares per method, with the difference between the best and worst rank of each method:
 
 ```{python}
 plot.rank_sensitivity_by_tool(rs)
@@ -337,7 +333,7 @@ print(f"top method rank stability under leave-one-dataset-out: {lodo.rank_stabil
 print(f"most influential dataset: {block_datasets[lodo.most_influential_dataset]}")
 ```
 
-[`specification_curve`](../../docs/explanations/rank-sensitivity.md#the-specification-curve) lists the rankings the grid produces. The choice-only multiverse (weighting by aggregation on the pooled matrix) shows whether GPT-4 holds the top across the modeling choices; the full grid adds the dataset.
+[`specification_curve`](../../docs/explanations/rank-sensitivity.md#the-specification-curve) lists the rankings of the grid, on the pooled matrix (weighting by aggregation) and with the datasets.
 
 ```{python}
 from beam.mcda import specification_curve
@@ -363,7 +359,7 @@ print(f"choices only ({pooled.n_specifications} combinations): "
 
 ## Dataset concordance
 
-The pooled order sits on top of 36 per-dataset orders. [`dataset_concordance`](../../docs/explanations/dataset-concordance-and-discrimination.md) recovers each of those, ranking the methods within a dataset and comparing every pair of orderings with Kendall tau-b. A high mean says the datasets broadly agree with the pooled order; a low mean says they do not. It assumes nothing about the datasets being interchangeable and needs no replicates.
+[`dataset_concordance`](../../docs/explanations/dataset-concordance-and-discrimination.md) ranks the methods within each dataset and compares every pair of orderings with Kendall tau-b.
 
 ```{python}
 conc = run.dataset_concordance
@@ -382,7 +378,7 @@ for cell in conc.notable_cells[:5]:
 plot.dataset_concordance(run)
 ```
 
-The companion view marks where each method places higher or lower than its own typical rank, showing which methods carry the dataset disagreement rather than which ranks best overall.
+Rank of each method per dataset minus its mean rank:
 
 ```{python}
 plot.dataset_struggle(run)
@@ -390,7 +386,7 @@ plot.dataset_struggle(run)
 
 ## Blind analysis
 
-A [blind analysis](../../docs/explanations/analysis-blinding.md) fixes the pipeline before the method names are known. This matters here, where one method (GPT-4) is the one under test: blinding removes the chance to tune the weighting toward it. `beam.blind` masks the names and shuffles the rows; `beam.unblind` restores them. The ranking is unchanged, and the seal fingerprint is recorded in the manifest.
+A [blind analysis](../../docs/explanations/analysis-blinding.md) fixes the pipeline before the method names are known. `beam.blind` masks the names and shuffles the rows; `beam.unblind` restores them. The seal fingerprint is recorded in the manifest.
 
 ```{python}
 from beam import blind, unblind
@@ -406,9 +402,9 @@ print("top method after unblinding:", restored.top_tool)
 print("blinding fingerprint:", blind_run.manifest["blinding"]["seal_sha256"][:12])
 ```
 
-## Equal versus cell-weighted pooling
+## Equal and cell-weighted pooling
 
-beam weights each dataset equally by default. The paper's per-cell-type accuracy weights a dataset by how many cell types it has. The dataset accounts for almost all of the variance, so the dataset weight changes the magnitudes. Here it does not change the top rank.
+By default each dataset has the same weight. The per-cell-type accuracy of the paper weights a dataset by its number of cell types.
 
 ```{python}
 n_cell_types = np.array(g.features.numeric["n_cell_types"])[complete]
@@ -422,7 +418,7 @@ for i in np.argsort(-equal_pool):
 
 ## Mixed-effects on agreement
 
-`rank_sensitivity` decomposes the ranks. A [mixed-effects model](../../docs/explanations/method-by-dataset-heterogeneity.md) decomposes the scores: it fits `agreement ~ method + (1 | dataset)` in R's lme4, separating the stable method effect from the dataset being uniformly easy or hard. The fit needs the R toolchain, so this section runs only when it is available.
+A [mixed-effects model](../../docs/explanations/method-by-dataset-heterogeneity.md) fits `agreement ~ method + (1 | dataset)` in R's lme4.
 
 ```{python}
 from beam.heterogeneity import mixed_effects_from_matrix, r_available
@@ -441,9 +437,9 @@ else:
     print("Provision it with envs/heterogeneity.yml (conda or mamba).")
 ```
 
-## Bradley-Terry tree on tissue features
+## Bradley-Terry tree
 
-A further question is whether the ranking reverses on particular kinds of data. A [Bradley-Terry tree](../../docs/explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees) turns each dataset into pairwise method comparisons and splits the datasets by their features, so each leaf gets its own ranking and a parameter-stability test decides where a split is real. The candidate features are the source, tissue, species, sample type (normal or cancer) and the number of cell types. The fit needs the R toolchain.
+A [Bradley-Terry tree](../../docs/explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees) turns each dataset into pairwise method comparisons and splits the datasets by their features: source, tissue, species, sample type (normal or cancer) and number of cell types. It needs R.
 
 ```{python}
 from beam.heterogeneity import bradley_terry_tree, bttree_available
@@ -468,7 +464,7 @@ else:
     print("Provision it with envs/heterogeneity.yml (conda or mamba).")
 ```
 
-[`plackett_luce`](../../docs/explanations/method-by-dataset-heterogeneity.md#plackett-luce-full-rankings) fits the same preference idea as a single full-ranking model over the methods, a check on the Bradley-Terry global ranking.
+[`plackett_luce`](../../docs/explanations/method-by-dataset-heterogeneity.md#plackett-luce-full-rankings) fits one full-ranking model over the methods.
 
 ```{python}
 from beam.heterogeneity import plackett_luce, plackett_luce_available
@@ -482,9 +478,9 @@ else:
     print("Provision it with envs/heterogeneity.yml (conda or mamba).")
 ```
 
-## Reliability of the manual annotation
+## Manual annotation
 
-The agreement metric is defined against the manual annotation, so beam uses it as the reference and cannot check it directly. One indirect check treats the five annotators as independent raters and looks for cell types where they agree on a broad lineage that differs from the manual label. Those cell types are candidates for a fine-grained mislabel or an ambiguous reference.
+The agreement metric is defined against the manual annotation. The cell types where the five methods agree on a broad lineage that differs from the manual label:
 
 ```{python}
 import csv
@@ -516,11 +512,11 @@ for dataset, cell_type, manual, consensus, votes in candidates[:8]:
     print(f"  {dataset:22s} {cell_type:26s} {manual:18s} -> {consensus} ({votes})")
 ```
 
-Most of these are a granularity difference rather than an error: the manual label is a fine type (innate lymphoid cell, platelet, capillary) and the methods agree on its parent lineage (t/nk cell, megakaryocyte, endothelial cell). In those cells the agreement score counts the method as wrong even though it named a broader correct lineage.
+In most of these the manual label is a fine type (innate lymphoid cell, platelet, capillary) and the methods agree on its parent lineage (t/nk cell, megakaryocyte, endothelial cell).
 
 ## Partial coverage
 
-The complete cases dropped the 18 datasets where SingleR and ScType were not run. beam can also rank on the full set without completing the matrix. [Available-case SAW](../../docs/explanations/missing-data.md) scores each method on the datasets where it was measured, with the weights renormalized over its support; the [Skillings-Mack test](../../docs/explanations/critical-difference.md#skillings-mack-for-incomplete-blocks) is the coverage-aware Friedman test for a matrix with gaps.
+The complete cases leave out the 18 datasets where SingleR and ScType were not run. [Available-case SAW](../../docs/explanations/missing-data.md) scores each method on the datasets where it was measured, with the weights renormalized. The [Skillings-Mack test](../../docs/explanations/critical-difference.md#skillings-mack-for-incomplete-blocks) is the Friedman-type test for an incomplete matrix.
 
 ```{python}
 from beam.mcda import skillings_mack
@@ -544,16 +540,16 @@ sm = skillings_mack(sub[:, :, 0], higher_is_better=True, method_names=head)
 print(f"\nSkillings-Mack statistic: {sm.statistic:.1f}  p-value: {sm.p_value:.2e}")
 ```
 
-The [funky heatmap](../../docs/explanations/funky-heatmaps-and-robustness.md) shows the available-case run as a glyph table: the two metrics per method, the composite, and the rank-robustness panels, on all 54 datasets rather than the 36 complete cases.
+The [funky heatmap](../../docs/explanations/funky-heatmaps-and-robustness.md) of the available-case run on all 54 datasets:
 
 ```{python}
 funky_heatmap_from_run(full_run, title="Cell type annotation: available-case ranking on 54 datasets")
 plt.show()
 ```
 
-## Cross-benchmark: LLM annotation benchmarks
+## Other LLM annotation benchmarks
 
-Three more recent benchmarks score LLMs at cell type annotation: DeepCellSeek (Briefings in Bioinformatics 2025, [10.1093/bib/bbaf677](https://doi.org/10.1093/bib/bbaf677)), AnnDictionary (Nature Communications 2025, [10.1038/s41467-025-64511-x](https://doi.org/10.1038/s41467-025-64511-x)) and Single-Cell Omics Arena (SOAR, [arXiv:2412.02915](https://arxiv.org/abs/2412.02915)). They use different models, datasets and metrics, so they cannot be pooled on a shared score. The common currency is the within-benchmark rank of the methods each benchmark has in common with the others. The three classical tools (CellMarker2.0, SingleR, ScType) connect GPTCelltype, DeepCellSeek and SOAR; GPT-4o connects DeepCellSeek, AnnDictionary and SOAR. The provenance and license of each bundled table are in `src/beam/data/`; DeepCellSeek and SOAR scores come from a pinned source, and the SOAR and AnnDictionary folders carry a note on their license status.
+Three more recent benchmarks score LLMs at cell type annotation: DeepCellSeek (Briefings in Bioinformatics 2025, [10.1093/bib/bbaf677](https://doi.org/10.1093/bib/bbaf677)), AnnDictionary (Nature Communications 2025, [10.1038/s41467-025-64511-x](https://doi.org/10.1038/s41467-025-64511-x)) and Single-Cell Omics Arena (SOAR, [arXiv:2412.02915](https://arxiv.org/abs/2412.02915)). They use different models, datasets and metrics, so they are compared by the within-benchmark rank of the methods they share. The three classical tools (CellMarker2.0, SingleR, ScType) connect GPTCelltype, DeepCellSeek and SOAR; GPT-4o connects DeepCellSeek, AnnDictionary and SOAR. The provenance and license of each bundled table are in `src/beam/data/`; DeepCellSeek and SOAR scores come from a pinned source, and the SOAR and AnnDictionary folders carry a note on their license status.
 
 ```{python}
 import csv
@@ -593,8 +589,6 @@ for name, sc in benchmarks.items():
         print(f"{name:13s} {n:2d} methods; LLM-only (no classical comparator)")
 ```
 
-In the two ontology-agreement benchmarks every classical tool ranks below every LLM. SOAR scores annotation text with ROUGE-L instead, and there CellMarker2.0 ranks in the middle, above several open-source LLMs, while SingleR and ScType stay near the bottom.
-
 ```{python}
 shared_methods = ["GPT-4o", "GPT-4", "CellMarker2.0", "SingleR", "ScType"]
 bench_names = list(benchmarks)
@@ -621,11 +615,11 @@ fig.tight_layout()
 plt.show()
 ```
 
-The benchmarks agree that the top-ranked LLM outranks the classical tools, but they disagree on the rest. CellMarker2.0 ranks last under ontology agreement (GPTCelltype, DeepCellSeek) and in the middle under SOAR's ROUGE-L. GPT-4o ranks first in AnnDictionary and SOAR but in the middle in DeepCellSeek, where the newer Grok-4, GPT-5 and Claude-4.1 score higher. The ranking depends on the metric and on the model generation each benchmark tested, the disagreement beam measures. A full [network meta-analysis](../../docs/explanations/network-meta-analysis.md) is left out here: GPTCelltype and DeepCellSeek provide per-dataset scores, but the AnnDictionary and SOAR tables are aggregate-only, so the network lacks the per-study arms the pooled model needs.
+A [network meta-analysis](../../docs/explanations/network-meta-analysis.md) is not possible: the AnnDictionary and SOAR tables are aggregates, without scores per dataset.
 
-### Quantitative cross-benchmark: variance on the shared classical methods
+### Variance on the shared classical methods
 
-GPTCelltype and DeepCellSeek both score the three classical tools per dataset on the same ontology-aware metric, so their scores can be pooled and the variance attributed. [`source_variance_decomposition`](../../docs/reference/source_variance_decomposition.qmd) fits `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)` in lme4 over the two benchmarks and the three shared methods. It separates the benchmark level effect, the method-by-benchmark interaction (whether the method order changes between benchmarks), the dataset nested in benchmark, and the residual. SOAR and AnnDictionary stay out of this fit: SOAR scores on a different metric and AnnDictionary has no classical methods. The fit needs the R toolchain.
+GPTCelltype and DeepCellSeek score the three classical tools per dataset on the same metric. [`source_variance_decomposition`](../../docs/reference/source_variance_decomposition.qmd) fits `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)` in lme4 over the two benchmarks and the three shared methods. It needs R.
 
 ```{python}
 from beam.heterogeneity import source_variance_decomposition, r_available
@@ -681,10 +675,7 @@ if sv is not None:
     plt.show()
 ```
 
-The benchmark accounts for about a quarter of the score variance and the method-by-benchmark interaction about a tenth, so the classical-method comparison is only partly portable across the two benchmarks. DeepCellSeek scores all three classical tools higher than GPTCelltype does, a level shift, and their relative order shifts somewhat between the two. The pooled order is SingleR, then ScType, then CellMarker2.0. Most of the variance is residual, the per-dataset spread at one score per cell type.
+## Summary
 
-## Recommendation
+On the 36 datasets where all five methods were run, GPT-4 ranks first on the mean agreement and the full match rate with equal weights and SAW. On the critical-difference diagram of the agreement score GPT-4 and CellMarker2.0 are each separate from the other methods, and SingleR, ScType and GPT-3.5 are in one clique.
 
-On the 36 datasets where all five methods were run, GPT-4 ranks first on the mean agreement and the full match rate pooled across datasets. It keeps that position across all twenty weighting-by-aggregation configurations. The SMAA draws and the weight-perturbation check report the top rank as not fragile. SingleR, a classical reference-based tool, ranks second, and GPT-3.5 ranks with the classical tools rather than with GPT-4.
-
-On the critical-difference diagram GPT-4 separates from the other four methods, which sit in overlapping cliques and are not separable on agreement at 36 datasets. The rank-sensitivity decomposition puts about 96 percent of the rank variance on the dataset and less than one percent on the weighting and the aggregation combined.

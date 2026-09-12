@@ -1,8 +1,6 @@
 # rbeam: R interface to beam
 
-R interface to the [beam](https://github.com/imallona/beam) Python package. The MCDA wrappers (`beam_rank`, `beam_report`, `beam_validate`, `beam_run`, `beam_metric_show`) forward to Python through `reticulate`. The heterogeneity diagnostics (mixed-effects, Bradley-Terry trees, Plackett-Luce, cross-benchmark variance decomposition) are implemented natively in R.
-
-For the MCDA pipeline, the metric cards and reporting, the canonical implementation is the Python package and the R side is a typed reticulate shim. The heterogeneity diagnostics are implemented natively in R.
+R interface to the [beam](https://github.com/imallona/beam) Python package. The MCDA wrappers (`beam_rank`, `beam_report`, `beam_validate`, `beam_run`, `beam_metric_show`) call Python through `reticulate`. The heterogeneity diagnostics (mixed-effects, Bradley-Terry trees, Plackett-Luce, cross-benchmark variance decomposition, network meta-analysis) run in R.
 
 ## Install
 
@@ -56,11 +54,11 @@ result$result$ranks    # integer ranks, aligned with tool_names
 result$manifest        # named list (write to JSON if you want)
 ```
 
-The heterogeneity entry points (`beam_mixed_effects`, `beam_bradley_terry_tree`, `beam_plackett_luce`, `beam_source_variance_decomposition`) run natively in R using lme4, glmmTMB, psychotree and PlackettLuce, with no Python involved. Those packages are Suggests, so each entry point needs only its own package installed and stops with a clear message otherwise.
+The heterogeneity functions (`beam_mixed_effects`, `beam_bradley_terry_tree`, `beam_plackett_luce`, `beam_source_variance_decomposition`, `beam_network_meta_analysis`) run in R with lme4, glmmTMB, psychotree, PlackettLuce and netmeta. Those packages are Suggests; each function needs its own package and stops with an error without it.
 
 ## Plots
 
-The figures are drawn natively in R with ggplot2 (and patchwork for the multi-panel ones), so they match the Python package's plots without calling matplotlib. `plot(result)` draws the funky heatmap for a run. `beam_plot(x, kind)` selects a figure and returns the ggplot object, or writes a file when a path is given:
+The figures are drawn with ggplot2 and patchwork. `plot(result)` draws the funky heatmap for a run. `beam_plot(x, kind)` selects a figure and returns the ggplot object, or writes a file when a path is given:
 
 ```r
 result <- beam_rank("scores.csv", sensitivity = TRUE)

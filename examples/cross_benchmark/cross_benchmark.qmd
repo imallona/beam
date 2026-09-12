@@ -13,13 +13,13 @@ format:
     fig-height: 4
 ---
 
-## Goal
+## Question
 
-Single-cell data-integration benchmarks reach different conclusions about which method to use. This vignette asks where the disagreement comes from: the methods, the datasets, or the benchmarker's own analysis choices (which metrics, how they are scaled, how they are weighted). It runs the meta-analysis on benchmarks that publish reusable per-method scores on a shared metric set, and shows that re-ranking them all with one consistent rule removes part of the disagreement.
+Single-cell data-integration benchmarks rank the same methods differently. The disagreement can come from the methods, the datasets, or the analysis choices of each benchmark (metrics, scaling, weighting).
 
-## The benchmarks
+## Benchmarks
 
-Five single-cell integration benchmarks are pooled here. Four publish reusable per-method scores on the shared scIB metric family (ARI, ASW, kBET, LISI); the fifth, BatchBench, scores on its own batch and cell-type entropy and enters on the within-benchmark rank scale.
+Five benchmarks are pooled. Four publish scores per method on the scIB metrics (ARI, ASW, kBET, LISI). BatchBench has its own batch and cell-type entropy and is used as within-benchmark ranks.
 
 | Benchmark | Paper | Methods covered | Metrics covered | Scores from |
 |---|---|---|---|---|
@@ -30,11 +30,11 @@ Five single-cell integration benchmarks are pooled here. Four publish reusable p
 | BatchBench | Chazarra-Gil et al., Nucleic Acids Research 2021, [10.1093/nar/gkab004](https://doi.org/10.1093/nar/gkab004) | combat, harmony, fastMNN, scanorama | batch entropy, cell-type entropy | Supplementary Table 1, provided by the author |
 | Shen 2026 (discrimination axis only) | Shen, He and Guan, PLOS Comput Biol 2026, [10.1371/journal.pcbi.1014008](https://doi.org/10.1371/journal.pcbi.1014008) | ten semi-supervised and unsupervised DL methods (overlap: harmony, scanorama only) | own ARI, NMI, ASW and others | authors' repository, pinned commit |
 
-Tyler is a preprint as of 2026-05-28 and covers three of the five methods and three of the four metrics (the cLISI it reports is a different quantity from the iLISI the others report), so it enters as a [partial-coverage](../../docs/explanations/missing-data.md) block. Its kBET is the raw rejection rate (lower is better), the opposite polarity to the others; the loader handles this per source so the within-cell ranking is consistent. BatchBench covers four of the five methods (it has no LIGER) on two entropy metrics: batch entropy, where higher is better (batches better mixed), and cell-type entropy, where lower is better (a higher value means cell types are more blurred). Ruben Chazarra-Gil provided the scores by personal communication. The metrics differ from the scIB family, so BatchBench enters on the within-benchmark rank scale, the same common currency as the others.
+Tyler is a preprint with three of the five methods and three of the four metrics, so it has [partial coverage](../../docs/explanations/missing-data.md). Its kBET is the raw rejection rate, lower is better, which the loader handles. BatchBench has four of the five methods (no LIGER) and two metrics: batch entropy, higher is better, and cell-type entropy, lower is better. Ruben Chazarra-Gil provided the scores by personal communication.
 
-The sixth source, Shen 2026, is not pooled with the first five. Its deep-learning methods overlap the classical five only on harmony and scanorama, too few to rank-harmonize, the same disjointness that excludes scIB-E. Rather than being dropped it enters the last section on a method-agnostic axis, dataset discrimination, which any benchmark can report whatever methods it ran.
+Shen 2026 is not pooled: its methods overlap the five only on harmony and scanorama. It is used in the dataset discrimination section.
 
-The five methods common to the first three benchmarks are combat, harmony, fastMNN, scanorama and LIGER. The excluded benchmarks and the reasons, with provenance, licenses and the dataset crosswalk, are in `src/beam/data/README.md`.
+The five methods shared by the first three benchmarks are combat, harmony, fastMNN, scanorama and LIGER. The excluded benchmarks, provenance, licenses and the dataset crosswalk are in `src/beam/data/README.md`.
 
 ```{python}
 %matplotlib inline
@@ -59,7 +59,7 @@ print("records:", len(ib.rank), "| benchmarks:", sorted(set(ib.benchmark)))
 
 ## The reported rankings
 
-Each benchmark reported its own ranking of the five methods, using its own metric set, [scaling](../../docs/explanations/normalization-and-scales.md) and [weighting](../../docs/explanations/weighting-schemes.md) (Tran's Table S7 final rank, scIB's 0.6 biological / 0.4 batch weighted overall, OpenProblems' mean of scaled scores).
+Each benchmark reported a ranking of the five methods with its own metrics, [scaling](../../docs/explanations/normalization-and-scales.md) and [weighting](../../docs/explanations/weighting-schemes.md): Tran's Table S7 final rank, scIB's 0.6 biological / 0.4 batch overall score, and the OpenProblems mean of scaled scores.
 
 ```{python}
 print("reported rank of each method (1 best):")
@@ -72,11 +72,9 @@ pub_rhos = [spearmanr(pub_vectors[a], pub_vectors[b]).correlation for a, b in co
 print(f"\nmean cross-benchmark Spearman of the reported ranks: {np.mean(pub_rhos):.2f}")
 ```
 
-combat ranks first in one benchmark and last in another; the reported rankings barely correlate.
+## Re-ranking with one rule
 
-## beam's consistent re-ranking
-
-beam re-ranks all three from their raw scores with one rule: four shared metrics, equal weight, ranked within the common methods so the per-benchmark scale does not matter. The datasets are pooled per benchmark.
+The three benchmarks are re-ranked from their raw scores with one rule: four shared metrics, equal weights, ranks within the five methods. The datasets are pooled per benchmark.
 
 ```{python}
 cell = defaultdict(list)
@@ -91,11 +89,9 @@ print(f"mean cross-benchmark Spearman, beam consistent ranking: {np.mean(beam_rh
 print(f"reported: {np.mean(pub_rhos):+.2f}   beam: {np.mean(beam_rhos):+.2f}   change: {np.mean(beam_rhos) - np.mean(pub_rhos):+.2f}")
 ```
 
-Agreement rises from near zero to moderate. Much of the disagreement was in the benchmarker's analysis choices, not the methods.
+## Reported ranks and consensus
 
-## Subway plot: reported ranks and the consensus
-
-The bump chart shows each method's reported rank in the three benchmarks (left of the divider) and the beam consensus (right), derived by pooling the consistent per-benchmark ranks.
+Reported rank of each method in the three benchmarks (left of the divider) and the consensus of the re-ranked benchmarks (right):
 
 ```{python}
 consensus = dict(zip(
@@ -112,11 +108,9 @@ fig = plot.rank_bump(
 display(fig)
 ```
 
-Harmony ranks first consistently; combat, reported anywhere from first to last, settles to the bottom on the shared metrics; the consensus order is harmony, liger, fastMNN, scanorama, combat.
-
 ## Funky heatmaps per benchmark
 
-The [glyph tables](../../docs/explanations/funky-heatmaps-and-robustness.md) show why the reported orders differ: the per-metric pattern over the five methods is not the same across benchmarks. Each circle is the method's standing on that metric within the benchmark (larger is better), coloured by the scIB biological and batch groups. The per-metric column maximum shifts across benchmarks for the same method, which is what causes the disagreement.
+The [funky heatmap](../../docs/explanations/funky-heatmaps-and-robustness.md) of each benchmark. Each circle is the standing of the method on that metric within the benchmark, coloured by the scIB biological and batch groups.
 
 ```{python}
 groups = ["bio", "bio", "batch", "batch"]  # ARI, ASW | kBET, LISI
@@ -135,9 +129,9 @@ for b in BENCH:
     display(fig)
 ```
 
-## A fifth source: BatchBench
+## BatchBench
 
-BatchBench scores the methods with two entropy metrics rather than the scIB family: batch entropy, where a higher value means the batches are better mixed, and cell-type entropy, where a higher value means the cell types are more blurred, so a lower value is better for biology. Ruben Chazarra-Gil provided the scores by personal communication. The two metrics show the batch-mixing against biology tradeoff directly.
+BatchBench has two entropy metrics: batch entropy, higher when the batches are better mixed, and cell-type entropy, higher when the cell types are less separated.
 
 ```{python}
 import matplotlib.pyplot as plt
@@ -161,11 +155,11 @@ fig.tight_layout()
 plt.show()
 ```
 
-A method low and to the right mixes batches well while keeping the cell types separate. harmony sits high and to the right: it mixes batches well but blurs the cell types more than the others. A benchmark that weights biology equally then ranks it below fastMNN, which is what BatchBench does.
+A method low and to the right mixes batches and keeps the cell types separate.
 
 ## Benchmark share of the variance
 
-A cross-benchmark [variance decomposition](../../docs/explanations/attribution-synthesis.md) puts a number on the split. The model is `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)`, where the method-by-benchmark component is the disagreement attributable to the benchmark rather than the method. The chunk fits it twice, with the four scIB-family sources and again with BatchBench added, so the effect of the fifth source is visible. The fit needs R's lme4, so the chunk runs only when it is available.
+The [variance decomposition](../../docs/explanations/attribution-synthesis.md) is `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)`. The method-by-benchmark component is the disagreement between benchmarks about the methods. It is fitted on the four scIB-metric sources and again with BatchBench. It needs R's lme4.
 
 ```{python}
 from beam.heterogeneity import r_available, source_variance_decomposition
@@ -187,11 +181,11 @@ else:
     print("Provision it with envs/heterogeneity.yml.")
 ```
 
-Adding BatchBench raises the method-by-benchmark share, from about 0.23 to about 0.42. Its two entropy metrics weight biological conservation and batch mixing equally, and on that footing it disagrees with the scIB-family benchmarks about harmony, so more of the spread now sits in the benchmark rather than the method. Part of the rise is also that BatchBench ranks four methods rather than five, the same scale difference Tyler has, so read it as a clear direction rather than an exact number. The fits are singular (with so few benchmarks one or more variance components are estimated at zero); this does not stop the share from being computed, and it is one more reason to read the value as a direction.
+The method-by-benchmark share is 0.23 with four sources and 0.42 with BatchBench. BatchBench ranks four methods and not five, as Tyler ranks three. The fits are singular: with so few benchmarks at least one variance component is estimated at zero.
 
-## One coherent ranking: network meta-analysis
+## Network meta-analysis
 
-The variance decomposition says how much of the spread is the benchmark. A network meta-analysis instead pools all five sources into one ranking, the way clinical research ranks treatments that were never all tried in one trial. Each method is a treatment, each (benchmark, dataset) block is a study, and the within-study effect of a method is its mean rank over the metrics with a standard deviation across them. netmeta combines the direct and the indirect evidence, and reports a P-score per method (higher is better) plus heterogeneity and inconsistency statistics. The fit needs R's netmeta, so the chunk runs only when it is available.
+A [network meta-analysis](../../docs/explanations/network-meta-analysis.md) pools the five sources into one ranking. Each method is a treatment and each (benchmark, dataset) pair a study; the effect of a method in a study is its mean rank over the metrics, with the standard deviation across them. netmeta reports a P-score per method (higher is better) and heterogeneity and inconsistency statistics. It needs R's netmeta.
 
 ```{python}
 from beam.heterogeneity import netmeta_available, network_meta_analysis
@@ -211,11 +205,11 @@ else:
     print("Provision it with envs/heterogeneity.yml.")
 ```
 
-With BatchBench in the pool, harmony no longer ranks first on its own: it ties with liger at the top, fastMNN follows, and combat ranks last. The I-squared is high and the inconsistency Q is significant: the direct and the indirect evidence for the same method pairs do not line up.
+harmony and liger have the same P-score, 0.83, followed by fastMNN at 0.58, scanorama at 0.25 and combat at 0. I-squared is 0.67 and the inconsistency Q is significant.
 
-## Same data, two pipelines: the human pancreas
+## Human pancreas in two pipelines
 
-The pooled decomposition above mixes pipeline differences with dataset differences, because the first three benchmarks barely share datasets and Tyler's in silico runs share none of them. The one confirmed overlap removes the data confound: Tran's Dataset 4 is built from Muraro, Segerstolpe, Baron, Wang and Xin, the same five studies scIB's pancreas task uses. Running both pipelines on this shared block reads off the pipeline effect with no data variability in the way.
+Tran's Dataset 4 and the scIB pancreas task use the same five studies (Muraro, Segerstolpe, Baron, Wang and Xin), so the two pipelines can be compared on the same data.
 
 ```{python}
 from beam.datasets import load_pancreas_contrast
@@ -231,7 +225,7 @@ for i, m in enumerate(pc.methods):
     print(f"  {m:10s}  Tran D4 {pc.tran_mean_rank[i]:.2f}    scIB pancreas {pc.scib_mean_rank[i]:.2f}")
 ```
 
-Both pipelines agree on the top-ranked method on the shared data, but the rest of the order disagrees more than the pooled Spearman in the previous section would predict. LIGER ranks second on Tran D4 (it took first on kBET and LISI in Tran's per-metric ranks) and tied last on scIB pancreas, where the same metrics put it near the bottom. The disagreement is not the data; it is in the pipeline.
+The Spearman correlation of the two rankings is 0.46.
 
 ```{python}
 import matplotlib.pyplot as plt
@@ -251,7 +245,7 @@ fig.tight_layout()
 plt.show()
 ```
 
-Within each benchmark, the smallest single-weight change that swaps the top-ranked method measures how much the recommendation depends on the analyst's weighting. beam uses the Triantaphyllou-Sanchez closed-form weight delta on the mean-rank matrix; [SAW](../../docs/explanations/aggregation-methods.md) with equal weights is the baseline so the perturbation is interpretable as "how much weight off one metric is needed to flip the top".
+The smallest single-weight change that swaps the top method of each benchmark, with the Triantaphyllou-Sanchez closed form on the mean-rank matrix under [SAW](../../docs/explanations/aggregation-methods.md) and equal weights:
 
 ```{python}
 from beam.mcda import smallest_weight_perturbation
@@ -274,11 +268,9 @@ for bench in BENCH:
         )
 ```
 
-OpenProblems is the most fragile of the three: a 0.11 absolute change to the ASW weight (out of 0.25 equal-weighted baseline) flips fastMNN to harmony. Tran's harmony lead needs a 0.24 ASW shift before LIGER takes top. scIB's fastMNN lead is the most stable: a 0.90 shift on LISI is needed before LIGER takes top, well past the [0, 1] feasible range and so practically out of reach. Each benchmark sits at a different point on the fragility axis, even though the analysis rule is the same.
-
 ## Specification curve per benchmark
 
-The fragility delta is one number per benchmark. The specification curve lists the whole multiverse of analyst choices: every weighting by every aggregation on the mean-rank matrix. [`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) runs the grid and [`specification_curve`](../../docs/explanations/rank-sensitivity.md#the-specification-curve) reports how often the top method holds. The benchmarks differ here too: on Tran and scIB the top method holds across all 20 combinations, while on OpenProblems it does not.
+[`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) ranks under every weighting and aggregation on the mean-rank matrix, and [`specification_curve`](../../docs/explanations/rank-sensitivity.md#the-specification-curve) reports how often the top method is the same.
 
 ```{python}
 from beam.mcda import rank_sensitivity, specification_curve
@@ -292,7 +284,7 @@ for bench in BENCH:
           f"{curve.n_specifications} combinations, {curve.n_distinct_top_tools} method(s) reach the top")
 ```
 
-On OpenProblems the top method does not hold across the choices, so the per-method split shows which methods carry that variance and whether it is the weighting or the aggregation. The four metrics (ARI, ASW, kBET, LISI) are the columns being combined, the criteria of the decision, not a factor in the split. The split has no factor for the dataset either. Each cell of this matrix is already a mean rank over the benchmark's datasets, so the datasets are collapsed and the bars carry only the weighting, the aggregation and their interaction.
+The shares per method on OpenProblems. Each cell of the matrix is a mean rank over the datasets of the benchmark, so the factors are the weighting and the aggregation only.
 
 ```{python}
 op_matrix = ib.method_metric_matrix("OpenProblems")[2]
@@ -302,7 +294,7 @@ plot.rank_sensitivity_by_tool(op_rs, title="OpenProblems: what moves each method
 
 ## Blind analysis
 
-A [blind analysis](../../docs/explanations/analysis-blinding.md) fixes the weighting and the aggregation before the method names are revealed, so the choices cannot be tuned toward a method known to lead. These benchmarks rank on the mean-rank scale rather than through [metric cards](../../docs/explanations/cards-and-pipeline.qmd), so the demonstration uses the low-level [`beam.mcda.run`](../../docs/reference/run.qmd) with explicit polarity. `beam.blind` relabels and shuffles the rows; the seal maps the labels back. The order is the same once unblinded.
+A [blind analysis](../../docs/explanations/analysis-blinding.md) fixes the weighting and the aggregation before the method names are known. These benchmarks are on the mean-rank scale and have no [metric cards](../../docs/explanations/cards-and-pipeline.qmd), so [`beam.mcda.run`](../../docs/reference/run.qmd) is called with explicit polarity. `beam.blind` relabels and shuffles the rows; the seal maps the labels back.
 
 ```{python}
 from beam import blind, Scores
@@ -325,11 +317,11 @@ print("order, unblinded: ", order_unblinded)
 print("same order after unblinding:", order_named == order_unblinded)
 ```
 
-## A sixth source: dataset discrimination
+## Dataset discrimination
 
-Every analysis above compares method orders, so it needs shared methods. Shen, He and Guan (2026, [10.1371/journal.pcbi.1014008](https://doi.org/10.1371/journal.pcbi.1014008)) score ten methods, five semi-supervised (scANVI, scGEN, STACAS, scDREAMER, ItClust) and five unsupervised (Seurat, scVI, Harmony, scanorama, scCRAFT), on six datasets, each under annotation scenarios that degrade label supervision from full to none. Only harmony and scanorama overlap the classical five, too few to rank-harmonize. A property defined per dataset is still available: how much each dataset separates the methods it scores. Any benchmark can report it for every dataset, whatever methods it ran. See the data README for provenance and the [dataset discrimination explanation](../../docs/explanations/dataset-concordance-and-discrimination.md#dataset-discrimination).
+Shen, He and Guan (2026, [10.1371/journal.pcbi.1014008](https://doi.org/10.1371/journal.pcbi.1014008)) score five semi-supervised methods (scANVI, scGEN, STACAS, scDREAMER, ItClust) and five unsupervised ones (Seurat, scVI, Harmony, scanorama, scCRAFT) on six datasets, under annotation scenarios with decreasing label supervision. See the [dataset discrimination explanation](../../docs/explanations/dataset-concordance-and-discrimination.md#dataset-discrimination).
 
-[`dataset_discrimination`](../../docs/reference/dataset_discrimination.qmd) computes it from the scores. beam treats each (dataset, scenario) pair as one unit and reports two values per unit: the spread of the pooled method scores, the effect size, and Kendall's W over the unit's method-by-metric matrix, the consistency of the order across metrics. It complements [`dataset_concordance`](../../docs/explanations/dataset-concordance-and-discrimination.md): concordance asks whether datasets agree on the order, discrimination asks whether a dataset separates the methods at all.
+[`dataset_discrimination`](../../docs/reference/dataset_discrimination.qmd) takes each (dataset, scenario) pair as a unit and reports the spread of the pooled method scores and Kendall's W over the method-by-metric matrix of the unit.
 
 ```{python}
 from beam.datasets import load_openproblems, load_semisupervised_integration
@@ -344,11 +336,9 @@ print(f"least discriminating: {disc.least_discriminating}")
 display(plot.dataset_discrimination(disc, top=15))
 ```
 
-The strongest discriminators are the corrupted-label scenarios (`randomly_wrong_70` and the heavily missing ones): wrong labels separate the methods that use them from the unsupervised ones. The weakest are the mild perturbations, where the methods score alike and the unit cannot rank them. On the high-spread units the colour is dark, so the metrics agree on the order there.
+### Difficulty concordance
 
-### Difficulty concordance: classical versus deep learning
-
-Splitting the methods into two categories, classical and deep learning, separates two kinds of hardness. [`difficulty_concordance`](../../docs/reference/difficulty_concordance.qmd) correlates the per-category difficulty profiles across the datasets. A high concordance places the hardness in the data; a low one places it in the kind of method.
+[`difficulty_concordance`](../../docs/reference/difficulty_concordance.qmd) correlates the difficulty profiles of classical and deep-learning methods across the datasets.
 
 ```{python}
 dl = {"scVI", "scANVI", "scGEN", "scDREAMER", "scCRAFT", "ItClust"}
@@ -369,11 +359,9 @@ print(f"OpenProblems (intrinsic-complexity hardness): concordance {op_conc.conco
 display(plot.difficulty_concordance(shen_conc, title="Shen 2026: do DL and classical find the same units hard?"))
 ```
 
-The two benchmarks differ because their datasets are hard for different reasons. On OpenProblems the hardness is dataset complexity, and the two categories agree (Spearman about 0.89): a dataset hard for classical methods is hard for the deep-learning ones. On Shen the hardness is annotation quality, and they agree weakly (about 0.32): degraded labels affect only the methods that use them. On the hardest units the deep-learning methods score below the classical ones; on the easy units they score above. Dataset complexity is shared; a benchmark that stresses what one category depends on is hard only for that category, which a single cross-method ranking would not show.
+### scIB classical and deep-learning methods
 
-### A controlled contrast inside scIB
-
-The OpenProblems and Shen contrasts compare the two categories across different method sets. The scIB source harmonized at the top of this vignette removes that confound: it scores deep-learning methods (scVI, scANVI, scGen, DESC, SAUCIE, trVAE) on the same five datasets and four metrics as the classical five already used, so the only thing that changes between classical and deep learning is the method. `load_scib_integration_families` returns both blocks; the deep-learning scores are extracted from the same `scib-reproducibility` table by `reduce_scib_dl.py`.
+scIB scores deep-learning methods (scVI, scANVI, scGen, DESC, SAUCIE, trVAE) on the same five datasets and four metrics as the classical five. `load_scib_integration_families` returns both sets; the deep-learning scores come from the same `scib-reproducibility` table through `reduce_scib_dl.py`.
 
 ```{python}
 from beam.datasets import load_scib_integration_families
@@ -387,8 +375,6 @@ print("methods now shared with Shen:", shared)
 display(plot.difficulty_concordance(scib_conc, title="scIB: do DL and classical find the same datasets hard?"))
 ```
 
-On scIB the two categories agree (about 0.90), as on OpenProblems and unlike Shen, even though the datasets and metrics are held fixed and only the method changes. The low Shen concordance is a property of annotation degradation, not of being a deep-learning method. Extracting these methods also lifts the deep-learning overlap: scVI, scANVI and scGen now join harmony and scanorama as methods shared with Shen, where before no deep-learning method was carried from scIB at all.
-
 ## Limits
 
-The published-rank chart and the within-five-methods Spearman comparison are computed on the first three benchmarks because Tyler does not publish an overall ranking (its paper is a methodological critique, not a recommendation). The variance decomposition pools all four sources. Numbers stay indicative, not precise: a Spearman over five methods is coarse, four benchmarks is still few for a sharp method-by-benchmark variance estimate, and the reported rankings are reconstructed (Tran's final rank directly, scIB's 0.6/0.4 overall and OpenProblems' mean score recomputed). For the pooled comparison the benchmarks also use mostly different datasets, so part of that disagreement is genuine data variability, not the benchmarker; the human pancreas section removes that confound on the one block where it can be removed. With those caveats, standardizing the decision making with beam removes part of the apparent disagreement between these benchmarks, but it does not close it: the network meta-analysis finds a significant residual inconsistency even under the shared rule.
+The reported-rank chart and the Spearman comparison use the first three benchmarks, as Tyler publishes no overall ranking. The reported rankings are reconstructed: Tran's final rank directly, scIB's 0.6/0.4 overall and the OpenProblems mean score recomputed. A Spearman over five methods is coarse, and five benchmarks are few for a method-by-benchmark variance estimate. The benchmarks use mostly different datasets, except for the human pancreas.

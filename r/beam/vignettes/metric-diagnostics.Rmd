@@ -15,7 +15,7 @@ knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>",
                       dpi = 140, out.width = "100%", fig.width = 7, fig.height = 4.5)
 ```
 
-A benchmark that reads a group of metrics as one criterion assumes the group behaves as one scale. beam has [three measurement-side checks](https://imallona.github.io/beam/docs/explanations/metric-set-diagnostics.html) for that assumption, all built on the same oriented Spearman correlations between the metrics. This vignette runs them on the bundled OpenProblems batch integration scores, where the scIB metrics split into biological conservation and batch correction. The R functions forward to the Python `beam` core; install it once with `install_beam_python()`.
+[Three checks](https://imallona.github.io/beam/docs/explanations/metric-set-diagnostics.html) on a group of metrics used as one criterion, from the Spearman correlations between the metrics, on the bundled OpenProblems batch integration scores. The scIB metrics are grouped into biological conservation and batch correction. The R functions call the Python `beam` package through reticulate; `install_beam_python()` installs it.
 
 ```{r libs}
 library(rbeam)
@@ -31,9 +31,9 @@ bio <- c("ari", "nmi", "asw_label", "isolated_label_f1",
 groups <- ifelse(metrics %in% bio, "bio", "batch")
 ```
 
-## All three at once
+## All three
 
-`beam_metric_diagnostics` runs validity, reliability and dimensionality on one grouping and returns the three reports together.
+`beam_metric_diagnostics` runs validity, reliability and dimensionality on one grouping.
 
 ```{r diagnostics}
 diag <- beam_metric_diagnostics(tensor, polarity, groups, metric_ids = metrics)
@@ -48,7 +48,7 @@ data.frame(
 
 ## Validity
 
-Convergent validity asks whether same-group metrics agree; discriminant validity asks whether different-group metrics agree less (Campbell and Fiske 1959).
+Correlations within and between groups (Campbell and Fiske 1959):
 
 ```{r validity, fig.height = 5}
 v <- diag$validity
@@ -58,33 +58,33 @@ cat("the split separates (within > between):", v$discriminant_ok, "\n")
 beam_plot(v, "metric_correlation")
 ```
 
-Metrics are ordered by group; a darker within-group block than between-group cells means the split holds.
+Metrics are ordered by group.
 
 ## Reliability
 
-Standardized Cronbach's alpha per group (Cronbach 1951). A group above the conventional 0.7 cutoff reads as one reliable scale.
+Standardized Cronbach's alpha per group (Cronbach 1951), with 0.7 as the usual cutoff.
 
 ```{r reliability, fig.height = 3.6}
 rel <- diag$reliability
 beam_plot(rel, "metric_reliability_dropped")
 ```
 
-Each bar is the group alpha recomputed with one metric removed, one facet per group. A bar above the dashed group-alpha line marks a metric whose removal raises reliability; the dotted line is the 0.7 cutoff.
+Each bar is the group alpha with one metric removed. The dashed line is the group alpha and the dotted line 0.7.
 
 ## Dimensionality
 
-Cronbach's alpha reads a group as one scale when it is high, but it cannot test whether the group is a single factor, and it rises with the number of metrics. `metric_dimensionality` counts the factors by parallel analysis (Horn 1965, Glorfeld 1995) on the metric correlation matrix. The scree plot shows the eigenvalues per group: a single large eigenvalue means one factor.
+`metric_dimensionality` counts the factors of each group by parallel analysis (Horn 1965, Glorfeld 1995). The scree plot has the eigenvalues per group.
 
 ```{r scree, fig.height = 4}
 dim_rep <- diag$dimensionality
 beam_plot(dim_rep, "metric_dimensionality_scree")
 ```
 
-One line per group joins its eigenvalues. The legend gives the factor count parallel analysis keeps. A curve that clears the Kaiser line at more than one component carries more than one factor.
+The legend gives the number of factors parallel analysis keeps.
 
 ## Specification curve and blind analysis
 
-The diagnostics above read the metrics. The MCDA-side [specification curve](https://imallona.github.io/beam/docs/explanations/rank-sensitivity.html#the-specification-curve) reads the methods: every weighting, aggregation and dataset, with how often the top method holds. COMET is left out because it is slow on a metric-rich task.
+The [specification curve](https://imallona.github.io/beam/docs/explanations/rank-sensitivity.html#the-specification-curve) over every weighting, aggregation and dataset. COMET is left out: it is slow with many metrics.
 
 ```{r spec-curve}
 mcda <- reticulate::import("beam.mcda")
@@ -108,7 +108,7 @@ cat(sprintf("specification curve: %s ranks first in %.0f%% of %d combinations, %
 beam_plot(curve, "specification_curve")
 ```
 
-A [blind analysis](https://imallona.github.io/beam/docs/explanations/analysis-blinding.html) fixes the weighting and the metric set before the method names are seen. `beam_blind` hides the names; `beam_unblind` restores them; the ranking does not change.
+A [blind analysis](https://imallona.github.io/beam/docs/explanations/analysis-blinding.html) fixes the weighting and the metric set before the method names are known. `beam_blind` hides the names; `beam_unblind` restores them.
 
 ```{r blind}
 beam <- reticulate::import("beam")
@@ -127,7 +127,7 @@ cat("blinding fingerprint:",
 
 ## Dataset concordance
 
-The metric-side checks above ask whether the metrics cohere. The method-side companion asks whether the datasets agree on how they order the methods. [`beam_dataset_concordance`](https://imallona.github.io/beam/docs/explanations/dataset-concordance-and-discrimination.html) ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b.
+[`beam_dataset_concordance`](https://imallona.github.io/beam/docs/explanations/dataset-concordance-and-discrimination.html) ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b.
 
 ```{r concordance, fig.height = 5}
 conc <- beam_dataset_concordance(
@@ -144,4 +144,4 @@ beam_plot(conc, "dataset_concordance")
 
 ## Summary
 
-The biological group has the higher alpha (0.85) but splits into two factors under parallel analysis, so the alpha partly reflects the group's size, not one underlying quantity. The batch group has the lower alpha (0.61) and a single factor that its metrics track only weakly. See `?beam_metric_validity`, `?beam_metric_reliability`, `?beam_metric_dimensionality`.
+Alpha is 0.85 for the biological group, with two factors under parallel analysis, and 0.62 for the batch group, with one. See `?beam_metric_validity`, `?beam_metric_reliability`, `?beam_metric_dimensionality`.

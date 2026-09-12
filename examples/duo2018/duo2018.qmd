@@ -1,5 +1,5 @@
 ---
-title: "Duo 2018 clustering benchmark, walkthrough"
+title: "Duo 2018 clustering benchmark"
 author: "Izaskun Mallona"
 date: today
 format:
@@ -15,7 +15,7 @@ format:
 
 ## Set-up
 
-The five [aggregation methods](../../docs/explanations/aggregation-methods.md) used below (SAW, TOPSIS, VIKOR, PROMETHEE II, [COMET](../../docs/explanations/aggregation-methods.md#comet)) are wrapped from pymcdm. beam normalizes by metric card, then calls pymcdm on the normalized matrix and keeps the higher-is-better convention. The [weighting schemes](../../docs/explanations/weighting-schemes.md) are beam's own, since pymcdm's reject the zeros beam's normalization produces.
+The five [aggregation methods](../../docs/explanations/aggregation-methods.md) (SAW, TOPSIS, VIKOR, PROMETHEE II, [COMET](../../docs/explanations/aggregation-methods.md#comet)) come from pymcdm, called on the matrix beam normalizes by metric card. The [weighting schemes](../../docs/explanations/weighting-schemes.md) are beam's own.
 
 ```{python}
 %matplotlib inline
@@ -35,9 +35,9 @@ from beam.mcda import (
 )
 ```
 
-## Load the tensor
+## Data
 
-[`load_duo2018`](../../docs/reference/load_duo2018.qmd) reads the bundled CSV into a frozen dataclass. The scores are a method by dataset by metric tensor with `numpy.nan` in the cells that were the literal string NA in the source. The loader does not impute or drop anything.
+[`load_duo2018`](../../docs/reference/load_duo2018.qmd) reads the bundled CSV into a method by dataset by metric tensor, with `numpy.nan` for the NA cells of the source.
 
 ```{python}
 duo = load_duo2018()
@@ -49,7 +49,7 @@ print("metrics:", ", ".join(duo.metric_ids))
 
 ## Missing cells
 
-Four metrics are recorded. ARI, runtime and Shannon entropy difference each have five [missing cells](../../docs/explanations/missing-data.md); cluster-count deviation has 101 of 168 cells missing because several methods do not report a fixed cluster count for every dataset. With more than half its cells empty, cluster-count deviation cannot be pooled across datasets without an imputation choice that would drive the result, so this analysis uses the three well-populated metrics: ARI, runtime, and Shannon entropy difference.
+ARI, runtime and Shannon entropy difference each have five [missing cells](../../docs/explanations/missing-data.md). Cluster-count deviation has 101 of 168 cells missing and is left out.
 
 ```{python}
 for metric_id in duo.metric_ids:
@@ -59,9 +59,9 @@ for metric_id in duo.metric_ids:
 analysis_metrics = ["ari", "runtime", "shannon_entropy_diff"]
 ```
 
-## Pull the metric cards
+## Metric cards
 
-[`properties_for`](../../docs/reference/properties_for.qmd) looks up the card for each metric and exposes the fields the pipeline consumes: polarity, scale type, declared range, and the recommended cross-dataset aggregation. ARI is higher is better; runtime and Shannon entropy difference are lower is better. Runtime is a ratio metric that spans orders of magnitude, so its card recommends the geometric mean across datasets (Smith 1988). ARI and Shannon entropy difference take the arithmetic mean.
+[`properties_for`](../../docs/reference/properties_for.qmd) reads the polarity, scale type, declared range and cross-dataset aggregation of each metric. ARI is higher is better; runtime and Shannon entropy difference are lower is better. Runtime is a ratio metric over orders of magnitude and takes the geometric mean across datasets (Smith 1988); the other two take the arithmetic mean.
 
 ```{python}
 props = properties_for(analysis_metrics)
@@ -74,11 +74,11 @@ for p in props:
     )
 ```
 
-## Pool across the twelve datasets
+## Pooling across datasets
 
 beam needs one value per metric, so the datasets are pooled first, keeping NaN awareness: the arithmetic mean of ARI and Shannon entropy difference, the geometric mean of runtime.
 
-A method's pooled score is the average over the datasets where it was measured. The five gaps fall on SAFE (two datasets) and ascend (three datasets); every other method is observed on all twelve.
+The five missing cells are on SAFE (two datasets) and ascend (three datasets).
 
 ```{python}
 def pool_metric(metric_id, rule):
@@ -96,7 +96,7 @@ print("pooled matrix shape:", pooled.shape)
 print("pooled matrix all finite:", bool(np.isfinite(pooled).all()))
 ```
 
-[`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks the pooled scores against what the cards declare: every value inside the declared range, the [chance baseline](../../docs/explanations/reference-levels.md) and noise floor sane. It reads the raw scores, before normalization, so a card or data error (a value outside the declared range, a metric reported on the wrong scale) is named here.
+[`card_data_consistency`](../../docs/explanations/card-data-consistency.md) checks the pooled raw scores against the ranges, [chance baseline](../../docs/explanations/reference-levels.md) and noise floor on the cards.
 
 ```{python}
 from beam.mcda import card_data_consistency, registry_context
@@ -112,9 +112,9 @@ for finding in audit.findings:
     print(" ", finding.severity, finding.message)
 ```
 
-## One MCDA run, ontology-aware
+## Ranking
 
-[`run_from_registry`](../../docs/reference/run_from_registry.qmd) pulls polarity, declared bounds and the per-metric [normalization](../../docs/explanations/normalization-and-scales.md) strategy from the cards, validates the requested aggregation against the declared scale types, and runs the full pipeline. The default here is equal weights with simple additive weighting (SAW).
+[`run_from_registry`](../../docs/reference/run_from_registry.qmd) takes polarity, bounds and the [normalization](../../docs/explanations/normalization-and-scales.md) of each metric from the cards, validates the aggregation against the scale types, and ranks. The default is equal weights with simple additive weighting (SAW).
 
 ```{python}
 result = run_from_registry(pooled, analysis_metrics, weights="equal", method="saw")
@@ -126,9 +126,9 @@ for i in order:
     print(f"{duo.method_names[i]:12s}  {result.composite[i]:.3f}      {result.ranks[i]}")
 ```
 
-## Compare across weightings and aggregation methods
+## Weightings and aggregation methods
 
-Four weightings (equal, entropy, std, critic) crossed with four aggregation methods (saw, topsis, vikor, promethee_ii) give sixteen runs. A method whose rank stays the same down a column is stable to these choices.
+Four weightings (equal, entropy, std, critic) by four aggregation methods (saw, topsis, vikor, promethee_ii) give sixteen runs.
 
 ```{python}
 weightings = ["equal", "entropy", "std", "critic"]
@@ -143,7 +143,7 @@ for i, (w, m) in enumerate(combos):
     row_labels.append(f"{w} / {m}")
 ```
 
-The ranks as a heatmap, rank 1 (best) in green and rank 14 (worst) in red. A column of one colour means that method holds its rank across every configuration.
+Ranks as a heatmap, rank 1 in green and rank 14 in red:
 
 ```{python}
 from beam import plot
@@ -165,9 +165,9 @@ print("methods that are top-ranked in at least one of the 16 configurations:")
 print("  " + ", ".join(sorted(top_per_combo)))
 ```
 
-## Critical-difference diagram on ARI
+## Critical difference on ARI
 
-The MCDA composite gives one ranking, but it does not say whether the methods are separable. The Demsar (2006) [Friedman test](../../docs/explanations/critical-difference.md) ranks the methods on each dataset and asks whether the average ranks differ more than chance. The Nemenyi post-hoc gives the critical difference: two methods whose average ranks differ by less than it are not distinguishable from this data.
+The Demsar (2006) [Friedman test](../../docs/explanations/critical-difference.md) ranks the methods on each dataset and tests whether the average ranks differ. Two methods whose average ranks differ by less than the Nemenyi critical difference are not separable.
 
 This runs only on ARI, on the complete observations across the twelve datasets. SAFE and ascend have missing ARI cells, so they are ignored. The rest are complete.
 
@@ -190,7 +190,7 @@ for i in cd.order:
     print(f"  {block_names[i]:12s}  {cd.average_ranks[i]:.2f}")
 ```
 
-The diagram draws each method at its average ARI rank, with rank 1 (best, highest ARI) on the left. The bars join methods whose average ranks lie within the critical difference, so the methods a bar spans are not separable on ARI at this sample size.
+Each method is drawn at its average ARI rank, rank 1 on the left. A bar joins methods within the critical difference.
 
 ```{python}
 from beam import plot
@@ -200,7 +200,7 @@ plot.critical_difference(cd)
 
 ## Pairwise superiority on ARI
 
-The critical-difference diagram says which methods are separable, but not by how much or how often one method outperforms another. [`pairwise_superiority`](../../docs/reference/pairwise_superiority.qmd) [compares the methods two at a time](../../docs/explanations/pairwise-method-comparison.md) across the datasets, with the ARI noise floor (0.01) as the equivalence band: a method counts as outperforming another on a dataset only when the difference clears that floor. The probability of superiority is the fraction of datasets on which one method outperforms the other, an effect size that does not depend on the pool.
+[`pairwise_superiority`](../../docs/reference/pairwise_superiority.qmd) [compares the methods two at a time](../../docs/explanations/pairwise-method-comparison.md) across the datasets, with the ARI noise floor (0.01) as the equivalence band. The probability of superiority is the fraction of datasets on which one method outperforms the other.
 
 ```{python}
 from beam.mcda import pairwise_superiority
@@ -212,11 +212,9 @@ print(f"highest standing: {top_method} ({sup.standing[sup.order[0]]:.2f})")
 print(f"method pairs the sign test cannot separate: {len(sup.equivalent_pairs)} of {len(sup.per_pair)}")
 ```
 
-Most pairs are not distinguishable: across the twelve datasets the ARI differences are often inside the 0.01 floor, so neither method outperforms the other decisively. Beyond the method with the highest standing, the rest are largely interchangeable on ARI at this dataset count.
-
 ## Pairwise transitivity on ARI
 
-The ranking is one order of the methods, but the pairwise majorities behind it need not agree with any single order. [`pairwise_transitivity`](../../docs/reference/pairwise_transitivity.qmd) reads the same pairwise relation and asks whether one order is [consistent with it](../../docs/explanations/pairwise-method-comparison.md#transitivity): it reports the method preferred to every other one, the circular triads (a method outperforms a second, the second a third, the third the first), and whether the relation is transitive.
+[`pairwise_transitivity`](../../docs/reference/pairwise_transitivity.qmd) tests whether the pairwise majorities [agree with one order](../../docs/explanations/pairwise-method-comparison.md#transitivity): the method preferred to every other one, the circular triads, and whether the relation is transitive.
 
 ```{python}
 from beam.mcda import pairwise_transitivity
@@ -227,7 +225,7 @@ print(f"method preferred to every other one: {choice}")
 print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_triads} of {trans.n_triads}")
 ```
 
-SC3 is preferred to every other method one at a time, yet the relation still contains one circular triad among the methods below it, so no single order agrees with all the pairwise majorities. The matrix below orders the methods by how many others they outperform. A transitive relation fills the upper triangle and leaves the lower one empty; a red cell below the diagonal marks a method that outperforms one ranked above it, which can only happen inside a cycle.
+The matrix orders the methods by how many others they outperform. A red cell below the diagonal is a method that outperforms one ranked above it.
 
 ```{python}
 plot.pairwise_majority(trans)
@@ -235,7 +233,7 @@ plot.pairwise_majority(trans)
 
 ## Bayesian comparison on ARI
 
-The tests above report a p-value: the chance of the observed split if two methods scored the same. [`bayesian_sign_comparison`](../../docs/explanations/pairwise-method-comparison.md#bayesian-sign-comparison) reads the same pairwise relation and reports, for each pair, the posterior probability that one method is practically better, that the two are practically equivalent within the floor, and that the other is practically better.
+[`bayesian_sign_comparison`](../../docs/explanations/pairwise-method-comparison.md#bayesian-sign-comparison) gives, for each pair, the posterior probabilities that one method is practically better, that the two are equivalent within the floor, and that the other is practically better.
 
 ```{python}
 from beam.mcda import bayesian_sign_comparison
@@ -248,15 +246,15 @@ print(f"P({top_method} practically better than {runner}): {p_top:.2f}")
 print(f"P(the two are practically equivalent): {pair.p_equivalent:.2f}")
 ```
 
-SC3 is practically better than the methods with the lowest standing with probability near 1. Against the method with the next-highest standing the posterior favors equivalence within the floor, and most pairs stay inconclusive at the 0.95 threshold. The heatmap shows the posterior probability that the row method scores higher than the column method.
+Posterior probability that the row method scores higher than the column method:
 
 ```{python}
 plot.bayesian_comparison(bayes)
 ```
 
-## SMAA confidence
+## SMAA
 
-[`smaa`](../../docs/reference/smaa.qmd) samples weight vectors from a Dirichlet over the three-metric simplex, runs the pipeline once per sample, and reports the confidence factor per method: the share of samples in which that method is top-ranked. A method with a confidence factor near 1 is top-ranked under almost any weighting.
+[`smaa`](../../docs/reference/smaa.qmd) samples weight vectors from a Dirichlet, ranks once per sample, and reports the share of samples in which each method is top-ranked.
 
 ```{python}
 smaa_report = smaa(pooled, polarity, n_samples=2000, method="topsis", seed=0)
@@ -281,7 +279,7 @@ plt.show()
 
 ## Smallest weight perturbation
 
-[`smallest_weight_perturbation`](../../docs/reference/smallest_weight_perturbation.qmd) reports, under SAW, the smallest single-weight change that swaps any ranked-above pair. It also flags whether the top-ranked method is fragile, that is, whether some single weight can be moved by less than the fragility threshold (default 0.05) to push it off the top rank.
+[`smallest_weight_perturbation`](../../docs/reference/smallest_weight_perturbation.qmd) reports, under SAW, the smallest single-weight change that swaps a pair, and whether a change below the fragility threshold (default 0.05) displaces the top method.
 
 ```{python}
 ts = smallest_weight_perturbation(pooled, polarity, weights="equal", method="saw")
@@ -297,9 +295,9 @@ if ts.most_fragile_pair is not None:
     )
 ```
 
-## End to end with beam.rank
+## beam.rank
 
-The sections above call the pipeline primitives one by one. The same analysis runs in three lines through the top-level API. `beam.rank` takes the method by dataset by metric tensor, pools it across datasets per each card's rule (nan-aware), runs the MCDA pipeline, and runs the default sensitivity analysis on the same normalization context: SMAA, leave-one-metric-out, the smallest-weight perturbation, and, because the input is a tensor, leave-one-dataset-out.
+`beam.rank` takes the tensor, pools it across datasets by the rule on each card, ranks, and runs SMAA, leave-one-metric-out, the smallest-weight perturbation and leave-one-dataset-out.
 
 ```{python}
 scores = beam.Scores(
@@ -314,7 +312,7 @@ print("top-ranked under equal weights / SAW:", run.top_tool)
 print("matrix ranked (methods by metrics):", run.matrix.shape)
 ```
 
-Leave-one-dataset-out asks how much the ranking leans on any single dataset. For each dataset dropped, the remaining eleven are pooled the same way, re-ranked, and compared to the base ranking. The per-method stability is the share of those runs in which the method keeps its base rank.
+For each dataset dropped, the other eleven are pooled and re-ranked. The stability of a method is the share of those runs in which it keeps its rank.
 
 ```{python}
 lodo = run.leave_one_dataset_out
@@ -332,7 +330,7 @@ print(f"\nmost influential dataset: {influential} (largest rank shift {lodo.max_
 plot.dataset_stability(run)
 ```
 
-The [funky heatmap](../../docs/explanations/funky-heatmaps-and-robustness.md) shows the same run as a glyph table, with two robustness panels: the span of ranks each method takes across the leave-one-dataset-out runs, and the span across the five aggregations (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET) holding the weighting fixed. The brackets on the left group the methods the Friedman-Nemenyi test cannot separate on ARI. The two span panels differ: dropping a dataset barely moves the order, and Seurat holds rank one, but the choice of aggregation moves it considerably. On this benchmark the order depends more on how the metrics are combined than on which datasets are pooled.
+The [funky heatmap](../../docs/explanations/funky-heatmaps-and-robustness.md) of the run, with the rank span across the leave-one-dataset-out runs and across the five aggregations. The brackets group the methods the Friedman-Nemenyi test does not separate on ARI.
 
 ```{python}
 from beam.mcda import critical_difference
@@ -354,7 +352,7 @@ funky_heatmap_from_run(
 
 ## Dataset concordance
 
-The pooled ranking averages over the twelve datasets. [`dataset_concordance`](../../docs/explanations/dataset-concordance-and-discrimination.md) ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b. A high mean says the pooled ranking stands in for the individual datasets; a low mean says it does not, and the per-dataset orderings diverge. The diagnostic needs no replicates and assumes nothing about the datasets being interchangeable, so it measures the heterogeneity rather than asking how many datasets would be enough.
+[`dataset_concordance`](../../docs/explanations/dataset-concordance-and-discrimination.md) ranks the methods within each dataset and compares every pair of per-dataset orderings with Kendall tau-b.
 
 ```{python}
 conc = run.dataset_concordance
@@ -370,13 +368,11 @@ for cell in conc.notable_cells[:5]:
           f"rank {cell.rank}, {side} than its mean {cell.mean_rank:.1f}")
 ```
 
-The datasets group into the Koh, the Kumar and Sim, and the Zhengmix families, which is how the source studies built the data. The agreement matrix shows that structure directly.
-
 ```{python}
 plot.dataset_concordance(run)
 ```
 
-The companion view locates where the disagreement comes from. Each cell is a method's rank on a dataset minus its mean rank, so a strong positive cell marks a method that places lower than usual on that dataset. A few cells carry most of the spread: some methods collapse on the harder simulated datasets while sitting mid-table on average.
+Rank of each method per dataset minus its mean rank:
 
 ```{python}
 plot.dataset_struggle(run)
@@ -384,7 +380,7 @@ plot.dataset_struggle(run)
 
 ## Specification curve
 
-[`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) runs every combination of the weighting, the aggregation and the dataset, and splits the rank variance between them. [`specification_curve`](../../docs/explanations/rank-sensitivity.md#the-specification-curve) reads the same grid and lists the rankings, then reports how often the top method holds. The choice-only grid (weighting by aggregation, on the pooled matrix) and the choice-plus-data grid (the dataset joins it) answer different questions: the first asks whether the recommendation survives the modeling choices, the second whether it survives a change of dataset.
+[`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) ranks under every combination of weighting, aggregation and dataset. [`specification_curve`](../../docs/explanations/rank-sensitivity.md#the-specification-curve) lists the rankings and how often the top method is the same, on the pooled matrix (weighting by aggregation) and on the grid with the datasets.
 
 ```{python}
 from beam.mcda import rank_sensitivity, specification_curve
@@ -423,7 +419,7 @@ print(
 )
 ```
 
-The pooled grid keeps Seurat first in every weighting-by-aggregation combination, so the top does not depend on the modeling choice. Adding the twelve datasets drops the fraction, since dropping to a single dataset is where the order moves. The curve below plots the top method's rank across the full grid, sorted from its highest rank to its lowest.
+Rank of the top method across the grid with the datasets:
 
 ```{python}
 plot.specification_curve(curve)
@@ -431,7 +427,7 @@ plot.specification_curve(curve)
 
 ## Blind analysis
 
-A benchmarker who can see which method is which while choosing the weighting and the metric set has room to tune the choices toward a method they expect to rank first. [`beam.blind`](../../docs/explanations/analysis-blinding.md) masks the method names and shuffles the rows under a seed, so the pipeline is fixed on opaque labels; `beam.unblind` restores the names afterward. The ranking does not change, because beam ranks on the score values and unblinding only renames the rows. What blinding adds is a record: the seal fingerprint goes into the run manifest.
+[`beam.blind`](../../docs/explanations/analysis-blinding.md) masks the method names and shuffles the rows under a seed; `beam.unblind` restores the names. The seal fingerprint is recorded in the manifest.
 
 ```{python}
 from beam import blind, unblind
@@ -450,9 +446,9 @@ print("top method after unblinding:", restored.top_tool)
 print("blinding fingerprint in manifest:", blind_run.manifest["blinding"]["seal_sha256"][:12])
 ```
 
-## Mixed-effects variance decomposition
+## Mixed-effects on ARI
 
-Leave-one-dataset-out asks whether the pooled ranking depends on any single dataset. A mixed-effects model asks a different question: how much of the score variation is a stable method effect and how much is the method-by-dataset interaction that a single ranking does not show. [`beam.heterogeneity.mixed_effects`](../../docs/reference/mixed_effects.qmd) fits `score ~ method + (1 | dataset)` on one metric in R's lme4, with the method as a fixed effect and the dataset as a random intercept that absorbs how easy or hard each dataset is for every method alike. The fit needs the R toolchain, so the section below runs only when it is available.
+[`beam.heterogeneity.mixed_effects`](../../docs/reference/mixed_effects.qmd) fits `score ~ method + (1 | dataset)` in R's lme4. See [the mixed-effects explanation](../../docs/explanations/method-by-dataset-heterogeneity.md).
 
 ```{python}
 from beam.heterogeneity import mixed_effects_from_matrix, r_available
@@ -482,11 +478,9 @@ if me is not None:
     display(plot.model_effects(me, xlabel="ARI marginal mean over datasets (higher ranks first)"))
 ```
 
-The dataset intercept takes about 0.71 of the ARI variance, so most of the spread is datasets being uniformly easy or hard rather than methods reordering. SC3 and Seurat have the highest marginal means and are not separable from each other given the standard errors, which matches the critical-difference reading above. The residual share, the upper bound on the method-by-dataset interaction at one run per cell, concentrates on the two lowest-scoring methods (RaceID2 and FlowSOM) on a few simulated and four-group datasets, not on a reshuffling of the higher-scoring methods. See [the mixed-effects explanation](../../docs/explanations/method-by-dataset-heterogeneity.md).
+## Bradley-Terry tree
 
-## Bradley-Terry tree on dataset features
-
-The variance decomposition says how much interaction there is. The Bradley-Terry tree asks which dataset feature drives it. For one metric, each dataset becomes a set of pairwise method comparisons (the higher ARI is the preferred method), and `psychotree::bttree` splits the datasets by their features, so each leaf gets its own Bradley-Terry ranking and a parameter-stability test decides where a split is real. The dataset features (number of cells, number of true clusters, real vs simulated, family) ship next to the benchmark. The fit needs the R toolchain, so the section runs only when psychotree is available.
+Each dataset becomes a set of pairwise method comparisons on ARI, and `psychotree::bttree` splits the datasets by their features (number of cells, number of true clusters, real or simulated, family), with a ranking per leaf. It needs R's psychotree. See [the Bradley-Terry explanation](../../docs/explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees).
 
 ```{python}
 from beam.datasets import load_duo2018_features
@@ -513,11 +507,9 @@ else:
     print("Provision it with envs/heterogeneity.yml (conda or mamba).")
 ```
 
-On these 12 datasets the parameter-stability test finds no split, so the tree reduces to a single Bradley-Terry ranking led by SC3, the same order the net pairwise preferences and the marginal means give. A dozen datasets is too few for the test to separate a feature-dependent regime from sampling noise, which is also why the critical-difference diagram and the variance decomposition both report a stable global ranking here. The tree is more informative on a benchmark with many datasets carrying real feature variation; the [OpenProblems spatially_variable_genes vignette](../openproblems/openproblems.qmd) is where a split appears. See [the Bradley-Terry explanation](../../docs/explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees).
+## Rank sensitivity
 
-## Rank sensitivity: data or analyst choice
-
-The sections above measure three things separately: leave-one-dataset-out (does the pooled order depend on one dataset), the weighting-by-aggregation grid (does the order depend on the modeling choice), and the mixed-effects ICC (how much score variance is the dataset). `rank_sensitivity` puts all three on one scale. It ranks the methods on each dataset, under every weighting and aggregation, and splits each method's rank variance into the dataset, the weighting, the aggregation and their interactions.
+`rank_sensitivity` splits the rank variance of each method into the dataset, the weighting, the aggregation and their interactions. Missing cells take the lowest score (`missing="worst"`).
 
 ```{python}
 from beam.mcda import rank_sensitivity
@@ -545,18 +537,15 @@ print(f"  most influential factor: {rs.most_influential_factor}")
 plot.rank_sensitivity(rs)
 ```
 
-The dataset carries the most, close to the 0.71 the mixed-effects ICC put on the ARI variance, reached here by an exact factorial decomposition of the ranks rather than a random-effects model of the scores. This is not in tension with the stable leave-one-dataset-out result above: that asks whether the pooled order survives dropping one dataset, and it does, because pooling averages over the per-dataset disagreement. The dataset share measures that disagreement directly, by ranking on each dataset on its own. The weighting filled the partial cells with the lowest score (`missing="worst"`), a stated choice the share is read against.
+The dataset has 0.73 of the rank variance.
 
-The shares above are pooled over the methods. The per-method version splits the same variance one method at a time. It separates a method whose rank depends on the dataset from one that depends on the weighting or the aggregation. The span next to each bar is the difference between the method's best and worst rank, read alongside its shares.
+The same shares per method, with the difference between the best and worst rank of each method:
 
 ```{python}
 plot.rank_sensitivity_by_tool(rs)
 ```
 
-## Recommendation
+## Summary
 
-Under the default pipeline (equal weights, SAW) on ARI, runtime and Shannon entropy difference pooled across the twelve datasets, Seurat ranks first, and it holds that position across all sixteen weighting-by-method configurations tested above. The SMAA analysis puts Seurat top-ranked in about 99 percent of random weight draws, and the weight-perturbation check finds its top rank is not fragile: no single weight change within the threshold dislodges it. Leave-one-dataset-out works across the datasets: Seurat keeps its first rank in all twelve runs that drop one dataset, so the recommendation does not depend on any single dataset. On the composite, RaceID2 and SAFE rank near the bottom.
+With equal weights and SAW on ARI, runtime and Shannon entropy difference pooled across the twelve datasets, Seurat ranks first. Across the 240 combinations of weighting, aggregation and dataset it is first in half, and the dataset has 0.73 of the rank variance.
 
-The critical-difference diagram qualifies this. On ARI alone, the per-dataset ranks favour SC3 (best average ARI rank), with Seurat tied close behind, and the Friedman test is clearly significant (p well below 0.05), so the methods are not all equivalent. But the Nemenyi critical difference is large relative to the rank spread, so most pairs sit inside overlapping cliques and are not separable on ARI at twelve datasets. The composite ranks Seurat first because it also pools strong runtime and entropy-difference scores, not because it ranks first on ARI alone. Read together, Seurat is a stable top choice across these three metrics and these weightings, while the gap between the upper-middle methods on ARI alone is within the noise the test can resolve.
-
-This matches the expected narrative for Seurat (stable top choice) and for RaceID2 (a consistent low performer). It diverges on FlowSOM: here FlowSOM sits mid-pack on the composite, not among the lowest, so the expected "RaceID2 and FlowSOM are consistent low performers" holds for RaceID2 but not for FlowSOM on this metric set and pooling.
