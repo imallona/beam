@@ -37,7 +37,7 @@ from beam.mcda import card_data_consistency, registry_context
 
 context = registry_context(metric_ids, "saw")
 report = card_data_consistency(
-    raw_scores,                 # native-unit tool-by-metric matrix
+    raw_scores,  # native-unit tool-by-metric matrix
     context.polarity,
     context.bounds,
     baselines=context.baselines,

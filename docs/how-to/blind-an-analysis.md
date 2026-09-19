@@ -27,7 +27,7 @@ print(final.top_tool)
 The run [manifest](run.md#reproduce-a-run) on a blinded run records the seal fingerprint:
 
 ```python
-result.manifest["blinding"]   # {"blinded": True, "seal_sha256": "..."}
+result.manifest["blinding"]  # {"blinded": True, "seal_sha256": "..."}
 ```
 
 A reviewer who has the manifest and the seal can confirm the analysis ran on scores blinded under that exact seal.

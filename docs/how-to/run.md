@@ -6,6 +6,7 @@ The same ranking in each interface, from a wide scores CSV: the tool in the firs
 
 ```python
 import beam
+
 result = beam.rank("scores.csv", weights="entropy", method="topsis")
 beam.report(result, "report.html")
 print(result.top_tool)

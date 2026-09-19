@@ -9,11 +9,11 @@ import beam
 
 scores = beam.load_scores("scores.csv")
 blinded, seal = beam.blind(scores, seed=7)
-beam.write_seal(seal, "seal.json")        # store the secret separately
+beam.write_seal(seal, "seal.json")  # store the secret separately
 
 # choose weights, aggregation and metric set on the blinded labels, then:
 result = beam.rank(blinded, weights="entropy", method="topsis")
-final = beam.unblind(result, seal)        # restore the true names
+final = beam.unblind(result, seal)  # restore the true names
 print(final.top_tool)
 ```
 

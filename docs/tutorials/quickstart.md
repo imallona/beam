@@ -43,12 +43,12 @@ beam.report(result, "report.html")
 `beam.rank` returns a [`RunResult`](../reference/RunResult.qmd). The fields you use most often:
 
 ```python
-result.top_tool        # name of the tool ranked first
-result.tool_names      # the tools, in input order
-result.metric_ids      # the metrics, in input order
-result.result.ranks    # 1-based rank per tool, in input order
+result.top_tool  # name of the tool ranked first
+result.tool_names  # the tools, in input order
+result.metric_ids  # the metrics, in input order
+result.result.ranks  # 1-based rank per tool, in input order
 result.result.composite  # composite score per tool
-result.result.normalized # the normalized tool-by-metric matrix
+result.result.normalized  # the normalized tool-by-metric matrix
 ```
 
 `result.result` is the MCDA result: it holds the ranks, the composite scores, the normalized matrix, the weighting vector and the method name. The sensitivity reports are on [`result.smaa`](../reference/smaa.qmd), [`result.leave_one_out`](../reference/leave_one_metric_out.qmd) and [`result.perturbation`](../reference/smallest_weight_perturbation.qmd); they are `None` when you pass `sensitivity=False`. `result.manifest` is a dictionary recording the input, the metrics, the parameters and the normalization.

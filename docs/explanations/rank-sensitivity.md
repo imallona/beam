@@ -17,7 +17,7 @@ from beam.mcda import rank_sensitivity, registry_context
 
 ctx = registry_context(metric_ids, "saw")
 report = rank_sensitivity(
-    tensor,                       # (n_tools, n_datasets, n_metrics)
+    tensor,  # (n_tools, n_datasets, n_metrics)
     ctx.polarity,
     normalization=list(ctx.normalization),
     bounds=list(ctx.bounds),

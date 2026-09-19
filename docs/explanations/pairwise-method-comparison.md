@@ -17,11 +17,12 @@ from beam.mcda import pairwise_superiority
 from beam.cards import properties_for
 
 floor = properties_for(["ari"])[0].noise_floor
-report = pairwise_superiority(ari_by_dataset, "higher_is_better", rope=floor,
-                              method_names=method_names)
-report.order[0]              # the method with the highest standing
+report = pairwise_superiority(
+    ari_by_dataset, "higher_is_better", rope=floor, method_names=method_names
+)
+report.order[0]  # the method with the highest standing
 report.probability_superior  # P(row outperforms column), a matrix
-report.equivalent_pairs      # pairs the sign test does not separate
+report.equivalent_pairs  # pairs the sign test does not separate
 ```
 
 `standing` is a Copeland-style score per method in `[0, 1]`: the mean over the other methods of the chance of outperforming or being equivalent to them.
@@ -45,7 +46,7 @@ from beam.mcda import pairwise_transitivity
 trans = pairwise_transitivity(report)
 trans.is_transitive
 trans.circular_triads
-trans.condorcet_choice            # method preferred to all others, or None
+trans.condorcet_choice  # method preferred to all others, or None
 trans.coefficient_of_consistence  # None when pairs are tied
 ```
 
