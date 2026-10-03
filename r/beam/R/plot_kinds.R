@@ -141,7 +141,7 @@ NULL
     ggplot2::geom_text(ggplot2::aes(label = formatC(.data$value, format = "f", digits = 3)),
                        vjust = -0.4, size = 3, colour = "#555555") +
     ggplot2::coord_cartesian(ylim = c(0, 1), clip = "off") +
-    ggplot2::labs(x = NULL, y = "share of rank variance", title = "what moves the ranking") +
+    ggplot2::labs(x = NULL, y = "share of rank variance", title = "rank variance by factor") +
     theme_beam() +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 20, hjust = 1))
   .sized(p, width = max(3.5, 1.1 * length(labels) + 1.5), height = 3.6)
@@ -167,7 +167,7 @@ NULL
   .stacked_plot(shares, labels, c(factors, "interaction"), order = ord,
                 annotation = paste("span", spans),
                 value_label = "share of rank variance",
-                title = title %||% "what moves each method's rank")
+                title = title %||% "rank variance by factor and method")
 }
 
 .k_aggregation_agreement <- function(report) {
@@ -459,9 +459,9 @@ NULL
     ggplot2::geom_errorbarh(ggplot2::aes(xmin = .data$lo, xmax = .data$hi),
                             height = 0.2, colour = .beam_palette[1], linewidth = 1) +
     ggplot2::geom_point(size = 2.6, colour = "#222222") +
-    ggplot2::geom_text(ggplot2::aes(x = .data$hi, label = sprintf("P=%.2f", .data$ps)),
+    ggplot2::geom_text(ggplot2::aes(x = .data$hi, label = sprintf("P-score %.2f", .data$ps)),
                        hjust = -0.2, size = 2.8, colour = "#555555") +
-    ggplot2::expand_limits(x = max(hi) + 0.18 * (span + 1e-9)) +
+    ggplot2::expand_limits(x = max(hi) + 0.3 * (span + 1e-9)) +
     ggplot2::labs(x = sprintf("mean-rank difference vs %s (smaller is better)", ref), y = NULL,
                   title = title %||% "network meta-analysis forest plot") +
     theme_beam()

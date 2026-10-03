@@ -238,7 +238,8 @@ beam_rank_bump <- function(method_names, columns, ranks, divider_after = NULL,
     ggplot2::geom_point(ggplot2::aes(size = .data$score, fill = .data$group),
                         shape = 21, colour = "#33333366", stroke = 0.3) +
     ggplot2::scale_size_area(max_size = 7, limits = c(0, 1), guide = "none") +
-    ggplot2::scale_fill_manual(values = .group_colours(groups), name = NULL) +
+    ggplot2::scale_fill_manual(values = .group_colours(groups), name = NULL,
+                               guide = if (length(unique(groups)) > 1) "legend" else "none") +
     ggplot2::scale_x_continuous(breaks = seq_len(m), labels = metrics, position = "top") +
     ggplot2::scale_y_continuous(breaks = pos, labels = methods, expand = c(0, 0))
   if (!is.null(brackets)) {

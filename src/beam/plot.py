@@ -155,7 +155,7 @@ def rank_sensitivity(report) -> Figure:
     ax.set_ylabel("share of rank variance")
     ax.set_xlabel("factor")
     ax.set_ylim(0, 1)
-    ax.set_title("what moves the ranking")
+    ax.set_title("rank variance by factor")
     return fig
 
 
@@ -166,7 +166,7 @@ _INTERACTION_COLOR = "#bbbbbb"
 
 
 def rank_sensitivity_by_tool(report, title: str | None = None) -> Figure:
-    """Per-method breakdown of what moves each method's rank.
+    """Rank variance by factor, per method.
 
     Takes a ``RankSensitivityReport`` from ``beam.mcda.rank_sensitivity``. The
     pooled :func:`rank_sensitivity` bar gives one share per factor over all
@@ -202,7 +202,7 @@ def rank_sensitivity_by_tool(report, title: str | None = None) -> Figure:
     ax.set_yticklabels(labels, fontsize=8)
     ax.set_xlim(0, 1)
     ax.set_xlabel("share of rank variance")
-    ax.set_title(title or "what moves each method's rank")
+    ax.set_title(title or "rank variance by factor and method")
     handles = [
         Patch(color=_FACTOR_COLORS[k % len(_FACTOR_COLORS)], label=f) for k, f in enumerate(factors)
     ]

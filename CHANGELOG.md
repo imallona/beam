@@ -27,6 +27,9 @@ The format follows Keep a Changelog (https://keepachangelog.com/en/1.1.0/).
 - The rank sensitivity plot colours bars by analyst choice, dataset, interaction.
 - The funky heatmap aligns its span and SMAA panels on rows.
 - Plots size to their content.
+- The forest plot labels P-scores as such.
+- Rank sensitivity plot titles are "rank variance by factor".
+- The funky heatmap has no group legend for one group.
 - The report draws the Friedman-Nemenyi diagram with joining bars.
 - COMET refuses more than eight metrics.
 - `install_beam_python()` installs from GitHub.

@@ -481,7 +481,7 @@ for name in ["dominant", "random"]:
     s = scenarios_by_name[name]
     pol = [p.polarity for p in properties_for(list(s.metric_ids))]
     rs = rank_sensitivity(s.scores, pol, tool_names=s.method_names)
-    display(plot.rank_sensitivity_by_tool(rs, title=f"{name}: what moves each method's rank"))
+    display(plot.rank_sensitivity_by_tool(rs, title=f"{name}: rank variance by factor and method"))
 ```
 
 A [blind analysis](../../docs/explanations/analysis-blinding.md) fixes the weighting and the aggregation before the method names are known. `beam.blind` masks the names; `beam.unblind` restores them.

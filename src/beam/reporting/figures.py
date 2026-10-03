@@ -1459,7 +1459,7 @@ def network_forest_plot(report, *, host: Figure | None = None, title: str | None
         )
         ax.plot([effect[i]], [y[k]], marker="o", color="#222222", markersize=5, zorder=3)
         ax.annotate(
-            f"P={pscore[i]:.2f}",
+            f"P-score {pscore[i]:.2f}",
             xy=(upper[i], y[k]),
             xytext=(6, 0),
             textcoords="offset points",

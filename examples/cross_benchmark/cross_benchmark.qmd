@@ -289,7 +289,7 @@ The shares per method on OpenProblems. Each cell of the matrix is a mean rank ov
 ```{python}
 op_matrix = ib.method_metric_matrix("OpenProblems")[2]
 op_rs = rank_sensitivity(op_matrix, polarity, tool_names=CANON)
-plot.rank_sensitivity_by_tool(op_rs, title="OpenProblems: what moves each method's rank")
+plot.rank_sensitivity_by_tool(op_rs, title="OpenProblems: rank variance by factor and method")
 ```
 
 ## Blind analysis
