@@ -1,20 +1,22 @@
 # Attribution synthesis
 
-A benchmark ranking is affected by three factors. The analyst's choices, the [weighting](weighting-schemes.md) and the [aggregation rule](aggregation-methods.md). The datasets: a method that ranks first on one dataset trails on another. And the benchmarker: two benchmarks of the same task, each with its own pipeline, methods and datasets, rank the shared methods differently. beam already measures these one at a time. [`rank_sensitivity`](rank-sensitivity.md) splits a ranking between the choices and the dataset. [`source_variance_decomposition`](method-by-dataset-heterogeneity.md) splits a method's standing between the benchmark and the method. The two use different scales, so they cannot be compared directly.
+A benchmark ranking depends on three sources of variation. The first is the analyst's choice of [weighting](weighting-schemes.md) and [aggregation rule](aggregation-methods.md). The second is the dataset: a method that ranks first on one dataset can rank last on another. The third is the benchmark itself: two benchmarks of the same task, each with its own pipeline, methods and datasets, rank their shared methods differently.
 
-[`attribution_synthesis`](../reference/attribution_synthesis.qmd) puts them on one scale. For each setting it gives three shares, for analyst choice, dataset and benchmarker, that sum to one. Compared across settings, from one benchmark to a contrast where the datasets are held fixed, the shares show how the source of the movement changes as the dataset contribution is removed.
+beam has a separate measure for each. Within one benchmark, [`rank_sensitivity`](rank-sensitivity.md) gives the fraction of the rank variance due to the analyst's choices and the fraction due to the dataset. Across benchmarks, [`source_variance_decomposition`](method-by-dataset-heterogeneity.md) gives the variance of the mean ranks split between the method and the benchmark. The first is a variance over a grid of weightings, aggregations and datasets. The second comes from a mixed model. The two are on different scales and cannot be compared.
 
-## Approach
+[`attribution_synthesis`](../reference/attribution_synthesis.qmd) expresses both as fractions of one total. For each setting there are three fractions that sum to one: analyst choice, dataset and benchmarker. Across the three settings, from a single benchmark to a contrast on the same datasets, the fractions show which source changes the ranking when the dataset is held fixed.
 
-Within one benchmark, from a `RankSensitivityReport` over a tool by dataset by metric tensor: analyst choice is the weighting plus aggregation share, the dataset share is the dataset main effect, and benchmarker is zero because one benchmark does the scoring. The interaction share is split between analyst choice and dataset in proportion to the main effect each already carries.
+## How the fractions are computed
 
-Across [pooled benchmarks](network-meta-analysis.md) (e.g., different benchmarks on the same task), from a `SourceVarianceReport`: benchmarker is the method-by-benchmark component, the part of a method's standing that changes between benchmarks. The dataset share is every other component (the between-benchmark and within-benchmark-dataset terms and the residual). The pooled scores are mean ranks with no metric axis, so analyst choice cannot be measured here and is set to zero unless supplied. If/when supplied, the rest of the budget is split between benchmarker and dataset in the ratio the model gives.
+Within one benchmark, from a `RankSensitivityReport` over a tool by dataset by metric tensor. Analyst choice is the weighting fraction plus the aggregation fraction. Dataset is the dataset main effect. Benchmarker is zero, since one benchmark does all the scoring. The interaction term is divided between analyst choice and dataset in proportion to their main effects.
 
-On a same-data contrast, where two or more pipelines score the methods on the same datasets: the dataset share is zero by construction. Each method's rank is centred on its mean across the pipelines, removing the part they agree on. What remains is split into a pipeline offset (benchmarker) and the method-by-pipeline reordering (analyst choice). When the pipelines give the same order there is nothing to attribute and the shares are undefined.
+Across [pooled benchmarks](network-meta-analysis.md), from a `SourceVarianceReport`. Benchmarker is the method-by-benchmark component, the between-benchmark variation of a method's mean rank. Dataset is every other component: the between-benchmark term, the within-benchmark dataset term and the residual. The pooled scores are mean ranks with no metric axis, so analyst choice cannot be measured here. It is zero unless the caller supplies it, in which case the remainder is divided between benchmarker and dataset in the ratio from the model.
+
+On a same-data contrast, where two or more pipelines score the methods on the same datasets. Dataset is zero by construction. Each method's rank is centred on its mean across the pipelines, which removes the order shared by the pipelines. What is left is divided into a pipeline offset (benchmarker) and a method-by-pipeline reordering (analyst choice). When the pipelines give the same order there is nothing to divide and the fractions are undefined.
 
 ## Limitations
 
-The shares are descriptive, without confidence intervals, and limited by data availability (different benchmarks, shared datasets, shared methods).
+The fractions are descriptive, without confidence intervals. Each setting needs its own kind of data: a grid within one benchmark, several benchmarks of one task, or shared datasets across pipelines.
 
 ## See also
 

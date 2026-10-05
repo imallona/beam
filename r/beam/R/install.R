@@ -38,8 +38,8 @@ install_beam_python <- function(method = c("auto", "virtualenv", "conda"),
 #' The heterogeneity diagnostics (`beam_bradley_terry_tree`,
 #' `beam_mixed_effects`, `beam_plackett_luce`,
 #' `beam_source_variance_decomposition`, `beam_network_meta_analysis`) are fit by CRAN packages declared as
-#' Suggests, so `install.packages("rbeam")` does not pull them in. Run this once
-#' to install the ones you are missing.
+#' Suggests, so `install.packages("rbeam")` does not install them. Run this
+#' once to install the missing ones.
 #'
 #' @param pkgs Character vector of package names to install. Default covers all
 #'   five diagnostics.

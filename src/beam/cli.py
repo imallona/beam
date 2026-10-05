@@ -1,8 +1,7 @@
 """Command-line interface for beam.
 
-Plain, unix-style: lowercase output, no decoration, errors to stderr, and exit
-codes a script can branch on (0 ok, 2 on a usage or validation error). Built on
-argparse so the CLI adds no dependency.
+Lowercase output, errors to stderr, and exit codes a script can branch on
+(0 ok, 2 on a usage or validation error). Built on argparse.
 
 Subcommands:
 

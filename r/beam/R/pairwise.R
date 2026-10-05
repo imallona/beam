@@ -6,7 +6,7 @@
 #' superiority is the fraction of datasets on which one method outperforms the
 #' other, a common-language effect size, and a sign test says whether the
 #' difference is more than chance. This is the effect-size companion to the
-#' critical-difference test, which reports significance but not magnitude. Forwards
+#' critical-difference test, which reports significance only. Forwards
 #' to the Python `beam.mcda.pairwise_superiority`.
 #'
 #' @param scores A numeric matrix of shape (methods, datasets) on one metric, in
@@ -49,16 +49,15 @@ beam_pairwise_superiority <- function(scores,
 #' Benavoli et al. (2017) to each pair's outperformance counts. For a pair, it
 #' reports the posterior probability that one method is practically better, that
 #' the two are practically equivalent within the region of practical equivalence,
-#' and that the other is practically better, three numbers that sum to one and
-#' read directly as evidence for a choice. This is the posterior companion to the
-#' critical-difference test, which reports a p-value rather than the probability
-#' that a method is better. Forwards to the Python `beam.mcda.bayesian_sign_comparison`.
+#' and that the other is practically better, three numbers that sum to one.
+#' This is the posterior companion to the critical-difference test, which
+#' reports a p-value only. Forwards to the Python `beam.mcda.bayesian_sign_comparison`.
 #' Plot the result with `beam_plot(report, "bayesian_comparison")`.
 #'
 #' @param report A Python `PairwiseSuperiorityReport`, as returned by
 #'   [beam_pairwise_superiority]. Its region of practical equivalence is reused.
 #' @param prior_strength Number of prior pseudo-observations. Default 1.
-#' @param prior_placement Where the prior mass sits: `"rope"` (default, on the
+#' @param prior_placement Placement of the prior mass: `"rope"` (default, on the
 #'   equivalence region), `"uniform"`, or `"neutral"`.
 #' @param decision_threshold Posterior probability a region must reach for a
 #'   decisive per-pair label. Default 0.95.

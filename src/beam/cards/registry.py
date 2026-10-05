@@ -23,11 +23,9 @@ def polarities_for(
 ) -> list[str]:
     """Look up the polarity string for each metric id, in order.
 
-    A small bridge between the card registry and the MCDA pipeline. The
-    facade `beam.mcda.run` takes a list of polarity strings, one per
-    column of the score matrix. Rather than hand-type that list (and risk
-    mismatching what the metric card actually says), pass the metric ids
-    through this helper and feed the result to `run`.
+    The facade `beam.mcda.run` takes a list of polarity strings, one per
+    column of the score matrix. This helper builds that list from the cards,
+    so it matches them.
 
     Parameters
     ----------
@@ -59,15 +57,14 @@ def properties_for(
 ) -> list[MetricProperties]:
     """Look up a MetricProperties record for each metric id, in order.
 
-    Wider counterpart to ``polarities_for``. Pulls polarity, scale_type,
-    declared range bounds, allowed transformations, and the recommended
-    cross-dataset aggregation from each card. Downstream code uses this
-    view to drive bounded normalization, scale-compatibility validation,
-    and across-dataset reduction without re-walking the YAML.
+    Wider counterpart to ``polarities_for``. Reads polarity, scale_type,
+    declared range bounds, allowed transformations and the recommended
+    cross-dataset aggregation from each card, for bounded normalization,
+    scale-compatibility validation and cross-dataset reduction.
 
     ``versions`` optionally pins the card version per metric, aligned with
     ``metric_ids``; ``None`` in a slot (or ``versions=None`` entirely) takes the
-    latest version. A pinned version the registry does not carry raises KeyError.
+    latest version. A pinned version that is not in the registry raises KeyError.
     """
     reg = registry if registry is not None else Registry()
     if versions is not None and len(versions) != len(metric_ids):

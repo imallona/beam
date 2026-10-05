@@ -42,8 +42,7 @@ def promethee_ii(normalized: np.ndarray, weights: np.ndarray) -> np.ndarray:
 
     The net flow is computed by ``pymcdm.methods.PROMETHEE_II`` with the
     ``"usual"`` preference function and all criteria typed as profit (+1),
-    because the matrix is oriented higher is better. The native pairwise loop
-    has been replaced by that call.
+    because the matrix is oriented higher is better.
 
     The diagonal pair (a, a) has d = 0, so P(0) = 0 contributes nothing and
     a tool never outranks itself. With a single tool there is no other tool

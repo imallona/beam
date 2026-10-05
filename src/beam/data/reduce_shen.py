@@ -9,7 +9,7 @@ datasets under a range of annotation scenarios, on the scIB metric family.
 The per-(dataset, scenario, method, metric) scores are the raw scIB output in the
 authors' repository (https://github.com/RainySheena/benchmark_semi) under
 metrics_by_datasets/results/, one CSV per dataset. The six CSVs do not share a
-column layout: most are type, metric, method, score; lung_atlas carries a UTF-8
+column layout: most are type, metric, method, score; lung_atlas has a UTF-8
 BOM on the first header; lung_two_species swaps method and metric; macaque names
 the scenario column file_path and the method column embedding_key. This script
 normalizes the layouts and concatenates them into one long table.
@@ -18,7 +18,7 @@ The repository ships no license file. Numerical results in a published benchmark
 are facts not subject to copyright, so the derived per-(dataset, scenario, method,
 metric) scores are vendored here with attribution, the same basis used for the
 Tyler 2023 and DeepCellSeek 2025 tables. beam's role is reanalysis under one
-consistent rule, not redistribution of the article text or figures. Cite Shen,
+consistent rule; the article text and figures are not redistributed. Cite Shen,
 He and Guan (2026).
 
 Run with no arguments to fetch the six CSVs from the pinned commit and write the

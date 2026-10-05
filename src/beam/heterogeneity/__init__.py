@@ -1,11 +1,10 @@
 """beam.heterogeneity: method-dataset heterogeneity diagnostics.
 
 A global MCDA ranking pools a heterogeneous set of datasets into one
-recommendation. This subpackage qualifies that ranking by asking where it
-fails: how much of the score variation is a method-by-dataset interaction
-rather than a stable method effect, and which dataset properties reverse the
-ranking. It is the technical answer to the "against one method fits all"
-critique (Strobl and colleagues).
+recommendation. This subpackage measures how much of the score variation is
+a method-by-dataset interaction and which dataset properties reverse the
+ranking, the questions behind the critique of one method fits all (Strobl
+and colleagues).
 
 The tools all wrap R in a one-shot subprocess:
 

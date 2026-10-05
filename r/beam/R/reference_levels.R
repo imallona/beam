@@ -1,8 +1,8 @@
-#' How many tools beat the chance baseline, per metric
+#' Number of tools above the chance baseline, per metric
 #'
 #' Reads raw scores against the per-metric random baseline declared on the cards
-#' (`semantics.score_of_random_baseline`) and reports, for each metric, how many
-#' tools score better than chance, plus the tools that beat chance on no metric.
+#' (`semantics.score_of_random_baseline`) and reports, for each metric, the
+#' number of tools above chance, plus the tools above chance on no metric.
 #' Forwards to the Python `beam.mcda.beats_random_baseline`.
 #'
 #' @param scores A numeric matrix of shape (tools, metrics) of raw scores.
@@ -12,7 +12,7 @@
 #'   list with `NULL` for a metric that has no declared baseline, or a numeric
 #'   vector when every metric has one. Source it from the cards with
 #'   `beam.cards` in the registry.
-#' @param metric_ids Optional character vector of metric labels carried into the
+#' @param metric_ids Optional character vector of metric labels kept in the
 #'   report. Default `NULL`.
 #'
 #' @return The Python `RandomBaselineReport`. Read its fields with `$`.
@@ -31,12 +31,11 @@ beam_beats_random_baseline <- function(scores, polarity, baselines, metric_ids =
   )
 }
 
-#' Tool pairs no metric separates above the noise floor
+#' Tool pairs within the noise floor on every metric
 #'
 #' Compares every pair of tools on the raw scores and flags the pairs that no
 #' metric separates by its declared noise floor (`comparability.noise_floor`),
-#' the pairs the metric set cannot tell apart, and whether the two top-ranked
-#' tools sit within the floor. Forwards to the Python
+#' and whether the two top-ranked tools are within the floor. Forwards to the Python
 #' `beam.mcda.noise_floor_separation`.
 #'
 #' @param scores A numeric matrix of shape (tools, metrics) of raw scores.

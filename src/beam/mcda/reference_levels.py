@@ -1,18 +1,18 @@
 """Compare raw method scores to per-metric reference levels.
 
-Two honesty checks read raw scores against a declared reference value on each
-metric, before any normalization or weighting. They qualify a ranking that the
-MCDA pipeline would otherwise present without a caveat.
+Two checks read raw scores against a declared reference value on each metric,
+before any normalization or weighting, and add a caveat to the ranking.
 
 ``beats_random_baseline`` reads ``semantics.score_of_random_baseline``: per
-metric, the share of tools whose score is better than chance. A tool that beats
-chance on no metric is no better than a random method on the evidence given.
+metric, the fraction of tools whose score is better than chance. A tool at or
+below chance on every metric is no better than a random method on this evidence.
 
 ``noise_floor_separation`` reads ``comparability.noise_floor``: the smallest
 difference in native units that is interpretable on a metric. A pair of tools
 separated by less than the noise floor on every metric that declares one is not
 distinguishable within measurement noise. Any ranking between them, and any
-weight perturbation that flips them, then rests on differences below the floor.
+weight perturbation that flips them, is then based on differences below the
+floor.
 """
 
 from __future__ import annotations
@@ -25,16 +25,16 @@ import numpy as np
 
 @dataclass(frozen=True)
 class MetricBaseline:
-    """How many tools beat the chance level on one metric.
+    """The number of tools above the chance level on one metric.
 
     Attributes
     ----------
     metric
-        Metric id, or ``None`` when the matrix carried no ids.
+        Metric id, or ``None`` when no ids were given.
     baseline
         The declared chance score in native units.
     polarity
-        The metric polarity, which sets the direction of "beats".
+        The metric polarity, which sets the direction of above.
     n_observed
         Tools with a non-NaN score on this metric.
     n_beating
@@ -53,10 +53,10 @@ class MetricBaseline:
 
 @dataclass(frozen=True)
 class RandomBaselineReport:
-    """Per-metric chance comparison plus the tools that never beat chance.
+    """Per-metric chance comparison plus the tools never above chance.
 
     ``per_metric`` covers only the metrics that declare a baseline.
-    ``tools_never_beating`` lists the indices of tools that beat chance on none
+    ``tools_never_beating`` lists the indices of tools above chance on none
     of those metrics while having at least one observed score among them. On the
     evidence given those tools are not distinguishable from a random method.
     """
@@ -129,9 +129,9 @@ def beats_random_baseline(
     baselines: Sequence[float | None],
     metric_ids: Sequence[str] | None = None,
 ) -> RandomBaselineReport:
-    """Count, per metric, how many tools score better than chance.
+    """Number of tools above chance per metric.
 
-    A tool beats chance on a metric when its score is strictly past the declared
+    A tool is above chance on a metric when its score is strictly past the declared
     baseline in the metric's favourable direction: above the baseline for a
     ``higher_is_better`` metric, below it for ``lower_is_better``. A
     ``target_value`` metric has no chance level, so it is skipped even if a

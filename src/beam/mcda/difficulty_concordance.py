@@ -1,7 +1,7 @@
 """Whether method families find the same datasets hard.
 
 A dataset can be hard because the biology is complex, in which case every method
-struggles, or because of something one family of methods depends on, such as
+scores low, or because of something one family of methods depends on, such as
 label quality for semi-supervised methods, in which case another family is
 unaffected. The distinction matters for a cross-benchmark reading: a
 recommendation that holds for classical methods need not hold for deep-learning
@@ -14,8 +14,8 @@ scaling every metric, and correlates the per-family difficulty profiles across
 datasets with Spearman. High concordance means the hardness comes from the data;
 low concordance means it comes from the method family.
 
-It is the family-split companion to :func:`dataset_discrimination`, which measures
-how much a dataset separates all its methods at once.
+:func:`dataset_discrimination` measures how much a dataset separates all its
+methods at once; this diagnostic splits the methods by family.
 """
 
 from __future__ import annotations
@@ -39,7 +39,7 @@ class DifficultyConcordanceReport:
     family_names
         Family labels in first-seen order, indexing the matrix rows.
     dataset_ids
-        Dataset labels in input order, or ``None`` when the input carried none.
+        Dataset labels in input order, or ``None`` when the input had none.
     family_score
         ``(n_families, n_datasets)`` mean pooled normalized score per family per
         dataset, higher meaning the family does better (the dataset is easier for
@@ -95,7 +95,7 @@ def difficulty_concordance(
         Length ``n_methods`` family label per method, for example ``"DL"`` or
         ``"classical"``. Methods sharing a label form one family.
     dataset_ids
-        Optional length ``n_datasets`` labels carried into the report.
+        Optional length ``n_datasets`` labels kept in the report.
     min_pairwise
         Minimum datasets where two families both have a score for their
         concordance to be computed. Default 3.

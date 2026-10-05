@@ -4,10 +4,10 @@ Each R-backed diagnostic in this subpackage (the mixed-effects variance
 decomposition, the Bradley-Terry trees) follows the same boundary: serialise
 the input to JSON, run a one-shot Rscript that fits the model and prints its
 JSON result to stdout, then parse that output. The mechanics are identical
-across diagnostics and live here: locating the Rscript executable, probing for
-the required R packages, running the subprocess under a timeout, and parsing
-the printed JSON. A one-shot subprocess is used rather than reticulate so each
-diagnostic runs in a clean R process with no shared interpreter state.
+across diagnostics and are in this module: locating the Rscript executable,
+probing for the required R packages, running the subprocess under a timeout,
+and parsing the printed JSON. Each diagnostic runs in its own R process, with
+no shared interpreter state.
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ def rscript_executable() -> str:
 
     Defaults to ``Rscript`` on PATH. Set the ``BEAM_RSCRIPT`` environment
     variable to an explicit path or wrapper script to point beam at an R
-    living elsewhere, for example an ``Rscript`` shim that runs inside an
+    installed elsewhere, for example an ``Rscript`` shim that runs inside an
     apptainer or singularity container.
     """
     return os.environ.get("BEAM_RSCRIPT", "Rscript")
@@ -46,7 +46,7 @@ def packages_available(packages: tuple[str, ...]) -> bool:
     """Return True when Rscript is callable and every named package is installed.
 
     The result is cached per package set for the process. Tests and vignettes
-    use this to skip an analysis cleanly on a machine without the R toolchain.
+    use this to skip an analysis on a machine without the R toolchain.
 
     Parameters
     ----------

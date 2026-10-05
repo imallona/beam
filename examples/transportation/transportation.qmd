@@ -19,7 +19,7 @@ A made-up transportation example. The modes of transport are the methods and the
 
 ## Set-up
 
-The five [aggregation methods](../../docs/explanations/aggregation-methods.md) (SAW, TOPSIS, VIKOR, PROMETHEE II, [COMET](../../docs/explanations/aggregation-methods.md#comet)) come from pymcdm, called on the matrix beam normalizes. The [weighting schemes](../../docs/explanations/weighting-schemes.md) are beam's own.
+The five [aggregation methods](../../docs/explanations/aggregation-methods.md) (SAW, TOPSIS, VIKOR, PROMETHEE II, [COMET](../../docs/explanations/aggregation-methods.md#comet)) come from pymcdm, called on the matrix normalized by beam. The [weighting schemes](../../docs/explanations/weighting-schemes.md) are beam's own.
 
 ```{python}
 %matplotlib inline
@@ -195,7 +195,7 @@ for wname in ["equal", "entropy", "std", "critic"]:
     print(f"  {wname:10s}  {w_str:28s}  {top}")
 ```
 
-MEREC takes the logarithm of the normalized scores and refuses the zero that `rank` on CO2 produces. Here `run` is called directly with z-score normalization:
+MEREC takes the logarithm of the normalized scores and refuses the zero produced by `rank` on CO2. Here `run` is called directly with z-score normalization:
 
 ```{python}
 merec = run(
@@ -237,7 +237,7 @@ plot.critical_difference_band(cd)
 
 ## SMAA on one terrain
 
-SMAA samples weight vectors from a Dirichlet and reports the share of samples in which each mode is top-ranked, here on the long-distance terrain with TOPSIS.
+SMAA samples weight vectors from a Dirichlet and reports the fraction of samples with each mode ranked first, here on the long-distance terrain with TOPSIS.
 
 ```{python}
 smaa_report = smaa(
@@ -246,7 +246,7 @@ smaa_report = smaa(
     method="topsis",
     seed=0,
 )
-print("confidence factor (share of sampled weightings ranking the mode first):")
+print("confidence factor (fraction of sampled weightings ranking the mode first):")
 for n, c in zip(names, smaa_report.confidence_factor):
     print(f"  {n:12s}  {c:.3f}")
 most = names[int(np.argmax(smaa_report.confidence_factor))]
@@ -256,7 +256,7 @@ print(f"\nmost confident top-ranked mode: {most} "
 
 ## Weight perturbation on one terrain
 
-[`smallest_weight_perturbation`](../../docs/reference/smallest_weight_perturbation.qmd) reports, for every pair of modes under SAW, the smallest single-weight change that swaps them, here on the long-distance terrain with equal weights.
+[`smallest_weight_perturbation`](../../docs/reference/smallest_weight_perturbation.qmd) reports, for every pair of modes under SAW, the smallest single-weight change swapping them, here on the long-distance terrain with equal weights.
 
 ```{python}
 ts = smallest_weight_perturbation(
@@ -437,7 +437,7 @@ print(f"{curve.n_specifications} specifications; {dom} first in "
 plot.specification_curve(curve)
 ```
 
-The [rank-sensitivity](../../docs/explanations/rank-sensitivity.md) shares per mode, with the difference between the best and worst rank of each mode:
+The [rank-sensitivity](../../docs/explanations/rank-sensitivity.md) rank variance split per mode, with the rank range of each mode:
 
 ```{python}
 plot.rank_sensitivity_by_tool(rs)

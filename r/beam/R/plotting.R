@@ -20,8 +20,7 @@
 #'
 #' Dispatches `kind` to a native ggplot2 builder and either returns the plot
 #' object or saves it to a file. The figures are drawn in R with ggplot2, and
-#' \pkg{patchwork} for the funky-heatmap panels, so they no longer depend on the
-#' Python matplotlib code.
+#' \pkg{patchwork} for the funky-heatmap panels.
 #'
 #' Run-based kinds take a [beam_rank] result: `"ranking"`, `"normalized_scores"`,
 #' `"smaa"`, `"dataset_stability"`, `"funky_heatmap"`, and the effect bump charts

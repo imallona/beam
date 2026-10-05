@@ -54,13 +54,13 @@ trans.coefficient_of_consistence  # None when pairs are tied
 
 [`beam.mcda.bayesian_sign_comparison`](../reference/bayesian_sign_comparison.qmd) applies the Bayesian sign test of Benavoli et al. (2017) to the same counts.
 
-Each shared dataset is in one of three regions: A higher by more than the ROPE, B higher by more than the ROPE, or within it. A Dirichlet posterior on the three shares, with the counts plus a prior as parameters, gives the probabilities that A is practically better, that the two are practically equivalent, and that B is practically better. A pair is decided when one of them reaches the threshold (0.95 by default). The report also has the posterior mean share per region and a standing score per method.
+Each shared dataset is in one of three regions: A higher by more than the ROPE, B higher by more than the ROPE, or within it. A Dirichlet posterior on the three region fractions, with the counts plus a prior as parameters, gives the probabilities that A is practically better, that the two are practically equivalent, and that B is practically better. A pair is decided when one of them reaches the threshold (0.95 by default). The report also has the posterior mean fraction per region and a standing score per method.
 
 The default prior is one pseudo-observation on the equivalence region, as in baycomp. `uniform` spreads it over the three regions and `neutral` over the two directional ones.
 
 ## Limits
 
-The comparison is paired by dataset and uses only the direction of each difference, not its size. The sign test drops equivalent datasets, so a pair equivalent on most datasets has a weak test. With few datasets the posterior is close to the prior. All three depend on the ROPE.
+The comparison is paired by dataset and uses only the direction of each difference; the size is ignored. The sign test drops equivalent datasets, so a pair equivalent on most datasets has a weak test. With few datasets the posterior is close to the prior. All three depend on the ROPE.
 
 ## References
 

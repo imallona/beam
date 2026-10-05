@@ -70,10 +70,9 @@ def test_report_includes_sensitivity_sections(tmp_path):
     assert "Smallest weight perturbation" in html
 
 
-def test_recommendation_text_follows_style_rules():
+def test_recommendation_text_uses_rank_language():
     text = recommendation(_toy_result())
     assert "ranks first" in text
-    # The project forbids winner/wins phrasing, em dashes, and bold markers.
     lowered = text.lower()
     assert "winner" not in lowered
     assert "wins" not in lowered
@@ -82,7 +81,6 @@ def test_recommendation_text_follows_style_rules():
     assert "\u2014" not in text  # em dash
     assert "\u2013" not in text  # en dash
     assert "**" not in text
-    # The claim is tied to the metric set and the weighting.
     assert "ari" in text and "runtime" in text
 
 
@@ -179,7 +177,7 @@ def test_report_includes_funky_heatmap_by_default(tmp_path):
     out = tmp_path / "report.html"
     write_report(result, out)
     html = out.read_text(encoding="utf-8")
-    assert "Robustness at a glance" in html
+    assert "Rank robustness" in html
     assert "funky heatmap with rank-robustness" in html
 
 
@@ -188,7 +186,7 @@ def test_funky_heatmap_can_be_disabled(tmp_path):
     out = tmp_path / "report.html"
     write_report(result, out, funky_heatmap=False)
     html = out.read_text(encoding="utf-8")
-    assert "Robustness at a glance" not in html
+    assert "Rank robustness" not in html
     # The aggregation-agreement sentence is a sensitivity result, not part of
     # the glyph table, so it still appears when the figure is turned off.
     assert "Aggregation agreement" in html

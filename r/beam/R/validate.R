@@ -13,7 +13,7 @@
 #'
 #' @return A list with at least `ok` (logical), `errors` (character vector),
 #'   and `metrics` (character vector of validated metric ids). On error,
-#'   raises an R error rather than returning the structure quietly, so callers
+#'   raises an R error instead of returning the structure, so callers
 #'   can wrap in `tryCatch` for diagnostics.
 #'
 #' @seealso [beam_rank], [beam_metric_show].

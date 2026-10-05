@@ -12,7 +12,8 @@ file ``supplementary_table_bbaf677.xlsx`` (sheet "Supplementary Table 4"). The
 article is CC-BY-NC; numerical results in a published table are facts not subject
 to copyright, so the derived per-(dataset, method) scores are vendored here with
 attribution, the same basis used for the Tyler 2023 integration table. beam's
-role is reanalysis under one consistent rule, not redistribution of the text.
+role is reanalysis under one consistent rule; the article text is not
+redistributed.
 
 The OUP supplement download link is signed and expires, so there is no stable
 raw URL. Download ``supplementary_table_bbaf677.xlsx`` from the article's
@@ -27,7 +28,7 @@ It writes two tables next to this script:
 - deepcellseek2025_features.csv: one row per (source, tissue) dataset with
   species, source, tissue and n_cell_types.
 
-Requires openpyxl (a one-off, not a beam runtime dependency).
+Requires openpyxl, which beam itself does not depend on.
 """
 
 from __future__ import annotations

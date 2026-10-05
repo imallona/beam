@@ -1,25 +1,22 @@
 """Cross-benchmark variance decomposition.
 
-When several benchmarks score overlapping methods, the question behind the
-"benchmarks disagree" complaint is whether the disagreement comes from the
-methods or from the benchmarks. This module fits a mixed-effects model with
-the method as a fixed effect and the benchmark, the dataset within a
-benchmark, and the method-by-benchmark interaction as random effects:
+When several benchmarks score overlapping methods, the question is whether
+their disagreement comes from the methods or from the benchmarks. This module
+fits a mixed-effects model with the method as a fixed effect and the benchmark,
+the dataset within a benchmark, and the method-by-benchmark interaction as random effects:
 
     score ~ method + (1 | benchmark) + (1 | benchmark:dataset)
                    + (1 | method:benchmark)
 
-The method-by-benchmark variance is the headline number: it is how much a
-method's standing changes depending on which benchmark evaluates it, that is,
-how much of the spread is the benchmarker's choices rather than the method.
-The benchmark and the benchmark:dataset components absorb how hard each
-benchmark and each of its datasets is for every method alike. With one score
+The method-by-benchmark variance is the main output: how much a method's
+mean score changes between benchmarks, the part of the spread due to the
+benchmarker. The benchmark and the benchmark:dataset components are the
+difficulty of each benchmark and each of its datasets for every method alike. With one score
 per method per dataset per benchmark, the method-by-dataset interaction cannot
 be separated from measurement noise, so it falls into the residual; the
 residual is therefore an upper bound on the genuine within-benchmark
 heterogeneity. Datasets do not need to be shared across benchmarks: dataset is
-nested in benchmark, so the model handles the usual case where each benchmark
-brings its own datasets.
+nested in benchmark, so each benchmark may have its own datasets.
 
 The model is fit by R's lme4 in a one-shot subprocess, the same
 boundary as the rest of beam.heterogeneity. Use ``r_available`` to check the R
@@ -76,7 +73,7 @@ class SourceVarianceReport:
         The R model formula that was fit.
     singular
         lme4's singular-fit flag. A singular fit usually means a variance
-        component collapsed to zero, common when one component carries little
+        component collapsed to zero, common when one component has little
         of the variance.
     n_obs, n_methods, n_datasets, n_benchmarks
         Counts after dropping NaN scores.
@@ -117,10 +114,8 @@ class SourceVarianceReport:
     def method_benchmark_share(self) -> float:
         """Share of the variance in the method-by-benchmark interaction.
 
-        The headline number: the fraction of the spread that is a method
-        ranking differently depending on which benchmark evaluates it, the
-        disagreement attributable to the benchmarker's choices rather than the
-        method.
+        The fraction of the spread due to a method scoring differently
+        between benchmarks, the part attributable to the benchmarker.
         """
         return self._share("method:benchmark")
 

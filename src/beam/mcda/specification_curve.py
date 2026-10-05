@@ -6,7 +6,7 @@ into a share per factor. That answers which choice moves the ranking. It does
 not list the rankings themselves.
 
 ``specification_curve`` does. It reads the per-combination ranks that
-``rank_sensitivity`` already computed and turns them into one record per
+``rank_sensitivity`` already computed and makes one record per
 combination: the factor levels that define it, the full tool ordering it
 produces, and the tool it ranks first. From those records it reports how stable
 the top method is: the fraction of combinations that rank the same tool first,
@@ -15,8 +15,8 @@ tools rank first in at least one combination.
 
 This is the specification-curve form used in meta-research (Simonsohn, Simmons
 and Nelson 2020; Steegen, Tuerlinckx, Gelman and Vanpaemel 2016): report the
-ranking under every combination of choices rather than one, so the reader can
-see how much it varies.
+ranking under every combination of choices, so the reader can see how much it
+varies.
 """
 
 from __future__ import annotations
@@ -77,7 +77,7 @@ class SpecificationCurveReport:
     dataset_names
         The datasets that formed the third factor, or ``None`` for a matrix.
     tool_names
-        Tool labels in index order, or ``None`` when the input carried none.
+        Tool labels in index order, or ``None`` when the input had none.
     n_specifications
         The number of combinations in the factorial.
     specifications

@@ -8,21 +8,22 @@ head to head in one trial. Here the treatments are the methods and the studies
 are the (benchmark, dataset) blocks. The within-study effect of a method is its
 mean rank over the metrics, with a standard error from the spread across them.
 
-The standard error is the modeling choice to read honestly. Benchmarks publish
+The standard error is the main modeling choice. Benchmarks publish
 one score per method per dataset per metric, with no replicate runs, so there
 is no sampling standard error in the usual sense. This wrapper takes the
 variability across the metrics within a (benchmark, dataset) block as the
-within-arm spread. That treats the metrics as repeated readings of the same
-quantity, which they are not exactly: they measure related but distinct aspects
-of integration quality. The pooled ranking is therefore a descriptive summary
-of the evidence as published, not an inference back to a population of runs.
-The mixed-effects ``source_variance_decomposition`` answers the complementary
-question of how much of the spread is the benchmark rather than the method.
+within-arm spread. This uses the metrics as repeated readings of one
+quantity, an assumption they meet only approximately: they measure related
+aspects of integration quality. The pooled ranking is therefore a descriptive summary
+of the evidence as published and does not infer anything about a population
+of runs.
+The mixed-effects ``source_variance_decomposition`` measures how much of the
+spread is due to the benchmark.
 
 The model is fit by R's netmeta (built on meta) in a one-shot subprocess (ADR
 0009), the same boundary as the rest of beam.heterogeneity. Use
 ``netmeta_available`` to check the R toolchain before calling
-``network_meta_analysis``. Lower ranks are better, so the P-score treats small
+``network_meta_analysis``. Lower ranks are better, so the P-score is computed with small
 values as desirable: a higher P-score is a better-ranked method.
 """
 
@@ -70,7 +71,7 @@ class NetworkMetaReport:
         The reference treatment is 0 by construction. A negative effect means a
         better (lower) pooled rank than the reference.
     pscore
-        Per-treatment P-score, the share of competing treatments a method beats
+        Per-treatment P-score, the fraction of the other methods outperformed by it
         averaged over the ranking uncertainty, in 0 to 1. Higher is better.
     tau, tau2, i2
         Between-study heterogeneity standard deviation, its square, and the I^2
@@ -148,14 +149,14 @@ def network_meta_analysis(
         Five parallel sequences, one entry per study arm: the method label, the
         study label (a (benchmark, dataset) block), the mean rank of the method
         over the metrics, the standard deviation of those ranks, and the number
-        of metrics it rests on. Each study must contribute at least two arms.
+        of metrics behind it. Each study must contribute at least two arms.
         Arms with a NaN mean, sd or n are dropped.
     reference
         The reference treatment to express effects against. Defaults to
         netmeta's own choice (the first treatment) when None.
     sm
         The summary measure passed to netmeta; "MD" (mean difference) is the
-        right choice for the mean-rank arms.
+        measure for mean-rank arms.
 
     Returns
     -------

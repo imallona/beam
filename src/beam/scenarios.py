@@ -1,14 +1,14 @@
 """Canonical simulated benchmark scenarios with known ground truth.
 
-Every generator returns a ``Scenario`` carrying a tool by metric score
+Every generator returns a ``Scenario`` with a tool by metric score
 matrix (and, when relevant, the underlying tool by dataset by metric
 tensor it was reduced from), the metric ids used, and a label for the
 kind of ground truth the scenario was built to encode. The accompanying
 ``ScenarioExpectation`` documents what the MCDA pipeline and the
 sensitivity primitives ought to say about it.
 
-The scenarios sit underneath the MCDA module. Their purpose is to give
-the test suite and the documentation a controlled set of inputs whose
+The scenarios give the test suite and the documentation a controlled set of
+inputs whose
 correct interpretation is known up front, so a regression in any single
 primitive (normalization, weighting, aggregation, SMAA, leave-one-metric-out,
 Triantaphyllou-Sanchez) flips a documented assertion.
@@ -29,14 +29,14 @@ Kinds covered:
   card determines the top-performing method overall; the odd-dataset
   signal is visible only when the per-dataset tensor is inspected directly.
 
-Two further scenarios expose where plain min-max scaling goes wrong, and
+Two further scenarios show where plain min-max scaling goes wrong, and
 why the card chooses a different normalization. They are returned by
 ``normalization_failure_scenarios`` rather than by ``all_scenarios``, and
 each is built so the top-ranked method under unguarded all-min_max differs
 from the top-ranked method under the card defaults:
 
 - ``minmax_heavy_tail``: one runtime outlier sets the min-max scale and
-  hides the real speed differences among the good methods. ``log_min_max``
+  the real speed differences among the good methods are lost. ``log_min_max``
   keeps them.
 - ``minmax_chance_baseline``: min-max maps a chance-level ARI to the
   column midpoint, so a no-better-than-random method outranks a modestly
@@ -59,8 +59,8 @@ class ScenarioExpectation:
     """What the MCDA pipeline ought to report about a scenario.
 
     Fields are deliberately conservative: where the ground truth is
-    "no method that reliably comes out on top" the expectation states a
-    bound, not an exact value, so the test suite can run with a tractable
+    "no method that reliably comes out on top" the expectation states only a
+    bound, so the test suite can run with a tractable
     number of SMAA samples without flaking.
     """
 
@@ -206,9 +206,9 @@ def tied_scenario(
     The tied pair shares identical scores, set above the other methods on
     both metrics, so the pair ties for the top rank under any weighting.
     Making the pair the best methods keeps the SMAA confidence factor on
-    the pair rather than on some unrelated method, so the tie is the story
-    the plot tells. The expectation flags the pair so the test suite can
-    check rank equality and SMAA rank-acceptability equality.
+    the pair and off any unrelated method, so the plot shows the tie. The
+    expectation flags the pair so the test suite can check rank equality and
+    SMAA rank-acceptability equality.
     """
     rng = np.random.default_rng(seed)
     ari = rng.uniform(0.05, 0.55, size=n_tools)
@@ -301,13 +301,13 @@ def odd_dataset_scenario(
 def outlier_runtime_scenario(seed: int = 0) -> Scenario:
     """A runtime outlier breaks unguarded min-max scaling.
 
-    Four methods of comparable accuracy sit on a clean runtime ladder of
-    10, 20, 40 and 80 seconds. A fifth method is a 5000 second outlier.
-    Plain min-max anchors the runtime scale on that outlier, so the four
+    Four methods of comparable accuracy have runtimes of 10, 20, 40 and 80
+    seconds. A fifth method is a 5000 second outlier. Plain min-max sets the
+    runtime scale from that outlier, so the four
     good methods all map to about 0.99 and their real speed differences
     disappear. A tiny ARI difference then decides the order, and the
     slightly more accurate but twice as slow method m1 comes out on top.
-    The card default log_min_max keeps the multiplicative ladder, so the
+    The card default log_min_max keeps the multiplicative spacing, so the
     genuinely fastest good method m0 ranks first instead. The two pipelines
     put different methods on top.
     """
@@ -344,8 +344,8 @@ def chance_baseline_scenario(seed: int = 0) -> Scenario:
     """A chance-level method looks average under unguarded min-max.
 
     ARI is corrected for chance, so 0 means no better than random. Plain
-    min-max against the declared range maps that 0 to 0.5, half way to the
-    best possible score. With a second metric in play this lets a
+    min-max against the declared range maps that 0 to 0.5, halfway to the
+    top of the range. With a second metric this lets a
     chance-level method outrank a genuinely better one. Here m0 is at
     chance on ARI but reasonably fast, m1 is modestly better than chance
     but slower, and m2 is the strong all-round method. Under unguarded
@@ -407,7 +407,7 @@ def normalization_failure_scenarios(seed: int = 0) -> list[Scenario]:
     """Return the scenarios that expose the failure modes of plain min-max.
 
     Each one is built so the top-ranked method under unguarded all-min_max
-    differs from the one under the card defaults. They drive the normalization
+    differs from the one under the card defaults. They are used in the normalization
     section of the scenarios vignette and the regression tests that pin
     the contrast between strategies.
     """
@@ -420,21 +420,20 @@ class TransportationBenchmark:
 
     The methods are transport modes and the datasets are terrains. The data
     is illustrative and made up, but the numbers are kept in a plausible
-    range so the example reads sensibly. It is deliberately not a bio
+    range so the example is plausible. It is deliberately not a bio
     benchmark, yet it still goes through the metric registry: the metric ids
     ``speed``, ``cost`` and ``co2`` resolve to bundled cards, so polarity and
-    normalization come from the ontology rather than being carried here. This
-    keeps every example, bio or not, consistent in how it reads metric
-    semantics.
+    normalization come from the cards. This keeps every example, bio or not,
+    consistent in how it reads metric semantics.
 
     The point of the example is threefold. First, no mode is fastest on every
     terrain (a boat is fastest on water, a small plane on the long leg, a
     motorcycle off-road), which is the method-by-dataset interaction that a
-    single global ranking hides. Second, some modes do not run on some
+    single global ranking does not show. Second, some modes do not run on some
     terrains at all (a boat off-road, a small plane on an urban hop). Those
     cells are NaN. Because no mode is feasible on every terrain, a single
-    pooled ranking over all modes is not even well defined, so the honest
-    output is per-terrain. Third, the slower modes cross over within the land
+    pooled ranking over all modes is not well defined, so the output is per
+    terrain. Third, the slower modes cross over within the land
     terrains: trail running is slower than road running on the flat road but
     faster on mud and uphill, and an e-bike is faster than a bicycle on the
     flat road and the urban hop but slower uphill. A pooled speed order over
@@ -483,10 +482,9 @@ class TransportationBenchmark:
         On a given terrain only some modes run. This drops the modes whose
         cells are NaN on that terrain and returns the remaining mode names
         together with the dense ``(n_feasible_modes, n_metrics)`` score
-        matrix, ready to pass to ``beam.mcda.run``. This is the per-terrain,
-        example-level NaN handling the transportation vignette documents:
-        instead of imputing or pooling across terrains, each terrain is
-        analysed over the modes that actually run on it.
+        matrix, ready to pass to ``beam.mcda.run``. Each terrain is analysed
+        over the modes that run on it; nothing is imputed or pooled across
+        terrains.
 
         Parameters
         ----------
@@ -520,9 +518,9 @@ class TransportationBenchmark:
         """Return a block of modes and the terrains on which all of them run.
 
         A critical-difference diagram needs a complete tool by dataset table
-        with no missing cells. Because no mode runs on every terrain, the
-        honest way to build such a table is to restrict to a set of modes and
-        keep only the terrains where every mode in the set is feasible. This
+        with no missing cells. Because no mode runs on every terrain, such a
+        table restricts to a set of modes and keeps only the terrains where
+        every mode in the set is feasible. This
         returns those common terrain names and the ``(n_modes, n_common)``
         speed matrix for the requested modes, in the row order given.
 
@@ -575,7 +573,7 @@ def transportation_benchmark() -> TransportationBenchmark:
     The slower modes cross over within the land terrains. Trail running is
     slower than road running on the flat road but faster on mud and uphill,
     where off-road traction helps. An e-bike is faster than a bicycle on the
-    flat road and the urban hop but slower uphill, where its weight costs it.
+    flat road and the urban hop but slower uphill, because of its weight.
     On the water, the kayak is slower than the motorboat but cheaper and zero
     CO2, so it outranks the boat on cost and CO2 while it is slower on speed.
     """

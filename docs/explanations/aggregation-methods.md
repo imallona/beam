@@ -1,6 +1,6 @@
 # Aggregation methods
 
-After [normalizing](normalization-and-scales.md) the metrics results, beam holds a tool by metric matrix in the unit interval, with every column oriented so higher is better, plus a weight per metric. Aggregation turns that matrix into one preference score per tool, which then becomes a ranking. beam offers five aggregation methods: SAW, TOPSIS, VIKOR, PROMETHEE II and COMET.
+After [normalizing](normalization-and-scales.md) the metric scores, beam has a tool by metric matrix in the unit interval, with every column oriented so higher is better, plus a weight per metric. Aggregation turns that matrix into one preference score per tool, which then becomes a ranking. beam offers five aggregation methods: SAW, TOPSIS, VIKOR, PROMETHEE II and COMET.
 
 beam calls pymcdm for each, with an identity normalization and every metric typed as positive, and handles the single-tool case itself.
 

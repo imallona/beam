@@ -372,8 +372,8 @@ NULL
 
 # Heterogeneity kinds
 # `highlight` names one or more components to colour as the benchmarker (green),
-# the disagreement that is a benchmarker choice rather than the method or the
-# data; the rest are data (blue) and the residual grey. `annotation` adds a
+# the disagreement due to the benchmarker; the rest are data (blue) and the
+# residual grey. `annotation` adds a
 # caption, for example how a highlighted share moves as sources are added.
 .k_variance_components <- function(report, title = NULL, highlight = NULL, annotation = NULL) {
   vc <- reticulate::py_to_r(report$variance_components)
@@ -572,7 +572,7 @@ NULL
     benchmarker = vapply(settings, function(s) .num(s$benchmarker_share), numeric(1))
   )
   .stacked_plot(shares, labels, colnames(shares), order = seq_along(labels),
-                value_label = "share of rank-variance budget",
+                value_label = "fraction of rank variance",
                 title = title %||% "attribution across settings")
 }
 

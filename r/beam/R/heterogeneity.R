@@ -496,8 +496,8 @@ beam_bradley_terry_tree <- function(scores,
 #'
 #' Fits `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) +
 #' (1 | method:benchmark)` in lme4, with dataset nested in benchmark. Reports
-#' the method-by-benchmark variance share, the disagreement attributable to the
-#' benchmark rather than the method, with restricted likelihood-ratio tests for
+#' the method-by-benchmark variance share, the disagreement due to the
+#' benchmark, with restricted likelihood-ratio tests for
 #' each random term. Fit natively in R.
 #'
 #' @param methods,datasets,benchmarks,scores Parallel vectors of equal length,
@@ -596,8 +596,8 @@ beam_source_variance_decomposition <- function(methods, datasets, benchmarks, sc
 #' (benchmark, dataset) blocks, and the within-study effect of a method is its
 #' mean rank over the metrics with a standard deviation across them.
 #' `meta::pairwise` turns the arm means into study-level contrasts and `netmeta`
-#' pools them. Lower ranks are better, so the P-score treats small values as
-#' desirable. Fit natively in R.
+#' pools them. Lower ranks are better, so the P-score is computed with small
+#' values as desirable. Fit natively in R.
 #'
 #' @param treatment,study,mean,sd,n Parallel vectors of equal length, one entry
 #'   per study arm: the method, the study label, the mean rank over the metrics,

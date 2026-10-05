@@ -1,6 +1,6 @@
 # Add a new metric card
 
-Each metric card is one YAML file under `src/beam/metrics/<id>/v1.yaml`. The card carries the metadata the pipeline needs to normalize, weight and aggregate the metric correctly: [polarity](../explanations/measurement-theory.md) (higher or lower better), scale type, range, allowed transformations, a [recommended normalization](../explanations/normalization-and-scales.md), and the [ontology mappings](../explanations/ontology-mappings.md) (STATO, UO, OBI, HuggingFace evaluate) where an external term exists.
+Each metric card is one YAML file under `src/beam/metrics/<id>/v1.yaml`. The card has the metadata the pipeline uses to normalize, weight and aggregate the metric: [polarity](../explanations/measurement-theory.md) (higher or lower better), scale type, range, allowed transformations, a [recommended normalization](../explanations/normalization-and-scales.md), and the [ontology mappings](../explanations/ontology-mappings.md) (STATO, UO, OBI, HuggingFace evaluate) where an external term exists.
 
 ## 1. Pick the id and the version
 
@@ -87,11 +87,11 @@ provenance:
 .venv/bin/python -m pytest tests/test_schema.py -q
 ```
 
-The schema check runs against every card in the registry. A missing required field, a polarity that does not match the polarity enum, or a range that is inverted (lower > upper) raises a clear error.
+The schema check runs against every card in the registry. A missing required field, a polarity that does not match the polarity enum, or an inverted range (lower > upper) raises an error.
 
 ## 4. Optionally add a STATO or UO mapping
 
-A metric with a term in the Statistics Ontology, the Units of Measurement Ontology, the Ontology for Biomedical Investigations, or the HuggingFace evaluate catalogue takes the full IRI under `mappings`. `scripts/ols_query.py` searches OLS for candidate IRIs, and `scripts/ols_verify.py` confirms a candidate is the right term and not obsolete. IRIs are not invented.
+A metric with a term in the Statistics Ontology, the Units of Measurement Ontology, the Ontology for Biomedical Investigations, or the HuggingFace evaluate catalogue takes the full IRI under `mappings`. `scripts/ols_query.py` searches OLS for candidate IRIs, and `scripts/ols_verify.py` confirms a candidate is the right term and not obsolete. Only existing IRIs are used.
 
 The cards-and-pipeline page lists which fields the pipeline reads and which are reserved for documentation. See [../explanations/cards-and-pipeline.qmd](../explanations/cards-and-pipeline.qmd).
 

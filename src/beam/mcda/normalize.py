@@ -1,7 +1,7 @@
 """Rescale a tool by metric score matrix to [0, 1], respecting polarity.
 
 The pipeline picks one strategy per metric column from the card field
-``comparability.recommended_normalization``. Each strategy answers a
+``comparability.recommended_normalization``. Each strategy addresses a
 different failure mode of plain min-max scaling:
 
 - ``min_max``: linear rescale between the declared bounds, or the column
@@ -13,14 +13,14 @@ different failure mode of plain min-max scaling:
   longer compresses the differences among the fast ones (Smith 1988).
   Requires strictly positive values.
 - ``rank``: map the within-column position to [0, 1]. Scale-free and
-  immune to outliers; it keeps the order of the methods but drops the
+  unaffected by outliers; it keeps the order of the methods but drops the
   size of the gaps between them.
 - ``zscore``: standardize the column, then pass it through the logistic
   so the result is bounded in (0, 1). The mean method maps to 0.5 and an
   outlier is compressed smoothly instead of setting the scale.
 - ``baseline_relative``: rescale relative to a declared reference score
   (the chance-level value of a corrected-for-chance metric), so a method
-  no better than chance maps to 0 rather than to the column midpoint.
+  at chance maps to 0.
   Defined for higher-is-better metrics only.
 - ``target_relative``: rescale closeness to a declared target value, for a
   metric whose ideal is neither the highest nor the lowest score but a
@@ -31,7 +31,7 @@ different failure mode of plain min-max scaling:
   Requires the card to declare ``semantics.target``.
 
 ``normalization_warnings`` is the matching guard. It flags min-max columns
-that rest on an empirical bound (not comparable across method sets) or
+based on an empirical bound (not comparable across method sets) or
 that are heavy-tailed (one outlier dominates the rescale).
 """
 
@@ -163,7 +163,7 @@ def normalize(
 
 
 def _check_polarity_strategy(pol: str, strat: str, j: int) -> None:
-    """Reject any (polarity, strategy) pairing the normalization cannot honour.
+    """Reject any (polarity, strategy) pairing that is not allowed.
 
     ``target_value`` is the only polarity ``target_relative`` accepts, and it
     accepts no other strategy: a target-valued metric has no monotone best
@@ -239,8 +239,8 @@ def _constant_fill(col: np.ndarray, value: float) -> np.ndarray:
     """Fill every observed cell of ``col`` with ``value``, keeping NaN cells NaN.
 
     Used for a zero-range column, where the strategy cannot separate the tools
-    so every observed tool maps to the same value. A missing cell stays missing
-    rather than being assigned the fill value, since beam does not impute.
+    so every observed tool maps to the same value. A missing cell stays missing;
+    beam does not impute.
     """
     return np.where(np.isnan(col), np.nan, value)
 

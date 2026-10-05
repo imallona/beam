@@ -106,8 +106,8 @@ emm_se <- sqrt(pmax(emm_var, 0))
 # variances plus a Gaussian Residual. glmmTMB reports the random-effect
 # variances; the observation-level term is the residual variance for gaussian
 # and the dispersion parameter for beta (reported under "dispersion", which is
-# the beta precision, not a variance, so it is not comparable to a Gaussian
-# residual).
+# the beta precision and is not comparable to a Gaussian residual
+# variance).
 if (engine == "glmmtmb") {
     vc <- glmmTMB::VarCorr(model)$cond
     components <- list()

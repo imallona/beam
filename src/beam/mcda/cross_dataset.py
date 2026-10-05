@@ -90,21 +90,20 @@ def reduce_tensor(
     the downstream MCDA pipeline receives a tool by metric matrix. Unlike
     ``aggregate_across_datasets``, this function tolerates missing cells: a tool
     measured on only some datasets is summarized over the datasets where it was
-    observed. This available-case summary is not imputation; it estimates each
-    tool's performance from the runs that exist.
+    observed. This available-case summary estimates each tool's performance from
+    the runs that exist, without imputation.
 
     A tool with no observed dataset for a metric (zero coverage) has nothing to
     summarize. By default ``on_zero_coverage="error"`` raises, since the pooled
     matrix cannot rank a value that does not exist. ``on_zero_coverage="nan"``
     instead leaves that cell missing, so the downstream missing-data policy on
     the ranking call (``beam.rank(..., missing=...)``) decides what to do with
-    it, rather than this function deciding for the caller.
+    it.
 
     When a metric column has no missing cells the reduction delegates to
     ``aggregate_across_datasets``, so the complete-data path supports every rule
     including ``rank_mean``. When a column has missing cells, ``rank_mean`` is
-    rejected: coverage-aware ranking across datasets is future work tied to the
-    heterogeneity module.
+    rejected: coverage-aware ranking across datasets is not implemented.
 
     Parameters
     ----------

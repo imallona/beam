@@ -1,6 +1,6 @@
 """Triantaphyllou-Sanchez weight perturbation sensitivity.
 
-The analysis asks, for every ordered pair of tools, the smallest single-weight
+The analysis finds, for every ordered pair of tools, the smallest single-weight
 change that flips the pair ordering. The Triantaphyllou-Sanchez convention
 perturbs one weight, leaves the others unchanged, and requires the new weight
 to stay non-negative.
@@ -143,8 +143,8 @@ def smallest_weight_perturbation(
     normalization, baselines, targets
         Optional per-metric normalization context forwarded to ``run``.
         Default ``None`` keeps the ``run`` defaults. Pass the values from
-        ``beam.mcda.registry_context`` so the perturbation search rests on
-        the same normalized matrix as the headline ranking.
+        ``beam.mcda.registry_context`` so the perturbation search uses
+        the same normalized matrix as the main ranking.
     fragility_threshold
         Absolute weight delta below which the top-rank flip is flagged as
         fragile in ``top_rank_is_fragile``. Default 0.05, i.e. five
@@ -296,7 +296,7 @@ def _bisect_crossing(
 ) -> float:
     """Bisect a bracket for the zero crossing of a signed gap.
 
-    The two bracket points ``low`` and ``high`` carry gaps of opposite sign.
+    The two bracket points ``low`` and ``high`` have gaps of opposite sign.
     The endpoints may arrive in either numeric order (the search runs outward
     in both directions from zero), so this orders them first, then narrows the
     bracket until its width is below ``tolerance`` and returns the endpoint that

@@ -2,8 +2,8 @@
 
 If a benchmarker can see which method is which while choosing the weighting, the
 aggregation and the metric set, those choices can shift toward a preferred
-method, with or without intent. Blind analysis avoids this: fix the pipeline on
-data whose method labels are hidden, then reveal the labels. The practice comes
+method, with or without intent. A blind analysis fixes the pipeline on
+data with hidden method labels, then reveals the labels. The practice comes
 from particle physics and clinical trials (MacCoun and Perlmutter 2015; Klein and
 Roodman 2005).
 
@@ -13,8 +13,8 @@ the mapping back to the true names. The analyst runs the full beam pipeline on
 the blinded scores, fixes the configuration, then calls ``unblind`` with the seal
 to restore the true names.
 
-This is a record, not a guarantee. Software cannot stop a person from reading the
-source file. The ``Seal`` carries a fingerprint (a hash of the mapping and the
+Software cannot stop a person from reading the source file, so the blinding
+is only recorded. The ``Seal`` has a fingerprint (a hash of the mapping and the
 seed) that beam writes into the run manifest, so a reviewer can confirm the
 analysis ran on scores blinded under that seal. The seal file, kept separately,
 records that the configuration was fixed before the labels were revealed.
@@ -89,10 +89,10 @@ def blind(
     """Relabel and shuffle the tools of a score table, returning a seal.
 
     The tool axis is permuted under ``seed`` and renamed to opaque labels such as
-    ``method_1``, ``method_2``, so neither the names nor the row order carry the
-    methods' identity. The metric and dataset axes are left unchanged, since the
+    ``method_1``, ``method_2``, so neither the names nor the row order reveal
+    which method is which. The metric and dataset axes are left unchanged, since the
     analyst needs them to set polarity, weights and the cross-dataset rule. The
-    returned scores carry the seal fingerprint so a run on them records the
+    returned scores include the seal fingerprint so a run on them records the
     blinding in its manifest.
 
     Parameters

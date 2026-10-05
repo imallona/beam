@@ -1,7 +1,7 @@
 #' Stochastic multicriteria acceptability analysis (SMAA)
 #'
-#' Samples weights over the simplex and reports, per tool, how often it lands in
-#' each rank, the share of weight space where it ranks first, and its central
+#' Samples weights over the simplex and reports, per tool, the fraction of
+#' samples at each rank, the fraction with it ranked first, and its central
 #' weights. Forwards to the Python `beam.mcda.smaa`.
 #'
 #' @param scores A numeric matrix of shape (tools, metrics).
@@ -112,7 +112,7 @@ beam_leave_one_dataset_out <- function(tensor, polarity, reduction_rules,
   )
 }
 
-#' Agreement among datasets on how they order the methods
+#' Agreement between the per-dataset orderings of the methods
 #'
 #' Ranks the methods within each dataset and compares every pair of orderings
 #' with Kendall tau-b, reporting the dataset-by-dataset agreement matrix, the most

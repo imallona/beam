@@ -73,7 +73,7 @@ cat(sprintf("reported: %+.2f   beam consistent: %+.2f\n", mean(rhos), mean(beam_
 
 ## Funky heatmaps per benchmark
 
-The [funky heatmap](https://imallona.github.io/beam/docs/explanations/funky-heatmaps-and-robustness.html) of each benchmark. Each circle is the standing of the method on that metric within the benchmark, coloured by the scIB biological and batch groups.
+The [funky heatmap](https://imallona.github.io/beam/docs/explanations/funky-heatmaps-and-robustness.html) of each benchmark. Each circle is the rank of the method on that metric within the benchmark, coloured by the scIB biological and batch groups.
 
 ```{r funky, fig.height = 3.6}
 mean_rank_3d <- tapply(rank_value, list(benchmark, method, metric), mean)
@@ -119,7 +119,7 @@ A method low and to the right mixes batches and keeps the cell types separate.
 
 ## Network meta-analysis
 
-A [network meta-analysis](https://imallona.github.io/beam/docs/explanations/network-meta-analysis.html) pools the five sources into one ranking. Each method is a treatment and each (benchmark, dataset) pair a study. It needs R's netmeta.
+A [network meta-analysis](https://imallona.github.io/beam/docs/explanations/network-meta-analysis.html) pools the five sources into one ranking. Each method is a treatment and each (benchmark, dataset) pair a study. It needs netmeta.
 
 ```{r netmeta, eval = have_netmeta, fig.height = 3.6}
 arms <- ib$network_arms()
@@ -131,9 +131,9 @@ cat(sprintf("I-squared %.2f; inconsistency Q = %.1f on %.0f df, p = %.1e\n",
 
 Pooled mean-rank difference of each method from the combat reference, with its 95 percent interval, and its P-score.
 
-## Benchmark share of the variance
+## Variance between benchmarks
 
-In the [variance decomposition](https://imallona.github.io/beam/docs/explanations/attribution-synthesis.html) the method-by-benchmark component is the disagreement between benchmarks about the methods. It is fitted on the four scIB-metric sources and again with BatchBench. It needs R's lme4.
+The method-by-benchmark component of the [variance decomposition](https://imallona.github.io/beam/docs/explanations/attribution-synthesis.html) is the between-benchmark disagreement about the methods. The model is fitted on the four scIB-metric sources, then again with BatchBench added. It needs lme4.
 
 ```{r source-variance, eval = have_lme4, message = FALSE, warning = FALSE}
 rec <- ib$mean_rank_records()
@@ -148,7 +148,7 @@ cat(sprintf("method-by-benchmark variance share: %.2f without BatchBench, %.2f w
             share(sv4), share(sv5)))
 ```
 
-The method-by-benchmark share is 0.23 with four sources and 0.42 with BatchBench. The fits are singular: with so few benchmarks at least one variance component is estimated at zero.
+The method-by-benchmark component is 0.23 of the variance with four sources and 0.42 with BatchBench. Both fits are singular: with so few benchmarks at least one variance component is estimated at zero.
 
 ## Human pancreas in two pipelines
 
@@ -214,7 +214,7 @@ cat("seal fingerprint:", substr(bl$seal$fingerprint, 1, 12), "\n")
 
 ## Dataset discrimination
 
-The benchmark of Shen, He and Guan (2026, [10.1371/journal.pcbi.1014008](https://doi.org/10.1371/journal.pcbi.1014008)) shares only harmony and scanorama with the five methods. [`beam_dataset_discrimination`](https://imallona.github.io/beam/docs/explanations/dataset-concordance-and-discrimination.html#dataset-discrimination) reports, per (dataset, scenario) unit, how much it separates the methods it scores.
+The benchmark of Shen, He and Guan (2026, [10.1371/journal.pcbi.1014008](https://doi.org/10.1371/journal.pcbi.1014008)) shares only harmony and scanorama with the five methods. [`beam_dataset_discrimination`](https://imallona.github.io/beam/docs/explanations/dataset-concordance-and-discrimination.html#dataset-discrimination) reports, per (dataset, scenario) unit, the separation between the scored methods.
 
 ```{r discrimination}
 shen <- datasets$load_semisupervised_integration()

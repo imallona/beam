@@ -3,8 +3,7 @@
 #' A clean ggplot2 theme shared by every native beam plot: light gridlines on
 #' the value axis only, no panel border, a muted background, and the Paul Tol
 #' bright palette for categorical fills so the figures read the same in print
-#' and on screen. The native R figures replace the matplotlib ones the report
-#' and the older R wrappers drew.
+#' and on screen.
 #'
 #' @param base_size Base font size in points.
 #' @return A ggplot2 theme object.
@@ -118,7 +117,7 @@ beam_palette <- function(roles = FALSE) {
 
 #' Stop unless a plotting package is installed
 #'
-#' Raises a clear install hint when a plot needs \pkg{ggplot2} or \pkg{patchwork}
+#' Raises an install hint when a plot needs \pkg{ggplot2} or \pkg{patchwork}
 #' and it is not present.
 #' @keywords internal
 .need <- function(pkg) {

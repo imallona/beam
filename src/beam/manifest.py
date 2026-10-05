@@ -1,4 +1,4 @@
-"""The run manifest: the reproducibility envelope written next to a report.
+"""The run manifest: the record of a run, written next to a report.
 
 A manifest records everything needed to reproduce a beam recommendation: the
 beam version, the input and its hash, the metric cards with their versions and
@@ -8,7 +8,7 @@ that includes pymcdm, since the aggregation math is delegated to it and the
 rankings depend on its version.
 
 Two runs over the same inputs and settings produce the same manifest apart
-from the wall-clock timestamp and the host fingerprint, which live under the
+from the wall-clock timestamp and the host fingerprint, which are under the
 ``created_utc`` and ``host`` keys so a determinism check can drop them. Use
 ``volatile_keys`` for that.
 """
@@ -103,7 +103,7 @@ def build_manifest(
     versions
         Optional per-metric card version pin, aligned with ``metric_ids``.
         ``None`` in a slot (or ``versions=None``) fingerprints the latest
-        version, preserving the prior behavior.
+        version.
 
     Returns
     -------

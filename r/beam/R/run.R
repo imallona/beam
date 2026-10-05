@@ -2,7 +2,7 @@
 #'
 #' Loads the yaml, resolves paths relative to the file, runs the full pipeline,
 #' and writes the requested outputs (HTML report, manifest.json, normalized
-#' scores CSV). The yaml is the artefact that travels with a publication; the
+#' scores CSV). The yaml is the file published with a paper; the
 #' run is reproducible byte-for-byte where possible (the manifest documents
 #' every input hash and software fingerprint).
 #'

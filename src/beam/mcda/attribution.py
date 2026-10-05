@@ -1,46 +1,38 @@
-"""Put analyst choice, dataset, and benchmarker on one rank-variance budget.
+"""Analyst choice, dataset and benchmarker on one rank-variance scale.
 
-The other diagnostics each answer one slice of "why does this ranking move".
-``rank_sensitivity`` splits a ranking's movement between the analyst's choices
-(weighting, aggregation) and the dataset that is read.
-``source_variance_decomposition`` splits a method's standing between the
-benchmark that evaluates it and the method itself. They answer different
-questions on different scales, so they cannot be read side by side.
+``rank_sensitivity`` splits the rank variance within one benchmark between
+the analyst's choices (weighting, aggregation) and the dataset.
+``source_variance_decomposition`` splits the variance of the mean ranks
+across benchmarks between the method and the benchmark. The two are on
+different scales.
 
-``attribution_synthesis`` places them on one comparable scale. For each setting
-it reports a rank-variance budget, three non-negative shares that sum to one:
+``attribution_synthesis`` expresses both as shares of one total. For each
+setting there are three non-negative shares summing to one:
 
-- analyst choice: the part driven by the weighting and the aggregation, the
-  forks the analyst could take differently on the same datasets;
-- dataset: the part driven by which dataset is evaluated on;
-- benchmarker: the part driven by which benchmark (or pipeline) does the
-  scoring, the disagreement attributable to the benchmarker's own choices
-  rather than to the method.
+- analyst choice: the weighting and the aggregation;
+- dataset: the dataset the methods are scored on;
+- benchmarker: the scoring benchmark or pipeline.
 
-The budget definition is fixed here because no single decomposition spans all
-three buckets in every setting. The rules are:
+No single decomposition covers all three in every setting, so each setting
+has its own rule:
 
-- Within one benchmark, from a ``RankSensitivityReport`` over a tool by dataset
-  by metric tensor: analyst choice is the weighting plus aggregation share, the
-  dataset share is the dataset main effect, and the benchmarker share is zero
-  because one benchmark does the scoring. The interaction share is split between
-  analyst choice and dataset in proportion to the main-effect mass each carries.
+- Within one benchmark, from a ``RankSensitivityReport``: analyst choice is
+  the weighting plus aggregation share, dataset is the dataset main effect,
+  and benchmarker is zero. The interaction share is divided between analyst
+  choice and dataset in proportion to their main effects.
 
 - Across pooled benchmarks, from a ``SourceVarianceReport`` plus an
-  analyst-choice share measured on the pooled matrix: the analyst-choice share
-  is the weighting-plus-aggregation rank-variance share on the pooled matrix,
-  and the remaining budget is split between the benchmarker (the
-  method-by-benchmark component) and the dataset (every other component) in the
-  ratio the mixed model gives.
+  analyst-choice share measured on the pooled matrix: the remainder is
+  divided between benchmarker (the method-by-benchmark component) and
+  dataset (every other component) in the ratio from the mixed model.
 
-- On a same-data contrast, where two or more pipelines score the methods on the
-  identical datasets: the dataset share is zero by construction, and the rank
-  movement across pipelines, after removing each method's own mean rank, is split
-  into a pure pipeline offset (benchmarker) and the method-by-pipeline reordering
-  (analyst choice).
+- On a same-data contrast, where two or more pipelines score the methods on
+  the same datasets: dataset is zero. After centring each method on its mean
+  rank, the remaining variance is divided into a pipeline offset
+  (benchmarker) and a method-by-pipeline reordering (analyst choice).
 
-Passed in order, from one benchmark to a same-data contrast, the analyst-choice
-share rises as the dataset contribution is removed by design.
+Passed in order, from one benchmark to a same-data contrast, the analyst
+choice share rises as the dataset contribution is removed.
 """
 
 from __future__ import annotations
@@ -53,18 +45,17 @@ import numpy as np
 
 @dataclass(frozen=True)
 class AttributionSetting:
-    """One setting's rank-variance budget over the three sources.
+    """One setting's rank variance split over the three sources.
 
     Attributes
     ----------
     label
         The setting name shown on the figure axis.
     analyst_choice_share, dataset_share, benchmarker_share
-        Non-negative shares of the setting's rank-variance budget, summing to
-        one. ``analyst_choice_share`` is the weighting and aggregation, the forks
-        the analyst could take differently; ``dataset_share`` is which dataset is
-        read; ``benchmarker_share`` is which benchmark or pipeline does the
-        scoring.
+        Non-negative shares of the setting's rank variance, summing to one.
+        ``analyst_choice_share`` is the weighting and aggregation,
+        ``dataset_share`` the dataset the methods are scored on, and
+        ``benchmarker_share`` the scoring benchmark or pipeline.
     basis
         The decomposition the shares came from, for provenance.
     """
@@ -78,7 +69,7 @@ class AttributionSetting:
 
 @dataclass(frozen=True)
 class AttributionReport:
-    """The attribution budget across an ordered list of settings."""
+    """The attribution split across an ordered list of settings."""
 
     settings: tuple[AttributionSetting, ...]
 
@@ -97,12 +88,12 @@ def _normalize_triple(
 
 
 def setting_from_rank_sensitivity(report, label: str) -> AttributionSetting:
-    """Within-benchmark budget from a rank-sensitivity decomposition.
+    """Within-benchmark split from a rank-sensitivity decomposition.
 
     The weighting and aggregation shares are the analyst choice, the dataset
     share is the dataset main effect, and the benchmarker share is zero. The
-    interaction share is allocated to analyst choice and dataset in proportion to
-    the main-effect mass each carries, so the three shares sum to one.
+    interaction share is divided between analyst choice and dataset in
+    proportion to their main effects, so the three sum to one.
     """
     shares = report.factor_shares
     analyst = float(shares.get("weighting", 0.0)) + float(shares.get("aggregation", 0.0))
@@ -119,13 +110,13 @@ def setting_from_rank_sensitivity(report, label: str) -> AttributionSetting:
 def setting_from_source_variance(
     report, analyst_choice_share: float, label: str
 ) -> AttributionSetting:
-    """Pooled cross-benchmark budget from a source-variance decomposition.
+    """Pooled cross-benchmark split from a source-variance decomposition.
 
     ``analyst_choice_share`` is the weighting-plus-aggregation rank-variance
-    share measured on the pooled matrix, in ``[0, 1]``. The remaining budget,
+    share measured on the pooled matrix, in ``[0, 1]``. The remainder,
     ``1 - analyst_choice_share``, is split between the benchmarker (the
     method-by-benchmark component) and the dataset (every other component) in the
-    ratio the mixed model gives.
+    ratio from the mixed model.
     """
     analyst = float(np.clip(analyst_choice_share, 0.0, 1.0))
     benchmarker_raw = float(report.method_benchmark_share)
@@ -140,13 +131,13 @@ def setting_from_source_variance(
 def setting_from_same_data_contrast(
     ranks_by_source: Mapping[str, Sequence[float]], label: str
 ) -> AttributionSetting:
-    """Same-data budget from per-method ranks under two or more pipelines.
+    """Same-data split from per-method ranks under two or more pipelines.
 
-    Every source scores the methods on the identical datasets, so the dataset
-    share is zero. Each method's rank is centred on its own mean across sources,
-    removing the order the pipelines agree on. The remaining rank variance is
-    split into a pure source offset (the benchmarker) and the method-by-source
-    reordering (the analyst choice).
+    Every source scores the methods on the same datasets, so the dataset
+    share is zero. Each method's rank is centred on its mean across sources,
+    which removes the order shared by the sources. The remaining variance is
+    divided into a source offset (benchmarker) and a method-by-source
+    reordering (analyst choice).
     """
     sources = list(ranks_by_source)
     if len(sources) < 2:
@@ -170,10 +161,9 @@ def setting_from_same_data_contrast(
 def attribution_synthesis(settings: Sequence[AttributionSetting]) -> AttributionReport:
     """Bundle an ordered list of attribution settings into one report.
 
-    Each setting carries a rank-variance budget split into analyst choice,
-    dataset, and benchmarker. Pass the settings in order, from one benchmark to a
-    same-data contrast, so the rising analyst-choice share shows the dataset
-    contribution being removed by design.
+    Pass the settings in order, from one benchmark to a same-data contrast,
+    so the figure shows the analyst choice share rising as the dataset
+    contribution is removed.
     """
     settings = tuple(settings)
     if not settings:

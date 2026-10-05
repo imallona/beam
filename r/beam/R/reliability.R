@@ -1,12 +1,12 @@
 #' Internal-consistency reliability of a metric group
 #'
 #' Reports standardized Cronbach's alpha for each construct group of metrics,
-#' the companion to [beam_metric_validity]. Validity asks whether a grouping is
-#' the right split; reliability asks how consistently the metrics inside a group
+#' the companion to [beam_metric_validity]. Validity tests whether a grouping is
+#' the right split; reliability measures how consistently the metrics inside a group
 #' measure one thing, following Cronbach (1951). Each method-by-dataset cell is
 #' one observation. The function orients every metric to higher-is-better and
 #' uses the same oriented Spearman correlations as the validity check, so the two
-#' read together. Forwards to the Python `beam.mcda.metric_reliability`.
+#' are comparable. Forwards to the Python `beam.mcda.metric_reliability`.
 #'
 #' @param scores A numeric matrix of shape (observations, metrics), or a 3D
 #'   array (methods, datasets, metrics) which is reshaped so each
@@ -16,7 +16,7 @@
 #'   `"higher_is_better"` or `"lower_is_better"`. A `"target_value"` metric has
 #'   no monotone quality direction; drop it before calling.
 #' @param groups Character vector, one construct label per metric column.
-#'   Metrics sharing a label are read together as one composite scale.
+#'   Metrics sharing a label form one composite scale.
 #' @param metric_ids Optional character vector of metric labels, used to name the
 #'   alpha-if-dropped entries in the report. Default `NULL`.
 #' @param alpha_threshold Alpha below which a group is reported as

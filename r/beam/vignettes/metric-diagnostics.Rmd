@@ -15,7 +15,7 @@ knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>",
                       dpi = 140, out.width = "100%", fig.width = 7, fig.height = 4.5)
 ```
 
-[Three checks](https://imallona.github.io/beam/docs/explanations/metric-set-diagnostics.html) on a group of metrics used as one criterion, from the Spearman correlations between the metrics, on the bundled OpenProblems batch integration scores. The scIB metrics are grouped into biological conservation and batch correction. The R functions call the Python `beam` package through reticulate; `install_beam_python()` installs it.
+[Three checks](https://imallona.github.io/beam/docs/explanations/metric-set-diagnostics.html) on a group of metrics used as one criterion, all based on the Spearman correlations between the metrics, here on the bundled OpenProblems batch integration scores. The scIB metrics are grouped into biological conservation and batch correction. The R functions call the Python `beam` package through reticulate; `install_beam_python()` installs it.
 
 ```{r libs}
 library(rbeam)
@@ -31,7 +31,7 @@ bio <- c("ari", "nmi", "asw_label", "isolated_label_f1",
 groups <- ifelse(metrics %in% bio, "bio", "batch")
 ```
 
-## All three
+## All three checks
 
 `beam_metric_diagnostics` runs validity, reliability and dimensionality on one grouping.
 
@@ -80,7 +80,7 @@ dim_rep <- diag$dimensionality
 beam_plot(dim_rep, "metric_dimensionality_scree")
 ```
 
-The legend gives the number of factors parallel analysis keeps.
+The legend gives the number of factors retained by parallel analysis.
 
 ## Specification curve and blind analysis
 

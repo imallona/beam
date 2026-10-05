@@ -23,9 +23,9 @@ The metric cards are mapped to STATO, UO, OBI and HuggingFace evaluate where ava
 - [M4 forecasting](examples/m4/m4.qmd): 25 methods on six frequency bands.
 - [OpenProblems batch integration](examples/openproblems/openproblems.qmd): MCDA contrasted with the platform's own mean-of-scores rule, plus a Bradley-Terry tree on 50 spatial datasets.
 - [Cross-benchmark meta-analysis](examples/cross_benchmark/cross_benchmark.qmd): consistency across independently published scRNA-seq integration benchmarks.
-- [LLM cell type annotation](examples/cell_type_annotation/cell_type_annotation.qmd): GPT-4 and GPT-3.5, GPTCelltype etc versus classical annotation methods.
+- [LLM cell type annotation](examples/cell_type_annotation/cell_type_annotation.qmd): GPT-4, GPT-3.5 and other LLM annotators versus classical annotation methods.
 
-We also provide the standard reports for some of these comparisons.
+Standard HTML reports for some of these comparisons:
 
 - [Duo 2018 clustering](docs/reports/duo2018.html)
 - [M4 forecasting](docs/reports/m4.html)

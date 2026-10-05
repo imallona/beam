@@ -2,7 +2,7 @@
 #'
 #' Runs [beam_metric_validity], [beam_metric_reliability] and
 #' [beam_metric_dimensionality] on one set of inputs and returns the three
-#' reports together. The three rest on the same oriented Spearman correlations,
+#' reports together. The three use the same oriented Spearman correlations,
 #' so one call runs all three.
 #' Validity is skipped (returned as `NULL`) when the grouping has a single
 #' construct, since convergent and discriminant evidence need at least two.
@@ -15,7 +15,7 @@
 #' @param polarity Character vector, one per metric column, each
 #'   `"higher_is_better"` or `"lower_is_better"`.
 #' @param groups Character vector, one construct label per metric column.
-#' @param metric_ids Optional character vector of metric labels carried into each
+#' @param metric_ids Optional character vector of metric labels kept in each
 #'   report. Default `NULL`.
 #' @param min_pairwise Minimum shared observations for a pair's correlation,
 #'   shared by all three diagnostics. Default `3`.

@@ -1,8 +1,8 @@
 # Run a heterogeneity model from the command line
 
-The `beam heterogeneity` command fits one of the method-dataset heterogeneity models on a score file and writes the report as JSON, for when the [MCDA ranking](../explanations/aggregation-methods.md) pools several datasets and the order may depend on which datasets are in the pool.
+The `beam heterogeneity` command fits one of the method-dataset heterogeneity models on a score file and writes the report as JSON. The models apply when the [MCDA ranking](../explanations/aggregation-methods.md) pools several datasets and the order may depend on the datasets in the pool.
 
-These models wrap R, so the command needs the R toolchain. The conda recipe `envs/heterogeneity.yml` installs Python and R together with the packages each model uses. When a package is missing the command stops with a clear error naming it, so a script can branch on the exit code (0 on success, 2 on any error).
+These models wrap R, so the command needs the R toolchain. The conda recipe `envs/heterogeneity.yml` installs Python and R together with the packages each model uses. When a package is missing the command stops with an error naming it. The exit code is 0 on success and 2 on any error.
 
 ## The input
 
@@ -14,16 +14,16 @@ beam heterogeneity scores.csv --model mixed-effects --metric ari --out report.js
 
 ## The three models
 
-[`mixed-effects`](../reference/mixed_effects.qmd) fits `score ~ method + (1 | dataset)` in lme4 and splits the [score variation into a method effect](../explanations/method-by-dataset-heterogeneity.md), a between-dataset shift, and the residual. The report carries the variance components, the dataset ICC (the share of variation that is the dataset rather than the method), and the per-method marginal means. A high ICC means most of the spread is between datasets, so a single pooled ranking hides much of the structure.
+[`mixed-effects`](../reference/mixed_effects.qmd) fits `score ~ method + (1 | dataset)` in lme4 and splits the [score variation into a method effect](../explanations/method-by-dataset-heterogeneity.md), a between-dataset shift, and the residual. The report has the variance components, the dataset ICC (the fraction of the variation between datasets), and the per-method marginal means. A high ICC means most of the spread is between datasets, which a single pooled ranking does not show.
 
-[`bradley-terry-tree`](../reference/bradley_terry_tree.qmd) fits a [Bradley-Terry tree](../explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees) in psychotree. It splits the datasets by their features so each leaf has its own method ranking, and flags the leaves where the pooled top method does not hold. It needs a dataset features file, passed with `--features`:
+[`bradley-terry-tree`](../reference/bradley_terry_tree.qmd) fits a [Bradley-Terry tree](../explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees) in psychotree. It splits the datasets by their features so each leaf has its own method ranking, and flags the leaves with a top method different from the pooled one. It needs a dataset features file, passed with `--features`:
 
 ```
 beam heterogeneity scores.csv --model bradley-terry-tree --metric ari \
     --features dataset_features.csv --out tree.json
 ```
 
-The features file has a header whose first column is the dataset id and whose other columns are the features. A column whose values all parse as numbers becomes a numeric split candidate; the rest are treated as categorical. Every dataset in the score file must have a row.
+The features file has a header whose first column is the dataset id and whose other columns are the features. A column whose values all parse as numbers becomes a numeric split candidate; the rest are categorical. Every dataset in the score file must have a row.
 
 ```
 dataset,n_cells,n_clusters,kind

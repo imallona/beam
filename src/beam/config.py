@@ -1,6 +1,6 @@
 """Run a benchmark recommendation from a declarative beam.yaml file.
 
-beam.yaml captures a whole run in one diff-able file: the input scores, the
+beam.yaml describes a whole run in one file: the input scores, the
 metrics, the weighting and aggregation, the sensitivity settings, and the
 output paths. It is the artifact a reviewer reruns. ``run_config`` parses it,
 runs ``beam.rank``, and writes the requested outputs (the HTML report, the run
@@ -26,8 +26,8 @@ The optional top-level ``missing`` key sets the missing-cell policy passed to
 ``beam.rank`` (``error`` by default, or ``available``, ``worst``, ``impute``).
 The dataset_features and heterogeneity blocks are parsed but ignored here.
 A metric entry may pin a card version (``- id: ari`` with ``version: v1``); the
-pinned card is used and fingerprinted in the manifest, and a version the
-registry does not carry stops the run with a clear error. A metric without a
+pinned card is used and fingerprinted in the manifest, and a version that
+is not in the registry stops the run with an error. A metric without a
 ``version`` takes the latest.
 """
 
@@ -139,7 +139,7 @@ def _check_pinned_versions(
     requested: list[tuple[str, str | None]],
     registry: Registry,
 ) -> None:
-    """Fail early if a beam.yaml metric pins a version the registry does not carry."""
+    """Fail early if a beam.yaml metric pins a version that is not in the registry."""
     for mid, version in requested:
         if version is not None and version not in registry.list_versions(mid):
             raise ValueError(

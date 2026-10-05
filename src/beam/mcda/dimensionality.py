@@ -1,22 +1,22 @@
-"""Dimensionality of a metric group (how many factors the metrics carry).
+"""Dimensionality of a metric group (the number of factors in the metrics).
 
 ``beam.mcda.metric_reliability`` reports standardized Cronbach's alpha for a
-construct group, and alpha reads a group as one reliable scale when it is high.
-That reading rests on an assumption alpha cannot check: that the group is a
+construct group, and a high alpha reads as one reliable scale. That reading
+depends on an assumption alpha cannot check: that the group is a
 single reflective factor, one underlying quantity each metric measures with
 noise. Alpha also rises with the number of metrics, so a long group can reach a
-high alpha while carrying more than one factor. This module checks the
+high alpha with more than one factor. This module checks the
 assumption directly by counting the factors in the group.
 
 The check is principal component analysis of the same oriented Spearman
 correlation matrix that ``metric_validity`` and ``metric_reliability`` use, so
-the three diagnostics rest on one set of numbers. For a group of ``k`` metrics
+the three diagnostics use one set of numbers. For a group of ``k`` metrics
 the correlation matrix has ``k`` eigenvalues that sum to ``k`` (its trace). A
 single dominant eigenvalue means one factor; several eigenvalues of comparable
-size mean several. The report carries, per group:
+size mean several. The report has, per group:
 
 - the eigenvalues in descending order;
-- the share of variance the first component explains, ``lambda_1 / k``;
+- the fraction of variance explained by the first component, ``lambda_1 / k``;
 - the number of components by the Kaiser (1960) rule, the count of eigenvalues
   above one;
 - the number of components by parallel analysis (Horn 1965), the count of
@@ -24,18 +24,17 @@ size mean several. The report carries, per group:
   reaches at the same rank.
 
 Kaiser is the quick rule and is known to keep too many components, since with a
-finite sample the later eigenvalues sit above one by chance. Parallel analysis
+finite sample the later eigenvalues are above one by chance. Parallel analysis
 corrects for that by comparing each observed eigenvalue against the level chance
 alone would reach. The level is the 95th percentile of the random eigenvalues at
 each rank (Glorfeld 1995 sharpens Horn's original mean rule, which retains a
-component too readily on noise), so it is the verdict the report uses for the
-unidimensional flag. A group is reported as unidimensional when parallel
-analysis retains exactly one component.
+component too readily on noise), and it sets the unidimensional flag. A group
+is reported as unidimensional when parallel analysis retains exactly one
+component.
 
-Dimensionality reads alongside reliability rather than instead of it. A high
-alpha on a group that turns out to carry two factors is the case this check
-exists to surface: the group is internally consistent enough to look like one
-scale, but it is not one thing. As with the other two diagnostics, the result is
+Dimensionality complements reliability. A high alpha on a group with two
+factors is the case this check detects: the group is internally consistent but
+measures two things. As with the other two diagnostics, the result is
 descriptive of the methods and datasets in the input, and a small benchmark
 gives a coarse estimate.
 """
@@ -53,19 +52,19 @@ from .metric_validity import _oriented, _pairwise_spearman
 
 @dataclass(frozen=True)
 class MetricDimensionalityReport:
-    """How many factors each metric group carries.
+    """The number of factors in each metric group.
 
     Attributes
     ----------
     metric_ids
-        Metric labels in column order, or ``None`` when the input carried none.
+        Metric labels in column order, or ``None`` when the input had none.
     groups
         Construct label per metric, aligned with ``metric_ids``.
     eigenvalues_by_group
         Eigenvalues of the within-group correlation matrix in descending order,
         per assessed group. They sum to the group size ``k``.
     pc1_explained_by_group
-        Share of total variance the first component explains, ``lambda_1 / k``,
+        Fraction of total variance explained by the first component, ``lambda_1 / k``,
         per assessed group. Runs from ``1 / k`` (no shared variance) to 1 (one
         perfect factor).
     kaiser_components_by_group
@@ -73,13 +72,13 @@ class MetricDimensionalityReport:
         rule. This rule tends to keep too many components.
     parallel_components_by_group
         Number of components parallel analysis (Horn 1965) retains per assessed
-        group, the count of observed eigenvalues above the chance level. This is
-        the recommended reading.
+        group, the count of observed eigenvalues above the chance level. This
+        count sets the flags below.
     k_by_group
         Number of metrics in each assessed group.
     unidimensional_groups
         Groups parallel analysis retains exactly one component for, sorted. These
-        read as one factor, so a high reliability on them reflects one scale.
+        are one factor, so a high reliability on them reflects one scale.
     multidimensional_groups
         Groups parallel analysis retains more than one component for, each as
         ``(group, n_components)`` sorted by descending component count. A high
@@ -120,8 +119,9 @@ def _parallel_reference(n_obs: int, k: int, n_iter: int, seed: int) -> np.ndarra
     Draws ``n_iter`` matrices of ``n_obs`` rows by ``k`` independent standard
     normal columns, ranks each column, and takes the eigenvalues of the resulting
     Spearman correlation matrix. The 95th percentile per rank is the level chance
-    alone reaches with no real association between the metrics, the benchmark
-    parallel analysis compares the observed eigenvalues against (Glorfeld 1995).
+    alone reaches with no real association between the metrics, the reference
+    level parallel analysis compares the observed eigenvalues against (Glorfeld
+    1995).
     """
     rng = np.random.default_rng([seed, k])
     draws = np.empty((n_iter, k))
@@ -148,9 +148,9 @@ def metric_dimensionality(
     metric to higher-is-better, computes the Spearman rank correlation between
     every pair of metrics over their shared observations (the same engine as
     ``metric_validity`` and ``metric_reliability``), and, for each group, takes
-    the eigenvalues of the within-group correlation matrix. It reports how many
-    factors the group carries by the Kaiser rule and by parallel analysis, and
-    flags the groups that read as one factor.
+    the eigenvalues of the within-group correlation matrix. It reports the number
+    of factors in the group by the Kaiser rule and by parallel analysis, and
+    flags the one-factor groups.
 
     Parameters
     ----------
@@ -166,9 +166,9 @@ def metric_dimensionality(
         direction; drop it before calling.
     groups
         Length ``n_metrics`` construct label per metric. Metrics sharing a label
-        are read together as one composite scale.
+        form one composite scale.
     metric_ids
-        Optional length ``n_metrics`` labels carried into the report.
+        Optional length ``n_metrics`` labels kept in the report.
     min_pairwise
         Minimum shared observations for a pair's correlation to be computed.
         Default 3.

@@ -1,9 +1,8 @@
 """Ontology-aware validation gating the MCDA pipeline.
 
 Checks whether the requested aggregation, and the per-column normalization
-it rests on, are licit for the declared scale types and allowed
-transformations of the metric cards. These rules are the working contract
-between the metric registry and the pipeline.
+it depends on, are allowed by the declared scale types and allowed
+transformations of the metric cards.
 """
 
 from __future__ import annotations

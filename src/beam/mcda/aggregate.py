@@ -12,8 +12,8 @@ def _identity_normalization(matrix: np.ndarray, cost: bool | None = None) -> np.
     """Return the matrix unchanged.
 
     beam normalizes scores before aggregation, so the matrix already lies in
-    [0, 1] with every column oriented higher is better. This passthrough lets
-    pymcdm operate on that matrix directly instead of normalizing it again.
+    [0, 1] with every column oriented higher is better. This passthrough
+    hands pymcdm that matrix as is.
     """
     return matrix
 
@@ -39,8 +39,8 @@ def weighted_sum(
 
     A complete row reduces to the ordinary weighted sum, so this matches the
     pymcdm path exactly when no cell is missing and the weights sum to one. The
-    composites then rest on different metric supports across tools, which the
-    caller must surface; ``beam.mcda.run`` does so with a warning under
+    composites then use different metric subsets across tools;
+    ``beam.mcda.run`` reports this with a warning under
     ``missing="available"``. A row with no observed metric cannot be scored and
     raises, since there is nothing to average. The distance and pairwise methods
     (TOPSIS, VIKOR, PROMETHEE II, COMET) have no such form and refuse a matrix

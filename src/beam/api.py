@@ -1,22 +1,20 @@
 """The five-line procedural API: load scores, rank, report.
 
 ``rank`` is the one call most users need. It resolves polarity, normalization,
-bounds, baselines and targets from the metric registry, runs the MCDA pipeline, runs the
-default sensitivity primitives so the recommendation comes with a robustness
-account, builds the run manifest, and returns a ``RunResult`` that bundles all
-of it. ``beam.report`` (in ``beam.report``) turns a ``RunResult`` into a
+bounds, baselines and targets from the metric registry, runs the MCDA pipeline and the
+default sensitivity checks, builds the run manifest, and returns a
+``RunResult`` with all of it. ``beam.report`` writes a ``RunResult`` to a
 self-contained HTML file.
 
-The headline ranking and its sensitivity analysis share one normalization
-context, resolved once from the cards, so the SMAA, leave-one-metric-out and
-weight-perturbation outputs rest on the same normalized matrix as the ranking.
+The ranking and the sensitivity analysis use one normalization context,
+resolved once from the cards, so SMAA, leave-one-metric-out and weight
+perturbation run on the same normalized matrix as the ranking.
 
-A single-dataset wide input flows straight through. A long tool by dataset by
-metric tensor is first reduced across datasets per each card's recommended
-cross-dataset rule, then ranked. The reduction is nan-aware (a tool missing on
-some datasets is summarized over the datasets where it was observed), but a
-tool that is never observed for a metric leaves a gap that the reduction cannot
-fill, so ``rank`` refuses such an input and points to per-dataset analysis.
+A wide input with one dataset is ranked as is. A long tool by dataset by
+metric tensor is first reduced across datasets with the cross-dataset rule of
+each card, then ranked. The reduction is nan-aware: a tool missing on some
+datasets is summarized over the datasets with an observation. A tool with no
+observation for a metric has no value to rank, so ``rank`` refuses the input.
 """
 
 from __future__ import annotations
@@ -71,7 +69,7 @@ class RunResult:
         The tool by metric matrix actually ranked, after any cross-dataset
         reduction. Equal to ``scores.values`` for a wide input.
     result
-        The headline MCDA ``Result``.
+        The MCDA ``Result`` of the main ranking.
     context
         The card-derived normalization context shared by the ranking and the
         sensitivity analysis.
@@ -82,16 +80,16 @@ class RunResult:
         input was a tensor with at least two datasets and sensitivity was on.
     random_baseline
         Per-metric chance comparison from the cards' declared baselines, and the
-        tools that beat chance on no metric. Always computed.
+        tools at or below chance on every metric. Always computed.
     noise_floor
-        Pairwise separation against the cards' declared noise floors, flagging
-        the tool pairs the metric set cannot tell apart. Always computed.
+        Pairwise separation against the cards' declared noise floors, with the
+        tool pairs within the noise floor on every metric. Always computed.
     card_consistency
         The card-versus-data audit: where the raw scores contradict the cards'
         declared range, baseline, target or noise floor. Always computed.
     dataset_concordance
-        Agreement among the datasets on how they order the methods, with the
-        method-by-dataset cells that drive any disagreement. Present only when
+        Agreement between the per-dataset orderings of the methods, with the
+        method-by-dataset cells behind any disagreement. Present only when
         the input was a tensor with at least two datasets.
     manifest
         The run manifest dictionary (see ``beam.manifest``).
@@ -121,7 +119,7 @@ class RunResult:
 
     @property
     def top_tool(self) -> str:
-        """Name of the tool ranked first by the headline aggregation."""
+        """Name of the tool ranked first by the main ranking."""
         return self.tool_names[int(np.argmin(self.result.ranks))]
 
 
@@ -180,7 +178,7 @@ def rank(
     versions
         Optional per-metric card version pin, aligned with the score table's
         metric columns. ``None`` in a slot (or ``versions=None``) takes the
-        latest version. A pinned version the registry does not carry raises
+        latest version. A pinned version that is not in the registry raises
         KeyError. The resolved versions are recorded in the manifest.
 
     Returns

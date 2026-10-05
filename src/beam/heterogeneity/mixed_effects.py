@@ -12,25 +12,24 @@ every method). The variance components split the score variation into a
 between-dataset part (the random dataset intercept) and a residual part.
 With one observation per (method, dataset) cell the residual is the
 method-by-dataset interaction confounded with measurement noise: the two
-cannot be separated without replicates. When the input does carry
+cannot be separated without replicates. When the input has
 replicates (a multi-run benchmark, several runs of the same method on the
 same dataset), the richer model
 
     score ~ method + (1 | dataset) + (1 | dataset:method)
 
 fits the interaction as its own variance component, and its share of the
-total is the formal answer to "how much of the apparent ranking is
-dataset-dependent". This is the diagnostic counterpart to
-``beam.mcda.leave_one_dataset_out``: the leave-one-out check asks whether
-the pooled ranking hangs on any single dataset; this asks how much of the
-score variance lives in the interaction at all.
+total measures how much of the ranking is dataset-dependent.
+``beam.mcda.leave_one_dataset_out`` shows whether the pooled ranking depends
+on any single dataset; this model shows how much of the score variance is
+interaction.
 
 The model is fit by R's lme4 in a one-shot subprocess. The
 ``score`` values are taken as supplied for a single metric. Polarity does
 not enter a variance decomposition, but scale does, so do not mix metrics:
 pass one metric's scores per call. lme4 uses a Gaussian likelihood; for a
-bounded metric this is an approximation, and glmmTMB with a beta family is
-the documented future extension.
+bounded metric this is an approximation, and ``engine="glmmtmb"`` fits a
+beta family instead.
 """
 
 from __future__ import annotations
@@ -65,8 +64,8 @@ __all__ = [
 def r_available() -> bool:
     """Return True when Rscript and the lme4 and jsonlite packages are present.
 
-    Tests and vignettes use this to skip the analysis cleanly on a machine
-    without the R toolchain.
+    Tests and vignettes use this to skip the analysis on a machine without
+    the R toolchain.
     """
     return packages_available(_R_PACKAGES)
 
@@ -79,7 +78,7 @@ class MixedEffectsReport:
     ----------
     method_names
         Method labels in the order the effect estimates are reported (the
-        sorted factor levels lme4 used, not the input order).
+        sorted factor levels lme4 used, which can differ from the input order).
     method_effects
         Estimated marginal mean per method over datasets, aligned with
         ``method_names``. Higher means a higher score on the metric as
@@ -147,7 +146,7 @@ class MixedEffectsReport:
         The intraclass correlation for the dataset random intercept: the
         dataset variance over the total. A high value means most of the
         spread in scores is datasets being easier or harder for every
-        method alike, not methods reordering across datasets.
+        method alike, and little of it is methods reordering across datasets.
         """
         total = self.total_variance
         if total == 0.0:
@@ -178,7 +177,7 @@ class MixedEffectsReport:
         interaction confounded with measurement noise, so it is an upper bound on
         the interaction. For a glmmTMB beta fit it is the dispersion term on the
         link scale, which is the beta precision rather than a Gaussian variance,
-        so read it only as a rough share, not a variance ratio.
+        so it is only a rough share and is not a variance ratio.
         """
         total = self.total_variance
         if total == 0.0:
@@ -346,8 +345,8 @@ def mixed_effects_from_matrix(
     """Fit the mixed-effects model from a method by dataset score matrix for one metric.
 
     Convenience wrapper that flattens a 2D matrix into the long-format
-    sequences ``mixed_effects`` expects. NaN cells are carried through and
-    dropped by ``mixed_effects``.
+    sequences ``mixed_effects`` expects. NaN cells are dropped by
+    ``mixed_effects``.
 
     Parameters
     ----------

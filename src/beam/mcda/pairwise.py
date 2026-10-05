@@ -20,8 +20,8 @@ test on the decisive datasets, equivalences dropped, says whether the difference
 is more than chance.
 
 This is the effect-size and practical-equivalence companion to the
-critical-difference test, in the spirit of the Bayesian comparison of Benavoli et
-al. (2017), kept frequentist and descriptive here. It reads one metric, or a
+critical-difference test, a frequentist and descriptive counterpart to the
+Bayesian comparison of Benavoli et al. (2017). It reads one metric, or a
 composite, as a tool-by-dataset matrix.
 """
 
@@ -143,7 +143,7 @@ def pairwise_superiority(
         to count an outperformance only past the smallest interpretable difference.
         Default 0.
     method_names
-        Optional length ``n_methods`` labels carried in the report.
+        Optional length ``n_methods`` labels kept in the report.
     alpha
         Significance level for ``equivalent_pairs``. Default 0.05.
 

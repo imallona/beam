@@ -55,7 +55,7 @@
 #'
 #' Returns the smallest and largest rank each method takes across the base run
 #' and every leave-one-dataset-out run, the span the funky heatmap draws as a
-#' bar from best to worst rank. `NULL` when the run carries no
+#' bar from best to worst rank. `NULL` when the run has no
 #' leave-one-dataset-out report.
 #' @keywords internal
 .lodo_span <- function(run) {
@@ -69,9 +69,9 @@
 
 #' Per-method SMAA rank-acceptability matrix, or NULL
 #'
-#' Entry `[a, k]` is the share of sampled weightings that rank method `a` at
+#' Entry `[a, k]` is the fraction of sampled weightings that rank method `a` at
 #' rank `k`. Drawn as the funky heatmap's stacked acceptability bar. `NULL` when
-#' the run carries no SMAA report.
+#' the run has no SMAA report.
 #' @keywords internal
 .smaa_matrix <- function(run) {
   sm <- run$smaa

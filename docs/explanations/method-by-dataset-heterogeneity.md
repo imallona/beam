@@ -1,8 +1,8 @@
 # Method-by-dataset heterogeneity
 
-A pooled [MCDA](aggregation-methods.md) ranking reports one order of the methods for all datasets. `beam.heterogeneity` has four models of whether that order is stable across datasets. Each takes the method by dataset scores of one metric and fits in R:
+A pooled [MCDA](aggregation-methods.md) ranking reports one order of the methods for all datasets. `beam.heterogeneity` has four models of the stability of that order across datasets. Each takes the method by dataset scores of one metric and fits in R:
 
-- mixed-effects variance decomposition: the share of the score variance that is method-by-dataset interaction;
+- mixed-effects variance decomposition: the fraction of the score variance that is method-by-dataset interaction;
 - Bradley-Terry tree: the dataset features behind the interaction, and the ranking in each subgroup;
 - Plackett-Luce: one ranking with uncertainty from full orderings per dataset;
 - glmmTMB beta: the mixed-effects decomposition for a metric bounded in (0, 1).
@@ -17,15 +17,15 @@ The method is a fixed effect, with a marginal mean and standard error per method
 
 The intraclass correlation is the dataset variance over the total. A high value means the datasets differ in difficulty; a low value means most variation is within datasets, where the method-by-dataset interaction is.
 
-With one run per method and dataset, the interaction is not separable from noise, and the residual share is its upper bound. With replicates the model is
+With one run per method and dataset, the interaction is not separable from noise, and the residual fraction is its upper bound. With replicates the model is
 
     score ~ method + (1 | dataset) + (1 | dataset:method)
 
 and `interaction_share` is defined instead of `None`.
 
-`top_outliers` returns the cells with the largest residuals: methods that do much better or worse on a dataset than their marginal mean predicts.
+`top_outliers` returns the cells with the largest residuals: methods whose score on a dataset is far from their marginal mean.
 
-`mixed_effects(methods, datasets, scores)` takes three parallel sequences, and `mixed_effects_from_matrix(matrix, method_names, dataset_names)` a method by dataset matrix. NaN scores are dropped. The report has the marginal means and standard errors, the variance components, the dataset ICC, the interaction or residual share, the residuals, and the outlier cells.
+`mixed_effects(methods, datasets, scores)` takes three parallel sequences, and `mixed_effects_from_matrix(matrix, method_names, dataset_names)` a method by dataset matrix. NaN scores are dropped. The report has the marginal means and standard errors, the variance components, the dataset ICC, the interaction or residual fraction, the residuals, and the outlier cells.
 
 ## Bradley-Terry trees
 
@@ -33,7 +33,7 @@ and `interaction_share` is defined instead of `None`.
 
 For every pair of methods, each dataset records which scored higher, a tie, or a missing comparison. The metric polarity orients the comparison. [`beam.heterogeneity.paired_comparisons`](../reference/paired_comparisons.qmd) builds this design in Python. The datasets are the subjects and the methods the objects compared.
 
-A Bradley-Terry model gives a worth per method, summing to one; fitted on all datasets it is the `global_worth`. Recursive partitioning tests whether the worths are stable across the dataset features, splits the datasets on a feature that fails the test, and refits in each child, until no split is significant or a node is below the minimum size. Each leaf has its own ranking. `reversed_leaves` lists the leaves whose top method differs from the global one.
+A Bradley-Terry model gives a worth per method, summing to one; fitted on all datasets it is the `global_worth`. Recursive partitioning tests whether the worths are stable across the dataset features, splits the datasets on a feature that fails the test, and refits in each child, until no split is significant or a node is below the minimum size. Each leaf has its own ranking. `reversed_leaves` lists the leaves with a top method different from the global one.
 
 With about a dozen datasets the stability test rarely finds a split; `did_split` reports it.
 

@@ -18,7 +18,7 @@ knitr::opts_chunk$set(eval = have_beam, collapse = TRUE, comment = "#>",
                       dpi = 140, out.width = "100%", fig.width = 7, fig.height = 4.5)
 ```
 
-[Three models](https://imallona.github.io/beam/docs/explanations/method-by-dataset-heterogeneity.html) of the method-by-dataset interaction, fitted in R. Each section needs its package (`lme4`, `psychotree`, `PlackettLuce`) and runs only when it is installed. The scores come from the Python `beam` package through reticulate; `install_beam_python()` installs it. The data are the ARI scores of the Duo 2018 benchmark.
+[Three models](https://imallona.github.io/beam/docs/explanations/method-by-dataset-heterogeneity.html) of the method-by-dataset interaction, all fitted in R. Each section needs its package (`lme4`, `psychotree`, `PlackettLuce`) and runs only when it is installed. The scores come from the Python `beam` package through reticulate; `install_beam_python()` installs it. The data are the ARI scores of the Duo 2018 benchmark.
 
 ```{r libs}
 library(rbeam)
@@ -32,7 +32,7 @@ ari <- duo$tensor(list("ari"))[, , 1]
 
 ## Mixed-effects
 
-[`beam_mixed_effects`](https://imallona.github.io/beam/docs/explanations/method-by-dataset-heterogeneity.html) fits `score ~ method + (1 | dataset)` in lme4. The dataset intraclass correlation is the share of variance of the dataset intercept.
+[`beam_mixed_effects`](https://imallona.github.io/beam/docs/explanations/method-by-dataset-heterogeneity.html) fits `score ~ method + (1 | dataset)` in lme4. The dataset intraclass correlation is the fraction of the variance attributable to the dataset intercept.
 
 ```{r mixed-effects, eval = have_lme4, fig.height = 4.5}
 me <- beam_mixed_effects(ari, method_names, dataset_names)
@@ -100,7 +100,7 @@ ggplot2::ggplot(worth, ggplot2::aes(stats::reorder(method, worth), worth)) +
 
 ## Cell type annotation
 
-The cell type annotation benchmark of Hou and Ji (2024) has 36 datasets where GPT-4, GPT-3.5 and three reference-based annotators (CellMarker2.0, SingleR, ScType) were all run. Each is a (source, tissue) pair with a tissue, a source, a species, a normal-or-cancer label and a cell-type count. The metric is the mean agreement with a manual annotation, higher is better.
+The cell type annotation benchmark of Hou and Ji (2024) has 36 datasets where GPT-4, GPT-3.5 and three reference-based annotators (CellMarker2.0, SingleR, ScType) were all run. Each dataset is a (source, tissue) pair with a species, a normal-or-cancer label and a cell-type count. The metric is the mean agreement with a manual annotation, higher is better.
 
 ```{r gpt-block}
 g <- datasets$load_gptcelltype()

@@ -12,8 +12,8 @@ def _identity_normalization(matrix: np.ndarray, cost: bool | None = None) -> np.
     """Return the matrix unchanged.
 
     beam normalizes scores before aggregation, so the matrix already lies in
-    [0, 1] with every column oriented higher is better. This passthrough lets
-    pymcdm operate on that matrix directly instead of normalizing it again.
+    [0, 1] with every column oriented higher is better. This passthrough
+    hands pymcdm that matrix as is.
     """
     return matrix
 
@@ -36,13 +36,12 @@ def topsis(normalized: np.ndarray, weights: np.ndarray) -> np.ndarray:
     The computation is delegated to ``pymcdm.methods.TOPSIS`` with an
     identity normalization, so pymcdm runs directly on beam's already
     normalized matrix, and with all criteria typed as profit (+1) because the
-    matrix is oriented higher is better. The native loop has been replaced by
-    that call.
+    matrix is oriented higher is better.
 
     For a single tool, or when all tools are identical on every metric,
     D+ + D- is zero and closeness is undefined. pymcdm returns a not-a-number
-    there, so beam intercepts that case and returns 0.5 in those rows, the
-    same convention as before, so the caller still gets a usable vector.
+    there, so beam intercepts that case and returns 0.5 in those rows, so the
+    result stays usable.
 
     Parameters
     ----------

@@ -3,10 +3,10 @@
 #' Draws the glyph table with beam's rank-robustness panels, all sharing one row
 #' axis: methods as rows sorted best first, metrics as circles sized by the
 #' card-resolved normalized score and coloured by group, and a composite bar.
-#' beam adds the panels that test the row order: model worth with confidence
-#' intervals (when passed), the leave-one-dataset-out rank span, the rank span
-#' across the aggregation rules, and the SMAA rank-acceptability bar. Each panel
-#' answers whether the order survives one reasonable change.
+#' The panels show whether the row order holds under one change: model worth
+#' with confidence intervals (when passed), the leave-one-dataset-out rank span,
+#' the rank span across the aggregation rules, and the SMAA rank-acceptability
+#' bar.
 #'
 #' @param result A `beam_run` returned by [beam_rank].
 #' @param path Optional output path. When given, the figure is saved there (the
@@ -21,7 +21,7 @@
 #' @param worth_label Axis label for the worth panel.
 #' @param show_lodo,show_smaa,show_aggregation Draw the leave-one-dataset-out
 #'   span, the SMAA acceptability bar, and the aggregation rank span when the run
-#'   carries them. Default `TRUE`.
+#'   has them. Default `TRUE`.
 #' @param cliques Optional list of method-name groups from a Friedman-Nemenyi
 #'   test (for example `beam_critical_difference(...)$cliques` mapped to names).
 #'   Each multi-member group is drawn as an indigo bracket to the left of the
@@ -330,7 +330,7 @@ beam_rank_bump <- function(method_names, columns, ranks, divider_after = NULL,
     ggplot2::labs(x = paste(xlab, "(1 is best)"), y = NULL) + .panel_theme()
 }
 
-# the share of sampled weightings that place a method at each rank, stacked and
+# the fraction of sampled weightings that place a method at each rank, stacked and
 # coloured by rank with rank 1 at the bright end
 .smaa_panel <- function(acc, pos, ylim) {
   n_ranks <- ncol(acc)

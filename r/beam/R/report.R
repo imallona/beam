@@ -1,16 +1,16 @@
 #' Render a beam run result to a self-contained HTML report
 #'
-#' Writes a single HTML file with the ranking, normalization diagnostics,
-#' sensitivity outputs (SMAA, leave-one-out, perturbation, leave-one-dataset-out
-#' when applicable), a critical-difference section for tensor inputs, and a
-#' plain-language recommendation paragraph. Figures are embedded as base64
-#' PNGs; the file has no external dependencies.
+#' Writes one HTML file with the ranking, the normalization diagnostics, the
+#' sensitivity outputs (SMAA, leave-one-out, perturbation, and
+#' leave-one-dataset-out when there are datasets), a critical-difference
+#' section for tensor inputs, and a recommendation paragraph. Figures are
+#' embedded as base64 PNGs.
 #'
 #' @param result A `RunResult` returned by [beam_rank].
 #' @param path Output HTML path.
 #' @param ground_truth_tool Optional character: name of the documented top tool
-#'   to outline in the ranking figure. Vignettes set this; a plain CSV has no
-#'   ground truth.
+#'   to outline in the ranking figure. The vignettes set it; a plain CSV has
+#'   none.
 #' @param ... Other keyword arguments forwarded to `beam.report`.
 #'
 #' @return Invisibly, the output path.

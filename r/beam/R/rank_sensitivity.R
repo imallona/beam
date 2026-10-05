@@ -4,7 +4,7 @@
 #' rule and (for a tensor input) the dataset, by running the full factorial of
 #' every combination and decomposing each tool's rank variance with an analysis
 #' of variance. The shares sum to one. A large dataset share means the ranking
-#' depends on which dataset you use; a large weighting or aggregation share means
+#' depends on the dataset; a large weighting or aggregation share means
 #' it depends on a choice the analyst could make differently. Forwards to the
 #' Python `beam.mcda.rank_sensitivity`.
 #'
@@ -19,7 +19,7 @@
 #'   `NULL` uses the five beam aggregations.
 #' @param normalization,bounds,baselines,targets Optional per-metric
 #'   normalization context, as returned by the Python `registry_context`. Pass
-#'   them so the decomposition rests on the same normalized matrix as the ranking.
+#'   them so the decomposition uses the same normalized matrix as the ranking.
 #' @param missing Missing-data policy forwarded to every run. Default `"error"`;
 #'   use `"worst"` to complete a tensor with gaps.
 #' @param tool_names Optional character vector of tool labels.

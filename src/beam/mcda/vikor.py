@@ -35,24 +35,24 @@ def vikor(normalized: np.ndarray, weights: np.ndarray, v: float = 0.5) -> np.nda
         d_ij = (f_star_j - x_ij) / (f_star_j - f_minus_j)
 
     weighted by the metric weight. A criterion with zero range
-    (f_star == f_minus) carries no information between tools and contributes
+    (f_star == f_minus) gives no information between tools and contributes
     nothing.
 
     The compromise index Q is computed by ``pymcdm.methods.VIKOR`` with its
     normalization disabled, so pymcdm runs on beam's already normalized
-    matrix. The native S, R and Q loop has been replaced by that call.
+    matrix.
 
     Orientation convention. The canonical VIKOR Q is lower is better: the
     tool with the smallest Q is the preferred compromise. beam aggregations
     must return a higher-is-better preference score so that ``beam.mcda.rank``
     (1 = highest score) gives the ranking. This function therefore returns
     ``-Q``. Negating preserves the order exactly: the tool with the smallest
-    Q has the largest ``-Q`` and so ranks first. We return ``-Q`` rather than
-    a rescaled ``1 - Q`` to avoid a second normalization step that would
-    discard the absolute spacing of the Q values.
+    Q has the largest ``-Q`` and so ranks first. A rescaled ``1 - Q`` would add
+    a second normalization step and discard the absolute spacing of the Q
+    values, so ``-Q`` is returned.
 
     Degenerate cases are guarded. If every tool is identical on a metric the
-    column range is zero and that metric carries no information. pymcdm
+    column range is zero and that metric gives no information. pymcdm
     rejects a constant column, so beam drops such columns before the call.
     When every column is constant, which happens for a single tool or for
     rows identical on every metric, there is nothing to separate the tools,
@@ -114,7 +114,7 @@ def vikor(normalized: np.ndarray, weights: np.ndarray, v: float = 0.5) -> np.nda
     # pymcdm divides by the range of the group utility S and the regret R. When
     # either range is zero, for example when several rows are identical, it
     # returns not-a-number. beam then treats every tool as tied by returning a
-    # constant score, the same outcome as the previous native guard.
+    # constant score.
     if not np.all(np.isfinite(q)):
         return np.zeros(normalized.shape[0])
     return -q

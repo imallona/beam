@@ -148,8 +148,8 @@ def dataset_stability_plot(
 ) -> Figure:
     """Bar chart of the per-tool leave-one-dataset-out rank stability.
 
-    Each bar is the share of leave-one-dataset-out runs in which the tool kept
-    its base rank, so a bar near 100 percent means the tool's position does not
+    Each bar is the fraction of leave-one-dataset-out runs with the tool's base
+    rank unchanged, so a bar near 100 percent means the tool's position does not
     depend on any single dataset. Tools are ordered by their headline rank.
     """
     order = np.argsort(ranks)
@@ -252,7 +252,7 @@ def score_heatmap(
     """Heatmap of raw scores, tools by columns, NaN-aware.
 
     Draws the raw tool-by-dataset (or tool-by-group) scores. Missing cells are
-    left grey rather than imputed. With ``highlight_best_per_col`` the best score
+    grey; nothing is imputed. With ``highlight_best_per_col`` the best score
     in each column is outlined, the ground-truth box the transportation and M4
     vignettes draw. ``log`` colours on a log scale for a metric that spans orders
     of magnitude.
@@ -422,8 +422,7 @@ def rank_bump(
     a lot the columns disagree on the order; where they run parallel the columns
     agree. An optional vertical divider separates two groups of columns (for
     example the benchmarks' published rankings on the left from beam's
-    consistent re-ranking on the right), so the eye can compare how tangled each
-    side is.
+    consistent re-ranking on the right), so the two sides can be compared.
 
     Parameters
     ----------
@@ -535,11 +534,10 @@ def funky_heatmap(
     The funky heatmap (the glyph table used by dynbenchmark and OpenProblems)
     shows methods as rows, sorted best first, and metrics as columns, with each
     cell a circle whose radius grows with the normalized score and whose colour
-    marks the metric group. An overall column carries the composite score as a
-    bar. Read alone it looks like a settled ranking. beam adds panels that test
-    that reading, each answering whether the row order survives a reasonable
-    change. Both the circle sizes and the row order depend on the normalization,
-    which beam resolves from the metric cards rather than defaulting to min-max.
+    marks the metric group. An overall column shows the composite score as a bar.
+    The panels show whether the row order holds under a change of dataset,
+    weighting, aggregation or normalization. Both the circle sizes and the row
+    order depend on the normalization, resolved from the metric cards.
 
     Parameters
     ----------
@@ -788,13 +786,12 @@ def critical_difference_plot(
 ) -> Figure:
     """Canonical Friedman-Nemenyi critical-difference diagram (Demsar 2006).
 
-    Each tool sits at its average rank across datasets, rank 1 first. The red
+    Each tool is placed at its average rank across datasets, rank 1 first. The red
     reference bar at the top is one critical difference wide. A blue bar joins
     each group of tools whose average ranks differ by less than the critical
     difference, the cliques the Nemenyi test cannot separate, so tools under one
-    bar are statistically tied. This is the diagram people recognise in machine
-    learning benchmarking, drawn here one tool per row so it stays readable for
-    the dozen-plus methods a bioinformatics benchmark carries.
+    bar are statistically tied. The diagram is drawn one tool per row so it stays
+    readable with a dozen or more methods.
 
     ``cliques`` is the tuple of tool-index groups from a
     ``CriticalDifferenceReport``; pass it to draw the connecting bars. With no
@@ -846,8 +843,8 @@ def critical_difference_band_plot(
     The alternative to :func:`critical_difference_plot`: tools are placed on a
     rank axis, and a band one critical difference wide is shaded from the
     top-ranked tool, so any tool inside the band is within the critical
-    difference of it. It shows the size of the critical difference but only ties
-    with the top tool, not every clique.
+    difference of it. It shows the size of the critical difference and only the
+    ties with the top tool; other cliques are not drawn.
     """
     order = np.argsort(average_ranks)
     names = [tool_names[i] for i in order]
@@ -963,9 +960,9 @@ def rank_deviation_heatmap(
     are methods, columns are datasets, and each cell is the method's rank on that
     dataset minus its mean rank across the datasets. A negative cell (one colour)
     means the method places higher than its average on that dataset; a positive
-    cell (the other colour) means it places lower. A method that struggles on a
-    dataset relative to its own baseline shows as a strong positive cell, so the
-    figure reads as a map of where each method does better or worse than usual,
+    cell (the other colour) means it places lower. A method ranked lower than
+    usual on a dataset shows as a strong positive cell, so the figure is a map
+    of where each method does better or worse than usual,
     without ranking the methods against each other.
 
     Parameters
@@ -1021,13 +1018,12 @@ def specification_curve_plot(report, *, compact: bool = True, host: Figure | Non
     drawn in light gray for context. The lower panels mark which choice each
     combination used, in the same column order.
 
-    The figure width is capped rather than growing with the number of
-    combinations, since a specification curve is dense by design and a width that
-    scales with the count produces an unreadable canvas. With ``compact`` (the
+    The figure width is capped, since a width that grows with the number of
+    combinations produces an unreadable canvas. With ``compact`` (the
     default), the weighting and the aggregation are drawn as labelled dot rows
     and the datasets are collapsed into one colour strip below them, so a
     benchmark with many datasets stays readable. With ``compact=False`` every
-    dataset gets its own labelled row, the fuller dashboard for interactive use.
+    dataset gets its own labelled row, for interactive use.
 
     Takes a ``SpecificationCurveReport`` from ``beam.mcda.specification_curve``.
     """
@@ -1345,7 +1341,7 @@ def reliability_if_dropped_plot(
 
     # A focused y-range so the small differences between the dropped-metric
     # alphas are visible; the reference lines (group alpha, adequacy cutoff) are
-    # what the panel is read against, so a zoomed baseline is the right view.
+    # what the panel is read against, so the y range is zoomed.
     all_values = [a for entries in by_group.values() for _, a in entries]
     refs = [v for v in report.alpha_by_group.values() if np.isfinite(v)] + [alpha_threshold]
     finite = [v for v in all_values if np.isfinite(v)] + refs
@@ -1393,8 +1389,8 @@ def dimensionality_scree_plot(
     One line per assessed group joining the descending eigenvalues of its
     oriented metric-correlation matrix against the component index. The
     horizontal line at one is the Kaiser rule; the number of components parallel
-    analysis retains (the recommended reading) is annotated per group. A group
-    whose curve clears the line at more than one component carries more than one
+    analysis retains (the count used for the flags) is annotated per group. A
+    group with more than one eigenvalue above the line has more than one
     factor.
 
     Takes a ``MetricDimensionalityReport`` from ``beam.mcda.metric_dimensionality``.
@@ -1433,7 +1429,7 @@ def network_forest_plot(report, *, host: Figure | None = None, title: str | None
     Each method's pooled mean-rank difference from the reference, with its 95
     percent confidence interval as a horizontal whisker and a vertical line at
     zero. Smaller is better when the effect measure is a mean-rank difference, so
-    a method whose interval sits left of zero outranks the reference. The P-score
+    a method with its interval left of zero outranks the reference. The P-score
     (the probability a method outranks a random competitor) is annotated per row.
 
     Takes a ``NetworkMetaReport`` from ``beam.heterogeneity.network_meta_analysis``.
@@ -1481,12 +1477,12 @@ def network_forest_plot(report, *, host: Figure | None = None, title: str | None
 def attribution_progression_plot(
     report, *, host: Figure | None = None, title: str | None = None
 ) -> Figure:
-    """Stacked share of a common rank-variance budget across settings.
+    """Stacked rank-variance split per setting.
 
-    One stacked bar per setting, split into the analyst-choice, dataset, and
-    benchmarker shares of a common rank-variance budget. The settings run in the
-    order given, from one benchmark to a same-data contrast, so the rising
-    analyst-choice share shows the dataset contribution being removed by design.
+    One stacked bar per setting, split into the analyst-choice, dataset and
+    benchmarker fractions. The settings are drawn in the order given, from one
+    benchmark to a same-data contrast, so the analyst-choice fraction rises as
+    the dataset contribution is removed.
 
     Takes an ``AttributionReport`` from ``beam.mcda.attribution_synthesis``.
     """
@@ -1505,7 +1501,7 @@ def attribution_progression_plot(
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=8)
     ax.set_ylim(0, 1)
-    ax.set_ylabel("share of rank-variance budget")
+    ax.set_ylabel("fraction of rank variance")
     ax.set_xlabel("setting")
     ax.legend(fontsize=8, loc="upper center", ncol=3, bbox_to_anchor=(0.5, 1.12))
     if title:

@@ -15,7 +15,7 @@ format:
 
 ## Set-up
 
-The five [aggregation methods](../../docs/explanations/aggregation-methods.md) (SAW, TOPSIS, VIKOR, PROMETHEE II, [COMET](../../docs/explanations/aggregation-methods.md#comet)) come from pymcdm, called on the matrix beam normalizes by metric card. The [weighting schemes](../../docs/explanations/weighting-schemes.md) are beam's own.
+The five [aggregation methods](../../docs/explanations/aggregation-methods.md) (SAW, TOPSIS, VIKOR, PROMETHEE II, [COMET](../../docs/explanations/aggregation-methods.md#comet)) come from pymcdm, called on the matrix normalized by beam according to the metric cards. The [weighting schemes](../../docs/explanations/weighting-schemes.md) are beam's own.
 
 ```{python}
 %matplotlib inline
@@ -76,7 +76,7 @@ for p in props:
 
 ## Pooling across datasets
 
-beam needs one value per metric, so the datasets are pooled first, keeping NaN awareness: the arithmetic mean of ARI and Shannon entropy difference, the geometric mean of runtime.
+beam needs one value per metric, so the datasets are pooled first with NaN-aware means: the arithmetic mean of ARI and Shannon entropy difference, the geometric mean of runtime.
 
 The five missing cells are on SAFE (two datasets) and ascend (three datasets).
 
@@ -200,7 +200,7 @@ plot.critical_difference(cd)
 
 ## Pairwise superiority on ARI
 
-[`pairwise_superiority`](../../docs/reference/pairwise_superiority.qmd) [compares the methods two at a time](../../docs/explanations/pairwise-method-comparison.md) across the datasets, with the ARI noise floor (0.01) as the equivalence band. The probability of superiority is the fraction of datasets on which one method outperforms the other.
+[`pairwise_superiority`](../../docs/reference/pairwise_superiority.qmd) [compares the methods two at a time](../../docs/explanations/pairwise-method-comparison.md) across the datasets, with the ARI noise floor (0.01) as the equivalence band. The probability of superiority is the fraction of datasets with one method outperforming the other.
 
 ```{python}
 from beam.mcda import pairwise_superiority
@@ -225,7 +225,7 @@ print(f"method preferred to every other one: {choice}")
 print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_triads} of {trans.n_triads}")
 ```
 
-The matrix orders the methods by how many others they outperform. A red cell below the diagonal is a method that outperforms one ranked above it.
+The matrix orders the methods by the number of others outperformed. A red cell below the diagonal is a method outperforming one ranked above it.
 
 ```{python}
 plot.pairwise_majority(trans)
@@ -254,11 +254,11 @@ plot.bayesian_comparison(bayes)
 
 ## SMAA
 
-[`smaa`](../../docs/reference/smaa.qmd) samples weight vectors from a Dirichlet, ranks once per sample, and reports the share of samples in which each method is top-ranked.
+[`smaa`](../../docs/reference/smaa.qmd) samples weight vectors from a Dirichlet, ranks once per sample, and reports the fraction of samples with each method ranked first.
 
 ```{python}
 smaa_report = smaa(pooled, polarity, n_samples=2000, method="topsis", seed=0)
-print("confidence factor (share of weight samples ranked first), nonzero only:")
+print("confidence factor (fraction of weight samples ranked first), nonzero only:")
 for i in np.argsort(-smaa_report.confidence_factor):
     if smaa_report.confidence_factor[i] > 0:
         print(f"  {duo.method_names[i]:12s}  {smaa_report.confidence_factor[i]:.3f}")
@@ -279,7 +279,7 @@ plt.show()
 
 ## Smallest weight perturbation
 
-[`smallest_weight_perturbation`](../../docs/reference/smallest_weight_perturbation.qmd) reports, under SAW, the smallest single-weight change that swaps a pair, and whether a change below the fragility threshold (default 0.05) displaces the top method.
+[`smallest_weight_perturbation`](../../docs/reference/smallest_weight_perturbation.qmd) reports, under SAW, the smallest single-weight change swapping a pair, and whether a change below the fragility threshold (default 0.05) displaces the top method.
 
 ```{python}
 ts = smallest_weight_perturbation(pooled, polarity, weights="equal", method="saw")
@@ -312,7 +312,7 @@ print("top-ranked under equal weights / SAW:", run.top_tool)
 print("matrix ranked (methods by metrics):", run.matrix.shape)
 ```
 
-For each dataset dropped, the other eleven are pooled and re-ranked. The stability of a method is the share of those runs in which it keeps its rank.
+Each dataset is dropped in turn and the other eleven are pooled and re-ranked. The stability of a method is the fraction of those runs with its rank unchanged.
 
 ```{python}
 lodo = run.leave_one_dataset_out
@@ -330,7 +330,7 @@ print(f"\nmost influential dataset: {influential} (largest rank shift {lodo.max_
 plot.dataset_stability(run)
 ```
 
-The [funky heatmap](../../docs/explanations/funky-heatmaps-and-robustness.md) of the run, with the rank span across the leave-one-dataset-out runs and across the five aggregations. The brackets group the methods the Friedman-Nemenyi test does not separate on ARI.
+The [funky heatmap](../../docs/explanations/funky-heatmaps-and-robustness.md) of the run, with the rank span across the leave-one-dataset-out runs and across the five aggregations. The brackets group the methods not separated by the Friedman-Nemenyi test on ARI.
 
 ```{python}
 from beam.mcda import critical_difference
@@ -539,7 +539,7 @@ plot.rank_sensitivity(rs)
 
 The dataset has 0.73 of the rank variance.
 
-The same shares per method, with the difference between the best and worst rank of each method:
+The same split per method, with each method's rank range:
 
 ```{python}
 plot.rank_sensitivity_by_tool(rs)

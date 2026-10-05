@@ -1,8 +1,8 @@
-"""Refuse a tool by metric matrix that carries missing cells.
+"""Refuse a tool by metric matrix with missing cells.
 
 beam does not impute missing benchmark scores and does not pool a single
-ranking across tools measured on different metric subsets. A missing cell is a
-fact about coverage, not a value to fill in, so every step that consumes a tool
+ranking across tools measured on different metric subsets. A missing cell records
+that the tool was not scored on that metric, so every step that consumes a tool
 by metric matrix (normalization, weighting, the five aggregations, the
 critical-difference test, and the ``run`` and ``beam.rank`` entry points) treats
 a NaN as a hard error.
@@ -43,7 +43,7 @@ def require_complete(
 ) -> None:
     """Raise ``IncompleteMatrixError`` if ``matrix`` holds any NaN.
 
-    Names a few of the offending cells so the message is actionable. Accepts a
+    Names up to a few of the missing cells in the message. Accepts a
     2D tool by metric matrix or a 1D per-tool vector (a composite score), and
     labels rows with ``tool_names`` and columns with ``metric_ids`` when given.
 

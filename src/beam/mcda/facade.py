@@ -130,7 +130,7 @@ def _apply_missing_policy(normalized, mask, missing, weighting, method, metric_i
     path and refuses the methods and weightings that cannot use it; ``worst``
     maps a missing cell to the worst normalized score (0); ``impute`` fills it
     with the per-metric mean of the observed normalized scores. Every non-error
-    policy returns a loud warning naming the affected cells.
+    policy returns a warning naming the affected cells.
     """
     count = int(mask.sum())
     cells = _describe_cells(mask, metric_ids)
@@ -162,8 +162,8 @@ def _apply_missing_policy(normalized, mask, missing, weighting, method, metric_i
         filled = np.where(mask, 0.0, normalized)
         return filled, [
             f"missing='worst': {count} missing {'cell' if count == 1 else 'cells'} "
-            f"({cells}) were treated as the worst score (normalized 0). This is an "
-            "explicit choice that a non-run counts as a failure, not a measurement."
+            f"({cells}) were treated as the worst score (normalized 0), which counts "
+            "a non-run as a failure."
         ]
     if missing == "impute":
         with _warnings.catch_warnings():
@@ -206,7 +206,7 @@ def run(
        scheme, call ``beam.mcda.ahp_weights`` on a pairwise comparison
        matrix and pass the returned array. ``"merec"`` takes logarithms and
        needs a normalization bounded away from zero, so it rejects a column
-       carrying a hard zero (plain min-max maps the worst tool to zero).
+       with a hard zero (plain min-max maps the worst tool to zero).
     3. Aggregate to one composite score per tool. Pass ``"saw"`` for simple
        additive weighting (the dot product of normalized scores and
        weights), ``"topsis"`` for distance-to-ideal aggregation, ``"vikor"``
@@ -241,7 +241,7 @@ def run(
         ``min_max_normalize``. Either side can be ``None`` to fall back
         to the empirical extremum.
     metric_ids
-        Optional list of metric ids, carried in the Result for labelling
+        Optional list of metric ids, kept in the Result for labelling
         and used to name columns in any normalization warning.
     normalization
         ``None`` (min_max on every column), a single strategy name applied
@@ -255,7 +255,7 @@ def run(
         strategy. Forwarded to ``normalize``.
     missing
         Policy for missing cells (NaN) in the tool by metric matrix, applied
-        after normalization. beam never picks this for you, so the default
+        after normalization. There is no automatic choice, so the default
         refuses. One of:
 
         - ``"error"`` (default): raise ``IncompleteMatrixError`` naming the
@@ -267,11 +267,10 @@ def run(
           the matrix.
         - ``"worst"``: treat a non-run as the worst outcome, mapping each
           missing cell to the worst normalized score (0). The matrix is then
-          complete and every method runs. An explicit failure policy, not
-          imputation of an unknown.
+          complete and every method runs. This is a failure policy; nothing is
+          imputed.
         - ``"impute"``: fill each missing cell with the per-metric mean of the
-          observed normalized scores. Discouraged; provided only because a user
-          may explicitly want it.
+          observed normalized scores. Discouraged.
 
         Every non-error policy records a warning on the ``Result``.
 
@@ -360,8 +359,8 @@ def run_from_registry(
     ``run``.
 
     Use this when the columns of ``scores`` correspond to known metric
-    cards. Use the lower-level ``run`` when you want to drive the pipeline
-    by hand-typed polarity strings, for example in a unit test.
+    cards. ``run`` takes hand-typed polarity strings instead, for example in a
+    unit test.
 
     Parameters
     ----------
@@ -418,7 +417,7 @@ class RegistryContext:
     """The card-derived inputs the pipeline needs for a set of metric ids.
 
     Resolved once from the registry and reused by ``run_from_registry`` and by
-    the sensitivity primitives so the headline ranking and its sensitivity
+    the sensitivity primitives so the main ranking and its sensitivity
     analysis share the same per-metric normalization, bounds, baselines,
     targets, and noise floors.
     """
@@ -459,8 +458,8 @@ def registry_context(
         Optional per-metric card version pin, aligned with ``metric_ids``.
         ``None`` in a slot (or ``versions=None``) takes the latest version. The
         pins are recorded on the returned context (``None`` for latest) so the
-        manifest can fingerprint the exact cards used. A pinned version the
-        registry does not carry raises KeyError.
+        manifest can fingerprint the exact cards used. A pinned version that is not
+        in the registry raises KeyError.
 
     Returns
     -------

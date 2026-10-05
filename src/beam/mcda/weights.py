@@ -1,6 +1,6 @@
 """Weight vectors for MCDA aggregation.
 
-These weighting schemes stay native to beam rather than delegating to pymcdm.
+These weighting schemes are implemented in beam and do not use pymcdm.
 pymcdm's weight functions sum-normalize internally and reject zeros, but beam's
 min-max normalization routinely maps the worst tool to zero, and AHP is not in
 pymcdm.
@@ -80,7 +80,7 @@ def entropy_weights(normalized: np.ndarray) -> np.ndarray:
     p = normalized / safe_sums[None, :]
 
     # 0 * ln 0 = 0 by convention. np.where eagerly evaluates both branches,
-    # so we silence the harmless log(0) warning rather than rewrite with a mask.
+    # so the harmless log(0) warning is silenced instead of using a mask.
     with np.errstate(divide="ignore", invalid="ignore"):
         log_p = np.where(p > 0, np.log(p), 0.0)
     k = 1.0 / np.log(n_tools)
@@ -178,8 +178,8 @@ def critic_weights(normalized: np.ndarray) -> np.ndarray:
     CRITIC (CRiteria Importance Through Intercriteria Correlation) combines two
     ideas. A metric should weigh more when its scores spread out, measured by
     standard deviation, and when it conflicts with the other metrics, measured
-    by low correlation. A metric that merely repeats information already carried
-    by another metric should not be counted twice, so a high positive
+    by low correlation. A metric that repeats information already present in
+    another metric should not be counted twice, so a high positive
     correlation lowers the weight.
 
     Algorithm:
@@ -253,7 +253,7 @@ def merec_weights(normalized: np.ndarray) -> np.ndarray:
 
     MEREC (Method based on the Removal Effects of Criteria) weights each metric
     by how much the overall performance scores change when that metric is
-    dropped. A metric whose removal barely moves the scores carries little
+    dropped. A metric whose removal barely changes the scores has little
     information and gets a small weight. A metric whose removal shifts the
     scores a lot gets a large weight.
 
@@ -356,9 +356,9 @@ def ahp_weights(
 ) -> tuple[np.ndarray, float]:
     """Analytic Hierarchy Process weights from a pairwise comparison matrix.
 
-    AHP is a subjective scheme. Unlike the objective schemes in this module,
-    which read the spread of the score matrix, AHP needs a user-supplied square
-    matrix of pairwise judgments. Entry ``A[i, j]`` states how many times more
+    AHP is a subjective scheme. The objective schemes in this module read the
+    spread of the score matrix; AHP needs a square matrix of pairwise
+    judgments from the user. Entry ``A[i, j]`` states how many times more
     important metric i is than metric j, on Saaty's 1 to 9 scale. The matrix
     must be positive and reciprocal, meaning ``A[j, i] = 1 / A[i, j]`` and a
     unit diagonal.

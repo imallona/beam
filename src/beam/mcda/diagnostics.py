@@ -2,17 +2,16 @@
 
 ``metric_validity``, ``metric_reliability`` and ``metric_dimensionality`` take
 the same inputs (a method-by-dataset-by-metric tensor, the polarity per metric,
-and a construct label per metric) and rest on the same oriented pairwise-complete
+and a construct label per metric) and use the same oriented pairwise-complete
 Spearman correlations. They answer three questions about a metric grouping:
 
 - validity: is the grouping the right split (do same-group metrics agree and
   different-group metrics differ);
-- reliability: does each group hold together as one scale (Cronbach's alpha);
-- dimensionality: how many factors does each group actually carry.
+- reliability: is each group one consistent scale (Cronbach's alpha);
+- dimensionality: how many factors each group has.
 
 ``metric_diagnostics`` runs all three on one set of inputs and returns the three
-frozen reports together, so a caller reads the grouping from every angle without
-repeating the boilerplate. Validity is skipped (left ``None``) when there is only
+frozen reports together. Validity is skipped (left ``None``) when there is only
 one construct, since convergent and discriminant evidence need at least two.
 """
 
@@ -73,7 +72,7 @@ def metric_diagnostics(
     groups
         Length ``n_metrics`` construct label per metric.
     metric_ids
-        Optional length ``n_metrics`` labels carried into each report.
+        Optional length ``n_metrics`` labels kept in each report.
     min_pairwise
         Minimum shared observations for a metric pair's correlation, shared by
         all three diagnostics. Default 3.

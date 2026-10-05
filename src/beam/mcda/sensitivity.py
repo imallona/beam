@@ -58,8 +58,8 @@ def leave_one_metric_out(
     For each metric column j, drop column j and re-run ``beam.mcda.run`` on
     the remaining ``n_metrics - 1`` columns with the same weighting and
     method. Compare every leave-one-out ranking to the base ranking to
-    obtain per-tool rank stability (the fraction of leave-one-out runs in
-    which the tool keeps its base rank) and the maximum rank shift caused
+    obtain per-tool rank stability (the fraction of leave-one-out runs with
+    the tool's base rank unchanged) and the maximum rank shift caused
     by any single omission.
 
     Parameters
@@ -71,8 +71,8 @@ def leave_one_metric_out(
         ``"lower_is_better"``. Use ``beam.cards.polarities_for`` to source
         this from the registry.
     metric_ids
-        Optional length ``n_metrics`` sequence of metric ids. Carried in
-        the report for labelling; not consulted by the pipeline.
+        Optional length ``n_metrics`` sequence of metric ids. Kept in
+        the report for labelling.
     weights
         Forwarded to ``run``. ``"equal"``, ``"entropy"``, or an array.
     method
@@ -82,7 +82,7 @@ def leave_one_metric_out(
         subset to the kept columns on each omission. Default ``None`` keeps
         the ``run`` defaults. Pass the values from
         ``beam.mcda.registry_context`` so the leave-one-out runs normalize
-        the scores the same way as the headline ranking.
+        the scores the same way as the main ranking.
 
     Returns
     -------
@@ -171,7 +171,7 @@ class DatasetSensitivityReport:
     whose omission left a matrix the pipeline could still rank; a dataset whose
     removal would leave some tool with no observation for a metric is skipped
     and excluded from the stability denominator. ``rank_stability`` is the
-    per-tool fraction of evaluated runs in which the tool kept its base rank.
+    per-tool fraction of evaluated runs with the tool's base rank unchanged.
     ``most_influential_dataset`` is the dataset whose removal causes the largest
     rank change, and ``max_rank_shift`` is the size of that change.
     """
@@ -202,13 +202,13 @@ def leave_one_dataset_out(
 ) -> DatasetSensitivityReport:
     """Pool all datasets and rank, then re-rank with each dataset left out.
 
-    The headline ranking pools a tool by dataset by metric tensor across the
+    The main ranking pools a tool by dataset by metric tensor across the
     datasets (one reduction rule per metric) into a tool by metric matrix
-    and ranks it. This analysis asks how much that ranking depends on any single
+    and ranks it. This analysis measures how much that ranking depends on any single
     dataset: for each dataset d, drop d, pool the remaining datasets the same
     way, re-rank, and compare to the base ranking. The result is a per-tool rank
-    stability (the fraction of leave-one-out runs in which the tool keeps its
-    base rank) and the largest rank shift caused by removing any single dataset.
+    stability (the fraction of leave-one-out runs with the tool's base rank
+    unchanged) and the largest rank shift caused by removing any single dataset.
 
     The reduction is nan-aware. A dataset whose removal would leave some tool
     with no observation for a metric cannot be pooled, so that omission is
@@ -230,7 +230,7 @@ def leave_one_dataset_out(
         one per metric. Source these from each card's
         ``recommended_aggregation_across_datasets``.
     dataset_names
-        Optional length ``n_datasets`` labels, carried in the report.
+        Optional length ``n_datasets`` labels, kept in the report.
     metric_ids
         Optional length ``n_metrics`` labels used in reduction error messages.
     weights, method
@@ -238,7 +238,7 @@ def leave_one_dataset_out(
     normalization, bounds, baselines, targets
         Optional per-metric normalization context forwarded to every run.
         Pass the values from ``beam.mcda.registry_context`` so the leave-one-out
-        runs normalize the same way as the headline ranking.
+        runs normalize the same way as the main ranking.
 
     Returns
     -------

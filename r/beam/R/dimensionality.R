@@ -1,13 +1,13 @@
-#' How many factors a metric group carries
+#' How many factors a metric group has
 #'
 #' Counts the factors in each construct group by principal component analysis of
 #' the metric correlation matrix, the companion to [beam_metric_reliability].
-#' Cronbach's alpha reads a group as one scale when it is high but cannot test
+#' A high Cronbach's alpha reads as one scale but cannot test
 #' whether the group is a single factor; this check does, with parallel analysis
 #' (Horn 1965), using Glorfeld's (1995) 95th-percentile cutoff over Horn's mean
 #' rule. Each method-by-dataset cell is one observation, oriented to
-#' higher-is-better and correlated with Spearman, the same engine the validity
-#' and reliability checks use. Forwards to the Python
+#' higher-is-better and correlated with Spearman, the same correlations the
+#' validity and reliability checks use. Forwards to the Python
 #' `beam.mcda.metric_dimensionality`.
 #'
 #' @param scores A numeric matrix of shape (observations, metrics), or a 3D
@@ -18,8 +18,8 @@
 #'   `"higher_is_better"` or `"lower_is_better"`. A `"target_value"` metric has
 #'   no monotone quality direction; drop it before calling.
 #' @param groups Character vector, one construct label per metric column.
-#'   Metrics sharing a label are read together as one composite scale.
-#' @param metric_ids Optional character vector of metric labels carried into the
+#'   Metrics sharing a label form one composite scale.
+#' @param metric_ids Optional character vector of metric labels kept in the
 #'   report. Default `NULL`.
 #' @param min_pairwise Minimum shared observations for a pair's correlation to be
 #'   computed. Default `3`.

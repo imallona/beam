@@ -118,13 +118,13 @@ def funky_heatmap_from_run(
     cliques
         Optional groups of method names not separable by Friedman-Nemenyi.
     show_smaa
-        Draw the SMAA rank-acceptability panel when the run carries SMAA.
+        Draw the SMAA rank-acceptability panel when the run has SMAA.
     show_aggregation_consensus
         Draw the aggregation rank-span panel.
     show_normalization_consensus
         Draw the normalization rank-span panel, the span each method takes
         across the normalization strategies. Off by default to keep the figure
-        narrow; turn it on to dissect the normalization choice.
+        narrow; turn it on to show the normalization choice.
 
     Returns
     -------

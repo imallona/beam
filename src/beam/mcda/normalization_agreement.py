@@ -2,10 +2,10 @@
 
 Before any weighting or aggregation, beam rescales each metric column to
 [0, 1]. The strategy is chosen per metric from the card field
-``comparability.recommended_normalization``, but it is a real analyst choice: a
+``comparability.recommended_normalization``, but it is an analyst choice: a
 rank normalization drops the size of the gaps between methods, ``log_min_max``
 stops one slow method from compressing a runtime column, and ``zscore``
-squashes outliers smoothly. A different strategy can change the order.
+compresses outliers smoothly. A different strategy can change the order.
 
 Like ``aggregation_agreement``, this module checks whether a different
 normalization would order the tools the same way. It re-ranks the same
@@ -15,14 +15,14 @@ aggregation fixed, and reports how closely the resulting orderings agree.
 The agreement is measured with the Kendall tau-b rank-correlation coefficient,
 which handles the tied ranks that competition ranking produces. A high mean
 pairwise tau means the recommendation is stable under the normalization choice;
-a low one means the choice is itself a degree of freedom the report should
-disclose. The consensus ranking averages the per-method ranks, and a flag marks
-whether every normalization puts the same tool first.
+a low one means the ranking depends on the normalization choice. The consensus
+ranking averages the per-method ranks, and a flag marks whether every
+normalization puts the same tool first.
 
-This sits alongside the other choice-sensitivity diagnostics: SMAA varies the
-weights, ``aggregation_agreement`` varies the aggregation rule, and
+The other choice diagnostics: SMAA varies the weights,
+``aggregation_agreement`` varies the aggregation rule, and
 ``leave_one_dataset_out`` varies the data. ``normalization_agreement`` varies
-the normalization, the one analyst choice the others leave untested.
+the normalization.
 
 Only the scale-agnostic strategies are compared by default (``min_max``,
 ``log_min_max``, ``rank``, ``zscore``). ``baseline_relative`` and
@@ -30,7 +30,7 @@ Only the scale-agnostic strategies are compared by default (``min_max``,
 reference or target from the card and are tied to the metric's meaning, so they
 are not a free choice the analyst makes column by column. The card-recommended
 per-metric normalization can still be passed in as one labelled candidate, so
-the report compares the headline default against the uniform alternatives.
+the report compares the card default against the uniform alternatives.
 """
 
 from __future__ import annotations
@@ -73,7 +73,7 @@ class NormalizationAgreementReport:
             first.
         rank_low, rank_high: (n_tools,) best and worst rank each tool takes
             across the labels.
-        tool_names: optional labels carried for reporting.
+        tool_names: optional labels kept for reporting.
     """
 
     labels: tuple[str, ...]
@@ -114,9 +114,8 @@ def normalization_agreement(
     That is intended: the normalization choice propagates through the whole
     pipeline, and the report shows its total effect on the order.
 
-    A candidate that raises on the input is dropped from the report rather than
-    failing the whole analysis, matching how ``aggregation_agreement`` treats an
-    aggregation that cannot run. At least two candidates must succeed.
+    A candidate that raises on the input is dropped from the report and the
+    analysis continues, as in ``aggregation_agreement``. At least two candidates must succeed.
 
     Parameters
     ----------
@@ -149,7 +148,7 @@ def normalization_agreement(
     missing
         Missing-data policy forwarded to every run. Default ``"error"``.
     tool_names
-        Optional length ``n_tools`` labels carried in the report.
+        Optional length ``n_tools`` labels kept in the report.
 
     Returns
     -------

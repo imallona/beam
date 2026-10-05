@@ -48,7 +48,7 @@ class PairwiseTransitivityReport:
     tied_pairs
         Unordered pairs with no majority preference: the two methods outperform
         each other on the same number of shared datasets, or share no decisive
-        dataset. These pairs carry no edge.
+        dataset. These pairs have no edge.
     condorcet_choice
         The method index preferred to every other method by pairwise majority, or
         ``None`` when no such method exists. It must be preferred to each other
@@ -67,7 +67,7 @@ class PairwiseTransitivityReport:
         Kendall and Babington Smith's (1940) coefficient of consistence in
         ``[0, 1]``: ``1 - d / d_max``, where ``d`` is the circular-triad count and
         ``d_max`` is the largest number of circular triads a relation of this size
-        can hold. A value of 1 is a transitive relation and 0 is the least
+        can have. A value of 1 is a transitive relation and 0 is the least
         consistent relation. ``None`` when any pair is tied, since the coefficient
         is defined only when every pair is decided.
     is_transitive
@@ -81,11 +81,11 @@ class PairwiseTransitivityReport:
     n_methods
         The number of methods.
     rope
-        The region of practical equivalence carried over from the superiority
+        The region of practical equivalence taken from the superiority
         report, in native units. An edge counts an outperformance only past this
         band.
     summary
-        A short plain-language reading of the relation.
+        A short summary of the relation.
     """
 
     method_names: tuple[str, ...] | None

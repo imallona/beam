@@ -3,9 +3,9 @@
 A benchmark often treats a group of metrics as one criterion. The scIB
 integration score, for example, groups its metrics into biological conservation
 and batch correction and weights the two groups 0.6 and 0.4, so each group acts
-as a single composite scale. ``beam.mcda.metric_validity`` asks whether that
+as a single composite scale. ``beam.mcda.metric_validity`` tests whether that
 grouping is valid (do same-group metrics agree and different-group metrics
-differ). Reliability asks how consistently the group's metrics measure
+differ). Reliability measures how consistently the group's metrics measure
 one thing when it is read as one scale.
 
 Cronbach (1951) alpha is the standard internal-consistency coefficient. This
@@ -14,25 +14,25 @@ metrics in the group ``k`` and the mean correlation between them ``r_bar``:
 
     alpha = k * r_bar / (1 + (k - 1) * r_bar)
 
-The standardized form is the right choice here for the same reason
-``metric_validity`` uses rank correlation: the metrics live on different scales,
-so a coefficient built from the inter-item correlation, not from raw
-covariances, is the scale-free reading. The correlations are the oriented
+The standardized form fits here for the same reason ``metric_validity`` uses
+rank correlation: the metrics are on different scales,
+so a coefficient built from the inter-item correlations does not depend
+on those scales. The correlations are the oriented
 Spearman correlations ``metric_validity`` already computes, so the two
-diagnostics share one engine and read together. Reliability is the rank-based
-analogue of classical alpha, consistent with the project's use of Spearman for
-every cross-metric comparison.
+diagnostics use one set of numbers. Reliability is the rank-based analogue of
+classical alpha, consistent with the use of Spearman for every cross-metric
+comparison.
 
 Alpha rises with both the mean inter-item correlation and the number of metrics.
 A high value can therefore mean a tightly agreeing group or merely a large one,
-so the report carries ``k`` and ``r_bar`` next to each alpha. The per-metric
+so the report has ``k`` and ``r_bar`` next to each alpha. The per-metric
 "alpha if dropped" diagnostic recomputes a group's alpha with one metric removed
 and flags any metric whose removal raises the group's reliability, the metric
-that pulls hardest against the rest of its group.
+least consistent with the rest of its group.
 
 The standard reading of alpha (a single-factor reflective model, a group that is
-meant to be unidimensional) is an assumption, not a fact about a benchmark's
-metrics. A low alpha says the group does not behave as one reliable scale; it
+meant to be unidimensional) is an assumption that a benchmark's metrics may not
+meet. A low alpha says the group does not behave as one reliable scale; it
 does not say which metric to trust. As with ``metric_validity``, the result is
 descriptive of the methods and datasets in the input, and a small benchmark
 gives a coarse estimate.
@@ -55,7 +55,7 @@ class MetricReliabilityReport:
     Attributes
     ----------
     metric_ids
-        Metric labels in column order, or ``None`` when the input carried none.
+        Metric labels in column order, or ``None`` when the input had none.
     groups
         Construct label per metric, aligned with ``metric_ids``.
     alpha_by_group
@@ -76,7 +76,7 @@ class MetricReliabilityReport:
         a single metric, for which alpha is undefined).
     low_reliability_groups
         Groups whose alpha is below ``alpha_threshold``, each as
-        ``(group, alpha)`` sorted by ascending alpha. These groups do not read as
+        ``(group, alpha)`` sorted by ascending alpha. These groups are not
         one reliable scale at the chosen cutoff.
     n_observations
         Number of observation rows (method-by-dataset cells) the correlations
@@ -149,9 +149,9 @@ def metric_reliability(
         direction; drop it before calling.
     groups
         Length ``n_metrics`` construct label per metric. Metrics sharing a label
-        are read together as one composite scale.
+        form one composite scale.
     metric_ids
-        Optional length ``n_metrics`` labels carried into the report and used to
+        Optional length ``n_metrics`` labels kept in the report and used to
         name the alpha-if-dropped entries.
     alpha_threshold
         Alpha below which a group is reported as low-reliability. Default 0.7,

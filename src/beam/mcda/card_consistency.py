@@ -1,30 +1,30 @@
 """Audit a metric card's declared numeric claims against the observed scores.
 
-A metric card is a contract. It declares a value range, a chance baseline, an
-ideal target, and a noise floor, and the MCDA pipeline trusts every one of them:
-the range bounds the normalization, the baseline anchors ``baseline_relative``
-scaling and the beats-chance check, the target drives ``target_relative``
-scaling, and the noise floor sets which method differences are interpretable. If
-the score matrix contradicts a declared value, every downstream step inherits the
-error silently. The classic case is a unit mismatch: a metric reported as a
-percentage against a card that declares the ``[0, 1]`` fraction range. The column
-is still numeric and interval, so it passes schema validation and the
+A metric card declares a value range, a chance baseline, an ideal target, and
+a noise floor, and the MCDA pipeline uses every one of them: the range bounds
+the normalization, the baseline sets ``baseline_relative`` scaling and the
+above-chance check, the target sets ``target_relative`` scaling, and the noise
+floor sets which method differences are interpretable. If the score matrix
+contradicts a declared value, every downstream step inherits the error. The
+classic case is a unit mismatch: a metric reported as a percentage against a
+card that declares the ``[0, 1]`` fraction range. The column is still numeric
+and interval, so it passes schema validation and the
 scale-versus-method check, and then it distorts the min-max normalization for
-that metric and the weighting that rests on it.
+that metric and the weighting based on it.
 
 ``card_data_consistency`` reads the raw scores against the card values before any
 normalization and reports where they disagree. It separates hard contradictions
 from data-dependent observations. A contradiction is a violation: a score outside
 the declared range, a baseline or target outside that range, a non-positive noise
 floor, or a malformed range where the lower bound exceeds the upper. Each is a
-card bug or a data bug that needs fixing. An observation is a note: a metric that
+card bug or a data bug. An observation is a note: a metric that
 is constant on this data, a noise floor wider than the whole observed spread, or
-a metric with no observations at all. A note is true of this particular score
-matrix, not necessarily wrong, but worth surfacing before the ranking is read.
+a metric with no observations at all. A note describes this score matrix and is
+not necessarily an error.
 
-This is the card-facing companion to ``beats_random_baseline`` and
-``noise_floor_separation``, which read the same raw scores to compare the methods
-to each other. Here the comparison is the card against its own data.
+``beats_random_baseline`` and ``noise_floor_separation`` read the same raw
+scores to compare the methods to each other; here the comparison is the card
+against its own data.
 """
 
 from __future__ import annotations
@@ -45,17 +45,17 @@ class ConsistencyFinding:
     Attributes
     ----------
     metric
-        Metric id, or ``None`` when the matrix carried no ids.
+        Metric id, or ``None`` when no ids were given.
     code
         Machine-readable label for the kind of finding: ``out_of_range``,
         ``baseline_out_of_range``, ``target_out_of_range``,
         ``nonpositive_noise_floor``, ``malformed_range``,
         ``noise_floor_exceeds_spread``, ``degenerate`` or ``no_observations``.
     severity
-        ``"violation"`` for a hard card-or-data contradiction, ``"note"`` for a
-        data-dependent observation.
+        ``"violation"`` for a contradiction between card and data, ``"note"``
+        for an observation about the data.
     message
-        Plain-language description naming the declared value, the observed value,
+        Description naming the declared value, the observed value,
         and what disagrees.
     """
 
@@ -72,7 +72,7 @@ class MetricConsistency:
     Attributes
     ----------
     metric
-        Metric id, or ``None`` when the matrix carried no ids.
+        Metric id, or ``None`` when no ids were given.
     n_observed
         Tools with a non-NaN score on this metric.
     observed_min, observed_max
@@ -104,7 +104,7 @@ class CardDataConsistencyReport:
 
     ``per_metric`` holds one record per metric column in order. ``findings`` is
     every finding flattened across the metrics, in column order. The convenience
-    views split them by severity and give the headline ``ok`` flag.
+    views split them by severity and give the ``ok`` flag.
     """
 
     per_metric: tuple[MetricConsistency, ...]
@@ -112,12 +112,12 @@ class CardDataConsistencyReport:
 
     @property
     def violations(self) -> tuple[ConsistencyFinding, ...]:
-        """The findings that are hard card-or-data contradictions."""
+        """The findings that contradict the card."""
         return tuple(f for f in self.findings if f.severity == VIOLATION)
 
     @property
     def notes(self) -> tuple[ConsistencyFinding, ...]:
-        """The findings that are data-dependent observations, not contradictions."""
+        """The findings that describe the data without contradicting the card."""
         return tuple(f for f in self.findings if f.severity == NOTE)
 
     @property
@@ -161,7 +161,7 @@ def card_data_consistency(
       as large as the whole observed spread, so the metric separates no pair of
       tools on this data.
     - ``degenerate`` (note): the metric is constant across the observed tools, so
-      it carries no ranking signal here.
+      it cannot separate the tools here.
     - ``no_observations`` (note): every cell of the metric is NaN.
 
     Parameters
@@ -186,7 +186,7 @@ def card_data_consistency(
         Optional length ``n_metrics`` noise floors in native units, ``None``
         where the card declares none. Defaults to all ``None``.
     metric_ids
-        Optional length ``n_metrics`` labels carried into the findings.
+        Optional length ``n_metrics`` labels kept in the findings.
     range_tol
         Non-negative absolute tolerance on the range edges, to absorb float
         round-off at an exact boundary. Default 0.0.

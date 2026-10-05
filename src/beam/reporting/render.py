@@ -1,11 +1,10 @@
 """Render a RunResult to a single self-contained HTML report.
 
-The report has these sections: input summary, normalization diagnostics with the
-guard warnings, the ranking table, a funky-heatmap glyph table that carries the
-rank-robustness panels, the sensitivity outputs, a critical difference diagram
-when the input carries more than one dataset, and a plain English recommendation
-paragraph. Figures are embedded as base64 PNGs so the output is one file with no
-external assets.
+Sections: input summary, normalization diagnostics and guard warnings, the
+ranking table, the funky heatmap with its rank-robustness panels, the
+sensitivity outputs, a critical difference diagram when there is more than one
+dataset, and a recommendation paragraph. Figures are embedded as base64 PNGs so
+the output is one file.
 """
 
 from __future__ import annotations
@@ -55,17 +54,15 @@ def write_report(
     title
         Optional report title. Defaults to a generated one.
     ground_truth_tool
-        Optional name of the tool documented to rank first, drawn on the
-        ranking figure for comparison. Used by vignettes that carry a known
-        truth; left ``None`` for a plain benchmark CSV.
+        Optional name of the tool documented to rank first, outlined on the
+        ranking figure. The vignettes set it; a plain scores CSV has none.
     registry
         Optional ``Registry`` for the per-dataset critical-difference
         computation. Defaults to a fresh registry.
     funky_heatmap
-        Include the funky-heatmap glyph table with its rank-robustness panels
-        (leave-one-dataset-out span, SMAA acceptability, aggregation consensus).
-        Default True. Set False for a leaner report or when the matplotlib glyph
-        table is not wanted.
+        Include the funky heatmap with its rank-robustness panels
+        (leave-one-dataset-out span, SMAA acceptability, aggregation
+        consensus). Default True.
     metric_groups
         Optional group label per metric, in the order of ``result.metric_ids``,
         used to colour the funky-heatmap columns. Ignored when ``funky_heatmap``
@@ -432,8 +429,7 @@ def _card_consistency_section(result: RunResult) -> dict[str, Any] | None:
     """Build the card-versus-data audit section, or ``None`` when nothing to say.
 
     Returns a dict only when the audit raised at least one finding. ``violations``
-    are hard card-or-data contradictions and ``notes`` are data-dependent
-    observations, each a plain-language message.
+    contradict the card and ``notes`` describe the data, each a short message.
     """
     audit = result.card_consistency
     if audit is None or not audit.findings:
@@ -454,7 +450,7 @@ def _critical_difference_section(
     Builds a tool by dataset composite matrix by running the same aggregation
     on each dataset slice, then runs the Friedman and Nemenyi analysis. Returns
     ``None`` when the input is single-dataset, has too few tools or datasets for
-    the test, or carries missing cells that would make the per-dataset
+    the test, or has missing cells that would make the per-dataset
     composites undefined.
     """
     scores = result.scores
@@ -489,8 +485,7 @@ def _critical_difference_section(
         "cliques": cliques,
     }
 
-    # Effect-size companion: how often the top method outranks the runner-up
-    # across the datasets, not just whether the rank gap is significant.
+    # effect size: how often the top method outranks the runner-up across the datasets
     sup = pairwise_superiority(composite, "higher_is_better", method_names=result.tool_names)
     top, runner = int(sup.order[0]), int(sup.order[1])
     pair = next(p for p in sup.per_pair if {p.a, p.b} == {top, runner})
@@ -503,8 +498,8 @@ def _critical_difference_section(
         "pct": "n/a" if np.isnan(p_top) else f"{p_top * 100:.0f}",
     }
 
-    # Whether the pairwise majorities admit a single consistent order, or carry a
-    # cycle that no aggregated ranking can represent.
+    # whether the pairwise majorities admit a single consistent order or contain
+    # a cycle that no aggregated ranking can represent
     trans = pairwise_transitivity(sup)
     choice = (
         result.tool_names[trans.condorcet_choice] if trans.condorcet_choice is not None else None
@@ -519,8 +514,8 @@ def _critical_difference_section(
         "figure": figures.pairwise_majority_figure(trans),
     }
 
-    # Posterior companion: the probability that the top method is practically
-    # better than the runner-up, rather than the p-value of their difference.
+    # posterior probability that the top method is practically better than the
+    # runner-up
     bayes = bayesian_sign_comparison(sup)
     bayes_pair = next(p for p in bayes.per_pair if {p.a, p.b} == {top, runner})
     p_top_better = bayes_pair.p_a_better if bayes_pair.a == top else bayes_pair.p_b_better

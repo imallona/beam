@@ -1,11 +1,8 @@
-"""Generate the plain-English recommendation paragraph for a report.
+"""Recommendation paragraph for the HTML report.
 
-The text follows the project writing rules: plain English, short sentences,
-no em dash, no bold, no marketing vocabulary, and no winner or wins phrasing
-for methods. It also avoids bare best and worst value judgements, preferring
-rank-based language such as ranks first. Every claim is tied to the specific
-metric set and weighting, in line with the project's own thesis that no single
-method ranks first in the abstract.
+The top tool under the chosen weighting, aggregation and metric set, followed
+by the sensitivity results present in the run. The claim is always tied to the
+metric set and weighting, since the top rank can change with either.
 """
 
 from __future__ import annotations
@@ -52,11 +49,10 @@ def _metric_phrase(metric_ids: tuple[str, ...]) -> str:
 def recommendation(result: RunResult) -> str:
     """Return a short recommendation paragraph for a ``RunResult``.
 
-    Describes which tool ranks first under the chosen weighting and
-    aggregation on the given metric set, then qualifies that with the
-    sensitivity outputs when they are present: the SMAA confidence factor, the
-    leave-one-metric-out stability, and whether the top rank is fragile under a
-    single-metric weight change.
+    The top tool, then the sensitivity results present in the run: SMAA
+    confidence, leave-one-metric-out and leave-one-dataset-out stability, the
+    smallest weight perturbation, the chance baseline, the noise floor and the
+    card consistency audit.
     """
     ranks = result.result.ranks
     top_idx = int(np.argmin(ranks))
@@ -108,8 +104,8 @@ def recommendation(result: RunResult) -> str:
             )
         else:
             sentences.append(
-                "The top rank is stable: the smallest single-metric weight change that would "
-                f"overturn it is about {abs(pert.delta):.2f}."
+                "The top rank is stable: the smallest single-metric weight change overturning "
+                f"it is about {abs(pert.delta):.2f}."
             )
 
     if result.random_baseline is not None and result.random_baseline.active:
@@ -130,7 +126,7 @@ def recommendation(result: RunResult) -> str:
         n_viol = len(result.card_consistency.violations)
         sentences.append(
             f"The raw scores contradict the metric cards in {n_viol} place(s); the ranking "
-            "rests on at least one metric whose data falls outside its declared card values."
+            "is based on at least one metric whose data falls outside its declared card values."
         )
 
     return " ".join(sentences)

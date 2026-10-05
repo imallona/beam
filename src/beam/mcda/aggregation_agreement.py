@@ -1,8 +1,8 @@
 """How much the recommendation depends on the choice of aggregation method.
 
-beam offers five aggregations (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET), each
-resting on different assumptions about how per-metric scores combine into one
-composite. The headline ranking uses one of them. This module checks
+beam has five aggregations (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET), each
+with different assumptions about how per-metric scores combine into one
+composite. The main ranking uses one of them. This module checks
 whether another aggregation would order the tools the same way. It re-ranks
 the same normalized matrix under each aggregation, holding the weighting
 fixed, and reports how closely the resulting orderings agree.
@@ -10,11 +10,11 @@ fixed, and reports how closely the resulting orderings agree.
 The agreement is measured with the Kendall tau-b rank-correlation coefficient,
 which handles the tied ranks that competition ranking produces. A high mean
 pairwise tau means the recommendation is stable under the aggregation choice; a
-low one means the choice of method is itself a degree of freedom the report
-should disclose. The consensus ranking averages the per-method ranks, and a flag marks
-whether every aggregation puts the same tool first.
+low one means the ranking depends on the aggregation choice. The consensus
+ranking averages the per-method ranks, and a flag marks whether every
+aggregation puts the same tool first.
 
-This sits alongside the other choice-sensitivity diagnostics: leave-one-metric-out
+The other choice diagnostics: leave-one-metric-out
 and leave-one-dataset-out vary the inputs, SMAA varies the weights, and this
 varies the aggregation rule.
 """
@@ -55,7 +55,7 @@ class AggregationAgreementReport:
         top_is_unanimous: True when every method ranks ``top_tool`` first.
         rank_low, rank_high: (n_tools,) best and worst rank each tool takes across
             the methods, the rank span behind the funky-heatmap consensus panel.
-        tool_names: optional labels carried for reporting.
+        tool_names: optional labels kept for reporting.
     """
 
     methods: tuple[str, ...]
@@ -114,9 +114,8 @@ def aggregation_agreement(
     pipeline through ``beam.mcda.run``, collects the per-tool ranks, and compares
     every pair of rankings with the Kendall tau-b coefficient.
 
-    A method that raises on the input is dropped from the report rather than
-    failing the whole analysis, matching how the funky-heatmap consensus panel
-    already treats a method that cannot run. At least two methods must succeed.
+    A method that raises on the input is dropped from the report and the
+    analysis continues, as in the funky-heatmap consensus panel. At least two methods must succeed.
 
     Parameters
     ----------
@@ -134,12 +133,12 @@ def aggregation_agreement(
         (SAW, TOPSIS, VIKOR, PROMETHEE II, COMET).
     normalization, bounds, baselines, targets
         Optional per-metric normalization context forwarded to every run. Pass
-        the values from ``beam.mcda.registry_context`` so the comparison rests
-        on the same normalized matrix as the headline ranking.
+        the values from ``beam.mcda.registry_context`` so the comparison uses
+        the same normalized matrix as the main ranking.
     missing
         Missing-data policy forwarded to every run. Default ``"error"``.
     tool_names
-        Optional length ``n_tools`` labels carried in the report.
+        Optional length ``n_tools`` labels kept in the report.
 
     Returns
     -------

@@ -1,8 +1,8 @@
 # Analysis blinding
 
-If a benchmarker can see which method is which while choosing the [weighting](weighting-schemes.md), the [aggregation](aggregation-methods.md) and the metric set, those choices can shift toward a preferred method. This can happen via unconscious biases and without intent. Different choices give different rankings, and it is easy to settle on the one that fits an expected result (Gelman and Loken 2013; Simmons, Nelson and Simonsohn 2011). One way to avoid it is blind analysis: run the analysis on methods whose labels are hidden, then reveal the labels (MacCoun and Perlmutter 2015; Klein and Roodman 2005).
+If a benchmarker can see which method is which while choosing the [weighting](weighting-schemes.md), the [aggregation](aggregation-methods.md) and the metric set, those choices can shift toward a preferred method. This can happen via unconscious biases and without intent. Different choices give different rankings, and it is easy to settle on the one that fits an expected result (Gelman and Loken 2013; Simmons, Nelson and Simonsohn 2011). One way to avoid it is blind analysis: run the analysis on methods with hidden labels, then reveal them (MacCoun and Perlmutter 2015; Klein and Roodman 2005).
 
-`beam.blind` applies this to a score table. It replaces the tool names with opaque labels and shuffles the rows under a seed, so neither the names nor the order carry the methods' identity. The analyst runs the full beam pipeline on the blinded scores, fixes the configuration, then calls `beam.unblind` with the seal to restore the true names. Unblinding only renames the rows and does not re-rank the methods.
+`beam.blind` applies this to a score table. It replaces the tool names with opaque labels and shuffles the rows under a seed, so neither the names nor the order reveals which method is which. The analyst runs the full beam pipeline on the blinded scores, fixes the configuration, then calls `beam.unblind` with the seal to restore the true names. Unblinding only renames the rows and does not re-rank the methods.
 
 ```python
 import beam
@@ -21,13 +21,13 @@ The metric and dataset axes are left visible, since the analyst needs them to se
 
 ## Auditing
 
-beam is controlled by users and not the way around. To add an extra layer of auditing, beam treats blinding as an auditable record. The `Seal` carries a fingerprint, a sha256 over the seed and the label mapping, and beam writes it into the run manifest when the run is on blinded scores:
+The blinding is recorded so that it can be audited. The `Seal` has a fingerprint, a sha256 over the seed and the label mapping, and the run manifest includes it when the run is on blinded scores:
 
 ```json
 "blinding": {"blinded": true, "seal_sha256": "6ee805357098..."}
 ```
 
-The seal file, kept separately, records that the configuration was fixed before the labels were revealed. A reviewer who has the manifest and the seal can confirm the analysis ran on scores blinded under that seal. This mechanism suits preregistration well, but does not enforce it.
+The seal file, kept separately, records that the configuration was fixed before the labels were revealed. A reviewer who has the manifest and the seal can confirm the analysis ran on scores blinded under that seal. This mechanism supports preregistration but does not enforce it.
 
 ## Usage
 

@@ -1,6 +1,6 @@
 # beam
 
-beam  is a benchmark evaluation and metrics suite. For benchmarks as in method comparisons, mainly in bioinformatics.
+beam is a benchmark evaluation and metrics suite for method comparisons, mainly in bioinformatics.
 
 [Documentation](https://imallona.github.io/beam/): how-tos, vignettes, and explanations.
 
@@ -14,7 +14,7 @@ source .venv/bin/activate
 pip install -e ".[dev,docs]"
 ```
 
-`[docs]` pulls in Jupyter so Quarto can execute the Python code chunks in the vignettes. `[io]` pulls in pandas for the CSV adapter. `[dev]` covers the test suite.
+`[docs]` installs Jupyter so Quarto can execute the Python code chunks in the vignettes. `[io]` installs pandas for the CSV adapter. `[dev]` covers the test suite.
 
 R package:
 
@@ -34,7 +34,7 @@ conda activate beam-heterogeneity
 pip install -e ".[dev]"
 ```
 
-From R, install them once with `rbeam::install_beam_heterogeneity_deps()`. The availability checks (`beam.heterogeneity.r_available()` and friends) report whether the toolchain is in place.
+From R, install them once with `rbeam::install_beam_heterogeneity_deps()`. The availability checks (`beam.heterogeneity.r_available()` and the related functions) report whether the toolchain is in place.
 
 ## Usage
 

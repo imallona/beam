@@ -23,10 +23,10 @@ dataset, metric and score, in any order::
     seurat,koh,runtime,42.0
     sc3,koh,ari,0.74
 
-Missing cells are exposed as ``numpy.nan``: the literal string ``NA`` or an
+Missing cells are ``numpy.nan``: the literal string ``NA`` or an
 empty field in the wide layout, and any tool-dataset-metric combination
-absent from the long layout. The loader does not impute or drop; it surfaces
-the gaps so the pipeline can decide on a policy.
+absent from the long layout. The loader does not impute or drop; the gaps
+stay NaN for the missing-data policy of the pipeline.
 """
 
 from __future__ import annotations
@@ -138,7 +138,7 @@ def load_scores(
         If any metric id in the file does not resolve to a metric card.
     ValueError
         If the file is empty, a forced layout does not match the header, a
-        long file is missing a required column, or a long file carries a
+        long file is missing a required column, or a long file has a
         duplicate tool-dataset-metric row.
     """
     path = Path(path)
@@ -285,7 +285,7 @@ def _format_cell(value: float) -> str:
 
 
 def write_scores(scores: Scores, path: str | Path) -> None:
-    """Write a ``Scores`` to CSV in the layout it carries.
+    """Write a ``Scores`` to CSV in its own layout.
 
     A wide score matrix is written with the tool column first and one column per
     metric. A long tensor is written as tool, dataset, metric, score rows, with

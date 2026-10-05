@@ -30,7 +30,7 @@ Five benchmarks are pooled. Four publish scores per method on the scIB metrics (
 | BatchBench | Chazarra-Gil et al., Nucleic Acids Research 2021, [10.1093/nar/gkab004](https://doi.org/10.1093/nar/gkab004) | combat, harmony, fastMNN, scanorama | batch entropy, cell-type entropy | Supplementary Table 1, provided by the author |
 | Shen 2026 (discrimination axis only) | Shen, He and Guan, PLOS Comput Biol 2026, [10.1371/journal.pcbi.1014008](https://doi.org/10.1371/journal.pcbi.1014008) | ten semi-supervised and unsupervised DL methods (overlap: harmony, scanorama only) | own ARI, NMI, ASW and others | authors' repository, pinned commit |
 
-Tyler is a preprint with three of the five methods and three of the four metrics, so it has [partial coverage](../../docs/explanations/missing-data.md). Its kBET is the raw rejection rate, lower is better, which the loader handles. BatchBench has four of the five methods (no LIGER) and two metrics: batch entropy, higher is better, and cell-type entropy, lower is better. Ruben Chazarra-Gil provided the scores by personal communication.
+Tyler is a preprint with three of the five methods and three of the four metrics, so it has [partial coverage](../../docs/explanations/missing-data.md). Its kBET is the raw rejection rate, lower is better, and the loader applies that polarity. BatchBench has four of the five methods (no LIGER) and two metrics: batch entropy, higher is better, and cell-type entropy, lower is better. Ruben Chazarra-Gil provided the scores by personal communication.
 
 Shen 2026 is not pooled: its methods overlap the five only on harmony and scanorama. It is used in the dataset discrimination section.
 
@@ -157,9 +157,9 @@ plt.show()
 
 A method low and to the right mixes batches and keeps the cell types separate.
 
-## Benchmark share of the variance
+## Variance between benchmarks
 
-The [variance decomposition](../../docs/explanations/attribution-synthesis.md) is `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)`. The method-by-benchmark component is the disagreement between benchmarks about the methods. It is fitted on the four scIB-metric sources and again with BatchBench. It needs R's lme4.
+The [variance decomposition](../../docs/explanations/attribution-synthesis.md) is `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)`. The method-by-benchmark component is the between-benchmark disagreement about the methods. The model is fitted on the four scIB-metric sources, then again with BatchBench added. It needs lme4.
 
 ```{python}
 from beam.heterogeneity import r_available, source_variance_decomposition
@@ -181,7 +181,7 @@ else:
     print("Provision it with envs/heterogeneity.yml.")
 ```
 
-The method-by-benchmark share is 0.23 with four sources and 0.42 with BatchBench. BatchBench ranks four methods and not five, as Tyler ranks three. The fits are singular: with so few benchmarks at least one variance component is estimated at zero.
+The method-by-benchmark share is 0.23 with four sources and 0.42 with BatchBench. BatchBench ranks four of the five methods, and Tyler three. The fits are singular: with so few benchmarks at least one variance component is estimated at zero.
 
 ## Network meta-analysis
 
@@ -245,7 +245,7 @@ fig.tight_layout()
 plt.show()
 ```
 
-The smallest single-weight change that swaps the top method of each benchmark, with the Triantaphyllou-Sanchez closed form on the mean-rank matrix under [SAW](../../docs/explanations/aggregation-methods.md) and equal weights:
+The smallest single-weight change swapping the top method of each benchmark, with the Triantaphyllou-Sanchez closed form on the mean-rank matrix under [SAW](../../docs/explanations/aggregation-methods.md) and equal weights:
 
 ```{python}
 from beam.mcda import smallest_weight_perturbation
@@ -284,7 +284,7 @@ for bench in BENCH:
           f"{curve.n_specifications} combinations, {curve.n_distinct_top_tools} method(s) reach the top")
 ```
 
-The shares per method on OpenProblems. Each cell of the matrix is a mean rank over the datasets of the benchmark, so the factors are the weighting and the aggregation only.
+The rank variance split per method on OpenProblems. Each cell of the matrix is a mean rank over the datasets of the benchmark, so the factors are the weighting and the aggregation only.
 
 ```{python}
 op_matrix = ib.method_metric_matrix("OpenProblems")[2]

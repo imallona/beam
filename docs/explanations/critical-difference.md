@@ -4,7 +4,7 @@ A [composite ranking](aggregation-methods.md) does not test whether the methods 
 
 ## Method
 
-The input is a tool by dataset matrix for one metric or for a composite. The methods are ranked on each dataset, 1 for the best, and averaged across datasets. The Friedman test asks whether the average ranks differ more than expected if all methods were equivalent.
+The input is a tool by dataset matrix for one metric or for a composite. The methods are ranked on each dataset, 1 for the best, and averaged across datasets. The Friedman test checks whether the average ranks differ more than expected if all methods were equivalent.
 
 The Nemenyi post-hoc gives the critical difference, the smallest gap between two average ranks that is significant at the chosen alpha: $q \sqrt{k (k + 1) / (6 N)}$, with $k$ methods, $N$ datasets, and $q$ the Studentized range value for $k$ divided by the square root of two. beam computes $q$ with scipy. For five methods at alpha 0.05, $q$ is 2.728, as in Demsar's Table 5.
 

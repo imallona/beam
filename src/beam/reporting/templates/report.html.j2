@@ -71,20 +71,17 @@ individually{% endif %}. See the critical-difference section below.</p>
 <img src="data:image/png;base64,{{ heatmap_figure }}" alt="normalized scores heatmap">
 
 {% if funky_figure %}
-<h2>Robustness at a glance</h2>
-<p>The glyph table shows the per-metric normalized scores as circle size and the overall
-composite as a bar, alongside panels for how far each tool's rank moves under the robustness
-checks: the span across leave-one-dataset-out runs, the SMAA rank acceptability, and the span
-across the five aggregations. A tool with a tight rank span is a stable recommendation; a wide
-span means the order at that position depends on a choice the analyst made.</p>
+<h2>Rank robustness</h2>
+<p>Circle size is the normalized score per metric and the bar is the composite. The panels
+on the right are each tool's rank span across the leave-one-dataset-out runs, its SMAA rank
+acceptability, and its rank span across the five aggregations. A narrow span means a stable
+position; a wide one means a position dependent on an analyst choice.</p>
 <img src="data:image/png;base64,{{ funky_figure }}" alt="funky heatmap with rank-robustness panels">
 {% endif %}
 
 <h2>Sensitivity</h2>
-<p>The ranking above commits to one weighting ({{ weighting }}) and one aggregation ({{ method }}),
-the way a reader would apply the tool in practice. The sections here re-run it under the
-alternatives, so you can read how much the recommendation depends on those analyst choices rather
-than on the data.</p>
+<p>The ranking above uses one weighting ({{ weighting }}) and one aggregation ({{ method }}).
+The sections below are the same ranking under the alternative choices.</p>
 {% if smaa_figure %}
 <h3>SMAA weight sampling</h3>
 <img src="data:image/png;base64,{{ smaa_figure }}" alt="SMAA confidence per tool">
@@ -123,7 +120,7 @@ recommendation depends on which aggregation is used.{% endif %}</p>
 <p>Re-ranking under {{ normalization_agreement.n_labels }} normalizations
 ({{ normalization_agreement.labels }}) gives orderings that agree at a mean Kendall tau-b of
 {{ normalization_agreement.mean_tau }}. The <code>recommended</code> column is the per-metric
-default each card declares ({{ normalization_agreement.recommended_detail }}); the others apply one
+default declared on each card ({{ normalization_agreement.recommended_detail }}); the others apply one
 strategy to every metric.
 {% if normalization_agreement.top_is_unanimous %}Every normalization ranks
 <code>{{ normalization_agreement.top_tool }}</code> first, so the top recommendation does not
@@ -132,13 +129,13 @@ recommendation depends on which normalization is used.{% endif %}</p>
 <img src="data:image/png;base64,{{ normalization_agreement.figure }}" alt="normalization agreement heatmap">
 {% endif %}
 {% if rank_sensitivity %}
-<h3>What moves the ranking</h3>
+<h3>Rank variance by factor</h3>
 <p>Across the {{ rank_sensitivity.n_combinations }} combinations of weighting, aggregation and
 dataset, the rank variance splits into the dataset ({{ rank_sensitivity.dataset_pct }} percent),
 the weighting choice ({{ rank_sensitivity.weighting_pct }} percent), the aggregation choice
 ({{ rank_sensitivity.aggregation_pct }} percent), and their interactions
 ({{ rank_sensitivity.interaction_pct }} percent). The largest is the
-<strong>{{ rank_sensitivity.most_influential }}</strong>.</p>
+{{ rank_sensitivity.most_influential }}.</p>
 <p>The top tool overall (<code>{{ rank_sensitivity.headline_tool }}</code>) ranks first in
 {{ rank_sensitivity.headline_top_pct }} percent of combinations, with a rank span of
 {{ rank_sensitivity.headline_rank_span }}. Its mean rank per dataset:</p>
@@ -151,13 +148,13 @@ the weighting choice ({{ rank_sensitivity.weighting_pct }} percent), the aggrega
 {% if rank_sensitivity.spec_curve_figure %}
 <h3>Specification curve</h3>
 <p>Each of the {{ rank_sensitivity.n_combinations }} combinations of weighting, aggregation and
-dataset is one specification. The method that ranks first most often
+dataset is one specification. The most frequent top method
 (<code>{{ rank_sensitivity.headline_tool }}</code>) ranks first in
 {{ rank_sensitivity.top_first_pct }} percent of them. The single most common ordering of all tools
 holds in {{ rank_sensitivity.modal_order_pct }} percent of specifications, and
 {{ rank_sensitivity.n_distinct_top }} distinct tool(s) rank first in at least one specification.
 The curve below plots that method's rank across the specifications, sorted from its best rank to
-its worst; the panel beneath marks which choices each specification used.</p>
+its worst; the panel beneath marks the choices of each specification.</p>
 <img src="data:image/png;base64,{{ rank_sensitivity.spec_curve_figure }}" alt="specification curve"/>
 {% endif %}
 {% endif %}
@@ -167,7 +164,7 @@ its worst; the panel beneath marks which choices each specification used.</p>
 <p class="warning">The top rank is fragile: a weight change of about {{ perturbation.delta }}
 on <code>{{ perturbation.metric }}</code> overturns it.</p>
 {% elif perturbation.delta is defined %}
-<p>The top rank is stable: the smallest single-metric weight change that would overturn it is
+<p>The top rank is stable: the smallest single-metric weight change overturning it is
 about {{ perturbation.delta }} on <code>{{ perturbation.metric }}</code>.</p>
 {% else %}
 <p>No single-metric weight change within the searched range overturns the top rank.</p>
@@ -178,7 +175,7 @@ about {{ perturbation.delta }} on <code>{{ perturbation.metric }}</code>.</p>
 <h2>Reference levels</h2>
 {% if reference_levels.baseline_rows %}
 <h3>Chance baseline</h3>
-<p>How many tools score above a random method on each metric that declares a chance baseline.</p>
+<p>Number of tools above a random method on each metric with a declared chance baseline.</p>
 <table>
   <tr><th>metric</th><th>chance score</th><th>tools above chance</th></tr>
   {% for row in reference_levels.baseline_rows %}
@@ -187,7 +184,7 @@ about {{ perturbation.delta }} on <code>{{ perturbation.metric }}</code>.</p>
   {% endfor %}
 </table>
 {% if reference_levels.tools_never_beating %}
-<p class="warning">Do not score above chance on any metric that declares a baseline:
+<p class="warning">Tools without a score above chance on any metric with a declared baseline:
 {{ reference_levels.tools_never_beating | join(", ") }}. On this evidence these tools are not
 distinguishable from a random method.</p>
 {% else %}
@@ -204,7 +201,7 @@ floor on every metric that declares one, so the order between them is within mea
 least one metric.</p>
 {% endif %}
 {% if reference_levels.indistinguishable_pairs %}
-<p>Tool pairs the metric set cannot tell apart above the noise floor:</p>
+<p>Tool pairs within the noise floor on every metric:</p>
 <ul>
   {% for pair in reference_levels.indistinguishable_pairs %}<li>{{ pair }}</li>{% endfor %}
 </ul>
@@ -214,11 +211,11 @@ least one metric.</p>
 
 {% if card_consistency %}
 <h2>Card and data consistency</h2>
-<p>Whether the raw scores agree with the values each metric card declares (range, chance
+<p>Agreement of the raw scores with the values declared on each metric card (range, chance
 baseline, target, noise floor), checked before normalization.</p>
 {% if card_consistency.violations %}
 <p class="warning">The scores contradict the cards in {{ card_consistency.violations | length }}
-place(s). A normalization or ranking that rests on these metrics inherits the error.</p>
+place(s). A normalization or ranking based on these metrics inherits the error.</p>
 <ul>
   {% for message in card_consistency.violations %}<li>{{ message }}</li>{% endfor %}
 </ul>
@@ -226,7 +223,7 @@ place(s). A normalization or ranking that rests on these metrics inherits the er
 <p>The scores stay within every declared card value.</p>
 {% endif %}
 {% if card_consistency.notes %}
-<p>Observations about this particular score matrix, not card errors:</p>
+<p>Observations about this score matrix alone:</p>
 <ul>
   {% for message in card_consistency.notes %}<li>{{ message }}</li>{% endfor %}
 </ul>
@@ -258,8 +255,8 @@ higher than the next (<code>{{ critical_difference.superiority.runner }}</code>)
 <p>Consistency: the pairwise majorities are transitive, so one order is consistent with them
 {% if t.coefficient %}(coefficient of consistence {{ t.coefficient }}){% endif %}.</p>
 {% else %}
-<p>Consistency: the pairwise majorities carry {{ t.n_circular_triads }} circular triad{{ "" if t.n_circular_triads == 1 else "s" }}
-out of {{ t.n_triads }}, so no single order agrees with all of them and the reported ranking depends on the aggregation rule
+<p>Consistency: the pairwise majorities contain {{ t.n_circular_triads }} circular triad{{ "" if t.n_circular_triads == 1 else "s" }}
+out of {{ t.n_triads }}, so no single order agrees with all of them. The reported ranking then depends on the aggregation rule
 {% if t.choice %}(though <code>{{ t.choice }}</code> is still preferred to every other method individually){% endif %}.</p>
 {% endif %}
 <img src="data:image/png;base64,{{ t.figure }}" alt="pairwise dominance matrix ordered by methods outperformed">
@@ -281,8 +278,8 @@ and the probability that the two are practically equivalent is {{ bayes.p_equiva
   <tr><td>{{ name }}</td><td>{{ version }}</td></tr>
   {% endfor %}
 </table>
-<p class="meta">The full run manifest, written alongside this report, records the metric card
-versions and content hashes needed to reproduce the run.</p>
+<p class="meta">The run manifest written next to this report records the metric card versions
+and content hashes.</p>
 
 </body>
 </html>

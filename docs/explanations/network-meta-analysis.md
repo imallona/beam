@@ -6,9 +6,9 @@ When several benchmarks score overlapping sets of methods, no benchmark compares
 
 The treatments are the methods and the studies are the (benchmark, dataset) pairs. In a study each method has a mean rank over the metrics and a standard deviation across them. `meta::pairwise` computes the study-level contrasts and `netmeta` pools them into an effect per method relative to a reference, a P-score per method, and heterogeneity and inconsistency statistics.
 
-The P-score is the share of the other methods a method outperforms, averaged over the ranking uncertainty, in 0 to 1. A higher P-score is a better rank.
+The P-score of a method is the fraction of the other methods outperformed by it, averaged over the ranking uncertainty, in 0 to 1. A higher P-score is a better rank.
 
-Benchmarks publish one score per method, dataset and metric, without replicates. The standard deviation across the metrics of a study is used as the within-arm spread. This treats the metrics as repeated measures of one quantity, which they are not, so the pooled ranking is descriptive. An arm with fewer than two metrics is dropped, and netmeta keeps the studies with two or more arms.
+Benchmarks publish one score per method, dataset and metric, without replicates. The standard deviation across the metrics of a study is used as the within-arm spread. This uses the metrics as repeated measures of one quantity, an assumption they do not meet, so the pooled ranking is descriptive. An arm with fewer than two metrics is dropped, and netmeta keeps the studies with two or more arms.
 
 The heterogeneity Q (within designs) measures how much studies of the same design disagree. The inconsistency Q (between designs) measures whether direct and indirect evidence for the same comparison agree. beam reports both where the design allows, with tau-squared and I-squared.
 
@@ -26,5 +26,5 @@ The fit needs R with netmeta; `netmeta_available()` checks it, and the conda env
 
 ## References
 
-- Rucker, G.. Network meta-analysis, electrical networks and graph theory. Research Synthesis Methods (2012). DOI [10.1002/jrsm.1058](https://doi.org/10.1002/jrsm.1058).
-- Rucker, G., Schwarzer, G.. Ranking treatments in frequentist network meta-analysis works without resampling methods. BMC Medical Research Methodology (2015). DOI [10.1186/s12874-015-0060-8](https://doi.org/10.1186/s12874-015-0060-8).
+- Rucker, G. Network meta-analysis, electrical networks and graph theory. Research Synthesis Methods (2012). DOI [10.1002/jrsm.1058](https://doi.org/10.1002/jrsm.1058).
+- Rucker, G., Schwarzer, G. Ranking treatments in frequentist network meta-analysis works without resampling methods. BMC Medical Research Methodology (2015). DOI [10.1186/s12874-015-0060-8](https://doi.org/10.1186/s12874-015-0060-8).

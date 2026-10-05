@@ -22,10 +22,10 @@ It writes two tables next to this script:
   0.5 partial match, 0 mismatch) the paper assigns by comparing each prediction
   to the manual annotation. manual_broadtype is the broad lineage of the manual
   annotation and broadtype is the method's predicted broad lineage (empty when
-  the method gave none), kept so a consensus check can ask whether the methods
-  agree on a lineage that differs from the manual one. Rows where a method was
+  the method gave none), kept for a consensus check of whether the methods
+  agree on a lineage different from the manual one. Rows where a method was
   not run on a cell type are dropped, so a method absent from a whole dataset
-  surfaces as missing coverage downstream.
+  appears as missing coverage downstream.
 - gptcelltype2024_features.csv: one row per (source, tissue) dataset with the
   candidate Bradley-Terry splitting variables source, tissue, species and
   sample_type, plus n_cell_types.

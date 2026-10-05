@@ -31,7 +31,7 @@ The install above does not pull the heterogeneity Suggests. Install them once wi
 install_beam_heterogeneity_deps()
 ```
 
-Avoid `dependencies = TRUE` on the development install: it tries to source-compile every Suggests, and `PlackettLuce` pulls in `CVXR` and `clarabel` (the latter needs a Rust toolchain), which fails without those build tools. Install a prebuilt binary instead (Posit Package Manager or r-universe), or use the conda recipe [envs/heterogeneity.yml](https://github.com/imallona/beam/blob/main/envs/heterogeneity.yml).
+`dependencies = TRUE` on the development install source-compiles every Suggests. `PlackettLuce` depends on `CVXR` and `clarabel`, and `clarabel` needs a Rust toolchain, so the install fails without one. Install a prebuilt binary instead (Posit Package Manager or r-universe), or use the conda recipe [envs/heterogeneity.yml](https://github.com/imallona/beam/blob/main/envs/heterogeneity.yml).
 
 ## Quick use
 

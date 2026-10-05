@@ -27,8 +27,8 @@ class SMAAReport:
         central_weight_vector: (n_tools, n_metrics), the mean of the sampled
             weight vectors restricted to samples where tool a is top-ranked;
             row a is the zero vector if tool a is never top-ranked.
-        confidence_factor: (n_tools,), the share of samples in which tool a
-            is top-ranked; equal to rank_acceptability_index[:, 0].
+        confidence_factor: (n_tools,), the fraction of samples with tool a
+            top-ranked; equal to rank_acceptability_index[:, 0].
     """
 
     base: Result
@@ -67,8 +67,8 @@ def smaa(
     2. The central weight vector per tool, the mean of the sampled weights
        restricted to samples where that tool is top-ranked. A tool that is
        never top-ranked gets the zero vector.
-    3. The confidence factor per tool, the share of samples in which the
-       tool is top-ranked.
+    3. The confidence factor per tool, the fraction of samples with that tool
+       top-ranked.
 
     Parameters
     ----------
@@ -96,7 +96,7 @@ def smaa(
         Default ``None`` keeps the ``run`` defaults (min-max with empirical
         extrema). Pass the values resolved by
         ``beam.mcda.registry_context`` so the SMAA analysis normalizes the
-        scores the same way as the headline ranking.
+        scores the same way as the main ranking.
     missing
         Missing-data policy forwarded to every ``run`` call; see
         ``beam.mcda.run``. Defaults to ``"error"``.

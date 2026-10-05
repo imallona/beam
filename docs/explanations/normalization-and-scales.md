@@ -6,9 +6,9 @@ The multi-criteria decision analysis (MCDA) procedure rescales every metric to t
 
 Min-max scaling maps the smallest value in a column to 0 and the largest to 1. It is simple and it keeps the order of the methods. It has three failure modes that matter for benchmarks.
 
-1. One outlier sets the scale. Runtime and peak memory span orders of magnitude. If one method is a hundred times slower than the rest, it sets the top of the range, and every other method maps to a value near the same end. The speed differences among the fast methods then disappear, and the ranking turns on whichever metric still has spread.
-2. A meaningful zero is lost. The Adjusted Rand Index is corrected for chance, so a value of 0 means no better than random. Min-max against the declared range of -1 to 1 maps that 0 to 0.5, half way to the best possible score. A method scoring at chance then looks average, and it can outrank a method that is modestly better once a second metric enters the sum.
-3. an empirical bound is not stable. Runtime has no upper limit, so min-max uses the largest observed value as the top of the scale. Add a new method to the table and the scale shifts, which changes the normalized score of every method already there. A leaderboard that grows over time is not comparable from one version to the next.
+1. One outlier sets the scale. Runtime and peak memory span orders of magnitude. If one method is a hundred times slower than the rest, it sets the top of the range, and every other method maps to a value near the same end. The speed differences among the fast methods then disappear, and the ranking then depends on whichever metric still has spread.
+2. A meaningful zero is lost. The Adjusted Rand Index is corrected for chance, so a value of 0 means no better than random. Min-max against the declared range of -1 to 1 maps that 0 to 0.5, halfway to the top of the range. A method scoring at chance then looks average, and it can outrank a method with a modestly higher raw score once a second metric enters the sum.
+3. An empirical bound is not stable. Runtime has no upper limit, so min-max uses the largest observed value as the top of the scale. Add a new method to the table and the scale shifts, which changes the normalized score of every method already there. A leaderboard that grows over time is not comparable from one version to the next.
 
 ## Measurement theory
 
@@ -28,7 +28,7 @@ Each metric card declares `comparability.recommended_normalization`, which the p
 - `min_max` is the default, for bounded metrics whose declared range is the scale, such as normalized mutual information (NMI) in 0 to 1.
 - `log_min_max` takes the logarithm first, then min-max. It keeps the multiplicative structure of a ratio metric, so a single slow method no longer compresses the others. Runtime and peak memory use it. It needs strictly positive values.
 - `rank` maps the position in the column to the unit interval. It drops the size of the gaps, resists outliers and makes no scale assumption.
-- `zscore` standardizes the column and passes it through the logistic function, so the result stays in the open unit interval. The mean method maps to 0.5 and an outlier is compressed smoothly rather than setting the scale.
+- `zscore` standardizes the column and passes it through the logistic function, so the result stays in the open unit interval. The mean method maps to 0.5 and an outlier is compressed smoothly, so it does not set the scale.
 - `baseline_relative` rescales against a declared chance score, so a method at chance maps to 0. The Adjusted Rand Index uses it, with a [chance baseline](reference-levels.md) of 0. It is defined for higher-is-better metrics.
 - `target_relative` is for a metric whose ideal is a fixed value, such as a calibration slope of 1. It min-max scales the absolute deviation from `semantics.target` with flipped polarity: the method nearest the target maps to 1 and the farthest to 0.
 
@@ -36,7 +36,7 @@ A `polarity: target_value` column must use `target_relative`, and `target_relati
 
 ## Checks
 
-For a min-max column the pipeline warns when a declared bound is missing or the column is heavy-tailed, and names `log_min_max` or `rank`. The run continues. The [card and data consistency](card-data-consistency.md) audit makes the same checks over every metric.
+For a min-max column the pipeline warns when a declared bound is missing or the column is heavy-tailed, and the warning suggests `log_min_max` or `rank`. The run continues. The [card and data consistency](card-data-consistency.md) audit makes the same checks over every metric.
 
 ## Examples
 

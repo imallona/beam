@@ -20,7 +20,7 @@
 #'   the card declares none. Default `NULL`.
 #' @param noise_floors Optional noise floor per metric, an R list with `NULL`
 #'   where the card declares none. Default `NULL`.
-#' @param metric_ids Optional character vector of metric labels carried into the
+#' @param metric_ids Optional character vector of metric labels kept in the
 #'   findings. Default `NULL`.
 #' @param range_tol Non-negative absolute tolerance on the range edges. Default 0.
 #'

@@ -7,8 +7,8 @@
 #' analysis practice from particle physics and clinical trials (MacCoun and
 #' Perlmutter 2015; Klein and Roodman 2005). Forwards to the Python `beam.blind`.
 #'
-#' The blinding is a record, not a guarantee: software cannot stop someone
-#' reading the source file. The seal carries a fingerprint that beam writes into
+#' Software cannot stop someone reading the source file, so the blinding is
+#' only recorded. The seal has a fingerprint that beam writes into
 #' the run manifest, so a reviewer can confirm the analysis ran on scores blinded
 #' under that exact seal.
 #'

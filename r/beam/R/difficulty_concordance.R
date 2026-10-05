@@ -1,13 +1,12 @@
 #' Whether method families find the same datasets hard
 #'
 #' Splits the methods into families (for example deep-learning versus classical)
-#' and reads how hard each dataset is for each family, then correlates the
+#' and measures how hard each dataset is for each family, then correlates the
 #' per-family difficulty profiles across the datasets with Spearman. A high
 #' concordance means the families agree on which datasets are hard, so the
 #' hardness is a property of the data; a low concordance means a dataset hard for
 #' one family is not hard for another, so the hardness is a property of the
-#' method family. It is the family-split companion to
-#' [beam_dataset_discrimination]. Forwards to the Python
+#' method family. It complements [beam_dataset_discrimination]. Forwards to the Python
 #' `beam.mcda.difficulty_concordance`.
 #'
 #' @param scores A 3D array of shape (methods, datasets, metrics). Missing cells

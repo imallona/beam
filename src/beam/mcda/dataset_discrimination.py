@@ -9,8 +9,8 @@ scores. Every benchmark can report it for every dataset.
 methods score about the same cannot rank them; a dataset on which they differ
 can. This is the per-dataset form of the metric-level notion in the weighting
 code, where a metric on which methods do not differ has no discrimination. It
-complements :func:`dataset_concordance`, which asks whether datasets agree on the
-order.
+complements :func:`dataset_concordance`, which measures whether datasets agree
+on the order.
 
 Two values per dataset.
 
@@ -47,7 +47,7 @@ class DatasetDiscriminationReport:
     Attributes
     ----------
     dataset_ids
-        Dataset labels in input order, or ``None`` when the input carried none.
+        Dataset labels in input order, or ``None`` when the input had none.
     spread
         Per-dataset standard deviation across methods of the pooled normalized
         score, the effect size. ``nan`` when fewer than two methods are observed
@@ -97,7 +97,7 @@ def _oriented(scores: np.ndarray, polarity: Sequence[str]) -> np.ndarray:
 def _minmax_per_metric(oriented: np.ndarray) -> np.ndarray:
     """Scale each metric to [0, 1] across all method-by-dataset cells.
 
-    A metric that is constant over every observed cell carries no separation and
+    A metric that is constant over every observed cell gives no separation and
     maps to all-``nan`` so it drops out of the pooled mean.
     """
     out = np.full_like(oriented, np.nan)
@@ -164,7 +164,7 @@ def dataset_discrimination(
         ``"lower_is_better"``. A ``"target_value"`` metric has no monotone quality
         direction; drop it before calling.
     dataset_ids
-        Optional length ``n_datasets`` labels carried into the report.
+        Optional length ``n_datasets`` labels kept in the report.
     min_methods
         Minimum methods in a dataset's complete method-by-metric block for
         Kendall's W to be computed. Default 3.

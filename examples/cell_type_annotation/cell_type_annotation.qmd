@@ -189,7 +189,7 @@ print(f"top method unanimous across aggregations: {agg.top_is_unanimous} ({head[
 
 ## Rank stability
 
-SMAA samples weight vectors and records how often each method has each rank. The weight perturbation is the smallest single-weight change that displaces the top method.
+SMAA samples weight vectors and records how often each method has each rank. The weight perturbation is the smallest single-weight change displacing the top method.
 
 ```{python}
 smaa = run.smaa
@@ -254,7 +254,7 @@ for clique in cd.cliques:
 plot.critical_difference(cd)
 ```
 
-[`pairwise_superiority`](../../docs/explanations/pairwise-method-comparison.md) gives, for each pair, the share of the 36 datasets where one method scores higher.
+[`pairwise_superiority`](../../docs/explanations/pairwise-method-comparison.md) gives, for each pair, the fraction of the 36 datasets with a higher score for one method.
 
 ```{python}
 from beam.mcda import pairwise_superiority
@@ -274,7 +274,7 @@ trans = pairwise_transitivity(ps)
 print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_triads} of {trans.n_triads}")
 ```
 
-The matrix orders the methods by how many others they outperform. A red cell below the diagonal is a method that outperforms one ranked above it.
+The matrix orders the methods by the number of others outperformed. A red cell below the diagonal is a method outperforming one ranked above it.
 
 ```{python}
 plot.pairwise_majority(trans)
@@ -321,7 +321,7 @@ print(f"  most influential factor: {rs.most_influential_factor}")
 plot.rank_sensitivity(rs)
 ```
 
-The same shares per method, with the difference between the best and worst rank of each method:
+The same split per method, with each method's rank range:
 
 ```{python}
 plot.rank_sensitivity_by_tool(rs)
@@ -439,7 +439,7 @@ else:
 
 ## Bradley-Terry tree
 
-A [Bradley-Terry tree](../../docs/explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees) turns each dataset into pairwise method comparisons and splits the datasets by their features: source, tissue, species, sample type (normal or cancer) and number of cell types. It needs R.
+A [Bradley-Terry tree](../../docs/explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees) takes each dataset as a set of pairwise method comparisons and splits the datasets by their features: source, tissue, species, sample type (normal or cancer) and number of cell types. It needs R.
 
 ```{python}
 from beam.heterogeneity import bradley_terry_tree, bttree_available
@@ -480,7 +480,7 @@ else:
 
 ## Manual annotation
 
-The agreement metric is defined against the manual annotation. The cell types where the five methods agree on a broad lineage that differs from the manual label:
+The agreement metric is defined against the manual annotation. The cell types with a method consensus on a broad lineage different from the manual label:
 
 ```{python}
 import csv
@@ -549,7 +549,7 @@ plt.show()
 
 ## Other LLM annotation benchmarks
 
-Three more recent benchmarks score LLMs at cell type annotation: DeepCellSeek (Briefings in Bioinformatics 2025, [10.1093/bib/bbaf677](https://doi.org/10.1093/bib/bbaf677)), AnnDictionary (Nature Communications 2025, [10.1038/s41467-025-64511-x](https://doi.org/10.1038/s41467-025-64511-x)) and Single-Cell Omics Arena (SOAR, [arXiv:2412.02915](https://arxiv.org/abs/2412.02915)). They use different models, datasets and metrics, so they are compared by the within-benchmark rank of the methods they share. The three classical tools (CellMarker2.0, SingleR, ScType) connect GPTCelltype, DeepCellSeek and SOAR; GPT-4o connects DeepCellSeek, AnnDictionary and SOAR. The provenance and license of each bundled table are in `src/beam/data/`; DeepCellSeek and SOAR scores come from a pinned source, and the SOAR and AnnDictionary folders carry a note on their license status.
+Three more recent benchmarks score LLMs at cell type annotation: DeepCellSeek (Briefings in Bioinformatics 2025, [10.1093/bib/bbaf677](https://doi.org/10.1093/bib/bbaf677)), AnnDictionary (Nature Communications 2025, [10.1038/s41467-025-64511-x](https://doi.org/10.1038/s41467-025-64511-x)) and Single-Cell Omics Arena (SOAR, [arXiv:2412.02915](https://arxiv.org/abs/2412.02915)). They use different models, datasets and metrics, so they are compared by the within-benchmark rank of the shared methods. The three classical tools (CellMarker2.0, SingleR, ScType) connect GPTCelltype, DeepCellSeek and SOAR; GPT-4o connects DeepCellSeek, AnnDictionary and SOAR. The provenance and license of each bundled table are in `src/beam/data/`; DeepCellSeek and SOAR scores come from a pinned source, and the SOAR and AnnDictionary folders include a note on their license status.
 
 ```{python}
 import csv

@@ -1,16 +1,16 @@
 """Bradley-Terry trees on per-dataset method comparisons.
 
 A global MCDA ranking pools every dataset into one recommendation. The
-Bradley-Terry tree (Strobl, Wickelmaier and Zeileis) asks the sharper
-question behind the "against one method fits all" critique: which dataset
-properties reverse the ranking. For each dataset the methods are compared
-pairwise on one metric (a win, a loss, or a tie per method pair), and a
-Bradley-Terry model turns those outcomes into a latent strength per method.
+Bradley-Terry tree (Strobl, Wickelmaier and Zeileis) answers one question:
+which dataset properties reverse the ranking. For each dataset the methods
+are compared pairwise on one metric (a win, a loss, or a tie per method pair),
+and a Bradley-Terry model estimates a latent strength per method from those
+outcomes.
 Model-based recursive partitioning then splits the datasets by their
 features so that each leaf has its own Bradley-Terry ranking, with a
 parameter-stability test deciding where a split is warranted. The result
 reads as "on datasets with feature X above threshold Z prefer method A,
-otherwise prefer method B", which a single pooled number cannot give.
+otherwise prefer method B".
 
 The subjects of the tree are the datasets (their features are the splitting
 variables); the objects being compared are the methods. The model is fit by
@@ -19,11 +19,11 @@ mixed-effects wrapper. Use
 ``bttree_available`` to check the R toolchain before calling
 ``bradley_terry_tree``.
 
-Honest small-sample limit: model-based recursive partitioning needs enough
-datasets to support a split. With a dozen datasets (the Duo 2018 case) the
-test often finds no stable split and the report degrades to a single flat
-Bradley-Terry ranking, which it says plainly. The tree earns its keep on a
-benchmark with many datasets carrying real feature variation.
+Small-sample limit: model-based recursive partitioning needs enough datasets
+to support a split. With a dozen datasets (the Duo 2018 case) the test often
+finds no stable split and the report is a single flat Bradley-Terry ranking,
+with ``did_split`` False. The tree needs a benchmark with many datasets and
+real feature variation.
 """
 
 from __future__ import annotations
@@ -61,8 +61,8 @@ __all__ = [
 def bttree_available() -> bool:
     """Return True when Rscript and the psychotree and jsonlite packages are present.
 
-    Tests and vignettes use this to skip the analysis cleanly on a machine
-    without the R toolchain. psychotree pulls in partykit and psychotools.
+    Tests and vignettes use this to skip the analysis on a machine without
+    the R toolchain. psychotree depends on partykit and psychotools.
     """
     return packages_available(_R_PACKAGES)
 
@@ -180,12 +180,12 @@ class BradleyTerryTreeReport:
         ``dataset_names``.
     global_worth
         Bradley-Terry strengths from a single model over all datasets, the
-        reference ranking the tree qualifies, aligned with ``method_names``.
+        reference ranking for the tree, aligned with ``method_names``.
     global_worth_se
         Standard errors of ``global_worth``.
     did_split
         True when the tree found at least one feature split; False when it
-        degraded to a single flat Bradley-Terry model.
+        is a single flat Bradley-Terry model.
     feature_names
         The candidate splitting features that were offered to the tree.
     minsize
@@ -243,7 +243,7 @@ class BradleyTerryTreeReport:
         """Leaf ids whose strongest method differs from the global strongest one.
 
         These are the subgroups where the pooled recommendation does not hold,
-        the output the tree exists to surface.
+        the main output of the tree.
         """
         global_top = self.global_ranking()[0]
         out = []
@@ -255,7 +255,7 @@ class BradleyTerryTreeReport:
         return out
 
     def summary(self) -> str:
-        """A one-paragraph, plain-language reading of the tree."""
+        """A one-paragraph summary of the tree."""
         n_datasets = len(self.dataset_names)
         gtop = self.global_ranking()[0]
         if not self.did_split:

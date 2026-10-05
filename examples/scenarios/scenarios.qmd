@@ -22,7 +22,7 @@ format:
 
 ## Set-up
 
-The [aggregation methods](../../docs/explanations/aggregation-methods.md) come from pymcdm, called on the matrix beam normalizes by metric card. The [weighting schemes](../../docs/explanations/weighting-schemes.md) are beam's own.
+The [aggregation methods](../../docs/explanations/aggregation-methods.md) come from pymcdm, called on the matrix normalized by beam according to the metric cards. The [weighting schemes](../../docs/explanations/weighting-schemes.md) are beam's own.
 
 ```{python}
 %matplotlib inline
@@ -141,7 +141,7 @@ for s in all_scenarios():
 
 ## SMAA per scenario
 
-Share of weight samples in which each method is top-ranked. Gold is the method built to rank first and green a tied pair built as such.
+Fraction of weight samples with each method ranked first. Gold is the method built to rank first and green a tied pair built as such.
 
 ```{python}
 scenarios = all_scenarios()
@@ -221,7 +221,7 @@ plot.rank_heatmap(
 
 ## Dataset concordance
 
-[`dataset_concordance`](../../docs/explanations/dataset-concordance-and-discrimination.md) ranks the methods within each dataset and reports the Kendall tau-b agreement between every pair, and the dataset that agrees least with the rest.
+[`dataset_concordance`](../../docs/explanations/dataset-concordance-and-discrimination.md) ranks the methods within each dataset and reports the Kendall tau-b agreement between every pair, and the dataset least in agreement with the rest.
 
 ```{python}
 odd_scores = beam.Scores(
@@ -359,7 +359,7 @@ trans = pairwise_transitivity(sup)
 print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_triads} of {trans.n_triads}")
 ```
 
-The matrix orders the methods by how many others they outperform. A red cell below the diagonal is a method that outperforms one ranked above it.
+The matrix orders the methods by the number of others outperformed. A red cell below the diagonal is a method outperforming one ranked above it.
 
 ```{python}
 plot.pairwise_majority(trans)
@@ -474,7 +474,7 @@ for name in ["dominant", "random"]:
 
 [`specification_curve`](../../docs/explanations/rank-sensitivity.md#the-specification-curve) reports the dominant method first in every combination.
 
-The shares per method; a method with a fixed rank has none.
+The rank variance split per method; a method with a fixed rank has none.
 
 ```{python}
 for name in ["dominant", "random"]:

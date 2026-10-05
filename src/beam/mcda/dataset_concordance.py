@@ -1,7 +1,7 @@
 """Agreement between datasets on how they order the methods.
 
 A pooled ranking summarizes the methods over every dataset at once. It cannot
-show whether the datasets agree on that order or pull in different directions.
+show whether the datasets agree on that order.
 This module measures the agreement directly. It ranks the methods within each
 dataset under the same MCDA pipeline as the headline run, then compares every
 pair of per-dataset orderings with the Kendall tau-b rank correlation.
@@ -9,9 +9,8 @@ pair of per-dataset orderings with the Kendall tau-b rank correlation.
 The output is a dataset by dataset agreement matrix, a single mean-agreement
 summary, the dataset whose ordering matches the others least, and a grouping of
 datasets whose orderings are mutually consistent above a threshold. A high mean
-says the pooled recommendation stands in for the individual datasets. A low one
-says it does not, and a single pooled number then hides heterogeneity the reader
-should see.
+means the pooled ranking represents the individual datasets. A low mean means
+it does not.
 
 A second output is the rank-deviation table. For each method it records the
 datasets where the method places higher or lower than its own typical rank.
@@ -21,9 +20,8 @@ method is preferable overall.
 
 The diagnostic needs no replicates and assumes no exchangeability among the
 datasets. It treats each observed dataset as fixed and reports the structure of
-agreement among them. It is the data-driven companion to the Bradley-Terry
-tree, which splits the datasets by declared features rather than by their
-rankings.
+agreement among them. The Bradley-Terry tree splits the datasets by declared
+features; this diagnostic groups them by their rankings.
 """
 
 from __future__ import annotations
@@ -70,8 +68,8 @@ class DatasetConcordanceReport:
 
     Fields:
         evaluated_datasets: original indices of the datasets that produced a
-            ranking, in order. A dataset whose single-dataset matrix the pipeline
-            cannot rank (for example a missing cell under the ``"error"`` policy)
+            ranking, in order. A dataset the pipeline cannot rank on its own
+            (for example a missing cell under the ``"error"`` policy)
             is dropped and absent here.
         ranks_by_dataset: (n_evaluated, n_tools) per-dataset 1-based ranks.
         tau_matrix: (n_evaluated, n_evaluated) Kendall tau-b between every pair
@@ -173,9 +171,8 @@ def dataset_concordance(
     orderings with the Kendall tau-b coefficient, which handles the ties that
     competition ranking produces.
 
-    A dataset whose single-dataset matrix the pipeline cannot rank is dropped
-    rather than failing the whole analysis, matching how the aggregation and
-    normalization agreement reports drop a configuration that cannot run. At
+    A dataset the pipeline cannot rank on its own is dropped and the analysis
+    continues, as in the aggregation and normalization agreement reports. At
     least two datasets must produce a ranking.
 
     Parameters
@@ -193,13 +190,13 @@ def dataset_concordance(
     method
         Aggregation name forwarded to ``run``. Default ``"saw"``.
     dataset_names, tool_names
-        Optional labels carried in the report.
+        Optional labels kept in the report.
     metric_ids
         Optional length ``n_metrics`` labels used in error messages.
     normalization, bounds, baselines, targets
         Optional per-metric normalization context forwarded to every run. Pass
         the values from ``beam.mcda.registry_context`` so the per-dataset
-        rankings normalize the same way as the headline ranking.
+        rankings normalize the same way as the main ranking.
     missing
         Missing-data policy forwarded to every run. Default ``"error"``, which
         drops any dataset with a missing cell.

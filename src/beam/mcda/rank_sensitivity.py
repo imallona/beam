@@ -2,11 +2,10 @@
 
 A ranking can move for two reasons. One is the analyst's choices: which weighting
 scheme sets the weights, and which aggregation rule combines the scores. The other
-is the data: a method that ranks first on one dataset can trail on another. A
-benchmarker should know which reason is at work. The other tools each vary one
-thing. ``aggregation_agreement`` varies the aggregation. ``smaa`` varies the
-weights. ``leave_one_dataset_out`` drops a dataset. None of them measure the
-choices and the data on the same scale.
+is the data: a method that ranks first on one dataset can rank lower on another.
+The other diagnostics each vary one thing. ``aggregation_agreement`` varies the
+aggregation. ``smaa`` varies the weights. ``leave_one_dataset_out`` drops a
+dataset. None of them measure the choices and the data on the same scale.
 
 ``rank_sensitivity`` does. The weighting, the aggregation, and the dataset are
 each a small set of options, so beam computes every combination rather than
@@ -17,10 +16,10 @@ function of categorical factors over a balanced factorial, these main-effect
 shares are the first-order variance indices (the categorical form of the Sobol
 indices), and they are exact here because nothing is sampled.
 
-The headline is the share each factor carries, pooled over the tools. A large
-dataset share means the ranking depends on which dataset you use. A large
+The main output is the share of each factor, pooled over the tools. A large
+dataset share means the ranking depends on the dataset. A large
 weighting or aggregation share means it depends on a choice the analyst could make
-differently. Either way, the report says so instead of hiding it.
+differently.
 
 A 2D tool-by-metric matrix has two factors: the weighting and the aggregation. A
 3D tool-by-dataset-by-metric tensor adds the dataset as a third factor, so the
@@ -53,15 +52,15 @@ class ToolRankSensitivity:
     tool
         Tool index into the score matrix.
     name
-        Tool label, or ``None`` when the matrix carried none.
+        Tool label, or ``None`` when the matrix had none.
     factor_shares
         The fraction of this tool's rank variance over the factorial explained by
         each factor's main effect, keyed by factor name. With the
         ``interaction_share`` the values sum to one. All ``nan`` when the tool
         holds the same rank in every combination.
     interaction_share
-        The fraction of this tool's rank variance carried by every factor
-        interaction together, ``nan`` when the tool has no rank variance.
+        The fraction of this tool's rank variance due to all factor
+        interactions together, ``nan`` when the tool has no rank variance.
     rank_min, rank_max, rank_span
         The best, worst, and spread of this tool's rank across the factorial.
     modal_rank
@@ -108,7 +107,7 @@ class RankSensitivityReport:
         The pooled main-effect variance share per factor over all tools. With
         ``interaction_share`` the values sum to one.
     interaction_share
-        The pooled variance share carried by all factor interactions together.
+        The pooled variance share due to all factor interactions together.
     most_influential_factor
         The factor or ``"interaction"`` whose pooled share is largest.
     per_tool
@@ -122,7 +121,7 @@ class RankSensitivityReport:
     headline_rank_by_dataset
         For a tensor input, the mean rank of ``headline_tool`` on each dataset,
         averaged over the choices, in ``dataset_names`` order. ``None`` for a
-        matrix. A row that climbs from 1 shows where the headline tool slips.
+        matrix. A value above 1 marks a dataset where the headline tool ranks lower.
     """
 
     factors: tuple[str, ...]
@@ -227,16 +226,16 @@ def rank_sensitivity(
     Runs the full factorial of the factors, collecting the rank of every tool
     under each combination, and decomposes each tool's rank variance into a
     main-effect share per factor plus the interaction share by an analysis of
-    variance. Pooling the variance over the tools gives the overall share each
-    factor carries.
+    variance. Pooling the variance over the tools gives the overall share of each
+    factor.
 
     With a 2D ``(n_tools, n_metrics)`` matrix the factors are the weighting and the
     aggregation. With a 3D ``(n_tools, n_datasets, n_metrics)`` tensor the dataset
     joins them: each combination ranks the tools on one dataset's slice, so the
-    dataset share reads how much the ranking depends on which dataset you evaluate
-    on. Each combination must rank: the distance and outranking aggregations
-    refuse a slice with missing cells, so for partial coverage pass
-    ``missing="worst"`` to complete the matrix or restrict to the feasible subset.
+    dataset share is the dependence of the ranking on the dataset. Each
+    combination must rank: the distance and outranking aggregations refuse a
+    slice with missing cells, so for partial coverage pass ``missing="worst"``
+    to complete the matrix or restrict to the feasible subset.
 
     Parameters
     ----------
@@ -252,8 +251,8 @@ def rank_sensitivity(
         "critic")``. MEREC is left out of the default because it takes the
         logarithm of the scores and refuses the zeros the default min_max
         normalization produces; pass it explicitly with a positivity-preserving
-        normalization. AHP is excluded because it needs an analyst-supplied
-        pairwise matrix, not a data-driven rule.
+        normalization. AHP is excluded because it needs a pairwise matrix from
+        the analyst.
     methods
         Aggregations to vary, from the five beam aggregations. Default is all five.
         COMET builds characteristic objects whose count grows fast with the number
@@ -261,14 +260,14 @@ def rank_sensitivity(
         keep the factorial quick.
     normalization, bounds, baselines, targets
         Optional per-metric normalization context forwarded to every run. Pass the
-        values from ``beam.mcda.registry_context`` so the decomposition rests on
-        the same normalized matrix as the headline ranking.
+        values from ``beam.mcda.registry_context`` so the decomposition uses
+        the same normalized matrix as the main ranking.
     missing
         Missing-data policy forwarded to every run. Default ``"error"``.
     tool_names
-        Optional length ``n_tools`` labels carried in the report.
+        Optional length ``n_tools`` labels kept in the report.
     dataset_names
-        Optional length ``n_datasets`` labels for a tensor input, carried in the
+        Optional length ``n_datasets`` labels for a tensor input, kept in the
         report and used to name the dataset levels.
 
     Returns
@@ -279,7 +278,7 @@ def rank_sensitivity(
     ------
     ValueError
         If the shapes do not line up, or fewer than two weightings or two
-        aggregations (or, for a tensor, two datasets) survive on this input, so a
+        aggregations (or, for a tensor, two datasets) remain on this input, so a
         factorial decomposition is undefined.
 
     Examples
@@ -380,7 +379,7 @@ def rank_sensitivity(
         _warnings.warn(
             f"rank_sensitivity dropped weighting(s) {dropped_weightings}, "
             f"aggregation(s) {dropped_methods} and dataset(s) {dropped_datasets} "
-            "that failed on this input; the decomposition rests on the surviving grid",
+            "that failed on this input; the decomposition uses the remaining grid",
             stacklevel=2,
         )
 

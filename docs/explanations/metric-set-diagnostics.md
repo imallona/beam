@@ -27,9 +27,9 @@ On the [OpenProblems batch integration scores](../../examples/openproblems/openp
 
 with `k` the number of metrics in the group and `r_bar` their mean inter-item correlation. The standardized form uses correlations, as the metrics have different scales.
 
-Groups with alpha below 0.7 are flagged. Alpha increases with `k`, so the report gives `r_bar` and `k` with each alpha; `r_bar` compares groups of different size.
+Groups with alpha below 0.7 are flagged. Alpha increases with `k`, so the report gives `r_bar` and `k` with each alpha; `r_bar` is comparable across groups of different size.
 
-For a group of three or more metrics the report gives alpha with each metric removed. A metric whose removal raises alpha agrees less with the rest of its group.
+For a group of three or more metrics the report gives alpha with each metric removed. When removing a metric raises alpha, that metric agrees less with the rest of its group.
 
 Alpha is not a validity check.
 
@@ -39,7 +39,7 @@ On the OpenProblems scores the biological group has alpha 0.85 over seven metric
 
 Alpha assumes the group is one factor. [`beam.mcda.metric_dimensionality`](../reference/metric_dimensionality.qmd) counts the factors.
 
-For each group it takes the eigenvalues of the within-group correlation matrix, which sum to `k`. The report has the eigenvalues, the share of variance of the first component, and two counts of factors.
+For each group it takes the eigenvalues of the within-group correlation matrix, which sum to `k`. The report has the eigenvalues, the fraction of the variance explained by the first component, and two counts of factors.
 
 The Kaiser (1960) rule keeps the components with an eigenvalue above one and tends to keep too many. Parallel analysis (Horn 1965) keeps a component when its eigenvalue exceeds the 95th percentile (Glorfeld 1995) of the eigenvalues of random matrices of the same size, drawn with a fixed seed. A group is unidimensional when parallel analysis keeps one component.
 

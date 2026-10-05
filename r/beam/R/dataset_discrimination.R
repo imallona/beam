@@ -1,12 +1,12 @@
 #' How strongly each dataset separates the methods it scores
 #'
-#' Measures, per dataset, how far apart the methods are pulled (the spread, an
+#' Measures, per dataset, how far apart the methods are (the spread, an
 #' effect size) and whether the metrics agree on the order (Kendall's W, a
 #' consistency check). It needs no shared methods across benchmarks, so
 #' benchmarks that run disjoint method sets can each be measured and then
 #' compared. It is the dataset-level companion to [beam_dataset_concordance]:
-#' concordance asks whether datasets agree on the order, this asks whether a
-#' dataset produces an order at all. Forwards to the Python
+#' concordance measures whether datasets agree on the order; this measures
+#' whether a dataset produces an order at all. Forwards to the Python
 #' `beam.mcda.dataset_discrimination`.
 #'
 #' @param scores A 3D array of shape (methods, datasets, metrics). A method or

@@ -4,12 +4,12 @@ The critical-difference test (``beam.mcda.critical_difference``) reports whether
 methods differ. The pairwise superiority report (``beam.mcda.pairwise_superiority``)
 reports by how much, as outperformance counts, an effect size and a sign test.
 Both are frequentist: they answer with a p-value, which is the chance of the
-observed split if the two methods scored the same, not the chance that one method
-scores higher. Choosing between two methods needs the second quantity.
+observed split if the two methods scored the same. Choosing between two methods
+needs the chance that one scores higher, which a p-value does not give.
 
 ``bayesian_sign_comparison`` supplies it. It reads the same per-pair
-outperformance counts ``pairwise_superiority`` already produced and treats them as
-the Bayesian sign test of Benavoli, Corani, Demsar and Zaffalon (2017). For a
+outperformance counts ``pairwise_superiority`` already produced and applies the
+Bayesian sign test of Benavoli, Corani, Demsar and Zaffalon (2017) to them. For a
 pair, each shared dataset falls into one of three regions: A practically better, B
 practically better, or the two within the region of practical equivalence (the
 ROPE, set to the metric's noise floor by the superiority report). The proportion
@@ -19,10 +19,10 @@ probability that A is practically better, that the two are practically
 equivalent, and that B is practically better, three numbers that sum to one.
 
 It is the posterior companion to ``pairwise_superiority`` and ``pairwise_transitivity``,
-both of which also post-process a ``PairwiseSuperiorityReport`` rather than
-re-reading the scores. The reference implementation of the test is the baycomp
-package (Benavoli et al.), which beam matches on the closed-form posterior mean
-and, with a matched prior, on the Monte Carlo region probabilities.
+both of which also work from a ``PairwiseSuperiorityReport``. The reference
+implementation of the test is the baycomp package (Benavoli et al.), which beam
+matches on the closed-form posterior mean and, with a matched prior, on the
+Monte Carlo region probabilities.
 """
 
 from __future__ import annotations
@@ -168,7 +168,7 @@ def bayesian_sign_comparison(
         Number of prior pseudo-observations. Default 1, a single weak prior dataset.
         Must be non-negative.
     prior_placement
-        Where the prior mass sits: ``"rope"`` (default, all on the equivalence
+        Placement of the prior mass: ``"rope"`` (default, all on the equivalence
         region, the weak prior that the two are equivalent, matching the baycomp
         default), ``"uniform"`` (split across the three regions), or ``"neutral"``
         (split across the two directional regions, none on the equivalence region).

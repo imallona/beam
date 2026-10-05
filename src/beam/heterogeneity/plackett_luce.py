@@ -2,10 +2,10 @@
 
 The Bradley-Terry tree works from pairwise wins. When the natural input is a
 full ranking of the methods per dataset, the Plackett-Luce model (Turner, van
-Etten, Firth and Kosmidis) is the direct generalisation: it turns each
-dataset's ordering of the methods into a single latent strength per method,
-the worth, with the worths summing to one. On strictly pairwise input it
-reduces to the Bradley-Terry model, so it is the wider tool for the same
+Etten, Firth and Kosmidis) is the direct generalisation: it estimates one
+latent strength per method, the worth, from each dataset's ordering of the
+methods, with the worths summing to one. On strictly pairwise input it
+reduces to the Bradley-Terry model, so it is the general form for the same
 question of which method is stronger overall.
 
 For one metric, each dataset column of a method by dataset matrix is read as a
@@ -16,10 +16,10 @@ same boundary as the other heterogeneity wrappers. Use
 ``plackett_luce_available`` to check the R toolchain before calling
 ``plackett_luce``.
 
-This is a global ranking tool, not a heterogeneity split: it complements the
-Bradley-Terry tree (which localises where the ranking reverses) by giving a
-worth with a reference-free quasi-standard-error per method, so two methods
-can be compared without picking a baseline.
+This gives one global ranking and does not split the datasets. The
+Bradley-Terry tree localises where the ranking reverses; Plackett-Luce gives
+each method a worth with a reference-free quasi-standard-error, so two
+methods can be compared without picking a baseline.
 """
 
 from __future__ import annotations
@@ -137,7 +137,7 @@ class PlackettLuceReport:
         True when the win-loss network is strongly connected, the condition
         for finite worth estimates without pseudo-rankings. The fit uses the
         package default pseudo-rankings, so it returns estimates either way,
-        but a False here flags that the estimates lean on that prior.
+        but a False here means the estimates depend on that prior.
     npseudo
         The number of pseudo-rankings added against a hypothetical item.
     loglik, df, aic
@@ -186,8 +186,8 @@ def plackett_luce(
         ``"higher_is_better"`` or ``"lower_is_better"``, used to orient each
         dataset's ranking.
     npseudo
-        Number of pseudo-rankings against a hypothetical item, the package
-        device that keeps the worth estimates finite when the ranking network
+        Number of pseudo-rankings against a hypothetical item, which keeps
+        the worth estimates finite when the ranking network
         is weakly connected. The PlackettLuce default is 0.5; set 0 for the
         plain maximum-likelihood fit on a strongly connected design.
 
@@ -199,7 +199,7 @@ def plackett_luce(
     ------
     ValueError
         For shape, length, or polarity problems, or if fewer than two
-        rankings survive.
+        rankings remain.
     RNotAvailableError
         If the R toolchain with PlackettLuce is not available.
     RExecutionError

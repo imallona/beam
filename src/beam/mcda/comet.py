@@ -11,14 +11,13 @@ expert, so beam uses the simple additive weighting (weighted sum) of a
 characteristic object's coordinates as the expert rule: characteristic
 object a is preferred to b when its weighted sum is larger, and the two are
 equal when their weighted sums are equal. This is a deterministic, auditable
-stand-in for the human pairwise judgement.
+substitute for the human pairwise judgement.
 
 The COMET machinery is delegated to ``pymcdm.methods.COMET``. beam supplies
 the characteristic values and a ``pymcdm.methods.comet_tools.FunctionExpert``
 that applies the weighted-sum rule above. pymcdm then builds the Matrix of
 Expert Judgement, the Summed Judgement, the per-object preference, and the
-triangular fuzzy interpolation. The native implementation of those steps has
-been replaced by that call.
+triangular fuzzy interpolation.
 
 Reference: Salabun, W. (2015). The Characteristic Objects Method: A New
 Distance-based Approach to Multicriteria Decision-making Problems. Journal of
@@ -38,9 +37,9 @@ from ._missing import require_complete
 # COMET forms one characteristic object per combination of the per-criterion
 # characteristic values, so the default two-point grid gives 2**n_metrics
 # objects. Past this many metrics the grid is exponential and the result stops
-# being a meaningful aggregation, so beam refuses rather than spend minutes on a
-# 2**12-object model. The agreement and sensitivity layers drop COMET on such an
-# input the same way they drop any method that cannot run.
+# being a meaningful aggregation, so beam refuses it. The agreement and
+# sensitivity layers drop COMET on such an input the same way they drop any
+# method that cannot run.
 _MAX_COMET_METRICS = 8
 
 
@@ -90,7 +89,7 @@ def comet(
     P. Each criterion value is then turned into triangular fuzzy memberships
     over its characteristic values, and an alternative's score is the sum over
     characteristic objects of P times the product of the matching memberships
-    across criteria. Higher is better. These steps are carried out by
+    across criteria. Higher is better. These steps are computed by
     ``pymcdm.methods.COMET``.
 
     Because the model is fit on the fixed grid of characteristic objects,
@@ -118,7 +117,7 @@ def comet(
     Notes
     -----
     The expert function is the weighted sum of a characteristic object's
-    coordinates, a deterministic stand-in for the human pairwise judgement
+    coordinates, a deterministic substitute for the human pairwise judgement
     that COMET assumes. See the module docstring and
     docs/explanations/aggregation-methods.md#comet.
 

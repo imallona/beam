@@ -1,11 +1,10 @@
 """Demsar (2006) Friedman test with a Nemenyi critical-difference diagram.
 
-Given a tool by dataset score matrix, this module answers a question the
-MCDA composite cannot: across the datasets, are the methods separable at
-all, or does the apparent ranking sit within noise? It runs the Friedman
-test on the per-dataset rankings and, alongside it, the Nemenyi post-hoc,
-whose critical difference says how far two average ranks must be apart to
-count as different.
+Given a tool by dataset score matrix, this module tests whether the methods
+are separable across the datasets or the ranking is within noise. It runs
+the Friedman test on the per-dataset rankings and the Nemenyi post-hoc,
+whose critical difference is the smallest gap between two average ranks
+counted as different.
 
 The output is the data behind a critical-difference diagram: the average
 rank per tool (1 is best), the Friedman statistic and p-value, the
@@ -46,7 +45,7 @@ class CriticalDifferenceReport:
             are not significantly different. Only groups of two or more are
             reported.
         n_tools, n_datasets: matrix shape.
-        tool_names: optional labels carried for reporting.
+        tool_names: optional labels kept for reporting.
     """
 
     average_ranks: np.ndarray
@@ -99,7 +98,7 @@ def critical_difference(
     alpha
         Significance level for the Nemenyi critical difference.
     tool_names
-        Optional labels, length ``n_tools``, carried in the report.
+        Optional labels, length ``n_tools``, kept in the report.
 
     Returns
     -------
@@ -108,10 +107,10 @@ def critical_difference(
     Notes
     -----
     Friedman needs at least three tools and two datasets, and a complete tool
-    by dataset table: every tool ranked on every dataset. A missing cell is
-    refused rather than dropped or filled, since the Friedman ranks per dataset
-    are only defined over a complete column. The missing-data generalization is
-    the Skillings-Mack (1981) test, which is not implemented here; restrict the
+    by dataset table: every tool ranked on every dataset. A missing cell raises
+    an error, since the Friedman ranks per dataset are only defined over a
+    complete column. The missing-data generalization is the Skillings-Mack
+    (1981) test in ``beam.mcda.skillings_mack``; alternatively, restrict the
     diagram to the block of tools and datasets where all of them ran.
     """
     scores = np.asarray(scores, dtype=float)

@@ -5,7 +5,7 @@ meant to measure the same underlying quantity (for example the scIB
 biological-conservation metrics ARI, NMI and isolated-label F1 all read how well
 cell-type structure survives integration), and others are meant to measure a
 different quantity (the batch-correction metrics kBET, iLISI, batch silhouette).
-Campbell and Fiske (1959) asked the validity question that follows: do the
+Campbell and Fiske (1959) framed the validity question: do the
 metrics that claim to measure the same construct actually agree, and do the
 metrics that claim to measure different constructs actually differ?
 
@@ -13,19 +13,18 @@ metrics that claim to measure different constructs actually differ?
 cell is one observation; the metrics are the variables. The function orients
 every metric so that higher means better (it negates the ranks of a
 ``lower_is_better`` metric), then computes the Spearman rank correlation between
-every pair of metrics over the observations they share. Spearman is the right
-choice here: the metrics live on different scales, and a rank correlation reads
-"do these two metrics order the methods the same way" without assuming a common
-unit.
+every pair of metrics over the observations they share. Spearman fits here: the
+metrics are on different scales, and a rank correlation measures whether two
+metrics order the methods the same way without assuming a common unit.
 
 Grouping the metrics by the construct they claim to measure splits the
 correlations into two sets. Within-group correlations are the convergent
 evidence: metrics measuring one construct should agree. Between-group
 correlations are the discriminant evidence: metrics measuring different
 constructs should agree less. When the mean within-group correlation exceeds the
-mean between-group correlation, the grouping holds up, and treating the groups as
-separate criteria in the MCDA weighting (the scIB 0.6 bio / 0.4 batch split, for
-example) is justified by the data rather than by assertion. The report also
+mean between-group correlation, the data support the grouping, and with it
+the use of the groups as separate criteria in the MCDA weighting (the scIB 0.6
+bio / 0.4 batch split, for example). The report also
 flags near-duplicate metrics inside a group (redundant criteria) and any metric
 that correlates more with another group than with its own (a metric that does
 not measure what its group claims).
@@ -33,7 +32,7 @@ not measure what its group claims).
 This is the trait facet of a multitrait-multimethod matrix. beam records one
 measurement per metric per cell, so there is no separate method facet to vary;
 the diagnostic is the convergent and discriminant reading of the metric
-correlations, not the full MTMM design.
+correlations and omits the rest of the MTMM design.
 """
 
 from __future__ import annotations
@@ -54,7 +53,7 @@ class MetricValidityReport:
     Attributes
     ----------
     metric_ids
-        Metric labels in column order, or ``None`` when the input carried none.
+        Metric labels in column order, or ``None`` when the input had none.
     groups
         Construct label per metric, aligned with ``metric_ids``.
     correlation
@@ -179,7 +178,7 @@ def metric_validity(
         ``"bio"`` or ``"batch"``. Metrics sharing a label claim to measure the
         same construct.
     metric_ids
-        Optional length ``n_metrics`` labels carried into the report and used to
+        Optional length ``n_metrics`` labels kept in the report and used to
         name the flagged pairs and metrics.
     redundant_threshold
         Within-group correlation at or above which a pair is reported as

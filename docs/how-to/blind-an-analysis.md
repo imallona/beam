@@ -1,6 +1,6 @@
 # Run a blind analysis
 
-A blind analysis hides the method names while the pipeline is fixed, then restores them, as in particle physics and clinical trials: the weighting, aggregation and metric set are chosen without knowing which method is which, so the choices cannot be tuned toward a preferred result. See the explanation in [docs/explanations/analysis-blinding.md](../explanations/analysis-blinding.md) for the reasoning and the references.
+A blind analysis hides the method names while the pipeline is fixed, then restores them, as in particle physics and clinical trials. The weighting, aggregation and metric set are chosen without knowledge of which method is which, so the choices cannot be tuned toward a preferred result. See the explanation in [docs/explanations/analysis-blinding.md](../explanations/analysis-blinding.md) for the reasoning and the references.
 
 ## From Python
 
@@ -16,7 +16,7 @@ blinded, seal = beam.blind(scores, seed=7)
 beam.write_seal(seal, "seal.json")
 
 # 3. Fix the whole pipeline on the blinded labels. You cannot see which
-#    method is which, so the choices below do not chase a known winner.
+#    method is which, so the choices below cannot favour a known method.
 result = beam.rank(blinded, weights="entropy", method="topsis")
 
 # 4. Restore the true names once the pipeline is fixed.
@@ -58,4 +58,4 @@ print(final$top_tool)
 
 ## Guarantees and limits
 
-The ranking is the same whether or not the labels were hidden, because beam ranks on the score values and unblinding only renames the rows. It fixes the pipeline before the result is known, and it leaves a record (the seal fingerprint in the manifest) that the configuration predates the unblinding. It cannot stop someone from reading the source file; it supports a pre-registration claim rather than enforcing one.
+The ranking is the same whether or not the labels were hidden, because beam ranks on the score values and unblinding only renames the rows. The seal fingerprint in the manifest is a record that the configuration predates the unblinding. Software cannot stop someone from reading the source file, so the record is only evidence for a preregistration claim.

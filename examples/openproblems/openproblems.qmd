@@ -316,7 +316,7 @@ print(f"  interactions: {rs.interaction_share:.3f}")
 print(f"  most influential factor: {rs.most_influential_factor}")
 ```
 
-The same shares per method, with the difference between the best and worst rank of each method:
+The same split per method, with each method's rank range:
 
 ```{python}
 plot.rank_sensitivity_by_tool(rs)
@@ -418,7 +418,7 @@ trans = pairwise_transitivity(sup)
 print(f"transitive: {trans.is_transitive}; circular triads: {trans.n_circular_triads} of {trans.n_triads}")
 ```
 
-The matrix orders the methods by how many others they outperform. A red cell below the diagonal is a method that outperforms one ranked above it.
+The matrix orders the methods by the number of others outperformed. A red cell below the diagonal is a method outperforming one ranked above it.
 
 ```{python}
 plot.pairwise_majority(trans)
@@ -474,7 +474,7 @@ plot.score_heatmap(
 )
 ```
 
-The [Bradley-Terry tree](../../docs/explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees) turns each dataset into pairwise method comparisons and splits the datasets by their features, with a ranking per leaf. It needs R's psychotree.
+The [Bradley-Terry tree](../../docs/explanations/method-by-dataset-heterogeneity.md#bradley-terry-trees) takes each dataset as a set of pairwise method comparisons and splits the datasets by their features, with a ranking per leaf. It needs R's psychotree.
 
 ```{python}
 from beam.heterogeneity import bradley_terry_tree, bttree_available

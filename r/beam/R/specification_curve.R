@@ -3,8 +3,8 @@
 #' Lists the ranking produced by every combination of weighting, aggregation and
 #' (for a tensor) dataset, then reports how often the recommendation holds: the
 #' fraction of combinations that rank the same tool first, the fraction that
-#' produce the single most common ordering, and how many distinct tools ever
-#' reach the top. This is the specification-curve view from meta-research
+#' produce the single most common ordering, and how many distinct tools rank
+#' first at least once. This is the specification-curve view from meta-research
 #' (Simonsohn, Simmons and Nelson 2020; Steegen et al. 2016). It post-processes
 #' the factorial that [beam_rank_sensitivity] already ran, so it does no new
 #' ranking. Forwards to the Python `beam.mcda.specification_curve`.

@@ -6,7 +6,7 @@ complete column. Skillings and Mack (1981) generalize the Friedman statistic
 to unbalanced block designs by ranking within each block over only the methods
 that are present, standardizing each within-block rank deviation by the block
 size, and assembling a chi-squared form from the resulting per-method sums.
-The test gives a global "are the methods separable" answer on a partial matrix
+The test gives a global separability answer on a partial matrix
 without imputing the missing scores.
 
 Reference: Skillings JH, Mack GA. On the use of a Friedman-type statistic in
@@ -39,7 +39,7 @@ class SkillingsMackReport:
             blocks (columns with at least two methods present) each method
             appears in.
         n_methods, n_blocks: matrix shape.
-        method_names: optional labels carried for reporting.
+        method_names: optional labels kept for reporting.
         nemenyi_cliques: always ``None``. The Nemenyi post-hoc needs a
             complete matrix and is not generalized here; the field exists to
             mirror :class:`beam.mcda.cd.CriticalDifferenceReport` for callers
@@ -83,7 +83,7 @@ def skillings_mack(
         within-block rank. The chi-squared statistic itself does not depend
         on the direction.
     method_names
-        Optional length ``n_methods`` labels, carried in the report.
+        Optional length ``n_methods`` labels, kept in the report.
 
     Returns
     -------
@@ -200,8 +200,8 @@ def coverage_aware_critical_difference(
     chi-squared test only; ``nemenyi_cliques`` is ``None`` and the ``note``
     field explains that the pairwise post-hoc needs a complete matrix. On a
     matrix with no NaN this gives the same chi-squared statistic as
-    :func:`critical_difference`, so the global "are the methods separable"
-    answer is unchanged; only the cliques are missing.
+    :func:`critical_difference`, so the global separability answer is
+    unchanged; only the cliques are missing.
     """
     return skillings_mack(
         scores,

@@ -1,11 +1,11 @@
 """Loaders for benchmark data sets bundled with beam.
 
-The headline data set is the single-cell RNA-seq clustering benchmark of
+The first data set is the single-cell RNA-seq clustering benchmark of
 Duo, Robinson and Soneson (2018). ``load_duo2018`` reads the bundled CSV
 into a frozen ``Duo2018`` dataclass that holds a method by data set by
 metric tensor, with missing cells left as ``numpy.nan``. The loader
-does not impute or drop anything: it surfaces the gaps so the caller, the
-MCDA pipeline or the heterogeneity module, can decide how to handle
+does not impute or drop anything: the gaps stay NaN so the caller, the
+MCDA pipeline or the heterogeneity module, can choose how to handle
 partial method-data-set coverage.
 
 The data and metric mapping are documented in
@@ -281,7 +281,7 @@ def load_m4() -> M4Forecasting:
     methods kept in competition rank order and frequencies ordered from yearly
     to hourly.
 
-    The table is a derived artefact, computed once from the GPL-3
+    The table is derived, computed once from the GPL-3
     ``M4comp2018`` data (the top-25 methods' point forecasts and the realized
     values) by ``src/beam/data/reduce_m4.R``. See ``src/beam/data/README.md``
     for the provenance, the metric definitions, and the validation against the
@@ -345,7 +345,7 @@ class Duo2018Features:
 
     These are the candidate splitting variables for a Bradley-Terry tree
     (``beam.heterogeneity.bradley_terry_tree``): they describe each data set
-    rather than any method, so a tree can ask which data set properties
+    and no method, so a tree can test which data set properties
     reverse the method ranking. The values are read from the bundled
     ``DuoSCClustering2018_features.csv``; their provenance (the published
     cell and subpopulation counts from the DuoClustering2018 package help
@@ -511,7 +511,7 @@ class OpenProblems:
     Built from a bundled derived table; missing cells are ``numpy.nan``.
     Every OpenProblems metric here is reported with higher is better (the
     platform's ``maximize`` flag is true for all of them), so ``polarity`` is
-    uniform; the canonical per-metric semantics live in the registry cards.
+    uniform; the canonical per-metric semantics are in the registry cards.
 
     Attributes
     ----------
@@ -723,8 +723,8 @@ class GPTCelltype:
 
     The benchmark scores GPT-4 and GPT-3.5 against three reference-based
     annotators (CellMarker2.0, SingleR, ScType) on how well each labels the cell
-    types of a dataset, judged against a manual expert annotation. beam treats
-    each (source, tissue) pair as one dataset and each annotated cell type as one
+    types of a dataset, judged against a manual expert annotation. Each
+    (source, tissue) pair is one dataset and each annotated cell type one
     observation within it. The two metrics are the mean agreement score and the
     full match rate, both higher is better; provenance is in
     ``src/beam/data/README.md``. The classical annotators were not run on every
@@ -773,7 +773,7 @@ def load_gptcelltype() -> GPTCelltype:
     (method, dataset) the mean agreement over the cell types and the fraction of
     cell types that fully match the manual annotation. Datasets and their
     features come from ``gptcelltype2024_features.csv``, in its row order. A
-    method not run on a dataset has no rows there and surfaces as ``numpy.nan``;
+    method not run on a dataset has no rows there and is ``numpy.nan``;
     nothing is imputed or dropped.
 
     Returns
@@ -962,13 +962,13 @@ class IntegrationBenchmarks:
     Holds one record per (benchmark, dataset, method, metric): the rank of the
     method among the common methods on that metric within that benchmark's
     dataset, 1 best. Ranking within the common methods per benchmark, dataset
-    and metric is the scale-free common currency across benchmarks that score
-    on different native scales; for scIB and OpenProblems the rank is computed
+    and metric is the common scale across benchmarks with different native
+    score scales; for scIB and OpenProblems the rank is computed
     from the raw (unscaled) higher-is-better scores, for Tran from its published
     per-metric ranks, for Tyler from the raw per-metric scores with the metric's
     own polarity (kBET rejection rate is lower-is-better, ARI and ASW are
     higher-is-better). Tyler covers three of the five common methods (harmony,
-    scanorama, liger), so its records cover three rather than five method slots.
+    scanorama, liger), so its records cover three method slots.
 
     Attributes
     ----------
@@ -1035,7 +1035,7 @@ class IntegrationBenchmarks:
         Each cell is the mean rank of the method on that metric across all of
         the benchmark's datasets, in the within-common-methods rank scale (so
         lower is better, range 1 to 5). Methods or metrics with no observation
-        in that benchmark surface as NaN.
+        in that benchmark are NaN.
 
         Parameters
         ----------
@@ -1070,11 +1070,11 @@ class IntegrationBenchmarks:
 
         Each arm is one method in one (benchmark, dataset) block. The mean and
         the standard deviation are taken over that method's per-metric ranks in
-        the block, and the count is how many metrics it rests on. The study
+        the block, and the count is the number of metrics behind it. The study
         label is the dataset namespaced by benchmark, so a (benchmark, dataset)
         block is one study with the methods as its arms.
 
-        Arms resting on fewer than ``min_metrics`` metrics are dropped, since a
+        Arms with fewer than ``min_metrics`` metrics are dropped, since a
         standard deviation needs at least two values; netmeta then keeps only
         the studies that still have two or more arms.
 
@@ -1150,9 +1150,9 @@ def load_integration_benchmarks() -> IntegrationBenchmarks:
     records: list[tuple[str, str, str, str, float]] = []
 
     # scIB: raw (unscaled) scores, higher is better; rank within common methods.
-    # The source table carries two rows per (dataset, method, metric) for most
+    # The source table has two rows per (dataset, method, metric) for most
     # cells, one per feature space (HVG and full); take the mean across feature
-    # spaces so the data is not silently halved by row order. The remaining
+    # spaces so the result does not depend on row order. The remaining
     # singletons are kept as is.
     scib_cells = _load_scib_cells()
     for (dataset, metric), vals in scib_cells.items():
@@ -1266,11 +1266,11 @@ class PancreasContrast:
     """Same-data, different-pipeline contrast on the human pancreas data.
 
     Tran's Dataset 4 is built from the Muraro, Segerstolpe, Baron, Wang and Xin
-    studies, the same five studies scIB's ``pancreas`` task uses. The data is
-    shared; the pipelines are not. This holds the per-method-per-metric
+    studies, the same five studies scIB's ``pancreas`` task uses. Both use the
+    same data with different pipelines. This holds the per-method-per-metric
     ranking each paper assigned to the five common methods (combat, harmony,
     fastMNN, scanorama, LIGER) on those shared studies, plus the mean rank,
-    so the disagreement attributable to the benchmarker can be read directly.
+    so the disagreement due to the benchmarker is visible directly.
 
     Attributes
     ----------
@@ -1418,11 +1418,11 @@ class SemiSupervisedIntegration:
     scanorama, scCRAFT) on six datasets, each under a set of annotation scenarios
     that degrade label supervision (full supervision, unsupervised, randomly
     missing or wrong labels at 30/50/70 percent, partial batches, edge mixing,
-    and reference-based Azimuth, CellAssign and singleR transfers). beam treats
-    each (dataset, scenario) pair as one unit, so a method is scored once per unit
+    and reference-based Azimuth, CellAssign and singleR transfers). Each
+    (dataset, scenario) pair is one unit, so a method is scored once per unit
     per metric. The 13 metrics are the scIB family, all scaled to [0, 1] and
     higher is better; provenance is in ``src/beam/data/README.md``. A method or
-    metric not observed on a unit surfaces as ``numpy.nan``; nothing is imputed.
+    metric not observed on a unit is ``numpy.nan``; nothing is imputed.
 
     Attributes
     ----------
@@ -1563,7 +1563,7 @@ class ScibIntegrationFamilies:
 def _read_scib_long(csv_name: str) -> dict[tuple[str, str], dict[str, float]]:
     """Read a scib-format long table into ``{(dataset, metric): {method: mean}}``.
 
-    The source carries one row per feature space, so a ``(dataset, method,
+    The source has one row per feature space, so a ``(dataset, method,
     metric)`` cell may appear more than once; the duplicates are averaged.
     """
     from collections import defaultdict

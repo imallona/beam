@@ -1,7 +1,7 @@
 """Public plotting API: saveable matplotlib figures from a beam run.
 
-Every function here returns a ``matplotlib.figure.Figure`` you can show in a
-notebook, drop into a Quarto vignette, or write to a file with :func:`save`.
+Every function here returns a ``matplotlib.figure.Figure`` for a notebook, a
+Quarto vignette, or a file written with :func:`save`.
 The figure code is shared with the HTML report, so a plot you draw here is the
 same one the report embeds. Nothing switches the global matplotlib backend, so
 importing this module is safe inside another plotting session.
@@ -12,15 +12,15 @@ Ranking and stability, each taking a ``RunResult`` from ``beam.rank``:
 
 - :func:`ranking` the composite score per tool
 - :func:`normalized_scores` the normalized score heatmap
-- :func:`smaa` the share of random weightings that rank each tool first
+- :func:`smaa` the fraction of random weightings that rank each tool first
 - :func:`dataset_stability` the leave-one-dataset-out rank stability
-- :func:`rank_sensitivity` the share of rank variance carried by each factor
+- :func:`rank_sensitivity` the share of rank variance of each factor
 - :func:`rank_sensitivity_by_tool` that same split, one bar per method
 - :func:`funky_heatmap` the glyph table with the rank-robustness panels
 
 Effect dissection, each taking a ``RunResult`` and showing how the ranking
-moves when one choice or the data changes, drawn as a bump chart so you can
-follow each tool:
+moves when one choice or the data changes, drawn as a bump chart with one
+line per tool:
 
 - :func:`weighting_effect` across the weighting schemes
 - :func:`aggregation_effect` across the five aggregation rules
@@ -104,10 +104,10 @@ def normalized_scores(run) -> Figure:
 
 
 def smaa(run) -> Figure:
-    """Bar chart of the SMAA confidence factor, the share of sampled weightings
+    """Bar chart of the SMAA confidence factor, the fraction of sampled weightings
     that rank each tool first.
 
-    Raises ``ValueError`` when the run carries no SMAA report (sensitivity was
+    Raises ``ValueError`` when the run has no SMAA report (sensitivity was
     turned off).
     """
     if run.smaa is None:
@@ -135,13 +135,13 @@ def dataset_stability(run) -> Figure:
 
 
 def rank_sensitivity(report) -> Figure:
-    """Bar chart of the share of rank variance carried by each factor.
+    """Bar chart of the share of rank variance of each factor.
 
     Takes a ``RankSensitivityReport`` from ``beam.mcda.rank_sensitivity``. The
     factor shares are the first-order variance indices over the factorial of the
     weighting, the aggregation and (for a tensor) the dataset; the interaction
-    bar carries what the main effects do not explain. A tall dataset bar means
-    the ranking depends mostly on which dataset you use; a tall weighting or
+    bar is what the main effects do not explain. A tall dataset bar means
+    the ranking depends mostly on the dataset; a tall weighting or
     aggregation bar means it depends on a choice the analyst makes.
     """
     labels = [*report.factors, "interaction"]
@@ -335,7 +335,7 @@ def normalization_agreement_report(run, missing: str = "error"):
     """Run ``normalization_agreement`` on a run's reduced matrix and context.
 
     Passes the card-recommended per-metric normalization as the ``recommended``
-    candidate so the headline default is compared against the uniform strategies.
+    candidate so the card default is compared against the uniform strategies.
     """
     ctx = _context_args(run)
     return _normalization_agreement(
@@ -425,8 +425,8 @@ def dataset_struggle(report) -> Figure:
     Takes a ``DatasetConcordanceReport`` (or a ``RunResult``) and draws its
     ``rank_deviation`` table: rows are methods, columns are datasets, and each
     cell is the method's rank on that dataset minus its mean rank across the
-    datasets. A method that struggles on a dataset relative to its own baseline
-    shows as a strong positive cell. The figure locates where the dataset
+    datasets. A method ranked lower than usual on a dataset shows as a strong
+    positive cell. The figure locates where the dataset
     disagreement comes from without ranking the methods against each other.
     """
     report = _concordance_report(report)
@@ -441,7 +441,7 @@ def dataset_struggle(report) -> Figure:
 def critical_difference(report) -> Figure:
     """Canonical Friedman-Nemenyi critical-difference diagram (Demsar 2006).
 
-    Each tool sits at its average rank, with a blue bar joining each clique the
+    Each tool is placed at its average rank, with a blue bar joining each clique the
     Nemenyi test cannot separate. Takes a ``CriticalDifferenceReport`` from
     ``beam.mcda.critical_difference``. See :func:`critical_difference_band` for
     the shaded-band alternative.
@@ -575,7 +575,7 @@ def dataset_discrimination(report, top: int | None = None, title: str | None = N
 
     Takes a ``DatasetDiscriminationReport`` from
     ``beam.mcda.dataset_discrimination``. Each bar is one dataset's spread (how
-    far apart it pulls the methods, the effect size), sorted with the strongest
+    far apart the methods are, the effect size), sorted with the strongest
     discriminator on top; the bar colour is Kendall's W (whether the metrics
     agree on the order, the consistency). A long, dark bar is a dataset that
     separates the methods and whose metrics agree on how. ``top`` keeps only the
@@ -686,7 +686,7 @@ def network_forest(report, *, title: str | None = None) -> Figure:
 
 
 def attribution_progression(report, *, title: str | None = None) -> Figure:
-    """Stacked rank-variance budget across settings (analyst, data, benchmarker).
+    """Stacked rank-variance split across settings (analyst, data, benchmarker).
 
     Takes an ``AttributionReport`` from ``beam.mcda.attribution_synthesis``.
     See ``beam.reporting.figures.attribution_progression_plot``.

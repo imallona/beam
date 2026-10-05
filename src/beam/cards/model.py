@@ -100,8 +100,8 @@ class MetricCard:
 
         Set under comparability.noise_floor, in the metric's native units.
         Differences below it are not interpretable. Consumed by
-        beam.mcda.noise_floor_separation to flag tool pairs that the metric set
-        cannot tell apart.
+        beam.mcda.noise_floor_separation to list tool pairs within the noise
+        floor on every metric.
         """
         return self.comparability.get("noise_floor")
 
@@ -119,9 +119,8 @@ class MetricCard:
 class MetricProperties:
     """A small read-only view onto the metric card fields that the MCDA pipeline consumes.
 
-    Returned by ``beam.cards.properties_for`` so that downstream code can
-    work against a uniform structure rather than reaching into the nested
-    semantics dict of a ``MetricCard``.
+    Returned by ``beam.cards.properties_for``: one flat structure for
+    downstream code, built from the nested semantics dict of a ``MetricCard``.
     """
 
     id: str

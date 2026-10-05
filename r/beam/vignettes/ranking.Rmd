@@ -54,7 +54,7 @@ plot(run, metric_groups = c("accuracy", "cost", "accuracy"))
 
 ## SMAA
 
-Share of sampled weightings that rank each method first:
+Fraction of sampled weightings with each method ranked first:
 
 ```{r smaa, fig.height = 4}
 beam_plot(run, "smaa")
@@ -62,7 +62,7 @@ beam_plot(run, "smaa")
 
 ## Leave-one-dataset-out
 
-For each dataset dropped, the rest are pooled and re-ranked. The stability of a method is the share of those runs in which it keeps its rank.
+Each dataset is dropped in turn and the rest are pooled and re-ranked. The stability of a method is the fraction of those runs with its rank unchanged.
 
 ```{r lodo, fig.height = 4}
 lodo <- run$leave_one_dataset_out
@@ -90,7 +90,7 @@ cat("mean pairwise Kendall agreement across aggregations:",
 cat("the top rank is fragile to a small weight change:", pert$top_rank_is_fragile, "\n")
 ```
 
-Tools above the chance baseline, and tool pairs no metric separates above its noise floor:
+Tools above the chance baseline, and tool pairs within the noise floor on every metric:
 
 ```{r reference-levels}
 cat("tools that score above chance on no metric:",
@@ -130,7 +130,7 @@ cat(sprintf("dataset %.2f, weighting %.2f, aggregation %.2f, interaction %.2f\n"
 cat("most influential factor:", rs$most_influential_factor, "\n")
 ```
 
-The same shares per method, with the difference between the best and worst rank of each method:
+The same split per method, with each method's rank range:
 
 ```{r rank-sensitivity-by-tool, fig.height = 5}
 beam_plot(rs, "rank_sensitivity_by_tool")
@@ -209,7 +209,7 @@ cat(sprintf("Skillings-Mack chi-squared = %.2f on %d df, p = %.1e\n",
 
 ## Pairwise superiority on ARI
 
-[`beam_pairwise_superiority`](https://imallona.github.io/beam/docs/explanations/pairwise-method-comparison.html) compares the methods two at a time across the datasets, with the ARI noise floor as the equivalence band. The probability of superiority is the fraction of datasets on which one method outperforms the other.
+[`beam_pairwise_superiority`](https://imallona.github.io/beam/docs/explanations/pairwise-method-comparison.html) compares the methods two at a time across the datasets, with the ARI noise floor as the equivalence band. The probability of superiority is the fraction of datasets with one method scoring higher than the other.
 
 ```{r pairwise}
 ari_floor <- cards$properties_for(list("ari"))[[1]]$noise_floor
