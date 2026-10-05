@@ -9,8 +9,8 @@ authors:
     orcid: "https://orcid.org/0000-0002-2853-7526"
 repository-code: "https://github.com/imallona/beam"
 license: GPL-3.0-or-later
-version: "0.2.0"
-date-released: "2026-06-09"
+version: "0.3.0"
+date-released: "2026-10-05"
 keywords:
   - benchmarking
   - bioinformatics

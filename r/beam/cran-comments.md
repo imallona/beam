@@ -1,6 +1,6 @@
 ## Submission
 
-New submission. rbeam 0.2.0 is the R interface to the beam Python package.
+New submission. rbeam 0.3.0 is the R interface to the beam Python package.
 
 ## R CMD check results
 
