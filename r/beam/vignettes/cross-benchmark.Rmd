@@ -133,7 +133,7 @@ Pooled mean-rank difference of each method from the combat reference, with its 9
 
 ## Variance between benchmarks
 
-The method-by-benchmark component of the [variance decomposition](https://imallona.github.io/beam/docs/explanations/attribution-synthesis.html) is the between-benchmark disagreement about the methods. The model is fitted on the four scIB-metric sources, then again with BatchBench added. It needs lme4.
+The method-by-benchmark component of the [variance decomposition](https://imallona.github.io/beam/docs/explanations/attribution-synthesis.html) measures how differently the benchmarks rank the methods. The model is fitted on the four scIB-metric sources, then again with BatchBench added. It needs lme4.
 
 ```{r source-variance, eval = have_lme4, message = FALSE, warning = FALSE}
 rec <- ib$mean_rank_records()
@@ -152,7 +152,7 @@ The method-by-benchmark component is 0.23 of the variance with four sources and 
 
 ## Human pancreas in two pipelines
 
-Tran's Dataset 4 and the scIB pancreas task use the same five studies, so the two pipelines are compared on the same data.
+Tran's Dataset 4 has five pancreas studies and the scIB pancreas task has six; four of the studies are shared. The two pipelines are compared on these overlapping pancreas data.
 
 ```{r pancreas, fig.height = 4}
 pc <- datasets$load_pancreas_contrast()
@@ -171,7 +171,7 @@ ggplot2::ggplot(contrast, ggplot2::aes(method, rank, fill = pipeline)) +
   ggplot2::scale_fill_manual(values = c("Tran D4" = "#4477aa", "scIB pancreas" = "#ee6677"),
                              name = NULL) +
   ggplot2::labs(x = NULL, y = "mean rank across 4 metrics (lower ranks first)",
-                title = "Same pancreas data, two pipelines") +
+                title = "Overlapping pancreas data, two pipelines") +
   ggplot2::theme_minimal(base_size = 11)
 ```
 
@@ -196,7 +196,7 @@ for (b in bench) {
 
 ## Blind analysis
 
-A [blind analysis](https://imallona.github.io/beam/docs/explanations/analysis-blinding.html) hides the method names before the pipeline is fixed. `beam_blind` shuffles and relabels the rows; `beam_unblind` maps them back.
+A [blind analysis](https://imallona.github.io/beam/docs/explanations/analysis-blinding.html) masks the method names before the pipeline is fixed. `beam_blind` shuffles and relabels the rows; `beam_unblind` maps them back.
 
 ```{r blind}
 beam <- reticulate::import("beam")
@@ -214,7 +214,7 @@ cat("seal fingerprint:", substr(bl$seal$fingerprint, 1, 12), "\n")
 
 ## Dataset discrimination
 
-The benchmark of Shen, He and Guan (2026, [10.1371/journal.pcbi.1014008](https://doi.org/10.1371/journal.pcbi.1014008)) shares only harmony and scanorama with the five methods. [`beam_dataset_discrimination`](https://imallona.github.io/beam/docs/explanations/dataset-concordance-and-discrimination.html#dataset-discrimination) reports, per (dataset, scenario) unit, the separation between the scored methods.
+The benchmark of Shen, He and Guan (2026, [10.1371/journal.pcbi.1014008](https://doi.org/10.1371/journal.pcbi.1014008)) has only harmony and scanorama in common with the five methods. [`beam_dataset_discrimination`](https://imallona.github.io/beam/docs/explanations/dataset-concordance-and-discrimination.html#dataset-discrimination) reports, per (dataset, scenario) unit, the separation between the scored methods.
 
 ```{r discrimination}
 shen <- datasets$load_semisupervised_integration()

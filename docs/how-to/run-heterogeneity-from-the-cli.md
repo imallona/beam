@@ -6,7 +6,7 @@ These models wrap R, so the command needs the R toolchain. The conda recipe `env
 
 ## The input
 
-The score file is long format: a header `tool,dataset,metric,score` and one row per measurement. The dataset column is what these models decompose, so a wide tool by metric file is rejected. For a file with more than one metric, `--metric` selects one.
+The score file is long format: a header `tool,dataset,metric,score` and one row per measurement. These models decompose the score variation by dataset, so a wide tool-by-metric file, which has no dataset column, is rejected. For a file with more than one metric, `--metric` selects one.
 
 ```
 beam heterogeneity scores.csv --model mixed-effects --metric ari --out report.json

@@ -172,7 +172,7 @@ beam_plot(curve, "specification_curve")
 
 ## Blind analysis
 
-A [blind analysis](https://imallona.github.io/beam/docs/explanations/analysis-blinding.html) fixes the weighting, the aggregation and the metric set before the method names are known. `beam_blind` hides the names and shuffles the rows; `beam_unblind` restores them. The seal fingerprint is recorded in the manifest.
+A [blind analysis](https://imallona.github.io/beam/docs/explanations/analysis-blinding.html) fixes the weighting, the aggregation and the metric set before the method names are known. `beam_blind` masks the names and shuffles the rows; `beam_unblind` restores them. The seal fingerprint is recorded in the manifest.
 
 ```{r blinding}
 blinded <- beam_blind(scores, seed = 0L)

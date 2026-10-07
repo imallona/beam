@@ -20,7 +20,7 @@ Critical-difference cliques. Brackets over the rows not separated by the Friedma
 
 ## Usage
 
-`funky_heatmap_from_run(run)` takes the leave-one-dataset-out span, the aggregation consensus and the SMAA panel from the run. The worth intervals and the cliques are passed in, because the worth comes from the R-backed heterogeneity models.
+`funky_heatmap_from_run(run)` takes the leave-one-dataset-out span, the aggregation consensus and the SMAA panel from the run. The worth intervals and the cliques are passed in by the caller; the worth comes from the R-backed heterogeneity models.
 
 `beam.report` embeds the figure with the panels available without R; `funky_heatmap=False` drops it.
 

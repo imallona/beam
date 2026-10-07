@@ -195,7 +195,7 @@ for wname in ["equal", "entropy", "std", "critic"]:
     print(f"  {wname:10s}  {w_str:28s}  {top}")
 ```
 
-MEREC takes the logarithm of the normalized scores and refuses the zero produced by `rank` on CO2. Here `run` is called directly with z-score normalization:
+MEREC takes the logarithm of the normalized scores, so it stops on the zero produced by `rank` on CO2. Here `run` is called directly with z-score normalization:
 
 ```{python}
 merec = run(

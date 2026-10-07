@@ -15,7 +15,7 @@ pip install ./beam
 
 ## Step 1: write a small scores file
 
-beam reads a wide CSV. The first column has the tool name. Every other column header is a metric id that must resolve to a metric card. Here we use three cards bundled with beam: ari (adjusted Rand index, higher is better), nmi (normalized mutual information, higher is better) and runtime (seconds, lower is better). beam reads the [polarity](../explanations/measurement-theory.md) from the cards, so the runtime column is not flipped by hand.
+beam reads a wide CSV. The first column has the tool name. Every other column header is a metric id that must resolve to a metric card. Here we use three cards bundled with beam: ari (adjusted Rand index, higher is better), nmi (normalized mutual information, higher is better) and runtime (seconds, lower is better). beam reads the [polarity](../explanations/measurement-theory.md) from the cards, so the runtime column does not need to be inverted by hand.
 
 Save this as scores.csv:
 
@@ -36,7 +36,7 @@ result = beam.rank(scores)
 beam.report(result, "report.html")
 ```
 
-[`beam.load_scores`](../reference/load_scores.qmd) reads the CSV and checks every metric id against the [registry](../reference/Registry.qmd). An unknown id raises `UnknownMetricError`, so a typo in a header fails before any ranking. [`beam.rank`](../reference/rank.qmd) normalizes each column per its card, applies [equal weights](../reference/equal_weights.qmd) and the [SAW aggregation](../reference/weighted_sum.qmd) by default, runs the default [sensitivity analysis](../explanations/funky-heatmaps-and-robustness.md), and builds a [run manifest](../how-to/run.md#reproduce-a-run). [`beam.report`](../reference/report.qmd) writes one self-contained HTML file with the figures embedded, so report.html opens in a browser without any other files.
+[`beam.load_scores`](../reference/load_scores.qmd) reads the CSV and checks every metric id against the [registry](../reference/Registry.qmd). An unknown id raises `UnknownMetricError`, so a typo in a header stops the run before any ranking. [`beam.rank`](../reference/rank.qmd) normalizes each column per its card, applies [equal weights](../reference/equal_weights.qmd) and the [SAW aggregation](../reference/weighted_sum.qmd) by default, runs the default [sensitivity analysis](../explanations/funky-heatmaps-and-robustness.md), and builds a [run manifest](../how-to/run.md#reproduce-a-run). [`beam.report`](../reference/report.qmd) writes one self-contained HTML file with the figures embedded, so report.html opens in a browser without any other files.
 
 ## Step 3: read the RunResult
 
@@ -75,7 +75,7 @@ To save the run record to a file and add the manifest:
 beam rank scores.csv --report report.html --out result.json --manifest manifest.json
 ```
 
-The run record on `--out` captures the input path and hash, the parameters and the ranking. `beam report` reads the scores again from the recorded path and reruns with the recorded parameters:
+The run record on `--out` records the input path and hash, the parameters and the ranking. `beam report` reads the scores again from the recorded path and reruns with the recorded parameters:
 
 ```
 beam report result.json --out report.html

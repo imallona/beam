@@ -12,7 +12,7 @@ mkdir -p src/beam/metrics/recall_at_k
 
 ## 2. Write `v1.yaml`
 
-A card for a retrieval metric, with the required fields only. `accuracy/v1.yaml` shows the optional ones:
+A card for a retrieval metric. Every required field is set. `citations` and `recommended_normalization` are optional, as are `score_of_random_baseline` and `noise_floor`; `accuracy/v1.yaml` shows other optional fields:
 
 ```yaml
 id: recall_at_k
@@ -87,7 +87,7 @@ provenance:
 .venv/bin/python -m pytest tests/test_schema.py -q
 ```
 
-The schema check runs against every card in the registry. A missing required field, a polarity that does not match the polarity enum, or an inverted range (lower > upper) raises an error.
+The schema check runs against every card in the registry. A missing required field or a polarity outside the polarity enum raises an error. An inverted range (lower > upper) passes the schema check; `beam.rank` reports it as a violation in the [card-data consistency report](../explanations/card-data-consistency.md).
 
 ## 4. Optionally add a STATO or UO mapping
 
@@ -101,8 +101,8 @@ The cards-and-pipeline page lists which fields the pipeline reads and which are 
 .venv/bin/python -m beam.owl.generate
 ```
 
-This rewrites `docs/beam.owl.ttl` from the cards plus the schema. The new card now appears as an instance under its STATO parent (if mapped) or under the beam-private metric class (if not yet mapped).
+This rewrites `docs/beam.owl.ttl` from the cards plus the schema. The new card appears as an instance of the beam metric class, and also as an instance of its STATO class when the card has a STATO mapping.
 
 ## 6. Add a unit test for the metric (optional)
 
-A card that declares `implementations` warrants a small example under `tests/` confirming the implementation produces the expected output on a documented input.
+For a card with `implementations`, add a small test under `tests/` that checks the implementation returns the expected output on a documented input.

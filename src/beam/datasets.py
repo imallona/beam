@@ -1263,14 +1263,14 @@ def load_integration_published_ranks() -> dict[str, dict[str, int]]:
 
 @dataclass(frozen=True)
 class PancreasContrast:
-    """Same-data, different-pipeline contrast on the human pancreas data.
+    """Contrast of two benchmarks on overlapping human pancreas data.
 
-    Tran's Dataset 4 is built from the Muraro, Segerstolpe, Baron, Wang and Xin
-    studies, the same five studies scIB's ``pancreas`` task uses. Both use the
-    same data with different pipelines. This holds the per-method-per-metric
-    ranking each paper assigned to the five common methods (combat, harmony,
-    fastMNN, scanorama, LIGER) on those shared studies, plus the mean rank,
-    so the disagreement due to the benchmarker is visible directly.
+    Tran's Dataset 4 has the Muraro, Segerstolpe, Baron, Wang and Xin
+    studies. scIB's ``pancreas`` task has six studies, four of them in
+    common with Tran (Muraro, Segerstolpe, Baron and Xin). This holds the
+    per-method-per-metric ranking each benchmark assigned to the five common
+    methods (combat, harmony, fastMNN, scanorama, LIGER), plus the mean
+    rank, so the two benchmarks can be compared on mostly shared data.
 
     Attributes
     ----------
@@ -1316,7 +1316,7 @@ class PancreasContrast:
 
 
 def load_pancreas_contrast() -> PancreasContrast:
-    """Load Tran D4 versus scIB pancreas, the unconfounded benchmarker contrast.
+    """Load Tran Dataset 4 against the scIB pancreas task.
 
     Tran reports per-metric ranks across its 14 methods; here those ranks are
     re-ranked among the five common methods so the scale matches scIB. scIB

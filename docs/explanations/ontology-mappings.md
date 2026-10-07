@@ -13,7 +13,7 @@ Each metric card has an optional `mappings:` block that links the metric to exte
 
 1. Search the EBI Ontology Lookup Service (OLS) in STATO, then UO, then OBI: `https://www.ebi.ac.uk/ols4/api/search?q=<query>&ontology=<slug>`. `scripts/ols_query.py` does this for the registry.
 2. Fetch each candidate, `https://www.ebi.ac.uk/ols4/api/ontologies/<slug>/terms/<double-url-encoded-iri>`, and check the label and that `is_obsolete` is false. `scripts/ols_verify.py` runs this check.
-3. Write the full IRI under `mappings:`, not a CURIE.
+3. Write the full IRI under `mappings:`. The schema types each value as a URI.
 4. Without a term, leave the key absent and add a one-line YAML comment below the block. beam-private IRIs are not minted. STATO takes proposals at https://github.com/ISA-tools/stato/issues.
 5. Run `python -m pytest tests/test_schema.py -q`.
 6. Regenerate the OWL: `python -m beam.owl.generate`.

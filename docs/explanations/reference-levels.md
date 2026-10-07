@@ -1,6 +1,6 @@
 # Reference levels: chance baseline and noise floor
 
-A ranking always produces an order, even when the scores behind it are at chance level. beam reads two per-metric reference levels from the metric cards and reports where the order is based on uninterpretable differences. Both read the raw scores, before any [normalization](normalization-and-scales.md) or [weighting](weighting-schemes.md), and do not change the ranking.
+A ranking always produces an order, even when the scores behind it are at chance level. beam reads two per-metric reference levels from the metric cards and reports where the order is based on uninterpretable differences. Both checks use the raw scores, before any [normalization](normalization-and-scales.md) or [weighting](weighting-schemes.md), and do not change the ranking.
 
 ## Chance baseline
 
@@ -16,7 +16,7 @@ The report lists the tools at or below chance on every metric with a declared ba
 
 ## Usage
 
-Both add to the [smallest-weight-perturbation analysis](rank-sensitivity.md), which finds the smallest weight change reversing the top pair. The noise floor shows whether the top tools are far enough apart to rank at all, the chance baseline whether they beat a random method. A flip that is fragile under weights, between two tools within the noise floor and barely above chance, is not interpretable.
+Both checks add to the [smallest-weight-perturbation analysis](rank-sensitivity.md), which finds the smallest weight change reversing the top pair. The noise floor shows whether the top tools are far enough apart to rank at all, the chance baseline whether they beat a random method. A flip that is fragile under weights, between two tools within the noise floor and barely above chance, is not interpretable.
 
 Both fields are optional and independent of each other. `semantics.score_of_random_baseline` applies only to a metric with a defined chance level (corrected-for-chance metrics such as ARI, or a balanced-class accuracy at 1 over the number of classes). `comparability.noise_floor` applies when a measured value exists. If neither is defined on the metric card, beam reports no reference-level diagnostics.
 

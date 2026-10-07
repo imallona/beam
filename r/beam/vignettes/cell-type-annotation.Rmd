@@ -118,7 +118,7 @@ beam_plot(curve, "specification_curve")
 
 ## Blind analysis
 
-[Blinding](https://imallona.github.io/beam/docs/explanations/analysis-blinding.html) fixes the pipeline before the method names are known. `beam_blind` hides the names; `beam_unblind` restores them.
+[Blinding](https://imallona.github.io/beam/docs/explanations/analysis-blinding.html) fixes the pipeline before the method names are known. `beam_blind` masks the names; `beam_unblind` restores them.
 
 ```{r blinding}
 blinded <- beam_blind(scores, seed = 0L)

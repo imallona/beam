@@ -12,7 +12,7 @@ A method that ran on eight of ten datasets for a metric is summarized over those
 
 The tool by metric matrix can still have missing cells. The `missing` argument of `beam.rank` and `run`, the CLI `beam rank --on-missing`, and the `missing` key in beam.yaml set the policy. The default is `error`.
 
-`error` refuses any missing cell; the error message lists the alternatives.
+`error` raises on any missing cell; the error message lists the alternatives.
 
 `available` ranks each tool on the metrics it has, with the weights renormalized over them, and warns that the composites use different metric sets. Only SAW supports it. [TOPSIS, VIKOR, PROMETHEE II](aggregation-methods.md) and [COMET](aggregation-methods.md#comet) need every tool on every criterion, and the objective [weight schemes](weighting-schemes.md) (entropy, standard deviation, CRITIC, MEREC) need complete columns.
 

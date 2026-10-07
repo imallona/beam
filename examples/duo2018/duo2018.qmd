@@ -76,7 +76,7 @@ for p in props:
 
 ## Pooling across datasets
 
-beam needs one value per metric, so the datasets are pooled first with NaN-aware means: the arithmetic mean of ARI and Shannon entropy difference, the geometric mean of runtime.
+The standalone functions take one value per method and metric, so the datasets are pooled first with NaN-aware means: the arithmetic mean of ARI and Shannon entropy difference, the geometric mean of runtime.
 
 The five missing cells are on SAFE (two datasets) and ascend (three datasets).
 
@@ -169,7 +169,7 @@ print("  " + ", ".join(sorted(top_per_combo)))
 
 The Demsar (2006) [Friedman test](../../docs/explanations/critical-difference.md) ranks the methods on each dataset and tests whether the average ranks differ. Two methods whose average ranks differ by less than the Nemenyi critical difference are not separable.
 
-This runs only on ARI, on the complete observations across the twelve datasets. SAFE and ascend have missing ARI cells, so they are ignored. The rest are complete.
+This runs only on ARI, on the complete observations across the twelve datasets. SAFE and ascend have missing ARI cells, so they are dropped. The rest are complete.
 
 ```{python}
 ari = duo.tensor(("ari",))[:, :, 0]

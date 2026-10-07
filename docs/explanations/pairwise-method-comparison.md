@@ -71,4 +71,4 @@ The comparison is paired by dataset and uses only the direction of each differen
 - Benavoli, A., Corani, G., Demsar, J., Zaffalon, M. Time for a change: a tutorial for comparing multiple classifiers through Bayesian analysis. Journal of Machine Learning Research 18(77):1-36 (2017). https://jmlr.org/papers/v18/16-305.html
 - Corani, G., Benavoli, A. A Bayesian approach for comparing cross-validated algorithms on multiple data sets. Machine Learning 100(2-3):285-304 (2015). https://doi.org/10.1007/s10994-015-5486-z
 
-The reference implementation is the baycomp package (https://github.com/janezd/baycomp), against which beam is cross-checked.
+beam is cross-checked against the reference implementation, the baycomp package (https://github.com/janezd/baycomp).

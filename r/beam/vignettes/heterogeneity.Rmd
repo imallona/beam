@@ -152,7 +152,7 @@ cat(sprintf("specification curve: %s ranks first in %.0f%% of %d combinations, %
 beam_plot(curve, "specification_curve")
 ```
 
-[Blinding](https://imallona.github.io/beam/docs/explanations/analysis-blinding.html) fixes the analysis before the method names are known. `beam_blind` hides the names; `beam_unblind` restores them.
+[Blinding](https://imallona.github.io/beam/docs/explanations/analysis-blinding.html) fixes the analysis before the method names are known. `beam_blind` masks the names; `beam_unblind` restores them.
 
 ```{r blind}
 beam <- reticulate::import("beam")

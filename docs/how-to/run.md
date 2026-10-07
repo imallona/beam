@@ -91,7 +91,7 @@ The pinned card is the one used to rank and the one fingerprinted in the manifes
 
 ## Reproduce a run
 
-`beam rank --manifest manifest.json` records the run: input path and content hash, card ids and versions, weighting, aggregation, [SMAA](../reference/smaa.qmd) seed and sample count, normalization, and the versions of python, beam, numpy, scipy, pymcdm, pyyaml and jsonschema. It is kept with the scores. `beam rank --out result.json` writes the run record, and `beam report` reruns from it with the recorded parameters and seed:
+`beam rank --manifest manifest.json` records the run: input path and content hash, the tool names, card ids, versions and content hashes, weighting, aggregation, normalization per metric, the sensitivity settings ([SMAA](../reference/smaa.qmd) seed and sample count), and the versions of python, beam, numpy, scipy, pymcdm, pyyaml and jsonschema. A blinded run also records the seal fingerprint. The manifest is kept with the scores. `beam rank --out result.json` writes the run record, and `beam report` reruns from it with the recorded parameters and seed:
 
 ```sh
 beam rank scores.csv --out result.json --manifest manifest.json

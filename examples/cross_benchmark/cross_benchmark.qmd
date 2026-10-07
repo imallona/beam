@@ -15,7 +15,7 @@ format:
 
 ## Question
 
-Single-cell data-integration benchmarks rank the same methods differently. The disagreement can come from the methods, the datasets, or the analysis choices of each benchmark (metrics, scaling, weighting).
+Single-cell data-integration benchmarks rank the same methods differently. The differences can come from the methods, the datasets, or the analysis choices of each benchmark (metrics, scaling, weighting).
 
 ## Benchmarks
 
@@ -159,7 +159,7 @@ A method low and to the right mixes batches and keeps the cell types separate.
 
 ## Variance between benchmarks
 
-The [variance decomposition](../../docs/explanations/attribution-synthesis.md) is `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)`. The method-by-benchmark component is the between-benchmark disagreement about the methods. The model is fitted on the four scIB-metric sources, then again with BatchBench added. It needs lme4.
+The [variance decomposition](../../docs/explanations/attribution-synthesis.md) is `score ~ method + (1 | benchmark) + (1 | benchmark:dataset) + (1 | method:benchmark)`. The method-by-benchmark component measures how differently the benchmarks rank the methods. The model is fitted on the four scIB-metric sources, then again with BatchBench added. It needs lme4.
 
 ```{python}
 from beam.heterogeneity import r_available, source_variance_decomposition
@@ -181,7 +181,7 @@ else:
     print("Provision it with envs/heterogeneity.yml.")
 ```
 
-The method-by-benchmark share is 0.23 with four sources and 0.42 with BatchBench. BatchBench ranks four of the five methods, and Tyler three. The fits are singular: with so few benchmarks at least one variance component is estimated at zero.
+The method-by-benchmark fraction of the variance is 0.23 with four sources and 0.42 with BatchBench. BatchBench ranks four of the five methods, and Tyler three. The fits are singular: with so few benchmarks at least one variance component is estimated at zero.
 
 ## Network meta-analysis
 
@@ -209,7 +209,7 @@ harmony and liger have the same P-score, 0.83, followed by fastMNN at 0.58, scan
 
 ## Human pancreas in two pipelines
 
-Tran's Dataset 4 and the scIB pancreas task use the same five studies (Muraro, Segerstolpe, Baron, Wang and Xin), so the two pipelines can be compared on the same data.
+Tran's Dataset 4 has five pancreas studies (Muraro, Segerstolpe, Baron, Wang and Xin) and the scIB pancreas task has six; four of the studies (Muraro, Segerstolpe, Baron and Xin) are shared. The two pipelines are compared on these overlapping pancreas data.
 
 ```{python}
 from beam.datasets import load_pancreas_contrast
@@ -238,7 +238,7 @@ ax.set_xticks(xs)
 ax.set_xticklabels(pc.methods)
 ax.set_ylabel("mean rank across 4 metrics (lower ranks first)")
 ax.set_xlabel("method")
-ax.set_title("Same pancreas data, two pipelines")
+ax.set_title("Overlapping pancreas data, two pipelines")
 ax.invert_yaxis()
 ax.legend(loc="upper right")
 fig.tight_layout()
@@ -377,4 +377,4 @@ display(plot.difficulty_concordance(scib_conc, title="scIB: do DL and classical 
 
 ## Limits
 
-The reported-rank chart and the Spearman comparison use the first three benchmarks, as Tyler publishes no overall ranking. The reported rankings are reconstructed: Tran's final rank directly, scIB's 0.6/0.4 overall and the OpenProblems mean score recomputed. A Spearman over five methods is coarse, and five benchmarks are few for a method-by-benchmark variance estimate. The benchmarks use mostly different datasets, except for the human pancreas.
+The reported-rank chart and the Spearman comparison use the first three benchmarks, as Tyler publishes no overall ranking. The reported rankings are reconstructed: Tran's final rank directly, scIB's 0.6/0.4 overall and the OpenProblems mean score recomputed. A Spearman over five methods is coarse, and five benchmarks are few for a method-by-benchmark variance estimate. The benchmarks use mostly different datasets; only the human pancreas data overlap, and only in part.

@@ -8,11 +8,11 @@ beam has a separate measure for each. Within one benchmark, [`rank_sensitivity`]
 
 ## How the fractions are computed
 
-Within one benchmark, from a `RankSensitivityReport` over a tool by dataset by metric tensor. Analyst choice is the weighting fraction plus the aggregation fraction. Dataset is the dataset main effect. Benchmarker is zero, since one benchmark does all the scoring. The interaction term is divided between analyst choice and dataset in proportion to their main effects.
+Within one benchmark, the fractions come from a `RankSensitivityReport` over a tool by dataset by metric tensor. Analyst choice is the weighting fraction plus the aggregation fraction. Dataset is the dataset main effect. Benchmarker is zero, since one benchmark does all the scoring. The interaction term is divided between analyst choice and dataset in proportion to their main effects.
 
-Across [pooled benchmarks](network-meta-analysis.md), from a `SourceVarianceReport`. Benchmarker is the method-by-benchmark component, the between-benchmark variation of a method's mean rank. Dataset is every other component: the between-benchmark term, the within-benchmark dataset term and the residual. The pooled scores are mean ranks with no metric axis, so analyst choice cannot be measured here. It is zero unless the caller supplies it, in which case the remainder is divided between benchmarker and dataset in the ratio from the model.
+Across [pooled benchmarks](network-meta-analysis.md), the fractions come from a `SourceVarianceReport`. Benchmarker is the method-by-benchmark component, the between-benchmark variation of a method's mean rank. Dataset is every other component: the between-benchmark term, the within-benchmark dataset term and the residual. The pooled scores are mean ranks with no metric axis, so analyst choice cannot be measured here. It is zero unless the caller supplies it, in which case the remainder is divided between benchmarker and dataset in the ratio from the model.
 
-On a same-data contrast, where two or more pipelines score the methods on the same datasets. Dataset is zero by construction. Each method's rank is centred on its mean across the pipelines, which removes the order shared by the pipelines. What is left is divided into a pipeline offset (benchmarker) and a method-by-pipeline reordering (analyst choice). When the pipelines give the same order there is nothing to divide and the fractions are undefined.
+On a same-data contrast, two or more pipelines score the methods on the same datasets. Dataset is zero by construction. Each method's rank is centred on its mean across the pipelines, which removes the order shared by the pipelines. What is left is divided into a pipeline offset (benchmarker) and a method-by-pipeline reordering (analyst choice). When the pipelines give the same order there is nothing to divide and the fractions are undefined.
 
 ## Limitations
 

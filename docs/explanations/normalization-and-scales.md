@@ -32,11 +32,11 @@ Each metric card declares `comparability.recommended_normalization`, which the p
 - `baseline_relative` rescales against a declared chance score, so a method at chance maps to 0. The Adjusted Rand Index uses it, with a [chance baseline](reference-levels.md) of 0. It is defined for higher-is-better metrics.
 - `target_relative` is for a metric whose ideal is a fixed value, such as a calibration slope of 1. It min-max scales the absolute deviation from `semantics.target` with flipped polarity: the method nearest the target maps to 1 and the farthest to 0.
 
-A `polarity: target_value` column must use `target_relative`, and `target_relative` refuses a monotone polarity. Like min-max, it is relative to the methods in the table. It is the distance-to-a-reference normalization of the OECD handbook.
+A `polarity: target_value` column must use `target_relative`, and `target_relative` raises on a monotone polarity. Like min-max, it is relative to the methods in the table. It is the distance-to-a-reference normalization of the OECD handbook.
 
 ## Checks
 
-For a min-max column the pipeline warns when a declared bound is missing or the column is heavy-tailed, and the warning suggests `log_min_max` or `rank`. The run continues. The [card and data consistency](card-data-consistency.md) audit makes the same checks over every metric.
+For a min-max column the pipeline warns when a declared bound is missing or the column is heavy-tailed, and the warning suggests `log_min_max` or `rank`. The run continues. The [card and data consistency](card-data-consistency.md) audit checks the raw scores of every metric against the declared range, baseline, target and noise floor.
 
 ## Examples
 
