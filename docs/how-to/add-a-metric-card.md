@@ -87,7 +87,7 @@ provenance:
 .venv/bin/python -m pytest tests/test_schema.py -q
 ```
 
-The schema check runs against every card in the registry. A missing required field or a polarity outside the polarity enum raises an error. An inverted range (lower > upper) passes the schema check; `beam.rank` reports it as a violation in the [card-data consistency report](../explanations/card-data-consistency.md).
+The schema check runs against every card in the registry. A missing required field or a polarity outside the polarity enum raises an error. An inverted range (lower > upper) passes the schema check. `beam.rank` then stops with an error, because every score is outside such a range and the normalization step raises on the first one. To see the cause, call the [card-data consistency audit](../explanations/card-data-consistency.md) directly on the scores; it reports the inverted range as a `malformed_range` violation.
 
 ## 4. Optionally add a STATO or UO mapping
 
