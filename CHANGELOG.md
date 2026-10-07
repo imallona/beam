@@ -2,7 +2,12 @@
 
 ## [Unreleased]
 
-- rbeam: `beam_rank_dots` replaces `beam_rank_bars`; the attribution plot uses the role colours; `beam_funky_heatmap(size_legend = TRUE)` draws a key for the circle size; the reliability plot labels its reference lines; P-score and method labels are no longer clipped.
+## [0.3.1] - 2026-10-07
+
+- rbeam: `beam_rank_dots` replaces `beam_rank_bars`; size key in the funky heatmap.
+- Plot labels: fraction, labelled reference lines, role colours in the attribution plot.
+- Pancreas contrast: Tran and scIB share four studies.
+- Documentation copyedit.
 
 ## [0.3.0] - 2026-10-05
 

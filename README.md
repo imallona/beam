@@ -89,13 +89,13 @@ beam_run("beam.yaml")
 
 ## Citation
 
-Mallona, Izaskun (2026). beam: Benchmark Evaluation And Metrics. Version 0.3.0. https://github.com/imallona/beam. ORCID 0000-0002-2853-7526.
+Mallona, Izaskun (2026). beam: Benchmark Evaluation And Metrics. Version 0.3.1. https://github.com/imallona/beam. ORCID 0000-0002-2853-7526.
 
 ```bibtex
 @software{mallona_beam_2026,
   author  = {Mallona, Izaskun},
   title   = {beam: Benchmark Evaluation And Metrics},
-  version = {0.3.0},
+  version = {0.3.1},
   year    = {2026},
   url     = {https://github.com/imallona/beam},
   license = {GPL-3.0-or-later}
