@@ -266,7 +266,8 @@ NULL
     ggplot2::geom_text(ggplot2::aes(label = .data$method), hjust = -0.2, size = 3) +
     ggplot2::scale_y_reverse(breaks = NULL) +
     ggplot2::scale_x_reverse() +
-    ggplot2::expand_limits(x = max(ranks) + 1) +
+    ggplot2::expand_limits(x = c(max(ranks) + 1, min(ranks) - 0.8)) +
+    ggplot2::coord_cartesian(clip = "off") +
     ggplot2::labs(x = "average rank (1 best, on the right)", y = NULL,
                   title = sprintf("critical difference %.2f (Nemenyi)", cd)) +
     theme_beam()
@@ -336,10 +337,22 @@ NULL
     ggplot2::geom_col(fill = .beam_palette[1]) +
     ggplot2::geom_hline(yintercept = alpha_threshold, colour = "#888888", linetype = "dotted")
   if (nrow(ref) > 0) {
-    p <- p + ggplot2::geom_hline(data = ref, ggplot2::aes(yintercept = .data$group_alpha),
-                                 colour = "#ee6677", linetype = "dashed", linewidth = 1)
+    ref$metric <- vapply(ref$group, function(g) utils::tail(df$metric[df$group == g], 1),
+                         character(1))
+    ref$label <- sprintf("group alpha %.2f", ref$group_alpha)
+    p <- p +
+      ggplot2::geom_hline(data = ref, ggplot2::aes(yintercept = .data$group_alpha),
+                          colour = "#ee6677", linetype = "dashed", linewidth = 1) +
+      ggplot2::geom_text(data = ref, ggplot2::aes(x = .data$metric, y = .data$group_alpha,
+                                                  label = .data$label),
+                         hjust = 1, vjust = -0.5, size = 2.5, colour = "#ee6677")
   }
+  bound <- data.frame(metric = df$metric[1], group = df$group[1], y = alpha_threshold,
+                      label = sprintf("%.1f bound", alpha_threshold))
   p <- p +
+    ggplot2::geom_text(data = bound, ggplot2::aes(x = .data$metric, y = .data$y,
+                                                  label = .data$label),
+                       hjust = 0, vjust = -0.5, size = 2.5, colour = "#888888") +
     ggplot2::facet_wrap(~ group, scales = "free_x") +
     ggplot2::labs(x = NULL, y = "alpha if dropped",
                   title = title %||% "Cronbach's alpha if each metric is dropped") +
@@ -461,7 +474,8 @@ NULL
     ggplot2::geom_point(size = 2.6, colour = "#222222") +
     ggplot2::geom_text(ggplot2::aes(x = .data$hi, label = sprintf("P-score %.2f", .data$ps)),
                        hjust = -0.2, size = 2.8, colour = "#555555") +
-    ggplot2::expand_limits(x = max(hi) + 0.3 * (span + 1e-9)) +
+    ggplot2::expand_limits(x = max(hi) + 0.5 * (span + 1e-9)) +
+    ggplot2::coord_cartesian(clip = "off") +
     ggplot2::labs(x = sprintf("mean-rank difference vs %s (smaller is better)", ref), y = NULL,
                   title = title %||% "network meta-analysis forest plot") +
     theme_beam()
@@ -567,13 +581,15 @@ NULL
   settings <- .py_list(report$settings)
   labels <- vapply(settings, function(s) as.character(reticulate::py_to_r(s$label)), character(1))
   shares <- cbind(
-    `analyst choice` = vapply(settings, function(s) .num(s$analyst_choice_share), numeric(1)),
-    dataset = vapply(settings, function(s) .num(s$dataset_share), numeric(1)),
-    benchmarker = vapply(settings, function(s) .num(s$benchmarker_share), numeric(1))
+    `analyst choices` = vapply(settings, function(s) .num(s$analyst_choice_share), numeric(1)),
+    `datasets and residual` = vapply(settings, function(s) .num(s$dataset_share), numeric(1)),
+    benchmark = vapply(settings, function(s) .num(s$benchmarker_share), numeric(1))
   )
+  palette <- stats::setNames(unname(.beam_source_colours[c("analyst", "data", "benchmarker")]),
+                             colnames(shares))
   .stacked_plot(shares, labels, colnames(shares), order = seq_along(labels),
                 value_label = "fraction of rank variance",
-                title = title %||% "attribution across settings")
+                title = title %||% "attribution across settings", palette = palette)
 }
 
 # Helpers

@@ -117,10 +117,10 @@ test_that("funky heatmap draws clique brackets and a rank-sensitivity bar has co
   expect_s3_class(beam_plot(rs, "rank_sensitivity"), "ggplot")
 })
 
-test_that("grouped rank bars, variance highlight, theme and palette are exported", {
-  bars <- beam_rank_bars(c("a", "b", "c"),
+test_that("rank dots, variance highlight, theme and palette are exported", {
+  dots <- beam_rank_dots(c("a", "b", "c"),
                          list(one = c(1, 2, 3), two = c(2, 1, 3)))
-  expect_s3_class(bars, "ggplot")
+  expect_s3_class(dots, "ggplot")
   expect_s3_class(beam_theme(), "theme")
   expect_type(beam_palette(), "character")
   expect_named(beam_palette(roles = TRUE))

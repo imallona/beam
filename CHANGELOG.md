@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- rbeam: `beam_rank_dots` replaces `beam_rank_bars`; the attribution plot uses the role colours; `beam_funky_heatmap(size_legend = TRUE)` draws a key for the circle size; the reliability plot labels its reference lines; P-score and method labels are no longer clipped.
+
 ## [0.3.0] - 2026-10-05
 
 - Blinding, specification curve, attribution, pairwise transitivity, Bayesian sign test.
