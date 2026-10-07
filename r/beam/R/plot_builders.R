@@ -99,14 +99,15 @@ NULL
 #' @return A ggplot object.
 #' @keywords internal
 .stacked_plot <- function(shares, row_labels, seg_labels, order = NULL,
-                          annotation = NULL, value_label = "share", title = NULL) {
+                          annotation = NULL, value_label = "share", title = NULL,
+                          palette = NULL) {
   if (is.null(order)) order <- seq_along(row_labels)
   row_labels <- row_labels[order]
   shares <- shares[order, , drop = FALSE]
   df <- expand.grid(row = factor(row_labels, levels = rev(row_labels)),
                     segment = factor(seg_labels, levels = seg_labels))
   df$share <- as.vector(shares)
-  pal <- stats::setNames(.beam_palette[seq_along(seg_labels)], seg_labels)
+  pal <- palette %||% stats::setNames(.beam_palette[seq_along(seg_labels)], seg_labels)
   p <- ggplot2::ggplot(df, ggplot2::aes(.data$share, .data$row, fill = .data$segment)) +
     ggplot2::geom_col() +
     ggplot2::scale_fill_manual(values = pal, name = NULL) +

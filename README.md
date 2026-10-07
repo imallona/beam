@@ -1,6 +1,6 @@
 # beam
 
-beam is a benchmark evaluation and metrics suite for method comparisons, mainly in bioinformatics.
+beam ranks methods from the score tables of a benchmark and reports how much the ranking depends on the metric scaling, the weighting, the aggregation and the datasets. The scale type, direction, range and allowed transformations of each metric are stored in a metric card.
 
 [Documentation](https://imallona.github.io/beam/): how-tos, vignettes, and explanations.
 
@@ -26,7 +26,7 @@ rbeam::install_beam_python()
 
 ### Heterogeneity diagnostics (optional, needs R)
 
-The MCDA ranking is pure Python. The heterogeneity diagnostics (Bradley-Terry trees, mixed-effects, Plackett-Luce, variance decomposition, network meta-analysis) call `Rscript` and need `lme4`, `glmmTMB`, `psychotree`, `partykit`, `PlackettLuce`, `qvcalc`, `meta`, `netmeta` and `jsonlite`. The conda recipe puts Python and R in one environment so the wrapper finds `Rscript`:
+The ranking and its sensitivity diagnostics are pure Python. The heterogeneity diagnostics (Bradley-Terry trees, mixed-effects models, Plackett-Luce models, variance decomposition, network meta-analysis) call `Rscript` and need `lme4`, `glmmTMB`, `psychotree`, `partykit`, `PlackettLuce`, `qvcalc`, `meta`, `netmeta` and `jsonlite`. The conda recipe puts Python and R in one environment so that `Rscript` is on the path:
 
 ```bash
 mamba env create -f envs/heterogeneity.yml
@@ -38,9 +38,9 @@ From R, install them once with `rbeam::install_beam_heterogeneity_deps()`. The a
 
 ## Usage
 
-From a CSV to an HTML report:
+From a CSV to an HTML report.
 
-On a shell:
+Shell:
 
 ```bash
 beam validate scores.csv
@@ -51,7 +51,7 @@ beam heterogeneity scores.csv --model bradley-terry-tree --features features.csv
 beam run beam.yaml
 ```
 
-In python:
+Python:
 
 ```python
 import beam
@@ -65,7 +65,7 @@ print(Registry().get("ari"))
 run_config("beam.yaml")
 ```
 
-In R
+R:
 
 ```r
 library(rbeam)
@@ -77,7 +77,7 @@ beam_metric_show("ari")
 beam_run("beam.yaml")
 ```
 
-## Build artefacts
+## Generated files
 
 - [Documentation site](https://imallona.github.io/beam/): vignettes, how-tos, explanations, and the Python API reference.
 - Ontology release: `docs/beam.owl.ttl` (OWL) and `docs/beam.skos.ttl` (SKOS), regenerated from the cards on each release.
@@ -106,7 +106,7 @@ Mallona, Izaskun (2026). beam: Benchmark Evaluation And Metrics. Version 0.3.0. 
 
 Izaskun Mallona, izaskun.mallona.work@gmail.com.
 
-## Inspiration
+## Related reading
 
 - [Commonly used software tools produce conflicting and overly-optimistic AUPRC values](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-024-03266-y)
 - [Performance Evaluation in Machine Learning: The Good, The Bad, The Ugly and The Way Forward](http://people.cs.bris.ac.uk/~flach/papers/Performance-AAAI19.pdf)

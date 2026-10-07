@@ -27,7 +27,7 @@ The blinding is recorded so that it can be audited. The `Seal` has a fingerprint
 "blinding": {"blinded": true, "seal_sha256": "6ee805357098..."}
 ```
 
-The seal file, kept separately, records that the configuration was fixed before the labels were revealed. A reviewer who has the manifest and the seal can confirm the analysis ran on scores blinded under that seal. This mechanism supports preregistration but does not enforce it.
+The seal file is kept separately from the scores. A reviewer who has the manifest and the seal can confirm that the analysis ran on scores blinded under that seal, so the configuration was fixed before the labels were revealed. This mechanism supports preregistration but does not enforce it.
 
 ## Usage
 

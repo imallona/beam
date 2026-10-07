@@ -8,7 +8,7 @@ Benchmark datasets differ in size, biology, confounders, and whether they are si
 
 ## Implementation
 
-For each dataset the methods are ranked on that dataset's tool by metric matrix, holding the [weighting](weighting-schemes.md), [aggregation](aggregation-methods.md) and [normalization](normalization-and-scales.md) of the standard run. Each pair of per-dataset rankings is compared with Kendall tau-b, which handles the tied ranks that competition ranking produces. A dataset the pipeline cannot rank on its own, for example one with a missing cell under the error policy, is dropped and noted in `evaluated_datasets`.
+For each dataset the methods are ranked on that dataset's tool by metric matrix, with the [weighting](weighting-schemes.md), [aggregation](aggregation-methods.md) and [normalization](normalization-and-scales.md) of the standard run. Each pair of per-dataset rankings is compared with Kendall tau-b, which handles the tied ranks that competition ranking produces. A dataset the pipeline cannot rank on its own, for example one with a missing cell under the error policy, is dropped and noted in `evaluated_datasets`.
 
 The report has:
 

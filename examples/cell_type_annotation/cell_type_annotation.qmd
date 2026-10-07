@@ -56,7 +56,7 @@ print("metrics:", ", ".join(g.metric_ids))
 
 ## Coverage
 
-SingleR and ScType were not run on the Azimuth and literature datasets, and the March 2023 GPT-4 endpoint has a subset. Missing cells are `numpy.nan` and [are not imputed](../../docs/explanations/missing-data.md).
+SingleR and ScType were not run on the Azimuth and literature datasets, and the March 2023 GPT-4 endpoint was run on a subset of the datasets. Missing cells are `numpy.nan` and [are not imputed](../../docs/explanations/missing-data.md).
 
 ```{python}
 for i, m in enumerate(g.method_names):
@@ -404,7 +404,7 @@ print("blinding fingerprint:", blind_run.manifest["blinding"]["seal_sha256"][:12
 
 ## Equal and cell-weighted pooling
 
-By default each dataset has the same weight. The per-cell-type accuracy of the paper weights a dataset by its number of cell types.
+By default each dataset has the same weight. The per-cell-type accuracy of Hou and Ji weights a dataset by its number of cell types.
 
 ```{python}
 n_cell_types = np.array(g.features.numeric["n_cell_types"])[complete]
@@ -549,7 +549,7 @@ plt.show()
 
 ## Other LLM annotation benchmarks
 
-Three more recent benchmarks score LLMs at cell type annotation: DeepCellSeek (Briefings in Bioinformatics 2025, [10.1093/bib/bbaf677](https://doi.org/10.1093/bib/bbaf677)), AnnDictionary (Nature Communications 2025, [10.1038/s41467-025-64511-x](https://doi.org/10.1038/s41467-025-64511-x)) and Single-Cell Omics Arena (SOAR, [arXiv:2412.02915](https://arxiv.org/abs/2412.02915)). They use different models, datasets and metrics, so they are compared by the within-benchmark rank of the shared methods. The three classical tools (CellMarker2.0, SingleR, ScType) connect GPTCelltype, DeepCellSeek and SOAR; GPT-4o connects DeepCellSeek, AnnDictionary and SOAR. The provenance and license of each bundled table are in `src/beam/data/`; DeepCellSeek and SOAR scores come from a pinned source, and the SOAR and AnnDictionary folders include a note on their license status.
+Three more recent benchmarks score LLMs at cell type annotation: DeepCellSeek (Briefings in Bioinformatics 2025, [10.1093/bib/bbaf677](https://doi.org/10.1093/bib/bbaf677)), AnnDictionary (Nature Communications 2025, [10.1038/s41467-025-64511-x](https://doi.org/10.1038/s41467-025-64511-x)) and Single-Cell Omics Arena (SOAR, [arXiv:2412.02915](https://arxiv.org/abs/2412.02915)). They use different models, datasets and metrics, so they are compared by the within-benchmark rank of the shared methods. The three classical tools (CellMarker2.0, SingleR, ScType) are in GPTCelltype, DeepCellSeek and SOAR; GPT-4o is in DeepCellSeek, AnnDictionary and SOAR. The provenance and license of each bundled table are in `src/beam/data/`; DeepCellSeek and SOAR scores come from a pinned source, and the SOAR and AnnDictionary folders include a note on their license status.
 
 ```{python}
 import csv

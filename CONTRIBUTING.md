@@ -1,6 +1,6 @@
 # Contributing to beam
 
-Thanks for considering a contribution. This file covers the PR contract, how to add a metric card, the licensing terms, and the community expectations.
+This file covers what a pull request needs, how to add a metric card, the licenses, and the conduct expected.
 
 ## Quick start
 
@@ -18,26 +18,26 @@ If you change a metric card or the schema, validate from R too (or rely on CI to
 Rscript tests/validate_cards.R
 ```
 
-R-side validation needs the CRAN packages `jsonvalidate`, `yaml`, and `jsonlite`. The schema is plain JSON Schema (draft 2020-12) and is meant to be readable from any language; if your language is not covered, please open an issue.
+The R validation needs the CRAN packages `jsonvalidate`, `yaml` and `jsonlite`. The schema is JSON Schema (draft 2020-12), so any language with a validator can read it; open an issue if yours cannot.
 
-## PR contract
+## Pull requests
 
-Every non-trivial PR ships:
+A pull request that changes behaviour has:
 
-- code change with type hints (Python) or roxygen2 docstrings (R)
+- the code change, with type hints (Python) or roxygen2 documentation (R)
 - a unit test
-- updated docstring on every public function the PR touches
+- an updated docstring on every public function it touches
 - a CHANGELOG entry (Keep a Changelog format)
 
-Commits do not bundle unrelated edits. One commit = one coherent change.
+One commit per change; unrelated edits go in separate commits.
 
 ## Adding a metric card
 
-Cards live under `src/beam/metrics/<id>/v<version>.yaml`. The directory name must match the `id` field; the filename stem must match the `version` field. This is enforced in CI. The cards ship inside the package so an installed wheel can find them.
+Cards live under `src/beam/metrics/<id>/v<version>.yaml`. The directory name must equal the `id` field and the file name stem the `version` field; CI checks both. The cards are part of the package, so an installed wheel includes them.
 
 The schema is at `src/beam/schema/metric_card.schema.json`. Every required field must be present. A minimum-effort card needs `id`, `version`, `name`, `description`, `metric_kind`, `measurand`, `task`, `requires_ground_truth`, `output`, `semantics`, `comparability`, `implementations`, `examples`, and `provenance`.
 
-See `src/beam/metrics/ari/v1.yaml` and `src/beam/metrics/runtime/v1.yaml` for two worked examples covering the derived and the measured `metric_kind` respectively.
+`src/beam/metrics/ari/v1.yaml` is an example of a derived metric and `src/beam/metrics/runtime/v1.yaml` of a measured one.
 
 ## Licensing
 
@@ -47,9 +47,9 @@ See `src/beam/metrics/ari/v1.yaml` and `src/beam/metrics/runtime/v1.yaml` for tw
 ## Conventions
 
 - Documentation uses Quarto. Vignettes live in `examples/` and are rendered as part of CI.
-- Diataxis split for `docs/`: tutorials, how-to, reference, explanations. Do not mix modes within one document.
-- Plain English in prose; no jargon without an explicit definition.
+- `docs/` follows the Diataxis split: tutorials, how-to, reference, explanations. One mode per document.
+- Plain English; define a term before using it.
 
 ## Community
 
-Contributors and users are welcome regardless of sex, gender identity, age, ethnicity, nationality, religion, disability, sexual orientation, career stage, native language, or any other attribute. We believe in respectful and healthy collaboration in scientific research.
+Contributors and users are welcome regardless of sex, gender identity, age, ethnicity, nationality, religion, disability, sexual orientation, career stage, native language, or any other attribute. Be respectful.

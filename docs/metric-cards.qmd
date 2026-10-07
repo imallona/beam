@@ -6,10 +6,10 @@ toc-location: left
 
 Every metric in beam's registry is described by a metric card: a small YAML file
 that declares what the metric measures, its measurement scale, its polarity, its
-declared range, how to normalize it, and how to pool it across datasets. The
-pipeline reads these fields so that ranking decisions follow from the metric
-definition rather than from a hidden default. The cards below are generated from
-the registry, so this page always matches the shipped cards.
+declared range, how to pool it across datasets and, optionally, how to normalize
+it (min_max when not set). The pipeline reads these fields, so the normalization
+and pooling of each metric follow from its card. The cards below are generated
+from the registry, so this page always matches the shipped cards.
 
 For how the pipeline consumes these fields, see [Cards and pipeline](explanations/cards-and-pipeline.qmd).
 

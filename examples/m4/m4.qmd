@@ -222,7 +222,7 @@ else:
 
 ## Rank sensitivity: band or analyst choice
 
-[`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) ranks under every combination of [weighting scheme](../../docs/explanations/weighting-schemes.md), [aggregation rule](../../docs/explanations/aggregation-methods.md) and band, and splits the rank variance of each method into a share per factor.
+[`rank_sensitivity`](../../docs/explanations/rank-sensitivity.md) ranks under every combination of [weighting scheme](../../docs/explanations/weighting-schemes.md), [aggregation rule](../../docs/explanations/aggregation-methods.md) and band, and splits the rank variance of each method into a fraction per factor.
 
 ```{python}
 from beam.mcda import rank_sensitivity

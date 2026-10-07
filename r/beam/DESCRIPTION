@@ -7,16 +7,17 @@ Authors@R: c(
            role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-2853-7526"))
     )
-Description: Thin R interface to the beam Python package. beam is a metric
-    formalization layer for bioinformatics benchmarks: it ships metric cards
-    (YAML, JSON Schema) with measurement-theory grounded metadata (scale type,
-    polarity, range, allowed transformations), a multi-criteria decision
-    analysis pipeline with sensitivity primitives (SMAA, leave-one-out,
-    Triantaphyllou-Sanchez weight perturbation, the Skillings-Mack
-    coverage-aware Friedman test), and method-dataset heterogeneity
-    diagnostics (mixed-effects variance decomposition, Bradley-Terry trees,
-    Plackett-Luce models). This R package exposes the canonical Python
-    implementation via 'reticulate'.
+Description: R interface to the beam Python package. beam stores the scale
+    type, polarity, range and allowed transformations of each performance
+    metric of a benchmark in a metric card (YAML, JSON Schema), ranks methods
+    with multi-criteria aggregations, reports how the ranking changes with
+    the weighting, the aggregation and the datasets (SMAA, leave-one-out,
+    weight perturbation, rank sensitivity), tests whether methods are
+    separable (Friedman, Nemenyi, Skillings-Mack), and fits heterogeneity
+    models (mixed-effects variance decomposition, Bradley-Terry trees,
+    Plackett-Luce models, network meta-analysis). The R package calls the
+    Python package through 'reticulate' and draws the figures with
+    'ggplot2'.
 URL: https://github.com/imallona/beam
 BugReports: https://github.com/imallona/beam/issues
 License: GPL (>= 3)

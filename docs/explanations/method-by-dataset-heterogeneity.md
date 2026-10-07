@@ -43,7 +43,7 @@ With about a dozen datasets the stability test rarely finds a split; `did_split`
 
 Plackett-Luce estimates one worth per method from the full ranking of the methods on each dataset. It reduces to Bradley-Terry for pairwise data.
 
-[`beam.heterogeneity.plackett_luce`](../reference/plackett_luce.qmd) builds the ranking per dataset from the score matrix, oriented by the polarity. Ties are shared, and a method missing on a dataset is left out of that ranking. The report has the worth, the log-worth, the quasi-standard-errors, which compare any two methods without a baseline, and whether the ranking network is connected. With ties and partial coverage the quasi-standard-errors can fail; the worths are reported and the standard errors are NA with a warning.
+[`beam.heterogeneity.plackett_luce`](../reference/plackett_luce.qmd) builds the ranking per dataset from the score matrix, oriented by the polarity. Tied methods share a rank, and a method missing on a dataset is left out of that ranking. The report has the worth, the log-worth, the quasi-standard-errors, which compare any two methods without a baseline, and whether the ranking network is connected. With ties and partial coverage the quasi-standard-errors can fail; the worths are reported and the standard errors are NA with a warning.
 
 ## glmmTMB beta: bounded metrics
 

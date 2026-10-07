@@ -22,7 +22,7 @@ devtools::install_local("beam/r/beam")
 rbeam::install_beam_python()
 ```
 
-`rbeam::install_beam_python()` installs the Python beam into the active reticulate environment; alternatively, reticulate uses an existing one via `reticulate::use_python()` or `RETICULATE_PYTHON`. `dependencies = TRUE` fails here: `PlackettLuce` depends on `CVXR` and `clarabel`, which need a Rust toolchain.
+`rbeam::install_beam_python()` installs the Python beam into the active reticulate environment. To use an existing environment instead, point reticulate at it with `reticulate::use_python()` or `RETICULATE_PYTHON`. Do not pass `dependencies = TRUE` to `install_local`: `PlackettLuce` depends on `CVXR` and `clarabel`, which need a Rust toolchain.
 
 ## Heterogeneity models
 

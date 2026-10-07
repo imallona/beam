@@ -1,8 +1,8 @@
 # Card and data consistency
 
-A metric card declares the metric value range, a baseline of what is obtainable by chance, an ideal target, and a noise floor. The [multi-criteria decision analysis (MCDA) pipeline](cards-and-pipeline.qmd) reads each of these: the range bounds the [normalization](normalization-and-scales.md), the baseline anchors `baseline_relative` scaling and the beats-chance check, the target sets `target_relative` scaling, and the [noise floor](reference-levels.md) sets which method differences are interpretable.
+A metric card declares the metric value range, a baseline of what is obtainable by chance, an ideal target, and a noise floor. The [multi-criteria decision analysis (MCDA) pipeline](cards-and-pipeline.qmd) reads each of these: the range bounds the [normalization](normalization-and-scales.md), the baseline is the reference of `baseline_relative` scaling and of the beats-chance check, the target sets `target_relative` scaling, and the [noise floor](reference-levels.md) sets which method differences are interpretable.
 
-[`beam.mcda.card_data_consistency`](../reference/card_data_consistency.qmd) reads the raw scores against the card values, before any normalization, and reports where they disagree. `validate.py` checks the aggregation is licit for the declared [scale type](measurement-theory.md); this audit checks the data against the declared values.
+[`beam.mcda.card_data_consistency`](../reference/card_data_consistency.qmd) reads the raw scores against the card values, before any normalization, and reports where they disagree. `validate.py` checks that the aggregation is allowed for the declared [scale type](measurement-theory.md); this audit checks the data against the declared values.
 
 A recurring failure is a unit mismatch. A metric defined on the `[0, 1]` fraction scale is reported as a percentage, so the column runs to 100 against a card that declares the `[0, 1]` range. The column is still numeric and still interval, so it passes the schema validation and the scale-versus-method check. It then distorts the min-max normalization for that metric and the [weighting](weighting-schemes.md) that is based on it. The audit detects this on the raw scores and reports the metric, the number of tools outside the range, and the worst value.
 
@@ -26,7 +26,7 @@ The `ok` flag is true when there are no violations. Notes do not change it and a
 
 ## Redundant checks
 
-[`beam.mcda.normalize`](../reference/normalize.qmd) also has a narrow guard: it raises when a column's minimum or maximum falls outside the declared bounds. That guard fires inside the ranking call, stops at the first offending column, reports a column index without the metric id, and checks only the range. `card_data_consistency` is the full standalone audit. It reads all metrics in one pass, names each one, grades the findings, and adds the baseline, target, noise-floor and degeneracy checks absent from the normalization guard.
+[`beam.mcda.normalize`](../reference/normalize.qmd) also has a narrow check: it raises when a column's minimum or maximum falls outside the declared bounds. That check runs inside the ranking call, stops at the first offending column, reports a column index without the metric id, and checks only the range. `card_data_consistency` is the full standalone audit. It reads all metrics in one pass, names each one, grades the findings, and adds the baseline, target, noise-floor and degeneracy checks absent from the normalization check.
 
 ## Running
 

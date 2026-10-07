@@ -1,6 +1,6 @@
 # Run a blind analysis
 
-A blind analysis hides the method names while the pipeline is fixed, then restores them, as in particle physics and clinical trials. The weighting, aggregation and metric set are chosen without knowledge of which method is which, so the choices cannot be tuned toward a preferred result. See the explanation in [docs/explanations/analysis-blinding.md](../explanations/analysis-blinding.md) for the reasoning and the references.
+A blind analysis replaces the method names with labels while the pipeline is fixed, then restores them, as in particle physics and clinical trials. The weighting, aggregation and metric set are chosen without knowledge of which method is which, so the choices cannot be tuned toward a preferred result. See the explanation in [docs/explanations/analysis-blinding.md](../explanations/analysis-blinding.md) for the reasoning and the references.
 
 ## From Python
 

@@ -5,7 +5,7 @@ A metric card declares fields for identity, kind, inputs, output, semantics, com
 ## Fields read
 
 - `polarity`: `normalize` inverts `lower_is_better` columns and rescales each column to [0, 1], higher is better.
-- `range_lower`, `range_upper`: when both are declared, [`run_from_registry`](../reference/run_from_registry.qmd) passes them to `normalize`, and min-max and baseline-relative use them instead of the observed extrema. A value outside the declared range raises.
+- `range_lower`, `range_upper`: when both are declared, [`run_from_registry`](../reference/run_from_registry.qmd) passes them to `normalize`, and min-max and baseline-relative use them instead of the observed extrema. A value outside the declared range raises an error.
 - `comparability.recommended_normalization`: the strategy for the column, by default `min_max`. The options are `min_max`, `log_min_max`, `rank`, `zscore`, `baseline_relative` and `target_relative`.
 - `semantics.score_of_random_baseline`: the chance-level value, used by `baseline_relative`.
 - `semantics.target`: the ideal value, used by `target_relative`.

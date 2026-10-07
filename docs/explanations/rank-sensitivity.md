@@ -36,9 +36,9 @@ On the [M4 forecasting benchmark](../../examples/m4/m4.qmd) the dataset fraction
 
 ## Defaults and limits
 
-The default weightings are equal, entropy, standard deviation, and CRITIC. MEREC takes the logarithm of the scores and refuses a zero, which min_max produces; it needs a normalization with positive scores.
+The default weightings are equal, entropy, standard deviation, and CRITIC. MEREC takes the logarithm of the scores and raises on a zero, which min_max produces; it needs a normalization with positive scores.
 
-TOPSIS, VIKOR, PROMETHEE II and [COMET](aggregation-methods.md#comet) refuse missing cells, so a tensor with missing cells needs `missing="worst"` or a restriction to the complete cases. A factor level that fails on the input is dropped and named in the report.
+TOPSIS, VIKOR, PROMETHEE II and [COMET](aggregation-methods.md#comet) do not accept missing cells, so a tensor with missing cells needs `missing="worst"` or a restriction to the complete cases. A factor level that fails on the input is dropped and named in the report.
 
 COMET is slow with many metrics.
 

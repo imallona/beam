@@ -1,6 +1,6 @@
 # beam documentation
 
-This directory holds the docs site.
+This directory is the source of the docs site.
 
 ## Layout
 

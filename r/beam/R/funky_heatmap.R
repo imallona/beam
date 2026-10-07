@@ -26,6 +26,8 @@
 #'   test (for example `beam_critical_difference(...)$cliques` mapped to names).
 #'   Each multi-member group is drawn as an indigo bracket to the left of the
 #'   glyphs, joining the methods the test cannot separate.
+#' @param size_legend Draw a key for the circle size (the normalized score).
+#'   Default `FALSE`.
 #' @param ... Reserved for future panels.
 #'
 #' @return Invisibly the output path when `path` is given, otherwise the
@@ -49,7 +51,8 @@ beam_funky_heatmap <- function(result, path = NULL, metric_groups = NULL,
                                title = NULL, worth = NULL, worth_ci = NULL,
                                worth_label = "model worth",
                                show_lodo = TRUE, show_smaa = TRUE,
-                               show_aggregation = TRUE, cliques = NULL, ...) {
+                               show_aggregation = TRUE, cliques = NULL,
+                               size_legend = FALSE, ...) {
   .require_beam()
   .need("patchwork")
   d <- .glyph_data(result, metric_groups)
@@ -70,7 +73,8 @@ beam_funky_heatmap <- function(result, path = NULL, metric_groups = NULL,
     agg = .reorder_span(agg, order),
     smaa = if (is.null(smaa)) NULL else smaa[order, , drop = FALSE],
     cliques = .clique_name_list(cliques),
-    title = title
+    title = title,
+    size_legend = size_legend
   )
   if (is.null(path)) return(fig)
   .beam_save(fig, path)
@@ -164,12 +168,13 @@ beam_rank_bump <- function(method_names, columns, ranks, divider_after = NULL,
 #' @keywords internal
 .funky_figure <- function(methods, metrics, groups, normalized, composite, ranks,
                           worth, worth_ci, worth_label, lodo, agg, smaa, title,
-                          cliques = NULL) {
+                          cliques = NULL, size_legend = FALSE) {
   n <- length(methods)
   pos <- rev(seq_len(n))  # row 1 (best) sits at the top
   ylim <- c(0.4, n + 0.6)
 
-  panels <- list(.glyph_panel(methods, metrics, groups, normalized, pos, ylim, cliques))
+  panels <- list(.glyph_panel(methods, metrics, groups, normalized, pos, ylim, cliques,
+                              size_legend))
   widths <- max(1.6, 0.75 * length(metrics))
 
   panels <- c(panels, list(.bar_panel(composite, pos, ylim, "overall\ncomposite")))
@@ -226,7 +231,8 @@ beam_rank_bump <- function(method_names, columns, ranks, divider_after = NULL,
     )
 }
 
-.glyph_panel <- function(methods, metrics, groups, normalized, pos, ylim, cliques = NULL) {
+.glyph_panel <- function(methods, metrics, groups, normalized, pos, ylim, cliques = NULL,
+                         size_legend = FALSE) {
   m <- length(metrics)
   long <- expand.grid(mi = seq_len(m), ri = seq_along(methods))
   long$score <- as.vector(t(normalized))
@@ -237,7 +243,9 @@ beam_rank_bump <- function(method_names, columns, ranks, divider_after = NULL,
   p <- ggplot2::ggplot(long, ggplot2::aes(.data$mi, .data$y)) +
     ggplot2::geom_point(ggplot2::aes(size = .data$score, fill = .data$group),
                         shape = 21, colour = "#33333366", stroke = 0.3) +
-    ggplot2::scale_size_area(max_size = 7, limits = c(0, 1), guide = "none") +
+    ggplot2::scale_size_area(max_size = 7, limits = c(0, 1), breaks = c(0.25, 0.5, 1),
+                             name = "normalized score",
+                             guide = if (size_legend) "legend" else "none") +
     ggplot2::scale_fill_manual(values = .group_colours(groups), name = NULL,
                                guide = if (length(unique(groups)) > 1) "legend" else "none") +
     ggplot2::scale_x_continuous(breaks = seq_len(m), labels = metrics, position = "top") +
@@ -345,6 +353,6 @@ beam_rank_bump <- function(method_names, columns, ranks, divider_after = NULL,
                                   name = "rank") +
     ggplot2::scale_y_continuous(expand = c(0, 0)) +
     ggplot2::coord_cartesian(xlim = c(0, 1), ylim = ylim) +
-    ggplot2::labs(x = "SMAA rank acceptability\n(share of weightings)", y = NULL) +
+    ggplot2::labs(x = "SMAA rank acceptability\n(fraction of weightings)", y = NULL) +
     .panel_theme()
 }

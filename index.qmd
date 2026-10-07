@@ -3,9 +3,9 @@ title: "beam"
 subtitle: "Benchmark Evaluation and Metrics"
 ---
 
-beam is a metric formalization layer for method comparisons and benchmarks in bioinformatics. It records each performance metric in a [metric card](docs/explanations/cards-and-pipeline.qmd) with [measurement-theory](docs/explanations/measurement-theory.md) grounded metadata, ranks methods with [multi-criteria decision analysis](docs/explanations/aggregation-methods.md), and decomposes [method-dataset heterogeneity](docs/explanations/method-by-dataset-heterogeneity.md).
+beam ranks methods from the score tables of a benchmark. Each performance metric has a [metric card](docs/explanations/cards-and-pipeline.qmd) with its scale type, direction, range and allowed transformations, following [measurement theory](docs/explanations/measurement-theory.md). Methods are ranked with [multi-criteria aggregations](docs/explanations/aggregation-methods.md), and the ranking comes with diagnostics: how much it depends on the weighting, the aggregation and the datasets, whether the methods are separable, and whether one ranking fits all datasets ([method by dataset heterogeneity](docs/explanations/method-by-dataset-heterogeneity.md)).
 
-The metric cards are mapped to STATO, UO, OBI and HuggingFace evaluate where available. The OWL is available at [docs/beam.owl.ttl](docs/beam.owl.ttl) and regenerated from the cards on each release.
+The metric cards link to STATO, UO, OBI and HuggingFace evaluate terms where one exists. The OWL file, [docs/beam.owl.ttl](docs/beam.owl.ttl), is regenerated from the cards on each release.
 
 ## Where to start
 
@@ -18,14 +18,14 @@ The metric cards are mapped to STATO, UO, OBI and HuggingFace evaluate where ava
 ## Worked vignettes
 
 - [Duo 2018 clustering](examples/duo2018/duo2018.qmd): scRNA-seq clustering with 14 methods on 12 datasets.
-- [Simulated scenarios](examples/scenarios/scenarios.qmd): consistency checks against documented ground truth.
-- [Transportation modes](examples/transportation/transportation.qmd): cross-domain example with partial coverage.
+- [Simulated scenarios](examples/scenarios/scenarios.qmd): checks against a known answer.
+- [Transportation modes](examples/transportation/transportation.qmd): an example outside bioinformatics, with missing scores.
 - [M4 forecasting](examples/m4/m4.qmd): 25 methods on six frequency bands.
-- [OpenProblems batch integration](examples/openproblems/openproblems.qmd): MCDA contrasted with the platform's own mean-of-scores rule, plus a Bradley-Terry tree on 50 spatial datasets.
-- [Cross-benchmark meta-analysis](examples/cross_benchmark/cross_benchmark.qmd): consistency across independently published scRNA-seq integration benchmarks.
-- [LLM cell type annotation](examples/cell_type_annotation/cell_type_annotation.qmd): GPT-4, GPT-3.5 and other LLM annotators versus classical annotation methods.
+- [OpenProblems batch integration](examples/openproblems/openproblems.qmd): multi-criteria rankings next to the platform's mean of scores, plus a Bradley-Terry tree on 50 spatial datasets.
+- [Cross-benchmark meta-analysis](examples/cross_benchmark/cross_benchmark.qmd): five published scRNA-seq integration benchmarks of the same methods.
+- [LLM cell type annotation](examples/cell_type_annotation/cell_type_annotation.qmd): GPT-4, GPT-3.5 and other language models next to marker and reference based annotation tools.
 
-Standard HTML reports for some of these comparisons:
+HTML reports for four of these comparisons:
 
 - [Duo 2018 clustering](docs/reports/duo2018.html)
 - [M4 forecasting](docs/reports/m4.html)

@@ -41,7 +41,7 @@ NULL
   d <- .glyph_data(run)
   .bar_plot(.num(run$smaa$confidence_factor), d$methods, order = order(d$ranks),
             fill = .beam_palette[3],
-            value_label = "share of weightings ranking the tool first",
+            value_label = "fraction of weightings ranking the tool first",
             title = "SMAA confidence")
 }
 
@@ -141,7 +141,7 @@ NULL
     ggplot2::geom_text(ggplot2::aes(label = formatC(.data$value, format = "f", digits = 3)),
                        vjust = -0.4, size = 3, colour = "#555555") +
     ggplot2::coord_cartesian(ylim = c(0, 1), clip = "off") +
-    ggplot2::labs(x = NULL, y = "share of rank variance", title = "rank variance by factor") +
+    ggplot2::labs(x = NULL, y = "fraction of rank variance", title = "rank variance by factor") +
     theme_beam() +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 20, hjust = 1))
   .sized(p, width = max(3.5, 1.1 * length(labels) + 1.5), height = 3.6)
@@ -166,7 +166,7 @@ NULL
   ord <- order(-spans, labels)
   .stacked_plot(shares, labels, c(factors, "interaction"), order = ord,
                 annotation = paste("span", spans),
-                value_label = "share of rank variance",
+                value_label = "fraction of rank variance",
                 title = title %||% "rank variance by factor and method")
 }
 
@@ -266,7 +266,8 @@ NULL
     ggplot2::geom_text(ggplot2::aes(label = .data$method), hjust = -0.2, size = 3) +
     ggplot2::scale_y_reverse(breaks = NULL) +
     ggplot2::scale_x_reverse() +
-    ggplot2::expand_limits(x = max(ranks) + 1) +
+    ggplot2::expand_limits(x = c(max(ranks) + 1, min(ranks) - 0.8)) +
+    ggplot2::coord_cartesian(clip = "off") +
     ggplot2::labs(x = "average rank (1 best, on the right)", y = NULL,
                   title = sprintf("critical difference %.2f (Nemenyi)", cd)) +
     theme_beam()
@@ -336,11 +337,25 @@ NULL
     ggplot2::geom_col(fill = .beam_palette[1]) +
     ggplot2::geom_hline(yintercept = alpha_threshold, colour = "#888888", linetype = "dotted")
   if (nrow(ref) > 0) {
-    p <- p + ggplot2::geom_hline(data = ref, ggplot2::aes(yintercept = .data$group_alpha),
-                                 colour = "#ee6677", linetype = "dashed", linewidth = 1)
+    ref$metric <- vapply(ref$group, function(g) utils::tail(df$metric[df$group == g], 1),
+                         character(1))
+    ref$label <- sprintf("group alpha %.2f", ref$group_alpha)
+    p <- p +
+      ggplot2::geom_hline(data = ref, ggplot2::aes(yintercept = .data$group_alpha),
+                          colour = "#ee6677", linetype = "dashed", linewidth = 1) +
+      ggplot2::geom_text(data = ref, ggplot2::aes(x = .data$metric, y = .data$group_alpha,
+                                                  label = .data$label),
+                         hjust = 1, vjust = -0.5, size = 2.5, colour = "#ee6677")
   }
+  low_group <- names(which.min(tapply(df$alpha, df$group, max)))
+  bound <- data.frame(metric = df$metric[df$group == low_group][1], group = low_group,
+                      y = alpha_threshold, label = sprintf("%.1f bound", alpha_threshold))
   p <- p +
+    ggplot2::geom_text(data = bound, ggplot2::aes(x = .data$metric, y = .data$y,
+                                                  label = .data$label),
+                       hjust = 0, vjust = -0.5, size = 2.5, colour = "#888888") +
     ggplot2::facet_wrap(~ group, scales = "free_x") +
+    ggplot2::expand_limits(y = c(0, 1)) +
     ggplot2::labs(x = NULL, y = "alpha if dropped",
                   title = title %||% "Cronbach's alpha if each metric is dropped") +
     theme_beam() +
@@ -388,7 +403,7 @@ NULL
     ggplot2::geom_col(show.legend = FALSE) +
     ggplot2::scale_fill_manual(values = .beam_source_colours) +
     ggplot2::ylim(0, 1) +
-    ggplot2::labs(x = "component", y = "share of variance",
+    ggplot2::labs(x = "component", y = "fraction of variance",
                   title = title %||% "variance components", caption = annotation) +
     theme_beam() +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 20, hjust = 1))
@@ -461,7 +476,8 @@ NULL
     ggplot2::geom_point(size = 2.6, colour = "#222222") +
     ggplot2::geom_text(ggplot2::aes(x = .data$hi, label = sprintf("P-score %.2f", .data$ps)),
                        hjust = -0.2, size = 2.8, colour = "#555555") +
-    ggplot2::expand_limits(x = max(hi) + 0.3 * (span + 1e-9)) +
+    ggplot2::expand_limits(x = max(hi) + 0.5 * (span + 1e-9)) +
+    ggplot2::coord_cartesian(clip = "off") +
     ggplot2::labs(x = sprintf("mean-rank difference vs %s (smaller is better)", ref), y = NULL,
                   title = title %||% "network meta-analysis forest plot") +
     theme_beam()
@@ -539,7 +555,7 @@ NULL
   dotdf$row <- factor(dotdf$row, levels = rev(rows))
   mid <- ggplot2::ggplot(dotdf, ggplot2::aes(.data$x, .data$row)) +
     ggplot2::geom_point(size = 0.8, colour = "#222222") +
-    ggplot2::labs(x = "specification (sorted by the top tool's rank)", y = "choice") +
+    ggplot2::labs(x = "specification (sorted by the rank of the method shown)", y = "choice") +
     theme_beam()
 
   if (dataset_strip) {
@@ -548,7 +564,7 @@ NULL
       ggplot2::geom_tile() +
       ggplot2::scale_fill_manual(values = grDevices::colorRampPalette(.beam_palette)(length(datasets)),
                                  name = "dataset") +
-      ggplot2::labs(x = "specification (sorted by the top tool's rank)", y = NULL) +
+      ggplot2::labs(x = "specification (sorted by the rank of the method shown)", y = NULL) +
       theme_beam() +
       ggplot2::theme(axis.text.y = ggplot2::element_blank())
     mid <- mid + ggplot2::labs(x = NULL)
@@ -567,13 +583,15 @@ NULL
   settings <- .py_list(report$settings)
   labels <- vapply(settings, function(s) as.character(reticulate::py_to_r(s$label)), character(1))
   shares <- cbind(
-    `analyst choice` = vapply(settings, function(s) .num(s$analyst_choice_share), numeric(1)),
-    dataset = vapply(settings, function(s) .num(s$dataset_share), numeric(1)),
-    benchmarker = vapply(settings, function(s) .num(s$benchmarker_share), numeric(1))
+    `analyst choices` = vapply(settings, function(s) .num(s$analyst_choice_share), numeric(1)),
+    `datasets and residual` = vapply(settings, function(s) .num(s$dataset_share), numeric(1)),
+    benchmark = vapply(settings, function(s) .num(s$benchmarker_share), numeric(1))
   )
+  palette <- stats::setNames(unname(.beam_source_colours[c("analyst", "data", "benchmarker")]),
+                             colnames(shares))
   .stacked_plot(shares, labels, colnames(shares), order = seq_along(labels),
                 value_label = "fraction of rank variance",
-                title = title %||% "attribution across settings")
+                title = title %||% "attribution across settings", palette = palette)
 }
 
 # Helpers
