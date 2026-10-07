@@ -14,7 +14,7 @@ Ranking and stability, each taking a ``RunResult`` from ``beam.rank``:
 - :func:`normalized_scores` the normalized score heatmap
 - :func:`smaa` the fraction of random weightings that rank each tool first
 - :func:`dataset_stability` the leave-one-dataset-out rank stability
-- :func:`rank_sensitivity` the share of rank variance of each factor
+- :func:`rank_sensitivity` the fraction of rank variance of each factor
 - :func:`rank_sensitivity_by_tool` that same split, one bar per method
 - :func:`funky_heatmap` the glyph table with the rank-robustness panels
 
@@ -135,7 +135,7 @@ def dataset_stability(run) -> Figure:
 
 
 def rank_sensitivity(report) -> Figure:
-    """Bar chart of the share of rank variance of each factor.
+    """Bar chart of the fraction of rank variance of each factor.
 
     Takes a ``RankSensitivityReport`` from ``beam.mcda.rank_sensitivity``. The
     factor shares are the first-order variance indices over the factorial of the
@@ -152,7 +152,7 @@ def rank_sensitivity(report) -> Figure:
     ax.bar(range(len(labels)), shares, color=colors)
     ax.set_xticks(range(len(labels)))
     ax.set_xticklabels(labels, rotation=20, ha="right")
-    ax.set_ylabel("share of rank variance")
+    ax.set_ylabel("fraction of rank variance")
     ax.set_xlabel("factor")
     ax.set_ylim(0, 1)
     ax.set_title("rank variance by factor")
@@ -201,7 +201,7 @@ def rank_sensitivity_by_tool(report, title: str | None = None) -> Figure:
     ax.set_yticks(y)
     ax.set_yticklabels(labels, fontsize=8)
     ax.set_xlim(0, 1)
-    ax.set_xlabel("share of rank variance")
+    ax.set_xlabel("fraction of rank variance")
     ax.set_title(title or "rank variance by factor and method")
     handles = [
         Patch(color=_FACTOR_COLORS[k % len(_FACTOR_COLORS)], label=f) for k, f in enumerate(factors)
@@ -555,7 +555,7 @@ def model_effects(report, *, xlabel: str | None = None, title: str | None = None
 def variance_components(report, *, title: str | None = None) -> Figure:
     """Variance-component shares from a mixed-effects or source-variance report.
 
-    Draws each entry of the report's ``variance_components`` as a share of the
+    Draws each entry of the report's ``variance_components`` as a fraction of the
     total, the residual or dispersion bar greyed.
     """
     return _figures.variance_shares_plot(report.variance_components, title=title)

@@ -353,6 +353,6 @@ beam_rank_bump <- function(method_names, columns, ranks, divider_after = NULL,
                                   name = "rank") +
     ggplot2::scale_y_continuous(expand = c(0, 0)) +
     ggplot2::coord_cartesian(xlim = c(0, 1), ylim = ylim) +
-    ggplot2::labs(x = "SMAA rank acceptability\n(share of weightings)", y = NULL) +
+    ggplot2::labs(x = "SMAA rank acceptability\n(fraction of weightings)", y = NULL) +
     .panel_theme()
 }
